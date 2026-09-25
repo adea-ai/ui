@@ -8,10 +8,11 @@ import {
   CommandLoading as CmdkLoading,
   CommandRoot as CmdkRoot,
   CommandSeparator as CmdkSeparator,
+  useCommandState,
 } from 'cmdk-solid'
 import { Search } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
-import { splitProps } from 'solid-js'
+import { createEffect, createSignal, splitProps } from 'solid-js'
 import { menuItem } from '#lib/overlay'
 import { cn } from '#lib/utils'
 
@@ -83,14 +84,57 @@ export function CommandInput(props: ComponentProps<typeof CmdkInput>) {
   )
 }
 
+/**
+ * The scrolling list.
+ *
+ * Two DOM corrections, and both are deliberate. cmdk builds a `role="listbox"`
+ * whose children include two elements ARIA does not allow there:
+ *
+ *   - a bare `<div cmdk-list-sizer>` with no role, wrapped around every group;
+ *   - a `<div cmdk-separator role="separator">`, and `separator` is a menu and
+ *     toolbar role — inside a listbox the only owned elements may be `option`
+ *     and `group`.
+ *
+ * Both are pure presentation: the sizer is layout, and the separator is a
+ * hairline between groups that the groups already structure. `role="presentation"`
+ * is their accurate role rather than a workaround — each is flattened out of the
+ * accessibility tree, and the options inside are reached exactly as before.
+ *
+ * Written onto the mounted nodes rather than through props, because cmdk owns
+ * this markup and does not forward a `ref`; in an effect rather than `onMount`,
+ * because cmdk renders the sizer with the first item, after the list itself.
+ */
 export function CommandList(props: ComponentProps<typeof CmdkList>) {
   const [local, rest] = splitProps(props, ['class'])
+  const [wrapper, setWrapper] = createSignal<HTMLDivElement>()
+  const resultCount = useCommandState((state) => state.filtered.count)
+
+  createEffect(() => {
+    const root = wrapper()
+    if (!root) return
+    for (const selector of ['[cmdk-list-sizer]', '[cmdk-separator]']) {
+      root.querySelector(selector)?.setAttribute('role', 'presentation')
+    }
+
+    /*
+     * A `listbox` must own at least one `option`, so a listbox with nothing in it
+     * is invalid ARIA — which is what a search with no matches produces. When
+     * there are no results the list is inert, so it becomes presentational and
+     * the empty message carries the information instead. It keeps its `id`, so
+     * the input's `aria-controls` still resolves.
+     */
+    root
+      .querySelector('[cmdk-list]')
+      ?.setAttribute('role', resultCount() > 0 ? 'listbox' : 'presentation')
+  })
 
   return (
-    <CmdkList
-      class={cn('max-h-80 scroll-py-1 overflow-y-auto overflow-x-hidden p-1', local.class)}
-      {...rest}
-    />
+    <div ref={setWrapper} class="contents">
+      <CmdkList
+        class={cn('max-h-80 scroll-py-1 overflow-y-auto overflow-x-hidden p-1', local.class)}
+        {...rest}
+      />
+    </div>
   )
 }
 
@@ -99,6 +143,11 @@ export function CommandEmpty(props: ComponentProps<typeof CmdkEmpty>) {
 
   return (
     <CmdkEmpty
+      /*
+       * A status rather than plain text: when the list is presentational, this is
+       * the only thing that tells a screen reader the search matched nothing.
+       */
+      role="status"
       class={cn('text-muted-foreground py-8 text-center text-sm', local.class)}
       {...rest}
     />
