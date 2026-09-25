@@ -133,6 +133,26 @@
       ]
     },
     {
+      "name": "board",
+      "type": "registry:ui",
+      "title": "Board",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/board/board.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/board/board.tsx"
+        },
+        {
+          "path": "src/components/ui/board/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/board/index.ts"
+        }
+      ]
+    },
+    {
       "name": "breadcrumb",
       "type": "registry:ui",
       "title": "Breadcrumb",
@@ -333,6 +353,30 @@
       ]
     },
     {
+      "name": "detail-panel",
+      "type": "registry:ui",
+      "title": "Detail Panel",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/detail-panel/detail-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/detail-panel/detail-panel.tsx"
+        },
+        {
+          "path": "src/components/ui/detail-panel/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/detail-panel/index.ts"
+        }
+      ]
+    },
+    {
       "name": "dialog",
       "type": "registry:ui",
       "title": "Dialog",
@@ -417,6 +461,26 @@
           "path": "src/components/ui/empty/index.ts",
           "type": "registry:ui",
           "target": "components/ui/empty/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "entity-icon",
+      "type": "registry:ui",
+      "title": "Entity Icon",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/entity-icon/entity-icon.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/entity-icon/entity-icon.tsx"
+        },
+        {
+          "path": "src/components/ui/entity-icon/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/entity-icon/index.ts"
         }
       ]
     },
@@ -895,6 +959,28 @@
           "path": "src/components/ui/spinner/spinner.tsx",
           "type": "registry:ui",
           "target": "components/ui/spinner/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "status-chip",
+      "type": "registry:ui",
+      "title": "Status Chip",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/tooltip"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/status-chip/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/status-chip/index.ts"
+        },
+        {
+          "path": "src/components/ui/status-chip/status-chip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/status-chip/status-chip.tsx"
         }
       ]
     },
