@@ -107,17 +107,18 @@ dark mode carries a black label and its deep light-mode form carries a white one
 
 Four decisions, and everything else follows from them.
 
-**A neutral ladder with a separate accent axis.** The neutrals are adea's own palette —
-zero chroma, solved against the surfaces rather than picked from a wheel. Colour is
-carried by the accent axis and the status roles, and nothing else is tinted. That split
-is the point: a theme can be anyone's palette without giving up the accent the user
-chose, and an accent can be any of seven without the theme having to know.
+**A tinted canvas, and one accent axis on top of it.** The two defaults are a _pair_:
+Aardvark Ink's canvas for dark, Nord Light's for light, three degrees apart in hue and
+both tinted rather than pure grey, with the same sixteen hues on each. Colour beyond
+that is carried by the accent axis and the status roles. The split is the point: a theme
+can be anyone's palette without giving up the accent the user chose, and an accent can
+be any of seven without the theme having to know.
 
 **Dark-first, with light as a peer.** The dark theme is the one the design language was
-drawn against, and light is a full variant rather than an inversion. The default dark
-canvas is deliberately _not_ near-black — `#252525` — and
-`packages/ui/tests/themes.test.ts` asserts it, which is why GitHub Dark is absent from
-the catalogue.
+drawn against, and light is a full variant rather than an inversion — the same hues,
+moved in lightness. Neither canvas is near-black or pure white: `#0f141f` and `#e3e9f4`,
+and `@adea-ai/themes` asserts the relationships that make them a pair. The catalogue
+does still carry GitHub Dark as an importable theme; it is simply not the default.
 
 **Compact density.** 14px is the interface default and the two control heights that
 carry the product are 28px (toolbar) and 32px (form). This is a desktop tool used for

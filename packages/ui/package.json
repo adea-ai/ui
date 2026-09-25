@@ -78,7 +78,7 @@
     "theme:check": "bun scripts/build-default-theme.ts --check"
   },
   "dependencies": {
-    "@adea-ai/themes": "^0.2.0",
+    "@adea-ai/themes": "^0.3.2",
     "@corvu/calendar": "^0.1.2",
     "@corvu/drawer": "^0.2.4",
     "@corvu/otp-field": "^0.1.4",

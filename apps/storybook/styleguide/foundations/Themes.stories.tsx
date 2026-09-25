@@ -139,10 +139,13 @@ export const Defaults: Story = {
         <Input class="w-48" placeholder="Focus me" aria-label="Default theme input" />
       </div>
       <p class="max-w-prose text-sm text-muted-foreground">
-        <code>adea-light</code> and <code>adea-dark</code> are the defaults. The dark canvas is a
-        soft grey rather than a near-black, which is a rule rather than a preference — a dark
-        interface whose canvas is almost black is the most common way one is made unpleasant — and
-        <code>tests/themes.test.ts</code> asserts it.
+        <code>adea-light</code> and <code>adea-dark</code> are the defaults, and they are a{' '}
+        <em>pair</em>: <code>#0f141f</code> and <code>#e3e9f4</code>, three degrees apart in hue and
+        both tinted rather than neutral, carrying the same sixteen hues so that switching appearance
+        changes how bright the interface is and nothing else. Neither is a flat black or a pure
+        white, which is the rule rather than a preference — a dark interface whose canvas is
+        colourless <em>and</em> almost black is the most common way one is made unpleasant — and{' '}
+        <code>tests/themes.test.ts</code> asserts both halves of it.
       </p>
     </div>
   ),
@@ -162,9 +165,10 @@ export const WhatIsMissing: Story = {
           rather than AAA. Its body contrast is about 5:1 by design.
         </li>
         <li>
-          <span class="text-foreground">GitHub Dark</span> is absent on purpose: its canvas is a
-          near-black, and shipping it as an option next to a rule against near-black canvases would
-          be inconsistent.
+          <span class="text-foreground">GitHub Dark</span> is absent on purpose, though its
+          <em>hues</em> are not: both defaults borrow them. Shipping the theme as well would put a
+          near-duplicate of the default's sixteen colours in the picker, differing only in a canvas
+          that is a flat, colourless black.
         </li>
         <li>
           <span class="text-foreground">A theme picker for the accent</span> is a separate axis, not

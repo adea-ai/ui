@@ -227,11 +227,11 @@ export const DataRoles: Story = {
 /**
  * The accent axis.
  *
- * adea's default theme is **monochrome**: the primary is near-black in the light
- * theme and near-white in the dark. Colour enters through an independently chosen
- * accent, which overrides the interactive primary, its label, its hover rung, the
- * tint and the focus ring. Switch the **Accent** control in the toolbar to see the
- * whole workshop follow.
+ * Each default theme has **one** interactive colour of its own — the same blue in both,
+ * at different lightnesses, because the two themes are a pair — and a user can replace
+ * it with an independently chosen accent, which overrides the interactive primary, its
+ * label, its hover rung, the tint and the focus ring. Switch the **Accent** control in
+ * the toolbar to see the whole workshop follow.
  *
  * The six presets below are the ones adea ships, read from the library rather than
  * restated here, so this page cannot offer an accent the package does not define.
@@ -316,8 +316,9 @@ export const MonochromeDefault: Story = {
       </div>
       <p class="text-sm text-muted-foreground">
         With <code>data-accent</code> absent, every interactive role resolves to the variant's own
-        primary: near-black on the light canvas, near-white on the dark one. The destructive button
-        keeps its own colour, because an accent never overrides a status.
+        primary — the same blue in both themes, deepened for the light canvas and lifted for the
+        dark one. The destructive button keeps its own colour, because an accent never overrides a
+        status.
       </p>
     </div>
   ),

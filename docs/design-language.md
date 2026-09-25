@@ -25,16 +25,22 @@ incompatible with this distribution.
 What makes an interface recognisably _this_ system, rather than a themed shadcn
 default, is three decisions. Everything else follows from them.
 
-### 1. A neutral ladder, with the accent as a separate axis
+### 1. A tinted canvas, with the accent as a separate axis
 
-The neutrals are adea's own palette and they are **pure grey** — hue 0, zero chroma.
-That is the opposite of the earlier blue-tinted ladder this document used to
-describe, and it is deliberate: a tinted neutral fights every third-party palette in
-the catalogue, and a neutral that has to be re-solved for each theme is not a
-neutral. On a large dark surface the separation comes from the surface ladder and
-the elevation tokens instead, which is where it belongs.
+The two defaults are **composed**, not authored, and their canvases are **tinted**:
+`#0f141f` at hue 265 for dark, `#e3e9f4` at hue 262 for light, each borrowed from a
+palette chosen for its canvas and neither of them a pure grey. This document previously
+described a pure-grey neutral ladder — hue 0, zero chroma — and that was the opposite
+decision, made for a system whose themes were all imported and could not agree on a
+tint. It stopped being the right one when the defaults became a pair: two themes that
+share a hue family read as one interface at two exposures, and a neutral has no hue to
+share.
 
-Colour is carried by **two roles and nothing else**:
+Both are reproduced from upstream and credited in `@adea-ai/themes`'s NOTICE. The
+separation on a large dark surface still comes from the surface ladder and the elevation
+tokens rather than from the tint, which is where it belongs.
+
+Colour beyond the canvas is carried by **two roles and nothing else**:
 
 - The **accent axis** — seven presets, applied as `data-accent` on the same element
   that carries the theme. It re-colours the primary, its label, the hover rung, the

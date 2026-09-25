@@ -15,20 +15,20 @@
  *   - OKLCH supplies the *format*. Every colour is perceptually uniform, so a
  *     lightness step reads as the same step in every hue and a re-hue does not
  *     need its ramp re-derived by eye.
- *   - **adea's own palette supplies the values.** The neutrals, the monochrome
- *     primary, the destructive and success colours are the ones already shipped
- *     in `packages/ui/src/components/appearance.ts`'s `adea-light`/`adea-dark`
- *     variants, converted to OKLCH. This file and that registry describe the same
- *     theme; if you change one, change the other.
+ *   - **`@adea-ai/themes` supplies the values.** The two default themes are composed
+ *     there from upstream palettes — Aardvark Ink's canvas and greyscale for Adea
+ *     Dark, Nord Light's for Adea Light, and GitHub's hues for both — and normalized
+ *     against measured contrast floors. The colour declarations in sections 1 and 2
+ *     are *generated* from that catalogue (`bun run theme:build`) rather than written
+ *     here; everything else in this file is this system's own.
  *
  * ## The accent is a selection, not a constant
  *
- * adea's default theme has a *monochrome* primary — near-black in the light
- * theme, near-white in the dark — and colour enters through an independently
- * chosen **accent**, which overrides the primary, its label, and the focus ring.
- * That model is preserved here as the `[data-accent]` blocks below. It is why a
- * primary button is neutral by default and coloured only when the user asks, and
- * why nothing in this system should hard-code a hue.
+ * Each default theme has one interactive colour of its own — the two are the same
+ * hue at different lightnesses, which is what makes them a pair — and a user can
+ * override it with an independently chosen **accent**, which replaces the primary, its
+ * label and the focus ring. That model is preserved here as the `[data-accent]` blocks
+ * below, and it is why nothing in this system should hard-code a hue.
  *
  * ## Provenance
  *
@@ -43,68 +43,68 @@
 /* ---------------------------------------------------------------------------
  * 1. Colour — light theme (the default)
  *
- * Contrast: body text 15.3:1 on the canvas, `--muted-foreground` 5.0:1 on both
- * the canvas and a card, `--primary-foreground` on `--primary` 12.1:1. Measured
- * rather than estimated; `tests/tokens.test.ts` asserts each pairing.
+ * Contrast: body text 8.6:1 on the canvas and 7.7:1 on a card, `--muted-foreground`
+ * 5.5:1 on the canvas and 5.0:1 on a card, `--primary-foreground` on `--primary`
+ * 5.9:1. Measured rather than estimated; `tests/tokens.test.ts` asserts each pairing.
  * ------------------------------------------------------------------------- */
 :root {
   /* @generated theme:root — run `bun run theme:build` after changing the catalogue */
   /* The canvas and its text */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.2645 0 0);
+  --background: oklch(0.933 0.016 261.79);
+  --foreground: oklch(0.3697 0.0285 266.52);
 
   /* Raised surfaces */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2645 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2645 0 0);
-  --surface-hover: oklch(0.9761 0 0);
-  --surface-active: oklch(0.9401 0 0);
+  --card: oklch(0.898 0.0108 261.79);
+  --card-foreground: oklch(0.3697 0.0285 266.52);
+  --popover: oklch(0.868 0.0151 261.79);
+  --popover-foreground: oklch(0.3697 0.0285 266.52);
+  --surface-hover: oklch(0.833 0.0209 261.79);
+  --surface-active: oklch(0.783 0.0144 261.79);
 
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
 
   /* The interactive colour */
-  --primary: oklch(0.325 0 0);
-  --primary-foreground: oklch(0.9911 0 0);
-  --ring: oklch(0.325 0 0);
-  --accent: oklch(0.9761 0 0);
-  --accent-foreground: oklch(0.2645 0 0);
+  --primary: oklch(0.4513 0.1518 253.31);
+  --primary-foreground: oklch(0.9513 0.0074 260.73);
+  --ring: oklch(0.4513 0.1518 253.31);
+  --accent: oklch(0.833 0.0209 261.79);
+  --accent-foreground: oklch(0.3697 0.0285 266.52);
 
   /* Neutral fills and secondary text */
-  --secondary: oklch(1 0 0);
-  --secondary-foreground: oklch(0.2645 0 0);
-  --muted: oklch(1 0 0);
-  --muted-foreground: oklch(0.5417 0 0);
+  --secondary: oklch(0.898 0.0108 261.79);
+  --secondary-foreground: oklch(0.3697 0.0285 266.52);
+  --muted: oklch(0.898 0.0108 261.79);
+  --muted-foreground: oklch(0.474 0.0245 265.01);
 
   /* Status. The fills are catalogue roles; the labels are measured. */
-  --destructive: oklch(0.5551 0.1765 30.46);
-  --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.5244 0.1401 148.04);
-  --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.5538 0.1207 66.44);
-  --warning-foreground: oklch(1 0 0);
-  --info: oklch(0.5198 0.0936 223.13);
-  --info-foreground: oklch(1 0 0);
+  --destructive: oklch(0.4705 0.1626 25.78);
+  --destructive-foreground: oklch(0.933 0.016 261.79);
+  --success: oklch(0.4311 0.1809 145.62);
+  --success-foreground: oklch(0.933 0.016 261.79);
+  --warning: oklch(0.4556 0.1401 79.91);
+  --warning-foreground: oklch(0.933 0.016 261.79);
+  --info: oklch(0.4915 0.1155 202.14);
+  --info-foreground: oklch(0.933 0.016 261.79);
   --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
   --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
   --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
   --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
 
   /* Lines */
-  --border: oklch(0.9401 0 0);
-  --input: oklch(0.9401 0 0);
+  --border: oklch(0.783 0.0144 261.79);
+  --input: oklch(0.783 0.0144 261.79);
 
   /* The primary, so a focus ring is the interactive colour. */
   --ring: var(--primary);
 
   /* The sidebar */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.2645 0 0);
-  --sidebar-accent: oklch(0.9761 0 0);
-  --sidebar-border: oklch(0.9401 0 0);
-  --sidebar-muted-foreground: oklch(0.5417 0 0);
+  --sidebar: oklch(0.898 0.0108 261.79);
+  --sidebar-foreground: oklch(0.3697 0.0285 266.52);
+  --sidebar-accent: oklch(0.833 0.0209 261.79);
+  --sidebar-border: oklch(0.783 0.0144 261.79);
+  --sidebar-muted-foreground: oklch(0.474 0.0245 265.01);
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -112,12 +112,12 @@
   --sidebar-ring: var(--ring);
 
   /* Charts */
-  --chart-1: oklch(0.4949 0.1992 260.6);
-  --chart-2: oklch(0.4773 0.185 347.85);
-  --chart-3: oklch(0.5198 0.0936 223.13);
-  --chart-4: oklch(0.4606 0.1227 148.77);
-  --chart-5: oklch(0.5091 0.0985 68.76);
-  --chart-6: oklch(0.5054 0.1905 27.52);
+  --chart-1: oklch(0.4513 0.1518 253.31);
+  --chart-2: oklch(0.4683 0.1668 301.69);
+  --chart-3: oklch(0.4915 0.1155 202.14);
+  --chart-4: oklch(0.4311 0.1809 145.62);
+  --chart-5: oklch(0.4556 0.1401 79.91);
+  --chart-6: oklch(0.4705 0.1626 25.78);
 
   /* Diff surfaces, over the status roles. */
   --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
@@ -154,7 +154,7 @@
    * light one, but a sunken one is *always* darker, because the metaphor is a
    * well cut into the page rather than a panel laid on it.
    */
-  --surface-sunken: oklch(0.98 0 0);
+  --surface-sunken: oklch(0.913 0.008 261.79);
   --chrome-alpha: 0.9;
 
   color-scheme: light;
