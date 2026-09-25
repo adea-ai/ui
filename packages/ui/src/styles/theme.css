@@ -48,118 +48,117 @@
  * rather than estimated; `tests/tokens.test.ts` asserts each pairing.
  * ------------------------------------------------------------------------- */
 :root {
+  /* @generated theme:root — run `bun run theme:build` after changing the catalogue */
+  /* The canvas and its text */
   --background: oklch(1 0 0);
   --foreground: oklch(0.2645 0 0);
 
+  /* Raised surfaces */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2645 0 0);
-
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2645 0 0);
+  --surface-hover: oklch(0.9761 0 0);
+  --surface-active: oklch(0.9401 0 0);
 
-  /* Neutral by default. The accent axis below overrides these four plus `--ring`
-     when a colour is selected. */
-  --primary: oklch(0.325 0 0);
-  --primary-foreground: oklch(0.9911 0 0);
-  --primary-hover: oklch(0.265 0 0);
-  --primary-subtle: oklch(0.325 0 0 / 0.08);
-
-  --secondary: oklch(0.9761 0 0);
-  --secondary-foreground: oklch(0.325 0 0);
-
-  --muted: oklch(0.9761 0 0);
-  --muted-foreground: oklch(0.5417 0 0);
-
-  --accent: oklch(0.9761 0 0);
-  --accent-foreground: oklch(0.325 0 0);
-
-  --destructive: oklch(0.5551 0.1765 30.5);
-  --destructive-foreground: oklch(1 0 0);
-  --destructive-subtle: color-mix(in oklch, var(--destructive) 12%, transparent);
-
-  --success: oklch(0.5244 0.1401 148);
-  --success-foreground: oklch(1 0 0);
-  --success-subtle: color-mix(in oklch, var(--success) 12%, transparent);
-
-  --warning: oklch(0.5538 0.1207 66.4);
-  --warning-foreground: oklch(1 0 0);
-  --warning-subtle: color-mix(in oklch, var(--warning) 12%, transparent);
-
-  --info: oklch(0.5198 0.0936 223.1);
-  --info-foreground: oklch(1 0 0);
-  --info-subtle: color-mix(in oklch, var(--info) 12%, transparent);
-
-  --border: oklch(0.9401 0 0);
-  --input: oklch(0.9401 0 0);
-  /* The focus ring is the primary, which is what adea's `deriveAccentRoles`
-     returns — its declared `ring` is a mid grey, but the derived role it actually
-     applies is `ring: strong`, and `strong` starts as the primary. Matching the
-     derived role rather than the declaration also keeps the ring above the WCAG
-     1.4.11 3:1 non-text floor: a mid grey on white measures 2.2:1, which is a
-     focus indicator that cannot be seen. */
-  --ring: var(--primary);
-
-  /* --- The surface ladder -------------------------------------------------
-   * Five rungs, in painting order. `sunken` holds content that recedes (a code
-   * well, an empty state); `background` is the canvas; `raised` is a card or
-   * panel on the canvas; `overlay` floats; `hover` is the fill shared by rows,
-   * menu items and ghost controls. Naming them once is what keeps two apps'
-   * sidebars from drifting a shade apart.
-   */
-  --surface-sunken: oklch(0.9761 0 0);
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
-  --surface-hover: oklch(0.9551 0 0);
-  --surface-active: oklch(0.9401 0 0);
 
-  /* Window chrome. Its own token because a frameless desktop window tints it and
-     blurs what scrolls under it. */
-  --chrome: oklch(1 0 0);
-  --chrome-alpha: 0.95;
+  /* The interactive colour */
+  --primary: oklch(0.325 0 0);
+  --primary-foreground: oklch(0.9911 0 0);
+  --ring: oklch(0.325 0 0);
+  --accent: oklch(0.9761 0 0);
+  --accent-foreground: oklch(0.2645 0 0);
 
-  /* --- Diff and editor roles ---------------------------------------------- */
-  --diff-add: color-mix(in oklch, var(--success) 14%, transparent);
-  --diff-add-foreground: oklch(0.4424 0.1266 148);
-  --diff-delete: color-mix(in oklch, var(--destructive) 14%, transparent);
-  --diff-delete-foreground: oklch(0.5062 0.1921 24.5);
-  --diff-hunk: color-mix(in oklch, var(--primary) 10%, transparent);
-  --diff-hunk-foreground: oklch(0.44 0 0);
-  --diff-meta-foreground: oklch(0.3703 0 0);
+  /* Neutral fills and secondary text */
+  --secondary: oklch(1 0 0);
+  --secondary-foreground: oklch(0.2645 0 0);
+  --muted: oklch(1 0 0);
+  --muted-foreground: oklch(0.5417 0 0);
 
-  /* --- Chart series ------------------------------------------------------
-   * Six categorical hues, ordered for adjacent separation: the accent presets, so
-   * a chart and an accent selection are drawn from one palette. The set is
-   * closed — a seventh series folds into "other" rather than inventing a hue.
-   */
-  --chart-1: oklch(0.4907 0.2412 292.6);
-  --chart-2: oklch(0.5461 0.2152 262.9);
-  --chart-3: oklch(0.5198 0.0936 223.1);
-  --chart-4: oklch(0.5273 0.1371 150.1);
-  --chart-5: oklch(0.5553 0.1455 49);
-  --chart-6: oklch(0.5246 0.199 4);
+  /* Status. The fills are catalogue roles; the labels are measured. */
+  --destructive: oklch(0.5551 0.1765 30.46);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.5244 0.1401 148.04);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.5538 0.1207 66.44);
+  --warning-foreground: oklch(1 0 0);
+  --info: oklch(0.5198 0.0936 223.13);
+  --info-foreground: oklch(1 0 0);
+  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
+  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
+  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
 
-  /* --- Scrim -------------------------------------------------------------
-   * Theme-invariant dark glass for overlays and on-screen controls: the same value
-   * in light and dark, because it sits over media, not over the app.
+  /* Lines */
+  --border: oklch(0.9401 0 0);
+  --input: oklch(0.9401 0 0);
+
+  /* The primary, so a focus ring is the interactive colour. */
+  --ring: var(--primary);
+
+  /* The sidebar */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.2645 0 0);
+  --sidebar-accent: oklch(0.9761 0 0);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-muted-foreground: oklch(0.5417 0 0);
+
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
+
+  /* Charts */
+  --chart-1: oklch(0.4949 0.1992 260.6);
+  --chart-2: oklch(0.4773 0.185 347.85);
+  --chart-3: oklch(0.5198 0.0936 223.13);
+  --chart-4: oklch(0.4606 0.1227 148.77);
+  --chart-5: oklch(0.5091 0.0985 68.76);
+  --chart-6: oklch(0.5054 0.1905 27.52);
+
+  /* Diff surfaces, over the status roles. */
+  --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
+  --diff-add-foreground: var(--success);
+  --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
+  --diff-delete-foreground: var(--destructive);
+  --diff-hunk: color-mix(in oklch, var(--info) 14%, transparent);
+  --diff-hunk-foreground: var(--info);
+  --diff-meta-foreground: var(--muted-foreground);
+
+  /*
+   * The modal veil. One value in both appearances because a scrim sits over
+   * media rather than over the application — a video, a screenshot — and a veil
+   * that changed with the theme would be a veil that is wrong half the time.
    */
   --scrim: oklch(0.1919 0.025 264.7);
   --scrim-foreground: oklch(1 0 0);
   --scrim-edge: oklch(1 0 0);
 
-  /* --- Sidebar (shadcn contract) -----------------------------------------
-   * Its own surface family so a rail can be tinted against the canvas without
-   * touching `--card`, which every panel uses.
+  /* A step further from the canvas than the primary itself, so a hovered primary
+     button reads as hovered rather than as a different colour. */
+  --primary-hover: color-mix(in oklch, var(--primary) 86%, var(--background) 14%);
+  --primary-subtle: color-mix(in oklch, var(--primary) 8%, transparent);
+  /* The window chrome, one step off the canvas. */
+  --chrome: var(--surface);
+  /*
+   * Below the canvas: a code well, an inset panel. Not a catalogue role, because
+   * the catalogue's ladder only goes *up* from the canvas — the four rungs it
+   * derives are all surfaces something sits on. This is the one value in the
+   * ladder that runs the other way, so it is computed rather than mapped.
+   *
+   * Darker in both appearances, which is the rule the ladder does not follow: a
+   * raised surface is lighter than the canvas on a dark theme and darker on a
+   * light one, but a sunken one is *always* darker, because the metaphor is a
+   * well cut into the page rather than a panel laid on it.
    */
-  --sidebar: oklch(0.9851 0 0);
-  --sidebar-foreground: oklch(0.3703 0 0);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.9551 0 0);
-  --sidebar-accent-foreground: oklch(0.2645 0 0);
-  --sidebar-border: oklch(0.9401 0 0);
-  --sidebar-ring: var(--ring);
-  --sidebar-muted-foreground: var(--muted-foreground);
+  --surface-sunken: oklch(0.98 0 0);
+  --chrome-alpha: 0.9;
+
+  color-scheme: light;
+  /* @end generated theme:root */
 }
 
 /* ---------------------------------------------------------------------------
@@ -174,89 +173,108 @@
  * on a card, `--primary-foreground` on `--primary` 10.4:1.
  * ------------------------------------------------------------------------- */
 .dark {
-  --background: oklch(0.2645 0 0);
-  --foreground: oklch(0.9911 0 0);
+  /* @generated theme:dark — run `bun run theme:build` after changing the catalogue */
+  /* The canvas and its text */
+  --background: oklch(0.1918 0.0238 265.37);
+  --foreground: oklch(0.7933 0.0217 261.76);
 
-  --card: oklch(0.325 0 0);
-  --card-foreground: oklch(0.9911 0 0);
+  /* Raised surfaces */
+  --card: oklch(0.2268 0.0288 265.37);
+  --card-foreground: oklch(0.7933 0.0217 261.76);
+  --popover: oklch(0.2568 0.033 265.37);
+  --popover-foreground: oklch(0.7933 0.0217 261.76);
+  --surface-hover: oklch(0.2918 0.038 265.37);
+  --surface-active: oklch(0.3418 0.0214 265.37);
 
-  --popover: oklch(0.325 0 0);
-  --popover-foreground: oklch(0.9911 0 0);
-
-  --primary: oklch(0.9401 0 0);
-  --primary-foreground: oklch(0.325 0 0);
-  --primary-hover: oklch(0.975 0 0);
-  --primary-subtle: oklch(0.9911 0 0 / 0.12);
-
-  --secondary: oklch(0.3867 0 0);
-  --secondary-foreground: oklch(0.9911 0 0);
-
-  --muted: oklch(0.3867 0 0);
-  --muted-foreground: oklch(0.7155 0 0);
-
-  --accent: oklch(0.3867 0 0);
-  --accent-foreground: oklch(0.9911 0 0);
-
-  --destructive: oklch(0.6725 0.1429 29.7);
-  --destructive-foreground: oklch(0 0 0);
-  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
-
-  --success: oklch(0.6951 0.1809 145.6);
-  --success-foreground: oklch(0 0 0);
-  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
-
-  --warning: oklch(0.7952 0.1617 86);
-  --warning-foreground: oklch(0 0 0);
-  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
-
-  --info: oklch(0.7081 0.1109 221.7);
-  --info-foreground: oklch(0 0 0);
-  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
-
-  --border: oklch(0.36 0 0);
-  --input: oklch(0.3867 0 0);
-  /* The primary, for the reason given in the light theme. */
-  --ring: var(--primary);
-
-  /* adea's dark palette has no rung below the canvas, because nothing in the app
-     needed one. A code well does, so this is the one value in the ladder that is
-     derived rather than taken: one deliberate step down. */
-  --surface-sunken: oklch(0.2325 0 0);
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
-  --surface-hover: oklch(0.3867 0 0);
-  --surface-active: oklch(0.43 0 0);
 
-  --chrome: oklch(0.2905 0 0);
-  --chrome-alpha: 0.9;
+  /* The interactive colour */
+  --primary: oklch(0.7153 0.1518 253.31);
+  --primary-foreground: oklch(0.1918 0.0238 265.37);
+  --ring: oklch(0.7153 0.1518 253.31);
+  --accent: oklch(0.2918 0.038 265.37);
+  --accent-foreground: oklch(0.7933 0.0217 261.76);
 
-  --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
-  --diff-add-foreground: oklch(0.8416 0.1641 145.8);
-  --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
-  --diff-delete-foreground: oklch(0.8014 0.1134 25.8);
-  --diff-hunk: color-mix(in oklch, var(--primary) 14%, transparent);
-  --diff-hunk-foreground: oklch(0.85 0 0);
-  --diff-meta-foreground: oklch(0.85 0 0);
+  /* Neutral fills and secondary text */
+  --secondary: oklch(0.2268 0.0288 265.37);
+  --secondary-foreground: oklch(0.7933 0.0217 261.76);
+  --muted: oklch(0.2268 0.0288 265.37);
+  --muted-foreground: oklch(0.6308 0.0224 262.91);
 
-  --chart-1: oklch(0.709 0.1592 293.5);
-  --chart-2: oklch(0.7137 0.1434 254.6);
-  --chart-3: oklch(0.7971 0.1339 211.5);
-  --chart-4: oklch(0.8003 0.1821 151.7);
-  --chart-5: oklch(0.8369 0.1644 84.4);
-  --chart-6: oklch(0.7253 0.1752 349.8);
+  /* Status. The fills are catalogue roles; the labels are measured. */
+  --destructive: oklch(0.7345 0.1626 25.78);
+  --destructive-foreground: oklch(0.1918 0.0238 265.37);
+  --success: oklch(0.6951 0.1809 145.62);
+  --success-foreground: oklch(0.1918 0.0238 265.37);
+  --warning: oklch(0.7196 0.1401 79.91);
+  --warning-foreground: oklch(0.1918 0.0238 265.37);
+  --info: oklch(0.7555 0.1155 202.14);
+  --info-foreground: oklch(0.1918 0.0238 265.37);
+  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
+  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
+  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
 
-  --sidebar: oklch(0.2905 0 0);
-  --sidebar-foreground: oklch(0.9197 0 0);
+  /* Lines */
+  --border: oklch(0.3418 0.0214 265.37);
+  --input: oklch(0.3418 0.0214 265.37);
+
+  /* The primary, so a focus ring is the interactive colour. */
+  --ring: var(--primary);
+
+  /* The sidebar */
+  --sidebar: oklch(0.2268 0.0288 265.37);
+  --sidebar-foreground: oklch(0.7933 0.0217 261.76);
+  --sidebar-accent: oklch(0.2918 0.038 265.37);
+  --sidebar-border: oklch(0.3418 0.0214 265.37);
+  --sidebar-muted-foreground: oklch(0.6308 0.0224 262.91);
+
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.3867 0 0);
-  --sidebar-accent-foreground: oklch(0.9911 0 0);
-  --sidebar-border: oklch(0.36 0 0);
+  --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-ring: var(--ring);
-  --sidebar-muted-foreground: oklch(0.7155 0 0);
+
+  /* Charts */
+  --chart-1: oklch(0.7153 0.1518 253.31);
+  --chart-2: oklch(0.7323 0.1668 301.69);
+  --chart-3: oklch(0.7555 0.1155 202.14);
+  --chart-4: oklch(0.6951 0.1809 145.62);
+  --chart-5: oklch(0.7196 0.1401 79.91);
+  --chart-6: oklch(0.7345 0.1626 25.78);
+
+  /* Diff surfaces, over the status roles. */
+  --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
+  --diff-add-foreground: var(--success);
+  --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
+  --diff-delete-foreground: var(--destructive);
+  --diff-hunk: color-mix(in oklch, var(--info) 14%, transparent);
+  --diff-hunk-foreground: var(--info);
+  --diff-meta-foreground: var(--muted-foreground);
+
+  /* A step further from the canvas than the primary itself, so a hovered primary
+     button reads as hovered rather than as a different colour. */
+  --primary-hover: color-mix(in oklch, var(--primary) 86%, var(--background) 14%);
+  --primary-subtle: color-mix(in oklch, var(--primary) 8%, transparent);
+  /* The window chrome, one step off the canvas. */
+  --chrome: var(--surface);
+  /*
+   * Below the canvas: a code well, an inset panel. Not a catalogue role, because
+   * the catalogue's ladder only goes *up* from the canvas — the four rungs it
+   * derives are all surfaces something sits on. This is the one value in the
+   * ladder that runs the other way, so it is computed rather than mapped.
+   *
+   * Darker in both appearances, which is the rule the ladder does not follow: a
+   * raised surface is lighter than the canvas on a dark theme and darker on a
+   * light one, but a sunken one is *always* darker, because the metaphor is a
+   * well cut into the page rather than a panel laid on it.
+   */
+  --surface-sunken: oklch(0.1718 0.0199 265.37);
+  --chrome-alpha: 0.9;
 
   color-scheme: dark;
+  /* @end generated theme:dark */
 }
 
 /* ---------------------------------------------------------------------------
