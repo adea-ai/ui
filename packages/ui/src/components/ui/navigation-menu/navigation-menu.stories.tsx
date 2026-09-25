@@ -6,7 +6,6 @@ import {
   NavigationMenuLink,
   NavigationMenuLinkItem,
   NavigationMenuMenu,
-  NavigationMenuList,
   NavigationMenuTrigger,
   NavigationMenuViewport,
 } from './navigation-menu'
@@ -35,35 +34,34 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <NavigationMenu>
-      <NavigationMenuList>
-        <NavigationMenuMenu value="work">
-          <NavigationMenuTrigger>Work</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <NavigationMenuLinkItem>
-              <NavigationMenuLink href="#storybook-preview-iframe">Sessions</NavigationMenuLink>
-            </NavigationMenuLinkItem>
-            <NavigationMenuLinkItem>
-              <NavigationMenuLink href="#storybook-preview-iframe">Worktrees</NavigationMenuLink>
-            </NavigationMenuLinkItem>
-          </NavigationMenuContent>
-        </NavigationMenuMenu>
+      <NavigationMenuMenu value="work">
+        <NavigationMenuTrigger>Work</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <NavigationMenuLinkItem>
+            <NavigationMenuLink href="#storybook-preview-iframe">Sessions</NavigationMenuLink>
+          </NavigationMenuLinkItem>
+          <NavigationMenuLinkItem>
+            <NavigationMenuLink href="#storybook-preview-iframe">Worktrees</NavigationMenuLink>
+          </NavigationMenuLinkItem>
+        </NavigationMenuContent>
+      </NavigationMenuMenu>
 
-        <NavigationMenuMenu value="build">
-          <NavigationMenuTrigger>Build</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <NavigationMenuLinkItem>
-              <NavigationMenuLink href="#storybook-preview-iframe">Lanes</NavigationMenuLink>
-            </NavigationMenuLinkItem>
-            <NavigationMenuLinkItem>
-              <NavigationMenuLink href="#storybook-preview-iframe">Artifacts</NavigationMenuLink>
-            </NavigationMenuLinkItem>
-          </NavigationMenuContent>
-        </NavigationMenuMenu>
+      <NavigationMenuMenu value="build">
+        <NavigationMenuTrigger>Build</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <NavigationMenuLinkItem>
+            <NavigationMenuLink href="#storybook-preview-iframe">Lanes</NavigationMenuLink>
+          </NavigationMenuLinkItem>
+          <NavigationMenuLinkItem>
+            <NavigationMenuLink href="#storybook-preview-iframe">Artifacts</NavigationMenuLink>
+          </NavigationMenuLinkItem>
+        </NavigationMenuContent>
+      </NavigationMenuMenu>
 
-        <NavigationMenuItem>
-          <NavigationMenuLink href="#storybook-preview-iframe">Settings</NavigationMenuLink>
-        </NavigationMenuItem>
-      </NavigationMenuList>
+      <NavigationMenuItem>
+        <NavigationMenuLink href="#storybook-preview-iframe">Settings</NavigationMenuLink>
+      </NavigationMenuItem>
+
       <NavigationMenuViewport />
     </NavigationMenu>
   ),

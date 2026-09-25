@@ -5,7 +5,6 @@ export {
   NavigationMenuLink,
   NavigationMenuLinkItem,
   NavigationMenuMenu,
-  NavigationMenuList,
   NavigationMenuPanel,
   NavigationMenuTrigger,
   NavigationMenuViewport,

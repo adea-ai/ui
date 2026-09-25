@@ -31,14 +31,15 @@ export function NavigationMenu(props: ComponentProps<typeof KobalteNavigationMen
   )
 }
 
-export function NavigationMenuList(props: ComponentProps<typeof KobalteNavigationMenu.Item>) {
+/**
+ * A top-level link entry — a destination that needs no panel.
+ *
+ * A bar where *every* entry opens a panel is a bar nobody can navigate: the most
+ * important link is usually the one that goes straight there.
+ */
+export function NavigationMenuItem(props: ComponentProps<'li'>) {
   const [local, rest] = splitProps(props, ['class'])
-  return <KobalteNavigationMenu.Item class={cn('flex items-center gap-1', local.class)} {...rest} />
-}
-
-export function NavigationMenuItem(props: ComponentProps<typeof KobalteNavigationMenu.Item>) {
-  const [local, rest] = splitProps(props, ['class'])
-  return <KobalteNavigationMenu.Item class={cn('relative', local.class)} {...rest} />
+  return <li class={cn('relative', local.class)} {...rest} />
 }
 
 /**
@@ -47,6 +48,9 @@ export function NavigationMenuItem(props: ComponentProps<typeof KobalteNavigatio
  * Required for the same reason as the menubar's — the bar tracks which entry is
  * open so the shared viewport can move between panels — and it is what makes the
  * panels animate as one surface rather than as separate popovers.
+ *
+ * It renders no element of its own, so the *trigger* is what becomes the list item
+ * inside the root's `<ul>`.
  */
 export function NavigationMenuMenu(props: ComponentProps<typeof KobalteNavigationMenu.Menu>) {
   return <KobalteNavigationMenu.Menu {...props} />
@@ -56,6 +60,7 @@ export function NavigationMenuTrigger(props: ComponentProps<typeof KobalteNaviga
   const [local, rest] = splitProps(props, ['class', 'children'])
   return (
     <KobalteNavigationMenu.Trigger
+      as="li"
       class={cn(
         'group/nav-trigger flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium select-none',
         'transition-colors ease-out outline-none',
