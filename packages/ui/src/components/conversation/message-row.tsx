@@ -175,7 +175,13 @@ export function MessageRow(props: MessageRowProps) {
               <span role="status">responding…</span>
             </Show>
             <Show when={mirrored() && !local.pending && !local.streaming && !local.deleted}>
-              <span aria-label="Delivered" class="inline-flex">
+              {/*
+                `role="img"` because a bare span cannot carry `aria-label` — axe's
+                `aria-prohibited-attr`. The glyph is the whole message, so the role
+                is also the accurate one: this element *is* an image whose meaning
+                is its label.
+              */}
+              <span role="img" aria-label="Delivered" class="inline-flex">
                 <CheckCheck aria-hidden="true" class="size-3" />
               </span>
             </Show>

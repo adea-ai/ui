@@ -77,6 +77,18 @@ function monthLabel(month: Date, format?: (month: Date) => string): string {
   return format ? format(month) : new Intl.DateTimeFormat(undefined, MONTH_FORMAT).format(month)
 }
 
+/**
+ * A day's accessible name: the full date, because the visible number is only
+ * meaningful next to its column heading.
+ */
+function dayLabel(day: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(day)
+}
+
 /** The locale's short weekday names, Sunday first — which is the order corvu's `weeks` use. */
 function defaultWeekdays(): string[] {
   const format = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
@@ -165,7 +177,21 @@ function CalendarGrid(props: {
                               'data-disabled:text-muted-foreground data-disabled:line-through',
                               'data-disabled:hover:bg-transparent'
                             )}
-                          />
+                          >
+                            {/*
+                              The trigger renders no children of its own, so the
+                              day number is the caller's — without it every cell
+                              is an unnamed button (`button-name`).
+
+                              The number is what a sighted reader needs and the
+                              full date is what a screen reader user needs: "25"
+                              alone is meaningless out of context. So the number
+                              is hidden from the accessibility tree and the date
+                              supplies the name.
+                            */}
+                            <span aria-hidden="true">{day.getDate()}</span>
+                            <span class="visually-hidden">{dayLabel(day)}</span>
+                          </Calendar.CellTrigger>
                         </Calendar.Cell>
                       )}
                     </For>
