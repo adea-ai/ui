@@ -1,0 +1,22 @@
+{
+  "name": "button-group",
+  "type": "registry:ui",
+  "title": "Button Group",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/separator"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/button-group/button-group.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/button-group/button-group.tsx"
+    },
+    {
+      "path": "src/components/ui/button-group/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/button-group/index.ts"
+    }
+  ]
+}

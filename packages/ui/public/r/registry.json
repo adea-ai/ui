@@ -71,6 +71,26 @@
       ]
     },
     {
+      "name": "aspect-ratio",
+      "type": "registry:ui",
+      "title": "Aspect Ratio",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/aspect-ratio/aspect-ratio.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/aspect-ratio/aspect-ratio.tsx"
+        },
+        {
+          "path": "src/components/ui/aspect-ratio/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/aspect-ratio/index.ts"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:ui",
       "title": "Avatar",
@@ -153,6 +173,28 @@
           "path": "src/components/ui/button/index.ts",
           "type": "registry:ui",
           "target": "components/ui/button/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "button-group",
+      "type": "registry:ui",
+      "title": "Button Group",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/separator"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/button-group/button-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button-group/button-group.tsx"
+        },
+        {
+          "path": "src/components/ui/button-group/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/button-group/index.ts"
         }
       ]
     },
@@ -463,6 +505,48 @@
       ]
     },
     {
+      "name": "input-otp",
+      "type": "registry:ui",
+      "title": "Input Otp",
+      "description": "",
+      "dependencies": [
+        "@corvu/otp-field@^0.1.4"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/input-otp/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/input-otp/index.ts"
+        },
+        {
+          "path": "src/components/ui/input-otp/input-otp.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-otp/input-otp.tsx"
+        }
+      ]
+    },
+    {
+      "name": "item",
+      "type": "registry:ui",
+      "title": "Item",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/item/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/item/index.ts"
+        },
+        {
+          "path": "src/components/ui/item/item.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/item/item.tsx"
+        }
+      ]
+    },
+    {
       "name": "kbd",
       "type": "registry:ui",
       "title": "Kbd",
@@ -499,6 +583,52 @@
           "path": "src/components/ui/label/label.tsx",
           "type": "registry:ui",
           "target": "components/ui/label/label.tsx"
+        }
+      ]
+    },
+    {
+      "name": "menubar",
+      "type": "registry:ui",
+      "title": "Menubar",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/menubar/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/menubar/index.ts"
+        },
+        {
+          "path": "src/components/ui/menubar/menubar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/menubar/menubar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "navigation-menu",
+      "type": "registry:ui",
+      "title": "Navigation Menu",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/navigation-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/index.ts"
+        },
+        {
+          "path": "src/components/ui/navigation-menu/navigation-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/navigation-menu.tsx"
         }
       ]
     },
