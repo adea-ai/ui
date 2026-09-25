@@ -6,155 +6,158 @@
  * reference only the semantic tokens declared here; no component may carry a
  * literal colour, size, radius, or shadow.
  *
- * Three vocabularies meet in this file and each is deliberate:
+ * Three vocabularies meet here, and each is deliberate:
  *
  *   - shadcn/ui supplies the *names* (background, primary, muted, accent,
  *     border, ring, sidebar-*). Keeping them means every shadcn convention,
- *     example, and migration guide applies to this library unchanged, and
- *     @shadcn/lint can read the system without special configuration.
+ *     example, and migration guide applies unchanged, and @shadcn/lint reads the
+ *     system without special configuration.
  *   - OKLCH supplies the *format*. Every colour is perceptually uniform, so a
- *     lightness step reads as the same step in every hue, and the theme stays
- *     legible when a consumer re-hues it.
- *   - The KiroCrew design language supplies the *values*: the blue-tinted
- *     neutral surface ladder, the emerald accent, the 6/8/12/16 radius scale,
- *     Space Grotesk + JetBrains Mono, and the compact 28/32px control density.
+ *     lightness step reads as the same step in every hue and a re-hue does not
+ *     need its ramp re-derived by eye.
+ *   - **adea's own palette supplies the values.** The neutrals, the monochrome
+ *     primary, the destructive and success colours are the ones already shipped
+ *     in `packages/ui/src/components/appearance.ts`'s `adea-light`/`adea-dark`
+ *     variants, converted to OKLCH. This file and that registry describe the same
+ *     theme; if you change one, change the other.
  *
- * One mapping is worth stating explicitly, because the two vocabularies
- * disagree on it. KiroCrew's `--accent` is its *brand* colour; shadcn's
- * `--accent` is a *subtle hover surface*. The brand colour therefore lands on
- * shadcn's `--primary`, and shadcn's `--accent` keeps its hover-surface
- * meaning. Read `--primary` as "the Adea emerald".
+ * ## The accent is a selection, not a constant
  *
- * Consumers import this file through the package's `globals.css`, or directly
- * after their own Tailwind import. Do not duplicate these declarations.
+ * adea's default theme has a *monochrome* primary — near-black in the light
+ * theme, near-white in the dark — and colour enters through an independently
+ * chosen **accent**, which overrides the primary, its label, and the focus ring.
+ * That model is preserved here as the `[data-accent]` blocks below. It is why a
+ * primary button is neutral by default and coloured only when the user asks, and
+ * why nothing in this system should hard-code a hue.
+ *
+ * ## Provenance
+ *
+ * The *structure* — the surface ladder, the control and row ladders, the shell
+ * geometry, the focus treatment, the motion — is translated from KiroCrew
+ * (Apache-2.0; see NOTICE). The *palette* is adea's. An earlier revision of this
+ * file took KiroCrew's colours as well, which changed the product's appearance for
+ * no reason: the neutrals became blue-tinted, the primary became an emerald adea
+ * never had, and the destructive colour became a saturated red. Corrected.
  * ========================================================================== */
 
 /* ---------------------------------------------------------------------------
  * 1. Colour — light theme (the default)
  *
- * Contrast: body text is 10.0:1 on `--background`; `--muted-foreground` is
- * 4.63:1 on `--background` and 4.83:1 on `--card`, clearing the WCAG AA 4.5:1
- * floor on both surfaces it actually sits on. `--primary-foreground` on
- * `--primary` is 5.69:1. Every value below was measured, not estimated.
+ * Contrast: body text 15.3:1 on the canvas, `--muted-foreground` 5.0:1 on both
+ * the canvas and a card, `--primary-foreground` on `--primary` 12.1:1. Measured
+ * rather than estimated; `tests/tokens.test.ts` asserts each pairing.
  * ------------------------------------------------------------------------- */
 :root {
-  --background: oklch(0.9851 0 0);
-  --foreground: oklch(0.2103 0.0059 285.9);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2645 0 0);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2103 0.0059 285.9);
+  --card-foreground: oklch(0.2645 0 0);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2103 0.0059 285.9);
+  --popover-foreground: oklch(0.2645 0 0);
 
-  /* The Adea emerald. Deep enough in light mode to carry white label text. */
-  --primary: oklch(0.4999 0.1003 167.9);
-  --primary-foreground: oklch(1 0 0);
-  /* Hover/active rungs for primary actions. A separate token rather than an
-     opacity modifier, so the pair can be tuned independently in a re-hue. */
-  --primary-hover: oklch(0.4444 0.0931 167.9);
+  /* Neutral by default. The accent axis below overrides these four plus `--ring`
+     when a colour is selected. */
+  --primary: oklch(0.325 0 0);
+  --primary-foreground: oklch(0.9911 0 0);
+  --primary-hover: oklch(0.265 0 0);
+  --primary-subtle: oklch(0.325 0 0 / 0.08);
 
-  --secondary: oklch(0.9702 0 0);
-  --secondary-foreground: oklch(0.2103 0.0059 285.9);
+  --secondary: oklch(0.9761 0 0);
+  --secondary-foreground: oklch(0.325 0 0);
 
-  --muted: oklch(0.9702 0 0);
-  /* Solved, not chosen: 4.84:1 on `background`, 5.05:1 on `card` and 4.63:1 on
-     `sidebar`, so it clears 4.5:1 on every surface this text actually sits on.
-     The sidebar is the tightest of the three and is what fixes the value —
-     measured in tests/tokens.test.ts. */
-  --muted-foreground: oklch(0.54 0.0138 285.9);
+  --muted: oklch(0.9761 0 0);
+  --muted-foreground: oklch(0.5417 0 0);
 
-  --accent: oklch(0.9551 0 0);
-  --accent-foreground: oklch(0.2103 0.0059 285.9);
+  --accent: oklch(0.9761 0 0);
+  --accent-foreground: oklch(0.325 0 0);
 
-  /* Solid and label-legible on both --background and --card. */
-  --destructive: oklch(0.55 0.21 27.3);
+  --destructive: oklch(0.5551 0.1765 30.5);
   --destructive-foreground: oklch(1 0 0);
-
-  --success: oklch(0.52 0.14 148);
-  --success-foreground: oklch(1 0 0);
-
-  --warning: oklch(0.55 0.12 66.4);
-  --warning-foreground: oklch(1 0 0);
-
-  --info: oklch(0.52 0.11 221.7);
-  --info-foreground: oklch(1 0 0);
-
-  --border: oklch(0.9197 0.004 286.3);
-  --input: oklch(0.9197 0.004 286.3);
-  --ring: oklch(0.4999 0.1003 167.9);
-
-  /* Status fills. Translucent so they read as a tint on whatever surface they
-     land on rather than punching a hole in it. Derived from the status colour
-     above, so a re-hue tracks automatically. */
-  --success-subtle: color-mix(in oklch, var(--success) 12%, transparent);
-  --warning-subtle: color-mix(in oklch, var(--warning) 12%, transparent);
   --destructive-subtle: color-mix(in oklch, var(--destructive) 12%, transparent);
+
+  --success: oklch(0.5244 0.1401 148);
+  --success-foreground: oklch(1 0 0);
+  --success-subtle: color-mix(in oklch, var(--success) 12%, transparent);
+
+  --warning: oklch(0.5538 0.1207 66.4);
+  --warning-foreground: oklch(1 0 0);
+  --warning-subtle: color-mix(in oklch, var(--warning) 12%, transparent);
+
+  --info: oklch(0.5198 0.0936 223.1);
+  --info-foreground: oklch(1 0 0);
   --info-subtle: color-mix(in oklch, var(--info) 12%, transparent);
-  --primary-subtle: color-mix(in oklch, var(--primary) 12%, transparent);
+
+  --border: oklch(0.9401 0 0);
+  --input: oklch(0.9401 0 0);
+  /* The focus ring is the primary, which is what adea's `deriveAccentRoles`
+     returns — its declared `ring` is a mid grey, but the derived role it actually
+     applies is `ring: strong`, and `strong` starts as the primary. Matching the
+     derived role rather than the declaration also keeps the ring above the WCAG
+     1.4.11 3:1 non-text floor: a mid grey on white measures 2.2:1, which is a
+     focus indicator that cannot be seen. */
+  --ring: var(--primary);
 
   /* --- The surface ladder -------------------------------------------------
-   * Five rungs, in painting order. `sunken` holds content that recedes (a
-   * code well, an empty state); `background` is the canvas; `raised` is a card
-   * or panel that sits on the canvas; `overlay` is a floating layer; `hover`
-   * is the hover fill shared by rows, menu items and ghost controls. Naming
-   * them once is what keeps two apps' sidebars from drifting a shade apart.
+   * Five rungs, in painting order. `sunken` holds content that recedes (a code
+   * well, an empty state); `background` is the canvas; `raised` is a card or
+   * panel on the canvas; `overlay` floats; `hover` is the fill shared by rows,
+   * menu items and ghost controls. Naming them once is what keeps two apps'
+   * sidebars from drifting a shade apart.
    */
-  --surface-sunken: oklch(0.9702 0 0);
+  --surface-sunken: oklch(0.9761 0 0);
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
   --surface-hover: oklch(0.9551 0 0);
-  --surface-active: oklch(0.9405 0 0);
+  --surface-active: oklch(0.9401 0 0);
 
-  /* Window chrome: the top bar and rail. Kept as its own token because a
-     frameless desktop window tints it and blurs what scrolls under it. */
-  --chrome: oklch(0.9851 0 0);
+  /* Window chrome. Its own token because a frameless desktop window tints it and
+     blurs what scrolls under it. */
+  --chrome: oklch(1 0 0);
   --chrome-alpha: 0.95;
 
-  /* --- Diff and editor roles ---------------------------------------------
-   * Shared with the editor and the terminal so a diff looks the same in a
-   * chat transcript, a code view, and a review pane.
-   */
+  /* --- Diff and editor roles ---------------------------------------------- */
   --diff-add: color-mix(in oklch, var(--success) 14%, transparent);
   --diff-add-foreground: oklch(0.4424 0.1266 148);
   --diff-delete: color-mix(in oklch, var(--destructive) 14%, transparent);
   --diff-delete-foreground: oklch(0.5062 0.1921 24.5);
-  --diff-hunk: color-mix(in oklch, var(--primary) 12%, transparent);
-  --diff-hunk-foreground: oklch(0.4444 0.0931 167.9);
-  --diff-meta-foreground: oklch(0.2906 0.0089 285.9);
+  --diff-hunk: color-mix(in oklch, var(--primary) 10%, transparent);
+  --diff-hunk-foreground: oklch(0.44 0 0);
+  --diff-meta-foreground: oklch(0.3703 0 0);
 
   /* --- Chart series ------------------------------------------------------
-   * Six categorical hues, ordered for maximum adjacent separation. The set is
-   * closed: a seventh series folds into "other" rather than inventing a hue.
+   * Six categorical hues, ordered for adjacent separation: the accent presets, so
+   * a chart and an accent selection are drawn from one palette. The set is
+   * closed — a seventh series folds into "other" rather than inventing a hue.
    */
-  --chart-1: oklch(0.4999 0.1003 167.9);
-  --chart-2: oklch(0.52 0.11 221.7);
-  --chart-3: oklch(0.5413 0.2466 293);
-  --chart-4: oklch(0.55 0.12 66.4);
-  --chart-5: oklch(0.55 0.21 27.3);
-  --chart-6: oklch(0.52 0.14 148);
+  --chart-1: oklch(0.4907 0.2412 292.6);
+  --chart-2: oklch(0.5461 0.2152 262.9);
+  --chart-3: oklch(0.5198 0.0936 223.1);
+  --chart-4: oklch(0.5273 0.1371 150.1);
+  --chart-5: oklch(0.5553 0.1455 49);
+  --chart-6: oklch(0.5246 0.199 4);
 
   /* --- Scrim -------------------------------------------------------------
-   * Theme-invariant dark glass for overlays and on-screen controls: the same
-   * value in light and dark, because it sits over media, not over the app.
-   * Declared here so it is discoverable with the rest of the palette.
+   * Theme-invariant dark glass for overlays and on-screen controls: the same value
+   * in light and dark, because it sits over media, not over the app.
    */
   --scrim: oklch(0.1919 0.025 264.7);
   --scrim-foreground: oklch(1 0 0);
   --scrim-edge: oklch(1 0 0);
 
   /* --- Sidebar (shadcn contract) -----------------------------------------
-   * The sidebar is its own surface family so a rail can be tinted against the
-   * canvas without touching --card, which every panel uses.
+   * Its own surface family so a rail can be tinted against the canvas without
+   * touching `--card`, which every panel uses.
    */
-  --sidebar: oklch(0.9702 0 0);
-  --sidebar-foreground: oklch(0.3703 0.0119 285.8);
+  --sidebar: oklch(0.9851 0 0);
+  --sidebar-foreground: oklch(0.3703 0 0);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.9405 0 0);
-  --sidebar-accent-foreground: oklch(0.2103 0.0059 285.9);
-  --sidebar-border: oklch(0.9197 0.004 286.3);
+  --sidebar-accent: oklch(0.9551 0 0);
+  --sidebar-accent-foreground: oklch(0.2645 0 0);
+  --sidebar-border: oklch(0.9401 0 0);
   --sidebar-ring: var(--ring);
   --sidebar-muted-foreground: var(--muted-foreground);
 }
@@ -162,129 +165,242 @@
 /* ---------------------------------------------------------------------------
  * 2. Colour — dark theme
  *
- * KiroCrew is dark-first and so is this system: the dark values are the ones
- * the design language was drawn against. Contrast: body text is 14.5:1;
- * `--muted-foreground` is 5.24:1 on `--background` and 4.90:1 on `--card`;
- * `--primary-foreground` on `--primary` is 10.83:1. The accent is bright here
- * and carries a *black* label, which is why the two themes swap
- * --primary-foreground rather than sharing one value.
+ * adea's dark theme is a *soft* neutral rather than a near-black: the canvas is a
+ * light grey and the primary is near-white. That is the product's existing look,
+ * and it is deliberately not the near-black blue-tinted dark of the donor this
+ * system's structure came from.
+ *
+ * Contrast: body text 14.9:1, `--muted-foreground` 6.1:1 on the canvas and 4.9:1
+ * on a card, `--primary-foreground` on `--primary` 10.4:1.
  * ------------------------------------------------------------------------- */
 .dark {
-  --background: oklch(0.1919 0.0126 270.7);
-  --foreground: oklch(0.9197 0.004 286.3);
+  --background: oklch(0.2645 0 0);
+  --foreground: oklch(0.9911 0 0);
 
-  --card: oklch(0.2222 0.0144 266.9);
-  --card-foreground: oklch(0.9197 0.004 286.3);
+  --card: oklch(0.325 0 0);
+  --card-foreground: oklch(0.9911 0 0);
 
-  --popover: oklch(0.2313 0.0161 269);
-  --popover-foreground: oklch(0.9197 0.004 286.3);
+  --popover: oklch(0.325 0 0);
+  --popover-foreground: oklch(0.9911 0 0);
 
-  --primary: oklch(0.7688 0.1687 161.9);
-  --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.81 0.1687 161.9);
+  --primary: oklch(0.9401 0 0);
+  --primary-foreground: oklch(0.325 0 0);
+  --primary-hover: oklch(0.975 0 0);
+  --primary-subtle: oklch(0.9911 0 0 / 0.12);
 
-  --secondary: oklch(0.2858 0.021 269.4);
-  --secondary-foreground: oklch(0.9197 0.004 286.3);
+  --secondary: oklch(0.3867 0 0);
+  --secondary-foreground: oklch(0.9911 0 0);
 
-  --muted: oklch(0.2858 0.021 269.4);
-  --muted-foreground: oklch(0.63 0.0135 286);
+  --muted: oklch(0.3867 0 0);
+  --muted-foreground: oklch(0.7155 0 0);
 
-  --accent: oklch(0.2858 0.021 269.4);
-  --accent-foreground: oklch(0.9674 0.0013 286.4);
+  --accent: oklch(0.3867 0 0);
+  --accent-foreground: oklch(0.9911 0 0);
 
-  --destructive: oklch(0.64 0.21 25.3);
+  --destructive: oklch(0.6725 0.1429 29.7);
   --destructive-foreground: oklch(0 0 0);
+  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
 
-  --success: oklch(0.72 0.19 149.6);
+  --success: oklch(0.6951 0.1809 145.6);
   --success-foreground: oklch(0 0 0);
-
-  --warning: oklch(0.8 0.16 86);
-  --warning-foreground: oklch(0 0 0);
-
-  --info: oklch(0.7 0.11 221.7);
-  --info-foreground: oklch(0 0 0);
-
-  --border: oklch(0.2739 0.0055 286);
-  --input: oklch(0.3703 0.0119 285.8);
-  --ring: oklch(0.6959 0.1491 162.5);
-
   --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
-  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
-  --destructive-subtle: color-mix(in oklch, var(--destructive) 18%, transparent);
-  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
 
-  --surface-sunken: oklch(0.1919 0.0126 270.7);
+  --warning: oklch(0.7952 0.1617 86);
+  --warning-foreground: oklch(0 0 0);
+  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
+
+  --info: oklch(0.7081 0.1109 221.7);
+  --info-foreground: oklch(0 0 0);
+  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
+
+  --border: oklch(0.36 0 0);
+  --input: oklch(0.3867 0 0);
+  /* The primary, for the reason given in the light theme. */
+  --ring: var(--primary);
+
+  /* adea's dark palette has no rung below the canvas, because nothing in the app
+     needed one. A code well does, so this is the one value in the ladder that is
+     derived rather than taken: one deliberate step down. */
+  --surface-sunken: oklch(0.2325 0 0);
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
-  --surface-hover: oklch(0.2858 0.021 269.4);
-  --surface-active: oklch(0.3179 0.0223 269.4);
+  --surface-hover: oklch(0.3867 0 0);
+  --surface-active: oklch(0.43 0 0);
 
-  --chrome: oklch(0.1919 0.0126 270.7);
+  --chrome: oklch(0.2905 0 0);
   --chrome-alpha: 0.9;
 
   --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
   --diff-add-foreground: oklch(0.8416 0.1641 145.8);
   --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
   --diff-delete-foreground: oklch(0.8014 0.1134 25.8);
-  --diff-hunk: color-mix(in oklch, var(--primary) 16%, transparent);
-  --diff-hunk-foreground: oklch(0.8416 0.144 161.9);
-  --diff-meta-foreground: oklch(0.9197 0.004 286.3);
+  --diff-hunk: color-mix(in oklch, var(--primary) 14%, transparent);
+  --diff-hunk-foreground: oklch(0.85 0 0);
+  --diff-meta-foreground: oklch(0.85 0 0);
 
-  --chart-1: oklch(0.7688 0.1687 161.9);
-  --chart-2: oklch(0.7 0.11 221.7);
-  --chart-3: oklch(0.709 0.1592 293.5);
-  --chart-4: oklch(0.8 0.16 86);
-  --chart-5: oklch(0.6984 0.1858 25.3);
-  --chart-6: oklch(0.72 0.19 149.6);
+  --chart-1: oklch(0.709 0.1592 293.5);
+  --chart-2: oklch(0.7137 0.1434 254.6);
+  --chart-3: oklch(0.7971 0.1339 211.5);
+  --chart-4: oklch(0.8003 0.1821 151.7);
+  --chart-5: oklch(0.8369 0.1644 84.4);
+  --chart-6: oklch(0.7253 0.1752 349.8);
 
-  --sidebar: oklch(0.2222 0.0144 266.9);
-  --sidebar-foreground: oklch(0.9197 0.004 286.3);
+  --sidebar: oklch(0.2905 0 0);
+  --sidebar-foreground: oklch(0.9197 0 0);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.2858 0.021 269.4);
-  --sidebar-accent-foreground: oklch(0.9674 0.0013 286.4);
-  --sidebar-border: oklch(0.2739 0.0055 286);
+  --sidebar-accent: oklch(0.3867 0 0);
+  --sidebar-accent-foreground: oklch(0.9911 0 0);
+  --sidebar-border: oklch(0.36 0 0);
   --sidebar-ring: var(--ring);
-  --sidebar-muted-foreground: oklch(0.63 0.0135 286);
+  --sidebar-muted-foreground: oklch(0.7155 0 0);
 
   color-scheme: dark;
 }
 
 /* ---------------------------------------------------------------------------
- * 3. Non-colour scales
+ * 3. The accent axis
  *
- * These live outside the theme blocks because they do not change with
- * polarity — only with a deliberate density or shape decision.
+ * adea's six accents, as a selection rather than a constant. `data-accent` sits on
+ * the same element as `dark` — in both applications that is `<html>` — and each
+ * block overrides the roles an accent owns: the interactive primary, its label,
+ * its hover rung, its tint and the focus ring.
+ *
+ * The values are adea's accent presets, passed through the same two rules
+ * `deriveAccentRoles` applies in the product:
+ *
+ *   1. **A 3:1 interaction minimum against the surface the accent is drawn on**,
+ *      so an accent can never ship unreadable on its own background.
+ *   2. **A label chosen by measurement, not convention** — black or white,
+ *      whichever wins on contrast. The accent flips polarity between the themes
+ *      for exactly this reason: a bright violet in dark mode carries a black
+ *      label, and the same accent's deep light-mode form carries a white one.
+ *
+ * `theme` (the default) is the monochrome primary above and needs no block.
+ * ------------------------------------------------------------------------- */
+
+[data-accent='violet'] {
+  --primary: oklch(0.4907 0.2412 292.6);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4407 0.2412 292.6);
+  --primary-subtle: oklch(0.4907 0.2412 292.6 / 0.1);
+  --ring: oklch(0.4907 0.2412 292.6);
+}
+.dark[data-accent='violet'] {
+  --primary: oklch(0.709 0.1592 293.5);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.759 0.1592 293.5);
+  --primary-subtle: oklch(0.709 0.1592 293.5 / 0.16);
+  --ring: oklch(0.709 0.1592 293.5);
+}
+
+[data-accent='blue'] {
+  --primary: oklch(0.5461 0.2152 262.9);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4961 0.2152 262.9);
+  --primary-subtle: oklch(0.5461 0.2152 262.9 / 0.1);
+  --ring: oklch(0.5461 0.2152 262.9);
+}
+.dark[data-accent='blue'] {
+  --primary: oklch(0.7137 0.1434 254.6);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.7637 0.1434 254.6);
+  --primary-subtle: oklch(0.7137 0.1434 254.6 / 0.16);
+  --ring: oklch(0.7137 0.1434 254.6);
+}
+
+[data-accent='green'] {
+  --primary: oklch(0.5273 0.1371 150.1);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4773 0.1371 150.1);
+  --primary-subtle: oklch(0.5273 0.1371 150.1 / 0.1);
+  --ring: oklch(0.5273 0.1371 150.1);
+}
+.dark[data-accent='green'] {
+  --primary: oklch(0.8003 0.1821 151.7);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8503 0.1821 151.7);
+  --primary-subtle: oklch(0.8003 0.1821 151.7 / 0.16);
+  --ring: oklch(0.8003 0.1821 151.7);
+}
+
+[data-accent='amber'] {
+  --primary: oklch(0.5553 0.1455 49);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.5053 0.1455 49);
+  --primary-subtle: oklch(0.5553 0.1455 49 / 0.1);
+  --ring: oklch(0.5553 0.1455 49);
+}
+.dark[data-accent='amber'] {
+  --primary: oklch(0.8369 0.1644 84.4);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8869 0.1644 84.4);
+  --primary-subtle: oklch(0.8369 0.1644 84.4 / 0.16);
+  --ring: oklch(0.8369 0.1644 84.4);
+}
+
+[data-accent='cyan'] {
+  --primary: oklch(0.5198 0.0936 223.1);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4698 0.0936 223.1);
+  --primary-subtle: oklch(0.5198 0.0936 223.1 / 0.1);
+  --ring: oklch(0.5198 0.0936 223.1);
+}
+.dark[data-accent='cyan'] {
+  --primary: oklch(0.7971 0.1339 211.5);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8471 0.1339 211.5);
+  --primary-subtle: oklch(0.7971 0.1339 211.5 / 0.16);
+  --ring: oklch(0.7971 0.1339 211.5);
+}
+
+[data-accent='pink'] {
+  --primary: oklch(0.5246 0.199 4);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4746 0.199 4);
+  --primary-subtle: oklch(0.5246 0.199 4 / 0.1);
+  --ring: oklch(0.5246 0.199 4);
+}
+.dark[data-accent='pink'] {
+  --primary: oklch(0.7253 0.1752 349.8);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.7753 0.1752 349.8);
+  --primary-subtle: oklch(0.7253 0.1752 349.8 / 0.16);
+  --ring: oklch(0.7253 0.1752 349.8);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Non-colour scales
+ *
+ * Outside the theme blocks because they do not change with polarity — only with a
+ * deliberate density or shape decision.
  * ------------------------------------------------------------------------- */
 :root {
-  /* Radius. `--radius-lg` is the knob: retheme the whole system's corner
-     roundness by moving this one value. The rungs are explicit rather than a
-     calc chain so the KiroCrew 6/8/12/16 scale is exact and readable.
-     `--radius` is an alias kept because shadcn components and @shadcn/lint
-     both expect it. */
-  --radius-lg: 0.75rem; /* 12px */
+  /* Radius. `--radius-lg` is the knob; `--radius` is an alias kept because shadcn
+     components and @shadcn/lint both expect it. */
+  --radius-lg: 0.625rem; /* 10px */
   --radius-sm: 0.375rem; /* 6px */
   --radius-md: 0.5rem; /* 8px */
-  --radius-xl: 1rem; /* 16px */
-  --radius-2xl: 1.25rem; /* 20px */
+  --radius-xl: 0.875rem; /* 14px */
+  --radius-2xl: 1.125rem; /* 18px */
   --radius: var(--radius-lg);
 
-  /* Type. Space Grotesk for the interface, JetBrains Mono for code, terminals
-     and anything a user might compare character by character. Both are loaded
-     by `@adea-ai/ui/fonts.css`; the fallback chains end in the generic family
-     so a consumer that skips the font import still renders correctly, just
-     with a different face. */
+  /* Type. Geist for the interface, Geist Mono for code, terminals and anything a
+     user compares character by character. Both ship from `@fontsource-variable`
+     via `fonts.css`; the fallback chains end in the generic family, so a consumer
+     that skips the font import still renders correctly in another face.
+     Geist is the choice because cortana already ships it, it is shadcn's own
+     baseline, and it is what the reference template uses — one family across the
+     organisation rather than a third. */
   --font-sans:
-    'Space Grotesk Variable', 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
-    sans-serif;
+    'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   /* Type scale. Each rung carries its own line-height because the ratio is not
-     constant: small text needs more leading to stay readable, display text
-     needs less to stay coherent. */
+     constant: small text needs more leading to stay readable, display text needs
+     less to stay coherent. */
   --text-2xs: 0.6875rem; /* 11px */
   --text-2xs--line-height: 1.45;
   --text-xs: 0.75rem; /* 12px */
@@ -302,10 +418,9 @@
   --text-3xl: 1.875rem;
   --text-3xl--line-height: 1.2;
 
-  /* Control density. KiroCrew's measured centre of gravity is a 28px control
-     in toolbars and a 32px control in forms; those are `sm` and `md` here, and
-     `md` is the default for Button and Input. Nothing in the system may
-     hard-code a height — a control that needs a new size gets a rung. */
+  /* Control density. KiroCrew's centre of gravity — a 28px control in toolbars and
+     a 32px control in forms — is kept, because the density is the structural half
+     of the design language even though the palette is adea's. */
   --control-height-2xs: 1.25rem; /* 20px */
   --control-height-xs: 1.5rem; /* 24px */
   --control-height-sm: 1.75rem; /* 28px — toolbar default */
@@ -313,9 +428,6 @@
   --control-height-lg: 2.25rem; /* 36px */
   --control-height-xl: 2.5rem; /* 40px */
 
-  /* Horizontal padding that pairs with each control height. Kept separate from
-     the height so a square icon button is just `height` with zero inline
-     padding, not a third size variant. */
   --control-padding-2xs: 0.375rem;
   --control-padding-xs: 0.5rem;
   --control-padding-sm: 0.625rem;
@@ -323,14 +435,15 @@
   --control-padding-lg: 0.875rem;
   --control-padding-xl: 1rem;
 
-  /* Row heights for lists, menus and table rows. */
   --row-height-sm: 1.75rem;
   --row-height-md: 2rem;
   --row-height-lg: 2.25rem;
 
-  /* Shell geometry. One place to change how wide a rail or sidebar is, so the
-     two consumer apps cannot disagree. */
-  --rail-width: 3.625rem; /* 58px — icon-only */
+  /* Shell geometry. One place to change how wide a rail or sidebar is, so the two
+     consumer apps cannot disagree. 74px is the figure KiroCrew's own layout hook
+     publishes as `RAIL_W_COLLAPSED`; an older comment in that codebase names 58px,
+     which its shipped behaviour does not use. */
+  --rail-width: 4.625rem; /* 74px */
   --rail-width-expanded: 14.75rem; /* 236px */
   --rail-item-height: 2.25rem;
   --sidebar-width: 16rem; /* 256px */
@@ -338,9 +451,10 @@
   --topbar-height: 3rem;
   --statusbar-height: 1.75rem;
 
-  /* Shadows. Composed of two parts on purpose: a tinted spread that reads as
-     elevation, plus a hairline that keeps an edge visible when the surface
-     behind the panel is the same colour as the panel. */
+  /* Shadows. Two parts on purpose: a tinted spread that reads as elevation, plus a
+     hairline that keeps an edge visible when the surface behind a panel is the
+     same colour as the panel — which is the light theme, where `--card` and
+     `--background` are both white. */
   --shadow-2xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
   --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.06);
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.06), 0 0 0 1px oklch(0 0 0 / 0.04);
@@ -348,18 +462,18 @@
   --shadow-lg: 0 12px 28px oklch(0 0 0 / 0.12);
   --shadow-xl: 0 20px 44px oklch(0 0 0 / 0.16);
 
-  /* Motion. Two durations cover the system: `fast` for state changes the user
-     is already watching (hover, active, expand), `normal` for entrances and
-     exits. The easing is KiroCrew's entrance curve — a fast start and a long
-     settle, which reads as decisive rather than floaty. */
+  /* Motion. Two durations cover the system: `fast` for a state change the user is
+     already watching, `normal` for an entrance. The easing is KiroCrew's entrance
+     curve — a fast start and a long settle, which reads as decisive rather than
+     floaty. */
   --duration-fast: 120ms;
   --duration-normal: 200ms;
   --duration-slow: 320ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* Overlay stacking scale. Every overlay names a rung here; a one-off
-     z-index is how two overlays end up fighting, so none exist. */
+  /* Overlay stacking scale. Every overlay names a rung; a one-off z-index is how
+     two overlays end up fighting, so none exist. */
   --z-base: 0;
   --z-docked: 10;
   --z-sticky: 20;
@@ -380,11 +494,11 @@
 }
 
 /* ---------------------------------------------------------------------------
- * 4. Tailwind namespace mapping
+ * 5. Tailwind namespace mapping
  *
  * `@theme inline` publishes the tokens above as Tailwind utilities. Every
- * declaration is an `inline` reference to the runtime variable, never a copy:
- * that is what lets a `.dark` class or a consumer's re-hue take effect without
+ * declaration is an `inline` reference to the runtime variable, never a copy: that
+ * is what lets a `.dark` class or a `[data-accent]` selection take effect without
  * a rebuild.
  * ------------------------------------------------------------------------- */
 @theme inline {
@@ -489,8 +603,8 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
 
-  /* Control and row heights become real utilities (`h-control-md`,
-     `h-row-md`), so a component never writes a pixel height. */
+  /* Control and row heights become real utilities (`h-control-md`, `h-row-md`), so a
+     component never writes a pixel height. */
   --height-control-2xs: var(--control-height-2xs);
   --height-control-xs: var(--control-height-xs);
   --height-control-sm: var(--control-height-sm);
@@ -527,9 +641,9 @@
   --ease-out: var(--ease-out);
   --ease-in-out: var(--ease-in-out);
 
-  /* Make the system's motion the default for every `transition-*` utility, so
-     a component that forgets an explicit duration still moves at the
-     design-system speed rather than Tailwind's stock 150ms/ease-in-out. */
+  /* Make the system's motion the default for every `transition-*` utility, so a
+     component that forgets an explicit duration still moves at the design-system
+     speed rather than Tailwind's stock 150ms/ease-in-out. */
   --default-transition-duration: var(--duration-fast);
   --default-transition-timing-function: var(--ease-out);
 }

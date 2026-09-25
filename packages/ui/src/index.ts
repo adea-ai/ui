@@ -86,6 +86,7 @@ export {
   type VariantProps,
 } from './lib/variants'
 export {
+  accentPresets,
   allTokens,
   colorTokens,
   densityTokens,
@@ -96,6 +97,7 @@ export {
   typographyTokens,
   undocumentedTokenAliases,
   zIndexTokens,
+  type AccentPreset,
   type TokenDefinition,
   type TokenKind,
 } from './lib/tokens'

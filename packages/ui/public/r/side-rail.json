@@ -6,9 +6,7 @@
   "dependencies": [
     "@kobalte/core@^0.13.14"
   ],
-  "registryDependencies": [
-    "@adea-ai/ui/tooltip"
-  ],
+  "registryDependencies": [],
   "files": [
     {
       "path": "src/components/layout/side-rail/index.ts",

@@ -1,26 +1,26 @@
 import { Polymorphic, type PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
-import { Show, createMemo, splitProps } from 'solid-js'
+import { Show, createMemo, createSignal, splitProps } from 'solid-js'
+import { Portal } from 'solid-js/web'
 import { cn } from '#lib/utils'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip/tooltip'
 import { SideRailContext, createSideRailValue } from './side-rail-context'
 
 /**
  * SideRail.
  *
- * The narrow, persistent column of top-level destinations at the window's
- * leading edge: the app mark, the primary sections, and a footer for account
- * and settings. It is the one piece of chrome that is always on screen, which
- * is why it is a component rather than something each view arranges.
+ * The narrow, persistent column of top-level destinations at the window's leading
+ * edge: the app mark, the primary sections, and a footer for account and settings.
+ * It is the one piece of chrome that is always on screen, which is why it is a
+ * component rather than something each view arranges.
  *
  * Two forms, one component. Collapsed it is an icon column; expanded it carries
- * labels. Both widths come from the `--rail-width` and `--rail-width-expanded`
- * tokens, so an app cannot pick its own and end up a few pixels out of step
- * with the app beside it.
+ * labels. Both widths come from `--rail-width` (74px) and `--rail-width-expanded`
+ * (236px), so an app cannot pick its own and end up a few pixels out of step with
+ * the app beside it.
  *
  * The rail does not own its collapsed state; the app does. That state has to
- * survive a reload and usually lives with the rest of the window preferences,
- * and a rail that kept it privately could not be restored.
+ * survive a reload and usually lives with the rest of the window preferences, and
+ * a rail that kept it privately could not be restored.
  */
 export type SideRailProps<T extends ValidComponent = 'nav'> = PolymorphicProps<
   T,
@@ -50,13 +50,13 @@ export function SideRail<T extends ValidComponent = 'nav'>(props: SideRailProps<
       <Polymorphic
         as="nav"
         aria-label={local['aria-label'] ?? 'Primary'}
-        /* Rendered in both states, with a real value, so the descendant
-           selectors below can key on true *and* false — an absent attribute
-           would leave the expanded form matching neither. */
+        /* Rendered in both states, with a real value, so the descendant selectors
+           below can key on true *and* false — an absent attribute would leave the
+           expanded form matching neither. */
         data-collapsed={collapsed() ? 'true' : 'false'}
         class={cn(
           'group/rail bg-sidebar text-sidebar-foreground flex h-full shrink-0 flex-col border-e border-sidebar-border',
-          'transition-[width] ease-out',
+          'transition-[width] duration-150 ease-out',
           { 'w-rail': collapsed(), 'w-rail-expanded': !collapsed() },
           local.class
         )}
@@ -130,12 +130,11 @@ export function SideRailSection(props: ComponentProps<'div'> & { label?: string 
 }
 
 /**
- * The classes a rail row uses. Exported so a caller's own element — a router
- * link, a custom button — can match the rail exactly instead of approximating
- * it.
+ * The classes a rail row uses. Exported so a caller's own element — a router link,
+ * a custom button — can match the rail exactly instead of approximating it.
  */
 export const sideRailItemClass = [
-  'flex h-rail-item min-w-0 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium',
+  'group/rail-item flex h-rail-item min-w-0 w-full items-center gap-2.5 rounded-md px-3 text-sm font-medium',
   'group-data-[collapsed=true]/rail:justify-center group-data-[collapsed=true]/rail:px-0',
   'transition-colors ease-out outline-none select-none',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
@@ -147,6 +146,33 @@ export const sideRailItemStateClass = {
   idle: 'text-sidebar-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
 }
 
+/**
+ * A rail destination.
+ *
+ * ## The tooltip is the rail's hover affordance, not a generic bubble
+ *
+ * Collapsed, the row has no text, so the label has to come from somewhere. This
+ * ports the donor's treatment rather than using a standard tooltip, because the
+ * details are what make it read as part of the rail:
+ *
+ *   - It is **flush with the row**: positioned at the row's own top and given the
+ *     row's own height, so it continues the row outward instead of floating near
+ *     it. A centred bubble with an arrow reads as a separate object.
+ *   - It **repeats the icon**, which anchors it to the row it belongs to.
+ *   - It carries the **keyboard chord**, which is the one piece of information a
+ *     collapsed rail otherwise cannot show.
+ *   - It opens on **hover and on focus**, so a keyboard user gets the same label a
+ *     pointer user does.
+ *   - It is `pointer-events-none` and `aria-hidden`: the row already carries the
+ *     name (as a visually hidden span when collapsed), so this is decoration and
+ *     must never be the accessible name.
+ *
+ * ## The chord on the row
+ *
+ * Expanded, the row shows its chord on hover and on focus — and the chord is
+ * declared once to assistive technology through `aria-keyshortcuts` rather than
+ * being read out as glyphs. The visible badge is `aria-hidden` for that reason.
+ */
 export type SideRailItemProps<T extends ValidComponent = 'a'> = PolymorphicProps<
   T,
   {
@@ -154,30 +180,26 @@ export type SideRailItemProps<T extends ValidComponent = 'a'> = PolymorphicProps
     /** Marks the item as the current destination. */
     active?: boolean
     /**
-     * The item's accessible name. Required, and always in the accessibility
-     * tree: collapsed it moves into a tooltip and a visually hidden span rather
-     * than being deleted.
+     * The item's accessible name. Required, and always in the accessibility tree:
+     * collapsed it moves into the tooltip and a visually hidden span rather than
+     * being deleted.
      */
     label: string
-    /** A count or a dot, rendered at the trailing edge. */
+    /** A count or a dot, rendered over the icon's corner. */
     badge?: JSX.Element
     /** An indicator pinned to the trailing edge in the expanded form. */
     trailing?: JSX.Element
+    /** The chord as it should be drawn, e.g. `⌘1`. Shown on hover and focus. */
+    shortcut?: string
+    /**
+     * The same chord in the ARIA grammar, e.g. `Meta+1`. Declared to assistive
+     * technology instead of the display glyphs, which are not a keyboard shortcut
+     * a screen reader can parse. Supply it whenever `shortcut` is drawn.
+     */
+    keyshortcuts?: string
   }
 >
 
-/**
- * A rail destination.
- *
- * The row *is* the tooltip trigger — not a wrapper around it. That is forced by
- * the platform rather than chosen: `pointerenter` and `focus` do not bubble, so a
- * trigger element wrapping the real row would never see either, and the tooltip
- * would never open. Making the row the trigger is also what keeps the tooltip
- * anchored to the thing the pointer is actually over.
- *
- * Polymorphic, so a router's link component works here and keeps the rail's
- * styling contract.
- */
 export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItemProps<T>) {
   const [local, rest] = splitProps(props as SideRailItemProps, [
     'as',
@@ -186,21 +208,149 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
     'label',
     'badge',
     'trailing',
+    'shortcut',
+    'keyshortcuts',
     'children',
   ])
 
+  const [row, setRow] = createSignal<HTMLElement>()
+  const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
+
+  const collapsed = () =>
+    row()?.closest('[data-collapsed]')?.getAttribute('data-collapsed') === 'true'
+
+  const showTip = () => {
+    const element = row()
+    if (!element || !collapsed()) return
+    const rect = element.getBoundingClientRect()
+    setTip({ top: rect.top, left: rect.right + 8, height: rect.height })
+  }
+
+  const hideTip = () => setTip(null)
+
   return (
-    <Tooltip placement="right">
-      <TooltipTrigger
-        as={(local.as ?? 'a') as ValidComponent}
+    <>
+      <Polymorphic
+        as={local.as ?? 'a'}
+        ref={setRow}
         aria-current={local.active ? 'page' : undefined}
+        aria-keyshortcuts={local.keyshortcuts}
         data-active={local.active ? '' : undefined}
         class={cn(
           sideRailItemClass,
           local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,
           local.class
         )}
+        onPointerEnter={showTip}
+        onPointerLeave={hideTip}
+        onFocus={showTip}
+        onBlur={hideTip}
         {...(rest as Record<string, unknown>)}
+      >
+        <Show when={local.badge}>
+          <span class="relative flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+            {local.children}
+            <span class="absolute -top-1 -end-1 flex items-center justify-center">
+              {local.badge}
+            </span>
+          </span>
+        </Show>
+        <Show when={!local.badge}>
+          <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+            {local.children}
+          </span>
+        </Show>
+
+        <span class="min-w-0 flex-1 truncate group-data-[collapsed=true]/rail:sr-only">
+          {local.label}
+        </span>
+
+        <Show when={local.shortcut && local.trailing === undefined}>
+          <span
+            aria-hidden="true"
+            class="text-sidebar-muted-foreground shrink-0 font-mono text-2xs leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
+          >
+            {local.shortcut}
+          </span>
+        </Show>
+
+        <Show when={local.trailing}>
+          <span class="ms-auto shrink-0">{local.trailing}</span>
+        </Show>
+      </Polymorphic>
+
+      <Show when={tip()}>
+        {(position) => (
+          <Portal>
+            <div
+              aria-hidden="true"
+              data-slot="side-rail-tip"
+              class={cn(
+                'bg-card text-card-foreground border-border pointer-events-none fixed z-(--z-tooltip)',
+                'flex items-center gap-2.5 rounded-md border ps-3 pe-3 text-sm font-medium whitespace-nowrap shadow-lg'
+              )}
+              style={{
+                top: `${position().top}px`,
+                left: `${position().left}px`,
+                height: `${position().height}px`,
+              }}
+            >
+              <span
+                class={cn('flex size-4 shrink-0 items-center justify-center [&_svg]:size-4', {
+                  'text-primary': local.active,
+                })}
+              >
+                {local.children}
+              </span>
+              {local.label}
+              <Show when={local.shortcut}>
+                <span class="text-muted-foreground shrink-0 font-mono text-2xs leading-none">
+                  {local.shortcut}
+                </span>
+              </Show>
+            </div>
+          </Portal>
+        )}
+      </Show>
+    </>
+  )
+}
+
+/** A non-navigating rail control: a collapse toggle, a "new" action. */
+export function SideRailButton(
+  props: Omit<ComponentProps<'button'>, 'type'> & { label: string; shortcut?: string }
+) {
+  const [local, rest] = splitProps(props, ['class', 'label', 'shortcut', 'children'])
+  const [row, setRow] = createSignal<HTMLElement>()
+  const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
+
+  const collapsed = () =>
+    row()?.closest('[data-collapsed]')?.getAttribute('data-collapsed') === 'true'
+
+  const showTip = () => {
+    const element = row()
+    if (!element || !collapsed()) return
+    const rect = element.getBoundingClientRect()
+    setTip({ top: rect.top, left: rect.right + 8, height: rect.height })
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={setRow}
+        aria-label={local.label}
+        onPointerEnter={showTip}
+        onPointerLeave={() => setTip(null)}
+        onFocus={showTip}
+        onBlur={() => setTip(null)}
+        class={cn(
+          sideRailItemClass,
+          sideRailItemStateClass.idle,
+          'disabled:pointer-events-none disabled:opacity-50',
+          local.class
+        )}
+        {...rest}
       >
         <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
           {local.children}
@@ -208,46 +358,37 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
         <span class="min-w-0 flex-1 truncate group-data-[collapsed=true]/rail:sr-only">
           {local.label}
         </span>
-        <Show when={local.badge}>
-          <span class="group-data-[collapsed=true]/rail:absolute group-data-[collapsed=true]/rail:end-1 group-data-[collapsed=true]/rail:top-1 ms-auto shrink-0">
-            {local.badge}
+        <Show when={local.shortcut}>
+          <span
+            aria-hidden="true"
+            class="text-sidebar-muted-foreground shrink-0 font-mono text-2xs leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
+          >
+            {local.shortcut}
           </span>
         </Show>
-        <Show when={local.trailing}>
-          <span class="ms-auto shrink-0">{local.trailing}</span>
-        </Show>
-      </TooltipTrigger>
-      <TooltipContent class="group-data-[collapsed=false]/rail:hidden">
-        {local.label}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
+      </button>
 
-/** A non-navigating rail control: a collapse toggle, a "new" action. */
-export function SideRailButton(props: Omit<ComponentProps<'button'>, 'type'> & { label: string }) {
-  const [local, rest] = splitProps(props, ['class', 'label', 'children'])
-
-  return (
-    <Tooltip placement="right">
-      <TooltipTrigger
-        as="button"
-        type="button"
-        aria-label={local.label}
-        class={cn(
-          sideRailItemClass,
-          sideRailItemStateClass.idle,
-          'disabled:pointer-events-none disabled:opacity-50',
-          local.class
+      <Show when={tip()}>
+        {(position) => (
+          <Portal>
+            <div
+              aria-hidden="true"
+              data-slot="side-rail-tip"
+              class="bg-card text-card-foreground border-border pointer-events-none fixed z-(--z-tooltip) flex items-center gap-2.5 rounded-md border ps-3 pe-3 text-sm font-medium whitespace-nowrap shadow-lg"
+              style={{
+                top: `${position().top}px`,
+                left: `${position().left}px`,
+                height: `${position().height}px`,
+              }}
+            >
+              <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+                {local.children}
+              </span>
+              {local.label}
+            </div>
+          </Portal>
         )}
-        {...(rest as Record<string, unknown>)}
-      >
-        {local.children}
-        <span class="truncate group-data-[collapsed=true]/rail:sr-only">{local.label}</span>
-      </TooltipTrigger>
-      <TooltipContent class="group-data-[collapsed=false]/rail:hidden">
-        {local.label}
-      </TooltipContent>
-    </Tooltip>
+      </Show>
+    </>
   )
 }

@@ -19,6 +19,70 @@ body {
   min-height: 100%;
 }
 
+/* --- Docs chrome -----------------------------------------------------------
+ *
+ * Storybook's docs pages are a *second* document with their own theme, and it is
+ * light by default. The theme toolbar sets the class on the preview, which is
+ * what styles the components — so in dark mode the docs page kept its white sheet
+ * while the body text took the dark theme's near-white, which is a page you
+ * cannot read.
+ *
+ * `.dark` is set on `<html>` by the theme decorator, and these rules are scoped to
+ * it, so the docs chrome follows the same switch the components do. They cover the
+ * surfaces Storybook's theme paints rather than all of it: enough that the page
+ * reads correctly in both themes, and no more, because the docs chrome is
+ * Storybook's to own.
+ */
+.dark .sbdocs-wrapper,
+.dark .sb-show-main {
+  background: var(--background);
+}
+
+.dark .sbdocs-content,
+.dark .sbdocs-content p,
+.dark .sbdocs-content li,
+.dark .sbdocs-content td {
+  color: var(--foreground);
+}
+
+.dark .sbdocs-content h1,
+.dark .sbdocs-content h2,
+.dark .sbdocs-content h3,
+.dark .sbdocs-content h4 {
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.dark .sbdocs-content a {
+  color: var(--primary);
+}
+
+.dark .sbdocs-content code {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.dark .sbdocs-content pre,
+.dark .sbdocs-content pre > div,
+.dark .docblock-source {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .sbdocs-content blockquote {
+  border-inline-start-color: var(--border);
+  color: var(--muted-foreground);
+}
+
+/* The arguments table and the props table are Storybook's own chrome. */
+.dark .docblock-argstable th,
+.dark .docblock-argstable td {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
 /* Storybook's own canvas padding: generous by default, which makes a 28px
    control look lost. Tightened so component density is judged at its real
    size. */

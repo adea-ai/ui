@@ -229,9 +229,14 @@ function styleItem(): RegistryItem {
     title: 'Adea theme',
     description:
       'The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.',
+    // Derived rather than listed: the typefaces the stylesheet imports are the
+    // ones the manifest declares, and a hard-coded pair here is how the registry
+    // kept shipping two families the package had already stopped depending on.
     dependencies: [
-      `@fontsource-variable/jetbrains-mono@${packageJson.dependencies['@fontsource-variable/jetbrains-mono']}`,
-      `@fontsource-variable/space-grotesk@${packageJson.dependencies['@fontsource-variable/space-grotesk']}`,
+      ...Object.keys(packageJson.dependencies)
+        .filter((name) => name.startsWith('@fontsource-variable/'))
+        .toSorted()
+        .map((name) => `${name}@${packageJson.dependencies[name]}`),
       `tw-animate-css@${packageJson.dependencies['tw-animate-css']}`,
     ],
     registryDependencies: [],

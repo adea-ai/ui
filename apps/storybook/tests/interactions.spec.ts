@@ -96,9 +96,15 @@ test.describe('the shell', () => {
     await openStory(page, 'layout-side-rail--collapsed', 'dark')
 
     await page.getByRole('button', { name: 'Home' }).hover()
-    // The tooltip is the second place the label appears, which is how a collapsed
-    // rail stays usable with a pointer.
-    await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 5_000 })
+
+    // The flyout is aria-hidden decoration rather than an ARIA tooltip: the row
+    // already carries the name. What matters is that the label becomes visible to
+    // a pointer user, and that it carries the chord — the one thing a collapsed
+    // rail cannot otherwise show.
+    const flyout = page.locator('[data-slot="side-rail-tip"]')
+    await expect(flyout).toBeVisible({ timeout: 5_000 })
+    await expect(flyout).toContainText('Home')
+    await expect(flyout).toContainText('⌘1')
   })
 
   test('the app shell fills the viewport without scrolling the document', async ({ page }) => {

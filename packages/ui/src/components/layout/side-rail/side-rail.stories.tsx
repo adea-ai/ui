@@ -47,13 +47,18 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/**
+ * Each destination carries a chord. The rail is the one surface where a keyboard
+ * shortcut belongs on the row: collapsed, the chord is the only thing the rail
+ * cannot otherwise show, which is why the tooltip repeats it.
+ */
 const items = [
-  { label: 'Home', icon: Home },
-  { label: 'Dev view', icon: Terminal },
-  { label: 'Files', icon: Files },
-  { label: 'Worktrees', icon: GitBranch },
-  { label: 'Agents', icon: Users },
-  { label: 'Artifacts', icon: Box },
+  { label: 'Home', icon: Home, shortcut: '⌘1', keyshortcuts: 'Meta+1' },
+  { label: 'Dev view', icon: Terminal, shortcut: '⌘2', keyshortcuts: 'Meta+2' },
+  { label: 'Files', icon: Files, shortcut: '⌘3', keyshortcuts: 'Meta+3' },
+  { label: 'Worktrees', icon: GitBranch, shortcut: '⌘4', keyshortcuts: 'Meta+4' },
+  { label: 'Agents', icon: Users, shortcut: '⌘5', keyshortcuts: 'Meta+5' },
+  { label: 'Artifacts', icon: Box, shortcut: '⌘6', keyshortcuts: 'Meta+6' },
 ]
 
 /** The expanded form: 236px, with labels and section titles. */
@@ -72,7 +77,14 @@ export const Expanded: Story = {
         <SideRailContent>
           <SideRailSection label="Workspace">
             {items.map((item, index) => (
-              <SideRailItem as="button" type="button" active={index === 0} label={item.label}>
+              <SideRailItem
+                as="button"
+                type="button"
+                active={index === 0}
+                label={item.label}
+                shortcut={item.shortcut}
+                keyshortcuts={item.keyshortcuts}
+              >
                 <item.icon />
               </SideRailItem>
             ))}
@@ -128,7 +140,14 @@ export const Collapsed: Story = {
         </SideRailHeader>
         <SideRailContent>
           {items.map((item, index) => (
-            <SideRailItem as="button" type="button" active={index === 0} label={item.label}>
+            <SideRailItem
+              as="button"
+              type="button"
+              active={index === 0}
+              label={item.label}
+              shortcut={item.shortcut}
+              keyshortcuts={item.keyshortcuts}
+            >
               <item.icon />
             </SideRailItem>
           ))}
@@ -166,7 +185,14 @@ export const BothForms: Story = {
             </SideRailHeader>
             <SideRailContent>
               {items.slice(0, 4).map((item, index) => (
-                <SideRailItem as="button" type="button" active={index === 0} label={item.label}>
+                <SideRailItem
+                  as="button"
+                  type="button"
+                  active={index === 0}
+                  label={item.label}
+                  shortcut={item.shortcut}
+                  keyshortcuts={item.keyshortcuts}
+                >
                   <item.icon />
                 </SideRailItem>
               ))}
@@ -186,7 +212,14 @@ export const BothForms: Story = {
             </SideRailHeader>
             <SideRailContent>
               {items.slice(0, 4).map((item, index) => (
-                <SideRailItem as="button" type="button" active={index === 0} label={item.label}>
+                <SideRailItem
+                  as="button"
+                  type="button"
+                  active={index === 0}
+                  label={item.label}
+                  shortcut={item.shortcut}
+                  keyshortcuts={item.keyshortcuts}
+                >
                   <item.icon />
                 </SideRailItem>
               ))}
@@ -222,7 +255,14 @@ export const WithControls: Story = {
             <Sparkles />
           </SideRailButton>
           {items.slice(0, 3).map((item, index) => (
-            <SideRailItem as="button" type="button" active={index === 0} label={item.label}>
+            <SideRailItem
+              as="button"
+              type="button"
+              active={index === 0}
+              label={item.label}
+              shortcut={item.shortcut}
+              keyshortcuts={item.keyshortcuts}
+            >
               <item.icon />
             </SideRailItem>
           ))}

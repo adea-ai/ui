@@ -47,14 +47,14 @@
     },
     "packages/ui": {
       "name": "@adea-ai/ui",
-      "version": "0.1.0",
+      "version": "0.2.1",
       "dependencies": {
         "@corvu/calendar": "^0.1.2",
         "@corvu/drawer": "^0.2.4",
         "@corvu/otp-field": "^0.1.4",
         "@corvu/resizable": "^0.2.5",
-        "@fontsource-variable/jetbrains-mono": "^5.3.0",
-        "@fontsource-variable/space-grotesk": "^5.3.0",
+        "@fontsource-variable/geist": "^5.3.0",
+        "@fontsource-variable/geist-mono": "^5.3.0",
         "@kobalte/core": "^0.13.14",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -203,9 +203,9 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
-    "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
+    "@fontsource-variable/geist": ["@fontsource-variable/geist@5.3.0", "", {}, "sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA=="],
 
-    "@fontsource-variable/space-grotesk": ["@fontsource-variable/space-grotesk@5.3.0", "", {}, "sha512-2IxmvfB08i9vnGB3Ym/AXvhRE+8XOjWMXIyDum03c+tPwH0FUoMNQfGpU8NXPxjbws0Vvss3AH0Zqt4oJBBAdw=="],
+    "@fontsource-variable/geist-mono": ["@fontsource-variable/geist-mono@5.3.0", "", {}, "sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw=="],
 
     "@google-automations/git-file-utils": ["@google-automations/git-file-utils@3.2.1", "", { "dependencies": { "@octokit/rest": "^20.1.1", "minimatch": "^10.2.4" } }, "sha512-LYOjAnGu/xtEkYYh6W3/1RmeK9HB/fV+xMe7nHc+WiDYrnxAJWBfcyUucoJtYS8XAhVUzNWrQvYDPRbxe67DNQ=="],
 

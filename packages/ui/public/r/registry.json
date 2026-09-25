@@ -1012,9 +1012,7 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [
-        "@adea-ai/ui/tooltip"
-      ],
+      "registryDependencies": [],
       "files": [
         {
           "path": "src/components/layout/side-rail/index.ts",
@@ -1166,8 +1164,8 @@
       "title": "Adea theme",
       "description": "The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.",
       "dependencies": [
-        "@fontsource-variable/jetbrains-mono@^5.3.0",
-        "@fontsource-variable/space-grotesk@^5.3.0",
+        "@fontsource-variable/geist@^5.3.0",
+        "@fontsource-variable/geist-mono@^5.3.0",
         "tw-animate-css@^1.4.0"
       ],
       "registryDependencies": [],

@@ -345,7 +345,7 @@ export const radiusTokens: TokenDefinition[] = [
     name: 'radius-lg',
     kind: 'dimension',
     description:
-      '12px — cards and panels. Also the knob: move this one value to re-round the whole system.',
+      '10px — cards and panels. Also the knob: move this one value to re-round the whole system.',
   },
   { name: 'radius-sm', kind: 'dimension', description: '6px — badges, keyboard keys, menu items.' },
   {
@@ -353,20 +353,20 @@ export const radiusTokens: TokenDefinition[] = [
     kind: 'dimension',
     description: '8px — every control: buttons, inputs, selects.',
   },
-  { name: 'radius-xl', kind: 'dimension', description: '16px — dialogs, menus, sheets.' },
-  { name: 'radius-2xl', kind: 'dimension', description: '20px — full-window surfaces and media.' },
+  { name: 'radius-xl', kind: 'dimension', description: '14px — dialogs, menus, sheets.' },
+  { name: 'radius-2xl', kind: 'dimension', description: '18px — full-window surfaces and media.' },
 ]
 
 export const typographyTokens: TokenDefinition[] = [
   {
     name: 'font-sans',
     kind: 'font-family',
-    description: 'Space Grotesk Variable, then the platform stack.',
+    description: 'Geist Variable, then the platform stack. The one family both applications share.',
   },
   {
     name: 'font-mono',
     kind: 'font-family',
-    description: 'JetBrains Mono Variable, then the platform stack.',
+    description: 'Geist Mono Variable, then the platform stack. Code, terminals, ids, paths.',
   },
   {
     name: 'text-2xs',
@@ -534,6 +534,82 @@ export const zIndexTokens: TokenDefinition[] = [
     description: 'Notifications. Above everything, so they are never hidden by a dialog.',
   },
 ]
+
+/**
+ * The accent axis.
+ *
+ * adea's accent presets, as a selection rather than a constant. `theme` is the
+ * default and means "the variant's own primary" — monochrome in adea's palette —
+ * and each named preset overrides the interactive roles through the
+ * `[data-accent]` blocks in `theme.css`.
+ *
+ * These are the same six presets `accentPresets` exports in adea's own
+ * `appearance.ts`, and the values match. A consumer's appearance picker and the
+ * workshop's theme toolbar read this one list, so the two cannot disagree about
+ * what a preset is called or what colour it is.
+ */
+export type AccentPreset = {
+  /** The `data-accent` value. `theme` is the variant's own primary. */
+  id: string
+  label: string
+  /** What the preset is for, in the gallery and in a picker. */
+  description: string
+  /** The accent as it appears in the light theme. Absent for `theme`. */
+  light?: string
+  /** The accent as it appears in the dark theme. Absent for `theme`. */
+  dark?: string
+}
+
+export const accentPresets: readonly AccentPreset[] = Object.freeze([
+  {
+    id: 'theme',
+    label: 'Theme',
+    description:
+      "The variant's own primary. Neutral in adea's palette, so the interface stays monochrome.",
+  },
+  {
+    id: 'violet',
+    label: 'Violet',
+    description: 'The default brand accent.',
+    light: '#6d28d9',
+    dark: '#a78bfa',
+  },
+  {
+    id: 'blue',
+    label: 'Blue',
+    description: 'Cool and conventional. Reads as informational.',
+    light: '#2563eb',
+    dark: '#60a5fa',
+  },
+  {
+    id: 'green',
+    label: 'Green',
+    description: 'Reads as confirmatory, which competes with the success status.',
+    light: '#15803d',
+    dark: '#4ade80',
+  },
+  {
+    id: 'amber',
+    label: 'Amber',
+    description: 'Warm and attention-drawing. Competes with the warning status.',
+    light: '#b45309',
+    dark: '#fbbf24',
+  },
+  {
+    id: 'cyan',
+    label: 'Cyan',
+    description: 'Quiet and technical. The least saturated of the set.',
+    light: '#0e7490',
+    dark: '#22d3ee',
+  },
+  {
+    id: 'pink',
+    label: 'Pink',
+    description: 'The loudest of the set. Use where the accent is decorative.',
+    light: '#be185d',
+    dark: '#f472b6',
+  },
+])
 
 /** Every token, in gallery order. */
 export const designTokens = {
