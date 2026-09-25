@@ -153,13 +153,16 @@ text actually sits on. Body text must clear **7:1**; secondary text, labels on f
 buttons and the focus ring must clear **4.5:1** (or **3:1** for the ring, which is a
 non-text indicator).
 
-The 13 variants in the catalogue are held to a **different and lower floor**, and the
-difference is deliberate rather than an oversight: a third-party palette is somebody
+The other 25 variants in the catalogue are held to a **different and lower floor**, and
+the difference is deliberate rather than an oversight: a third-party palette is somebody
 else's solved set, and re-solving it to 7:1 would stop it being that palette.
-`packages/ui/tests/themes.test.ts` runs **WCAG AA** over every variant — 4.5:1 for
-text, 3:1 for the ring — and records the result, so an imported theme is _measured_
-rather than assumed. At least one of them would have failed on its own published
-values.
+
+Those floors live in [`@adea-ai/themes`](https://github.com/adea-ai/themes), which
+normalizes the upstream palettes and runs **WCAG AA** over every one of them — 4.5:1 for
+text, 3:1 for the ring — so an imported theme is _measured_ rather than assumed. At least
+one of them would have failed on its own published values: Solarized Light's body text
+measures 4.28:1 against its own background, and the catalogue raises its lightness rather
+than shipping a theme that fails the standard.
 
 The token values were _solved_ for those floors rather than chosen and checked. The
 comments in `theme.css` record which surface fixed each number — for

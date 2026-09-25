@@ -3,19 +3,18 @@ import { expect, test } from '@playwright/test'
 import { fetchStories, openStory } from './stories'
 
 /**
- * Accessibility: every story, in both themes.
+ * Accessibility: every story, in every theme the lane can afford.
  *
  * This is the lane that makes "accessible" a property of the repository rather
  * than an intention. A violation fails the story it appears in, and the failure
  * names the rule, the element and the fix — which is what makes it actionable
  * rather than merely blocking.
  *
- * Both themes are checked because the system is not symmetric: the accent is
- * bright in dark and deep in light, and a pairing that clears a floor in one can
- * fail in the other. Colour contrast is measured by the numeric token suite in
- * `packages/ui/tests/tokens.test.ts` instead of by axe, because axe cannot
- * resolve a value inside `color-mix()` and would report false positives on the
- * status tints.
+ * Themes are checked because the system is not symmetric: the accent is bright in
+ * dark and deep in light, and a pairing that clears a floor in one can fail in the
+ * other. Colour contrast is measured by the numeric suites instead of by axe,
+ * because axe cannot resolve a value inside `color-mix()` and would report false
+ * positives on the status tints.
  *
  * The rules below are the ones axe can judge here. They are run explicitly rather
  * than as a preset so that the lane's coverage is readable from the source.
@@ -23,8 +22,38 @@ import { fetchStories, openStory } from './stories'
 
 const stories = await fetchStories()
 
-/** The two default variants. A catalogue theme earns this when it becomes a default. */
+/**
+ * The two default variants, swept over every story.
+ *
+ * A catalogue theme earns a place here when it becomes a default — these are the
+ * themes a user sees without choosing, so every component is measured in them.
+ */
 const THEMES = ['adea-dark', 'adea-light'] as const
+
+/**
+ * The imports, sampled — every story in each, but only a few themes.
+ *
+ * Running the full catalogue over the full story set would multiply this lane by
+ * twenty-seven for a signal that does not scale with it: a contrast floor is
+ * already measured numerically for every theme in `@adea-ai/themes`, so what axe
+ * adds here is *rendering* failures — a component that reads a role the bridge
+ * failed to map, an overlay that lands invisible against a particular canvas.
+ *
+ * So the sample is chosen adversarially rather than evenly. It takes the extremes:
+ * the palette with the faintest colours in the catalogue (Everforest Light, whose
+ * own comment grey is 1.9:1 on its canvas), the palette most likely to break a
+ * focus ring (Vesper, which is near-black with a single amber accent), the two
+ * whose status colours had to be deepened the most (Ayu Light, Gruvbox Light), and
+ * one representative mid-catalogue dark theme. A theme that passes here is not
+ * proven correct, but a bridge defect has nowhere to hide.
+ */
+const SAMPLED_THEMES = [
+  'everforest-light',
+  'ayu-light',
+  'gruvbox-light',
+  'vesper',
+  'tokyonight-night',
+] as const
 
 test.describe.configure({ mode: 'parallel' })
 
@@ -34,8 +63,11 @@ test.describe('storybook accessibility', () => {
     // green while checking zero stories.
     expect(stories.length).toBeGreaterThan(40)
   })
+  test('the theme sample is not empty', () => {
+    expect(SAMPLED_THEMES.length).toBeGreaterThan(0)
+  })
 
-  for (const theme of THEMES) {
+  for (const theme of [...THEMES, ...SAMPLED_THEMES]) {
     test.describe(`${theme} theme`, () => {
       for (const story of stories) {
         test(`${story.title} › ${story.name}`, async ({ page }) => {

@@ -76,6 +76,7 @@
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts"
   },
   "dependencies": {
+    "@adea-ai/themes": "0.1.0",
     "@corvu/calendar": "^0.1.2",
     "@corvu/drawer": "^0.2.4",
     "@corvu/otp-field": "^0.1.4",

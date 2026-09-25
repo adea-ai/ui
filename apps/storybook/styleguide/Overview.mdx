@@ -76,11 +76,17 @@ Each sets the same preference an application sets, and the library's own
 `ThemeProvider` applies it the same way — so a theme or an accent added to the
 catalogue appears here with no change to this workshop.
 
-**Theme** selects from the **13 variants** in the catalogue, across eight families:
-Adea, Catppuccin, Nord, Gruvbox, Rosé Pine, Tokyo Night, Dracula, Solarized. A variant
-declares its own appearance, so picking one pins it in the light or dark slot rather
-than being a fifth axis. Every variant is validated against the contrast floors in
-`packages/ui/tests/themes.test.ts` — the third-party palettes are _measured_, not
+**Theme** selects from the **27 variants** in the catalogue, across fourteen families:
+Adea, Ayu, Catppuccin, Dracula, Everforest, Gruvbox, Kanagawa, Monokai, Nord, One Dark,
+Rosé Pine, Solarized, Tokyo Night, Vesper. A variant declares its own appearance, so
+picking one pins it in the light or dark slot rather than being a fifth axis.
+
+Those variants live in [`@adea-ai/themes`](https://github.com/adea-ai/themes), which
+sources them from mature upstream projects and owns the schema and the normalization
+rather than the palettes themselves. `packages/ui/src/lib/themes.ts` is the bridge from
+the catalogue's canonical roles into this system's variable vocabulary, and
+`packages/ui/tests/themes.test.ts` checks that every catalogue entry survives it. The
+contrast floors live with the catalogue: the third-party palettes are _measured_, not
 hand-checked, and at least one would have failed on its own published values.
 
 **Typeface** is the font axis: Space Grotesk (the default the language was drawn
@@ -120,7 +126,7 @@ hours at a time, and the extra rows are worth more than the extra legibility of 
 **Every value is a token, and every token is measured.** No component contains a literal
 colour, size, radius or shadow, and the contrast floors the system promises are asserted
 on every build — `tests/tokens.test.ts` measures every pairing the system actually uses,
-and `tests/themes.test.ts` runs the same floors over all 13 variants. The numbers in
+and the catalogue runs its own floors over all 27 variants through `@adea-ai/themes`. The numbers in
 `theme.css` are solved rather than chosen, and the comments there record which surface
 fixed each one.
 
