@@ -174,6 +174,19 @@ const preview: Preview = {
       expanded: true,
     },
     options: {
+      /**
+       * The sidebar order.
+       *
+       * It has to match the real title tree, because a group that is not named here
+       * falls to the end of its parent alphabetically and nothing says so — the
+       * order just quietly stops applying. `Conversation` and `UI` were both absent
+       * for a while, which put fifteen components after the primitives they belong
+       * beside.
+       *
+       * The order is the reading order the **Overview** page describes: the rules,
+       * then the tokens, then the window, then the components by purpose, then the
+       * app-layer shapes.
+       */
       storySort: {
         order: [
           'Overview',
@@ -181,6 +194,7 @@ const preview: Preview = {
           'Foundations',
           [
             'Colour',
+            'Themes',
             'Typography',
             'Spacing and density',
             'Radius and elevation',
@@ -196,10 +210,27 @@ const preview: Preview = {
             'Status bar',
             'Panel',
             'Page',
+            'Resizable',
+            'Scroll area',
           ],
           'Primitives',
           ['Actions', 'Forms', 'Overlays', 'Navigation', 'Data display', 'Feedback'],
           'Composites',
+          ['Settings', 'List row', 'Stat', 'Account menu', 'Update Dialog', 'Workspace mark'],
+          'Conversation',
+          'UI',
+          [
+            'Board',
+            'Detail Panel',
+            'Status Chip',
+            'Entity Icon',
+            'Code Block',
+            'Diff Block',
+            'Calendar',
+            'Carousel',
+            'Chart',
+            'Navigation Menu',
+          ],
         ],
       },
     },
