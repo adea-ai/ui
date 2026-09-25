@@ -1,0 +1,25 @@
+{
+  "name": "calendar",
+  "type": "registry:ui",
+  "title": "Calendar",
+  "description": "",
+  "dependencies": [
+    "@corvu/calendar@^0.1.2",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/calendar/calendar.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/calendar/calendar.tsx"
+    },
+    {
+      "path": "src/components/ui/calendar/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/calendar/index.ts"
+    }
+  ]
+}

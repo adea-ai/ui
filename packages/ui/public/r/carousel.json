@@ -1,0 +1,26 @@
+{
+  "name": "carousel",
+  "type": "registry:ui",
+  "title": "Carousel",
+  "description": "",
+  "dependencies": [
+    "embla-carousel",
+    "embla-carousel-solid",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/carousel/carousel.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/carousel/carousel.tsx"
+    },
+    {
+      "path": "src/components/ui/carousel/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/carousel/index.ts"
+    }
+  ]
+}

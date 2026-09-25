@@ -219,6 +219,31 @@
       ]
     },
     {
+      "name": "calendar",
+      "type": "registry:ui",
+      "title": "Calendar",
+      "description": "",
+      "dependencies": [
+        "@corvu/calendar@^0.1.2",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/calendar/calendar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/calendar/calendar.tsx"
+        },
+        {
+          "path": "src/components/ui/calendar/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/calendar/index.ts"
+        }
+      ]
+    },
+    {
       "name": "card",
       "type": "registry:ui",
       "title": "Card",
@@ -235,6 +260,55 @@
           "path": "src/components/ui/card/index.ts",
           "type": "registry:ui",
           "target": "components/ui/card/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "carousel",
+      "type": "registry:ui",
+      "title": "Carousel",
+      "description": "",
+      "dependencies": [
+        "embla-carousel",
+        "embla-carousel-solid",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/carousel/carousel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/carousel/carousel.tsx"
+        },
+        {
+          "path": "src/components/ui/carousel/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/carousel/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "chart",
+      "type": "registry:ui",
+      "title": "Chart",
+      "description": "",
+      "dependencies": [
+        "chart.js",
+        "solid-chartjs"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/chart/chart.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chart/chart.tsx"
+        },
+        {
+          "path": "src/components/ui/chart/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/chart/index.ts"
         }
       ]
     },
@@ -736,6 +810,29 @@
           "path": "src/components/ui/modal-dialog/modal-dialog.tsx",
           "type": "registry:ui",
           "target": "components/ui/modal-dialog/modal-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "navigation-menu",
+      "type": "registry:ui",
+      "title": "Navigation Menu",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/navigation-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/index.ts"
+        },
+        {
+          "path": "src/components/ui/navigation-menu/navigation-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/navigation-menu.tsx"
         }
       ]
     },

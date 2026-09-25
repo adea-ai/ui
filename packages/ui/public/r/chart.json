@@ -1,0 +1,23 @@
+{
+  "name": "chart",
+  "type": "registry:ui",
+  "title": "Chart",
+  "description": "",
+  "dependencies": [
+    "chart.js",
+    "solid-chartjs"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/chart/chart.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/chart/chart.tsx"
+    },
+    {
+      "path": "src/components/ui/chart/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/chart/index.ts"
+    }
+  ]
+}
