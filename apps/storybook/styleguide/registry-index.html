@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Adea UI — component registry</title>
+    <style>
+      /* Standalone on purpose: this page is served from the registry origin, which
+         is a different document root from the workshop, so it cannot import the
+         design system's stylesheet or its fonts. It reads its values as custom
+         properties instead, which keeps it a fair self-portrait rather than a
+         close-enough one. */
+      :root {
+        color-scheme: dark;
+        --bg: oklch(0.1919 0.0126 270.7);
+        --card: oklch(0.2222 0.0144 266.9);
+        --text: oklch(0.9197 0.004 286.3);
+        --muted: oklch(0.63 0.0135 286);
+        --border: oklch(0.2739 0.0055 286);
+        --accent: oklch(0.7688 0.1687 161.9);
+        --accent-foreground: oklch(0 0 0);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          400 0.875rem/1.55 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 40rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        text-wrap: pretty;
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+      }
+      pre {
+        margin: 0 0 1.5rem;
+        padding: 0.75rem 1rem;
+        overflow-x: auto;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+      li + li {
+        border-top: 1px solid var(--border);
+      }
+      li a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        text-decoration: none;
+        color: inherit;
+      }
+      li a:hover {
+        background: var(--card);
+      }
+      li a span:last-child {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+      .dot {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 9999px;
+        background: var(--accent);
+        flex: none;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.375rem;
+        background: var(--accent);
+        color: var(--accent-foreground);
+        font-size: 0.7rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Adea UI — component registry</h1>
+      <p>
+        A shadcn registry for the Adea design system. Add a single component to any Solid project,
+        or open the workshop to review the whole library.
+      </p>
+
+      <pre><code>bunx shadcn@latest add https://adea-ai.github.io/ui/r/button.json</code></pre>
+
+      <ul>
+        <li>
+          <a href="https://github.com/adea-ai/ui">
+            <span class="dot" aria-hidden="true"></span>
+            <span>Repository and documentation</span>
+            <span>adea-ai/ui</span>
+          </a>
+        </li>
+        <li>
+          <a href="/r/registry.json">
+            <span class="dot" aria-hidden="true"></span>
+            <span>The whole registry</span>
+            <span>r/registry.json</span>
+          </a>
+        </li>
+        <li>
+          <a href="/r/theme.json">
+            <span class="dot" aria-hidden="true"></span>
+            <span>The design tokens</span>
+            <span>r/theme.json</span>
+          </a>
+        </li>
+      </ul>
+
+      <p style="margin-top: 1rem">
+        Every payload is generated from the source and validated against it, so an item cannot name
+        a file that does not exist or omit a dependency it needs.
+      </p>
+    </main>
+  </body>
+</html>

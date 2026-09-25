@@ -36,11 +36,17 @@ export function Switch(props: SwitchProps) {
     'labelClass',
     'descriptionClass',
     'children',
+    'aria-label',
+    'aria-labelledby',
   ])
 
   return (
     <KobalteSwitch class={cn('group/switch flex items-center gap-2.5', local.class)} {...rest}>
-      <KobalteSwitch.Input />
+      {/* The name belongs on the input; see Checkbox for why. */}
+      <KobalteSwitch.Input
+        aria-label={local['aria-label']}
+        aria-labelledby={local['aria-labelledby']}
+      />
       <KobalteSwitch.Control
         class={cn(
           'bg-input inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent',
@@ -73,6 +79,12 @@ export function Switch(props: SwitchProps) {
   )
 }
 
+/**
+ * The switch's own label. Valid only inside a `<Switch>`: it is Kobalte's label
+ * for that root's control, and outside one there is nothing to associate with.
+ * A label drawn *beside* a switch — a settings row with the control trailing —
+ * is plain text, and the switch takes an `aria-label` instead.
+ */
 export function SwitchLabel(props: ComponentProps<typeof KobalteSwitch.Label>) {
   const [local, rest] = splitProps(props, ['class'])
   return (

@@ -49,7 +49,7 @@ export function PopoverContent(props: PopoverContentProps) {
         {...rest}
       >
         {local.children}
-        <KobaltePopover.Arrow class={popoverArrow} />
+        <KobaltePopover.Arrow aria-hidden="true" class={popoverArrow} />
       </KobaltePopover.Content>
     </KobaltePopover.Portal>
   )

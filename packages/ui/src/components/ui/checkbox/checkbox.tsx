@@ -36,11 +36,21 @@ export function Checkbox(props: CheckboxProps) {
     'descriptionClass',
     'children',
     'indeterminate',
+    'aria-label',
+    'aria-labelledby',
   ])
 
   return (
     <KobalteCheckbox class={cn('group/checkbox flex items-start gap-2.5', local.class)} {...rest}>
-      <KobalteCheckbox.Input />
+      {/*
+       * The name goes on the input, which is what carries the value and takes
+       * focus. On the Root it would land on a plain div and name nothing — the
+       * box would announce its state with no subject.
+       */}
+      <KobalteCheckbox.Input
+        aria-label={local['aria-label']}
+        aria-labelledby={local['aria-labelledby']}
+      />
       <KobalteCheckbox.Control
         class={cn(
           'border-input bg-transparent flex size-4 shrink-0 items-center justify-center rounded-sm border',
@@ -69,6 +79,10 @@ export function Checkbox(props: CheckboxProps) {
   )
 }
 
+/**
+ * The box's own label. Valid only inside a `<Checkbox>`, for the same reason as
+ * `SwitchLabel`: outside its root there is no control to associate with.
+ */
 export function CheckboxLabel(props: ComponentProps<typeof KobalteCheckbox.Label>) {
   const [local, rest] = splitProps(props, ['class'])
   return <KobalteCheckbox.Label class={cn('text-sm font-medium', local.class)} {...rest} />

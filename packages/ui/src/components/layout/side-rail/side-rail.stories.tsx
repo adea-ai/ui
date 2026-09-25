@@ -158,7 +158,7 @@ export const BothForms: Story = {
       <div class="flex flex-col gap-3">
         <code class="text-xs text-muted-foreground">collapsed · 58px</code>
         <div class="h-[28rem] overflow-hidden rounded-lg border border-border">
-          <SideRail collapsed>
+          <SideRail collapsed aria-label="Primary, collapsed">
             <SideRailHeader>
               <span class="flex size-6 items-center justify-center rounded-md bg-primary text-2xs font-semibold text-primary-foreground">
                 A
@@ -177,7 +177,7 @@ export const BothForms: Story = {
       <div class="flex flex-col gap-3">
         <code class="text-xs text-muted-foreground">expanded · 236px</code>
         <div class="h-[28rem] overflow-hidden rounded-lg border border-border">
-          <SideRail>
+          <SideRail aria-label="Primary, expanded">
             <SideRailHeader>
               <span class="flex size-6 items-center justify-center rounded-md bg-primary text-2xs font-semibold text-primary-foreground">
                 A

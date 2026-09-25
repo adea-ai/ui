@@ -95,7 +95,7 @@ export function TooltipContent(props: TooltipContentProps) {
         {...rest}
       >
         {local.children}
-        <KobalteTooltip.Arrow />
+        <KobalteTooltip.Arrow aria-hidden="true" />
       </KobalteTooltip.Content>
     </KobalteTooltip.Portal>
   )

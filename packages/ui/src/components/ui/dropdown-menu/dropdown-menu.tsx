@@ -59,7 +59,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
         )}
         {...rest}
       >
-        {!local.hideArrow && <KobalteDropdownMenu.Arrow class={popoverArrow} />}
+        {!local.hideArrow && <KobalteDropdownMenu.Arrow aria-hidden="true" class={popoverArrow} />}
         {local.children}
       </KobalteDropdownMenu.Content>
     </KobalteDropdownMenu.Portal>

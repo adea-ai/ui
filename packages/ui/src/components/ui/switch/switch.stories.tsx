@@ -64,10 +64,17 @@ export const Controlled: Story = {
 
     return (
       <div class="flex w-96 flex-col gap-4">
+        {/*
+         * The label here is plain markup, not `SwitchLabel`: that part is
+         * Kobalte's label for a switch inside its own root, and using it
+         * outside one has no control to associate with. A label drawn beside
+         * the switch — a settings row — is text, and the switch carries its own
+         * `aria-label`.
+         */}
         <div class="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <div class="flex flex-col gap-0.5">
-            <SwitchLabel>Reduce transparency</SwitchLabel>
-            <SwitchDescription>Solid panels instead of frosted ones.</SwitchDescription>
+            <div class="text-sm font-medium">Reduce transparency</div>
+            <p class="text-sm text-muted-foreground">Solid panels instead of frosted ones.</p>
           </div>
           <Switch checked={enabled()} onChange={setEnabled} aria-label="Reduce transparency" />
         </div>

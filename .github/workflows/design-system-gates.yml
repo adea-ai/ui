@@ -40,7 +40,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@dcc9425c4d67649ea7443d5f1df5d37e8a95b0fc # v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
 
@@ -65,7 +65,10 @@ jobs:
     name: Workshop
     if: vars.CI_BILLING_PAUSED != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The lane builds the workshop, installs a browser, then loads every story in
+    # both themes — 472 page loads. Forty-five minutes is comfortably above a
+    # measured run and still bounds a genuine hang.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -73,7 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@dcc9425c4d67649ea7443d5f1df5d37e8a95b0fc # v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
 
@@ -83,13 +86,17 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
-      # Builds the workshop, then loads every story in a real browser.
+      - name: Build the workshop
+        run: bun run storybook:build
+
+      # Loads every story in a real browser and checks it, and presses the things
+      # a user presses in the stories that document a behaviour.
       - name: Check every story for accessibility violations and interactions
         run: bun run test:storybook
 
       - name: Upload the accessibility report
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: accessibility-report
           path: apps/storybook/test-results/
@@ -98,7 +105,7 @@ jobs:
 
       - name: Upload the built workshop
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: storybook-static
           path: apps/storybook/storybook-static/

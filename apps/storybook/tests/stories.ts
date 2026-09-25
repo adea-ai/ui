@@ -17,7 +17,7 @@ export type StoryEntry = {
   type: string
 }
 
-const BASE_URL = process.env['STORYBOOK_URL'] ?? 'http://127.0.0.1:6106'
+const BASE_URL = (process.env['STORYBOOK_URL'] ?? 'http://127.0.0.1:6106').replace(/\/$/, '')
 
 export async function fetchStories(): Promise<StoryEntry[]> {
   const response = await fetch(`${BASE_URL}/index.json`)
