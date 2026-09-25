@@ -10,6 +10,7 @@ export {
 export {
   ThemeProvider,
   defaultThemeSelection,
+  inlineScriptLiteral,
   themeScript,
   useTheme,
   type ThemeContextValue,
