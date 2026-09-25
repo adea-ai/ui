@@ -23,16 +23,24 @@ const meta = {
       },
     },
   },
-  // The slides are the required prop, so they live in the meta and the default
-  // story renders from them. The variants supply their own `render` instead.
+  // `children` is a required prop, so the meta carries it — a story that supplies
+  // only a `render` is still typed rather than loosely asserted. The stories own
+  // their own markup, which is also why there is no decorator: a decorator that
+  // renders a container instead of the story mounts nothing.
   args: { dots: true, children: slides.map((label) => slide(label)) },
-  decorators: [() => <div class="w-[36rem]" />],
 } satisfies Meta<typeof Carousel>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Default: Story = {
+  render: () => <div class="w-[36rem]">{slideRow()}</div>,
+}
+
+/** The six slides, as the default story's markup. */
+function slideRow() {
+  return <Carousel dots>{slides.map((label) => slide(label))}</Carousel>
+}
 
 /** Two per view: `flex-basis` on the slide is what makes it work. */
 export const TwoUp: Story = {
