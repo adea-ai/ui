@@ -33,10 +33,22 @@ import { fileURLToPath } from 'node:url'
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = join(PACKAGE_ROOT, 'src')
-const COMPONENT_ROOTS = [
-  join(SRC, 'components', 'ui'),
-  join(SRC, 'components', 'layout'),
-  join(SRC, 'components', 'composites'),
+/**
+ * Where components live.
+ *
+ * `group` is the directory between `components/` and the component, and it is
+ * also what a consumer's target path is built from — except for a `self` root,
+ * which *is* the component rather than a directory of them. The conversation
+ * layer is the one such root: it is a single module of several components
+ * (`MessageRow`, `MessageComposer`, `ThreadPanel`, …) rather than a folder per
+ * component, and it belongs in the registry for the same reason the rest do — a
+ * consumer taking `MessageRow` should not have to adopt the package.
+ */
+const COMPONENT_ROOTS: readonly { dir: string; group: string; self?: boolean }[] = [
+  { dir: join(SRC, 'components', 'ui'), group: 'ui' },
+  { dir: join(SRC, 'components', 'layout'), group: 'layout' },
+  { dir: join(SRC, 'components', 'composites'), group: 'composites' },
+  { dir: join(SRC, 'components', 'conversation'), group: 'conversation', self: true },
 ]
 const PUBLIC_R = join(PACKAGE_ROOT, 'public', 'r')
 const REGISTRY_PATH = join(PACKAGE_ROOT, 'registry.json')
@@ -59,17 +71,25 @@ type RegistryItem = {
   files: { path: string; type: RegistryItemType; target: string }[]
 }
 
+type ComponentFolder = { slug: string; dir: string; group: string; self: boolean }
+
 /** Every folder under a component root that has an `index.ts`, keyed by slug. */
-function findComponentFolders(): { slug: string; dir: string; group: string }[] {
-  const found: { slug: string; dir: string; group: string }[] = []
+function findComponentFolders(): ComponentFolder[] {
+  const found: ComponentFolder[] = []
 
   for (const root of COMPONENT_ROOTS) {
-    for (const entry of readdirSync(root).toSorted()) {
-      const dir = join(root, entry)
+    // A root that carries its own index is a single component, not a group of
+    // them — and its target has no group segment.
+    if (root.self) {
+      found.push({ slug: root.group, dir: root.dir, group: root.group, self: true })
+      continue
+    }
+    for (const entry of readdirSync(root.dir).toSorted()) {
+      const dir = join(root.dir, entry)
       if (!statSync(dir).isDirectory()) continue
       // A folder without an index is not a public item; it is a private helper.
       if (!readdirSync(dir).includes('index.ts')) continue
-      found.push({ slug: entry, dir, group: root.split('/').at(-1) ?? 'ui' })
+      found.push({ slug: entry, dir, group: root.group, self: false })
     }
   }
 
@@ -212,7 +232,9 @@ function buildItems() {
       files: files.map((file) => ({
         path: relative(PACKAGE_ROOT, file),
         type: 'registry:ui' as const,
-        target: `components/${folder.group}/${folder.slug}/${file.split('/').at(-1)}`,
+        target: folder.self
+          ? `components/${folder.slug}/${file.split('/').at(-1)}`
+          : `components/${folder.group}/${folder.slug}/${file.split('/').at(-1)}`,
       })),
     }
   })

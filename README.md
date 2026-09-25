@@ -21,17 +21,25 @@ set of hand-rolled controls: shadcn supplies the token vocabulary and the varian
 convention, Kobalte and corvu supply the accessible behaviour, and every visual
 decision lives in one place.
 
-- **53 components** — 44 primitives, 7 window-layout regions, 3 composites.
+- **74 registry items** — 59 primitives, 7 window-layout regions, 6 composites, and
+  the conversation module — plus the app-layer shapes both applications share:
+  board, detail panel, status, entity icon, code, diff, update.
 - **One token file.** Semantic OKLCH colours, an eight-rung type scale, a six-rung
   control ladder, radius, elevation, motion and a z-index stack. Contrast is
   _measured_ in tests, not reviewed by eye.
+- **Four user-facing axes** — appearance, accent, font and density — each a
+  `data-*` attribute and a set of tokens. Seventeen themes ship in the catalogue,
+  every one validated against WCAG AA floors.
 - **Dark-first**, with light as an equal — not a lesser inversion.
 - **The shell is a component.** Side rail, sidebar, top bar, status bar, panels and
   their geometry are tokens, so the two applications cannot drift apart by pixels.
+- **Tree-shaking is measured, not claimed.** Importing one component costs 18–32 kB
+  gzipped against 275 kB for the library, and the gate fails if that stops being
+  true. The chart splits from itself: one chart type is 10 kB cheaper than seven.
 - **Storybook 10** with per-story accessibility checks, MDX documentation and token
   galleries. It is the review surface; if a component is not in it, it is not done.
-- **A shadcn registry**, so a consumer can take one component without adopting the
-  package — or install the whole thing from npm.
+- **A shadcn registry** of 74 items, so a consumer can take one component without
+  adopting the package — or install the whole thing from npm.
 
 ## Install
 
@@ -120,8 +128,9 @@ code would be.
 
 ## Using this with Adea and Cortana
 
-Both applications consume `@adea-ai/ui` as a workspace or npm dependency and import
-components from the package root. Neither keeps a local component library.
+Both applications consume `@adea-ai/ui` and import components from the package
+root. Neither keeps a local component library. The component-by-component mapping
+from adea's current packages is in [docs/consumption.md](docs/consumption.md).
 
 ```tsx
 import {
@@ -153,6 +162,20 @@ import {
 
 The full-window composition is documented in Storybook under **Layout → App
 shell**, and the exact arrangement each application uses is one of its stories.
+
+The rule the shared components follow: **the library owns the shape, the
+application owns the model.** `Board` takes the caller's column ids and a `canDrop`
+predicate rather than knowing what a task is; `AccountMenu` takes the caller's item
+list; `EntityIcon` takes a name and an optional glyph. A component that decided its
+own list, its own icons or its own column names could only serve one product.
+
+## Where to read more
+
+| Document                                           | What it covers                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| [docs/design-language.md](docs/design-language.md) | The visual decisions: palette, type, the control ladder, the rail   |
+| [docs/conventions.md](docs/conventions.md)         | How components are written here — variants, tokens, comments        |
+| [docs/consumption.md](docs/consumption.md)         | Installing, the registry, re-hueing, density, and the migration map |
 
 ## Contributing
 

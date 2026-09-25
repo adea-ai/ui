@@ -1589,6 +1589,54 @@
       ]
     },
     {
+      "name": "conversation",
+      "type": "registry:ui",
+      "title": "Conversation",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/kbd",
+        "@adea-ai/ui/spinner",
+        "@adea-ai/ui/textarea"
+      ],
+      "files": [
+        {
+          "path": "src/components/conversation/conversation-avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/conversation-avatar.tsx"
+        },
+        {
+          "path": "src/components/conversation/conversation-surface.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/conversation-surface.tsx"
+        },
+        {
+          "path": "src/components/conversation/index.ts",
+          "type": "registry:ui",
+          "target": "components/conversation/index.ts"
+        },
+        {
+          "path": "src/components/conversation/message-composer.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/message-composer.tsx"
+        },
+        {
+          "path": "src/components/conversation/message-row.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/message-row.tsx"
+        },
+        {
+          "path": "src/components/conversation/thread-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/thread-panel.tsx"
+        }
+      ]
+    },
+    {
       "name": "theme",
       "type": "registry:style",
       "title": "Adea theme",
