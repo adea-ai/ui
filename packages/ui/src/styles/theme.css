@@ -381,6 +381,25 @@
  * wants the platform's own face — which is what a terminal and a code editor
  * usually look best in — should be able to say so without losing the rest of the
  * system.
+ *
+ * ## Width compensation
+ *
+ * A monospace face is roughly 20% wider than Space Grotesk at the same size, and
+ * every measurement in this library — control heights, a rail's label budget, a
+ * button's padding — was drawn against the proportional face. Switching the UI
+ * font to mono without compensating therefore overflows exactly the tight places:
+ * a rail label truncates, a two-word button wraps, a status pill clips.
+ *
+ * `--ui-tracking` and `--ui-word-spacing` are the remedy, and they are tokens
+ * rather than one blanket rule because the two families want *opposite*
+ * treatment. Mono's space character is a full advance-width cell — three times
+ * Space Grotesk's — so a two-word label reads as two floating words and needs
+ * negative word spacing; its glyphs also carry more sidebearing, so a tighter
+ * track is safe. Neither correction is wanted on a proportional face, which is
+ * why the defaults are `normal`.
+ *
+ * Apply them where chrome is measured: `tracking-(--ui-tracking)
+ * word-spacing-(--ui-word-spacing)`. Body copy does not need them — it wraps.
  * ------------------------------------------------------------------------- */
 
 [data-font='system'] {
@@ -394,10 +413,14 @@
 [data-font='geist-mono'] {
   --font-sans: var(--font-family-geist-mono);
   --font-mono: var(--font-family-geist-mono);
+  --ui-tracking: -0.03em;
+  --ui-word-spacing: -1.5px;
 }
 [data-font='jetbrains-mono'] {
   --font-sans: var(--font-family-jetbrains-mono);
   --font-mono: var(--font-family-jetbrains-mono);
+  --ui-tracking: -0.04em;
+  --ui-word-spacing: -2.5px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -432,6 +455,11 @@
   --font-family-geist-mono: 'Geist Mono Variable', 'Geist Mono', monospace;
   --font-family-system: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-family-system-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Width compensation for the mono UI fonts. `normal` on the proportional face,
+     tightened by the `[data-font]` blocks above when the UI font is monospace. */
+  --ui-tracking: normal;
+  --ui-word-spacing: normal;
 
   /* Space Grotesk is the default because it is the face the visual language was
      drawn against: the donor this system's structure comes from sets it, and its

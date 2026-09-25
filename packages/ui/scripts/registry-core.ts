@@ -92,6 +92,9 @@ function componentFiles(dir: string): string[] {
       // into someone's project would ship our documentation as their source.
       if (entry.endsWith('.stories.tsx') || entry.endsWith('.stories.ts')) continue
       if (entry.endsWith('.mdx')) continue
+      // Tests are the same: a consumer wants the component, not our assertions
+      // about it, and `bun:test` is not a dependency they agreed to.
+      if (/\.test\.(ts|tsx)$/.test(entry)) continue
       if (!/\.(ts|tsx)$/.test(entry)) continue
       files.push(path)
     }

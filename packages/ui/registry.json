@@ -262,6 +262,30 @@
       ]
     },
     {
+      "name": "code-block",
+      "type": "registry:ui",
+      "title": "Code Block",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/code-block/code-block.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/code-block/code-block.tsx"
+        },
+        {
+          "path": "src/components/ui/code-block/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/code-block/index.ts"
+        }
+      ]
+    },
+    {
       "name": "collapsible",
       "type": "registry:ui",
       "title": "Collapsible",
@@ -396,6 +420,26 @@
           "path": "src/components/ui/dialog/index.ts",
           "type": "registry:ui",
           "target": "components/ui/dialog/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "diff-block",
+      "type": "registry:ui",
+      "title": "Diff Block",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/diff-block/diff-block.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diff-block/diff-block.tsx"
+        },
+        {
+          "path": "src/components/ui/diff-block/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/diff-block/index.ts"
         }
       ]
     },

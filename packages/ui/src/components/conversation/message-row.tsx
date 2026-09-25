@@ -3,6 +3,7 @@ import type { ComponentProps, JSX } from 'solid-js'
 import { For, Show, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button } from '../ui/button/button'
+import { CodeBlock, InlineCode } from '../ui/code-block'
 import { ConversationAvatar, type ConversationAvatarKind } from './conversation-avatar'
 
 /**
@@ -45,6 +46,12 @@ export type MessageRowProps = Omit<ComponentProps<'article'>, 'onSelect'> & {
   edited?: boolean
   /** Set while the message is in flight. */
   pending?: boolean
+  /**
+   * Set while tokens are still arriving. Shows a caret after the body and drops
+   * the delivered tick; distinct from `pending`, which is the *sending* state of
+   * a message the user wrote. A turn can be neither, either, or (briefly) both.
+   */
+  streaming?: boolean
   /** Set when the message has been deleted, which replaces the body. */
   deleted?: boolean
   /** Draw attention to this row, e.g. after arriving from a search result. */
@@ -75,6 +82,7 @@ export function MessageRow(props: MessageRowProps) {
     'dateTime',
     'edited',
     'pending',
+    'streaming',
     'deleted',
     'highlighted',
     'avatar',
@@ -163,7 +171,10 @@ export function MessageRow(props: MessageRowProps) {
             <Show when={local.pending}>
               <span role="status">sending…</span>
             </Show>
-            <Show when={mirrored() && !local.pending && !local.deleted}>
+            <Show when={local.streaming}>
+              <span role="status">responding…</span>
+            </Show>
+            <Show when={mirrored() && !local.pending && !local.streaming && !local.deleted}>
               <span aria-label="Delivered" class="inline-flex">
                 <CheckCheck aria-hidden="true" class="size-3" />
               </span>
@@ -270,28 +281,101 @@ export function MessageDayDivider(props: ComponentProps<'div'> & { label: string
   )
 }
 
-/** Renders a body's code fences as blocks, which a plain `<p>` cannot. */
-export function MessageBody(props: ComponentProps<'div'> & { text: string }) {
-  const [local, rest] = splitProps(props, ['class', 'text'])
+/**
+ * Renders a body's code fences as blocks, which a plain `<p>` cannot.
+ *
+ * The fence grammar is the part worth owning: a fence opens with ``` and an
+ * optional language, and closes with ``` on its own. Everything outside a fence
+ * is prose, and inside it the language tag belongs to the block's header rather
+ * than to the code.
+ *
+ * Inline code — a single backtick pair inside a line — is rendered too, because
+ * the alternative is an identifier in the prose that is indistinguishable from a
+ * word. Only the *first* pair on a line is treated as code by the splitter here,
+ * which is the common case; a caller that needs full inline grammar should pass
+ * already-rendered children instead of `text`.
+ */
+export function MessageBody(
+  props: ComponentProps<'div'> & {
+    text: string
+    /** True while the turn is still streaming, so a partial fence renders as a block. */
+    streaming?: boolean
+  }
+) {
+  const [local, rest] = splitProps(props, ['class', 'text', 'streaming'])
+
+  /**
+   * Split on fences, then on inline code. `filter(Boolean)` because a text that
+   * begins with a fence produces an empty leading segment.
+   */
+  const segments = () =>
+    local.text
+      .split(/(```[\s\S]*?(?:```|$))/g)
+      .filter(Boolean)
+      .map((segment) => {
+        if (!segment.startsWith('```')) {
+          return { kind: 'prose' as const, value: segment }
+        }
+        const body = segment.replace(/^```/, '').replace(/```$/, '')
+        // The language is the first token on the opening line, and only when the
+        // fence actually carried one — a fence with a bare newline has none.
+        const newline = body.indexOf('\n')
+        const firstLine = newline === -1 ? '' : body.slice(0, newline)
+        const language = /^[\w+#.-]+$/.test(firstLine.trim()) ? firstLine.trim() : undefined
+        return {
+          kind: 'code' as const,
+          value: language ? body.slice(newline + 1) : body,
+          language,
+        }
+      })
+
+  const last = () => segments().at(-1)
 
   return (
     <div data-slot="message-body" class={cn('flex flex-col gap-2', local.class)} {...rest}>
-      <For each={local.text.split(/(```[\s\S]*?```)/g).filter(Boolean)}>
-        {(block) => (
-          <Show
-            when={block.startsWith('```') && block.endsWith('```')}
-            fallback={<p class="whitespace-pre-wrap">{block}</p>}
-          >
-            <pre
-              tabindex={0}
-              aria-label="Code block"
-              class="bg-surface-sunken overflow-x-auto rounded-md border border-border p-2.5 font-mono text-xs"
-            >
-              <code>{block.slice(3, -3).replace(/^\w+\n/, '')}</code>
-            </pre>
+      <For each={segments()}>
+        {(segment) => (
+          <Show when={segment.kind === 'code'} fallback={<Prose text={segment.value} />}>
+            <CodeBlock
+              code={segment.value}
+              language={segment.kind === 'code' ? segment.language : undefined}
+              complete={!local.streaming}
+            />
           </Show>
         )}
       </For>
+      {/*
+        The caret trails the last segment, and only when that segment is prose: a
+        streaming code block already carries its own generating indicator, and two
+        of them on one turn read as two streams.
+      */}
+      <Show when={local.streaming && last()?.kind === 'prose'}>
+        <span class="streaming-caret" aria-hidden="true" />
+      </Show>
     </div>
+  )
+}
+
+/**
+ * A run of prose, with its inline code marked. The split is non-greedy and
+ * requires a non-empty span, so an unmatched backtick stays a backtick rather
+ * than swallowing the rest of the paragraph.
+ */
+function Prose(props: { text: string }) {
+  const parts = () => props.text.split(/(`[^`\n]+`)/g).filter(Boolean)
+
+  return (
+    <p class="whitespace-pre-wrap">
+      <For each={parts()}>
+        {(part) => (
+          <Show
+            when={part.startsWith('`') && part.endsWith('`') && part.length > 2}
+            fallback={part}
+          >
+            <InlineCode>{part.slice(1, -1)}</InlineCode>
+          </Show>
+        )}
+      </For>
+    </p>
   )
 }

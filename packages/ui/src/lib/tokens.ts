@@ -399,6 +399,18 @@ export const typographyTokens: TokenDefinition[] = [
     description: "The platform's own monospace face.",
   },
   {
+    name: 'ui-tracking',
+    kind: 'text',
+    description:
+      'Letter spacing for measured chrome. `normal` on a proportional face, tightened when the UI font is monospace — which is roughly 20% wider at the same size.',
+  },
+  {
+    name: 'ui-word-spacing',
+    kind: 'text',
+    description:
+      "Word spacing for measured chrome. Mono's space is a full advance-width cell, so a two-word label reads as two floating words without this.",
+  },
+  {
     name: 'text-2xs',
     kind: 'text',
     description: '11px — the smallest label the system permits: kbd keys, status bar.',

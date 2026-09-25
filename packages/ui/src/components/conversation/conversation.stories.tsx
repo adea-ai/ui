@@ -143,13 +143,41 @@ export const WithSlots: Story = {
 }
 
 /** A code fence in a body, which a plain paragraph cannot render. */
+/**
+ * A fenced block in a body is a real `CodeBlock` — header, copy, focusable
+ * scroller — and an inline span is `InlineCode`. Both are rendered from the text,
+ * so a caller that has markdown gets the code surface without a markdown library.
+ */
 export const CodeInBody: Story = {
   render: () => (
     <div class="flex w-[44rem] flex-col gap-1 rounded-xl border border-border p-2">
       <MessageRow senderKind="agent" senderName="Ada Lovelace" time="09:24">
         <MessageBody
           text={
-            'Here is the change:\n\n```ts\nconst digest = await hashTree(base)\n```\n\nIt replaces the stream loop.'
+            'Here is the change:\n\n```ts\nconst digest = await hashTree(base)\n```\n\nIt replaces the stream loop, and the `keyedRows` helper keeps the rows alive.'
+          }
+        />
+      </MessageRow>
+    </div>
+  ),
+}
+
+/**
+ * `streaming` is a different state from `pending`. `pending` is the user's own
+ * message still being sent; `streaming` is a turn that is still arriving. The
+ * caret is what says "more is coming" without a spinner competing with the text.
+ */
+export const Streaming: Story = {
+  render: () => (
+    <div class="flex w-[44rem] flex-col gap-1 rounded-xl border border-border p-2">
+      <MessageRow senderKind="user" senderName="You" time="09:23" pending>
+        <MessageBody text="Summarise the diff for me" />
+      </MessageRow>
+      <MessageRow senderKind="agent" senderName="Ada Lovelace" streaming>
+        <MessageBody
+          streaming
+          text={
+            'The change replaces the stream loop with a digest:\n\n```ts\nconst digest = await hashTree(base)'
           }
         />
       </MessageRow>
