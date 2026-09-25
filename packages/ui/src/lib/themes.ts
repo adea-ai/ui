@@ -193,22 +193,6 @@ const ROLE_FOR: Readonly<Record<keyof ThemeColors, keyof AdeaThemeRecord['colors
   sidebarBorder: 'border',
 }
 
-/**
- * The four syntax roles a diff needs.
- *
- * `syntaxRoles` covers the twelve roles a highlighter and a reader share; these four
- * are read from the same ANSI colours `git diff` uses, so a change in the editor and
- * the same change in a conversation agree. They move into the catalogue in the next
- * release; until then this keeps the mapping in one place rather than in every
- * component that renders a diff.
- */
-const DIFF_ROLES = Object.freeze({
-  diffAdd: 'green',
-  diffDelete: 'red',
-  diffHunk: 'cyan',
-  searchMatch: 'yellow',
-} as const)
-
 /** Builds the design system's view of one catalogue entry. */
 function toVariant(theme: AdeaThemeRecord): ThemeVariant {
   const colors = {} as ThemeColors
@@ -254,10 +238,10 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
       operator: syntax.operator,
       heading: syntax.heading,
       link: syntax.link,
-      diffAdd: theme.ansi[DIFF_ROLES.diffAdd],
-      diffDelete: theme.ansi[DIFF_ROLES.diffDelete],
-      diffHunk: theme.ansi[DIFF_ROLES.diffHunk],
-      searchMatch: theme.ansi[DIFF_ROLES.searchMatch],
+      diffAdd: syntax.diffAdd,
+      diffDelete: syntax.diffDelete,
+      diffHunk: syntax.diffHunk,
+      searchMatch: syntax.searchMatch,
     },
     chart: chartSeries(theme),
     provenance: {
