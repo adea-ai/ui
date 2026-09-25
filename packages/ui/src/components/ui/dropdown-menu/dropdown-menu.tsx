@@ -98,6 +98,24 @@ export function DropdownMenuItem(
   )
 }
 
+/**
+ * The chord drawn at a row's trailing edge.
+ *
+ * A component as well as the `shortcut` prop on an item, because a caller composing
+ * a row by hand needs the same treatment — and because the alternative is every
+ * caller inventing the same mono-and-dimmed span.
+ */
+export function DropdownMenuShortcut(props: ComponentProps<'span'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return (
+    <span
+      data-slot="dropdown-menu-shortcut"
+      class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', local.class)}
+      {...rest}
+    />
+  )
+}
+
 export function DropdownMenuCheckboxItem(
   props: ComponentProps<typeof KobalteDropdownMenu.CheckboxItem>
 ) {

@@ -43,6 +43,7 @@ export * from './components/ui/input-otp'
 export * from './components/ui/kbd'
 export * from './components/ui/label'
 export * from './components/ui/menubar'
+export * from './components/ui/modal-dialog'
 export * from './components/ui/pagination'
 export * from './components/ui/popover'
 export * from './components/ui/progress'
@@ -83,9 +84,11 @@ export * from './components/conversation'
 export * from './components/theme'
 
 /* --- Composites ---------------------------------------------------------- */
+export * from './components/composites/account-menu'
 export * from './components/composites/list-row'
 export * from './components/composites/settings'
 export * from './components/composites/stat'
+export * from './components/composites/workspace-mark'
 
 /* --- Library ------------------------------------------------------------- */
 export { cn } from './lib/utils'

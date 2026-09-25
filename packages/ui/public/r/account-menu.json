@@ -1,0 +1,25 @@
+{
+  "name": "account-menu",
+  "type": "registry:ui",
+  "title": "Account Menu",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/dropdown-menu"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/account-menu/account-menu.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/account-menu/account-menu.tsx"
+    },
+    {
+      "path": "src/components/composites/account-menu/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/account-menu/index.ts"
+    }
+  ]
+}

@@ -610,6 +610,28 @@
       ]
     },
     {
+      "name": "modal-dialog",
+      "type": "registry:ui",
+      "title": "Modal Dialog",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/dialog"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/modal-dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/modal-dialog/index.ts"
+        },
+        {
+          "path": "src/components/ui/modal-dialog/modal-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/modal-dialog/modal-dialog.tsx"
+        }
+      ]
+    },
+    {
       "name": "pagination",
       "type": "registry:ui",
       "title": "Pagination",
@@ -1202,6 +1224,31 @@
       ]
     },
     {
+      "name": "account-menu",
+      "type": "registry:ui",
+      "title": "Account Menu",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/dropdown-menu"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/account-menu/account-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/account-menu/account-menu.tsx"
+        },
+        {
+          "path": "src/components/composites/account-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/account-menu/index.ts"
+        }
+      ]
+    },
+    {
       "name": "list-row",
       "type": "registry:ui",
       "title": "List Row",
@@ -1262,6 +1309,28 @@
           "path": "src/components/composites/stat/stat.tsx",
           "type": "registry:ui",
           "target": "components/composites/stat/stat.tsx"
+        }
+      ]
+    },
+    {
+      "name": "workspace-mark",
+      "type": "registry:ui",
+      "title": "Workspace Mark",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/tooltip"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/workspace-mark/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-mark/index.ts"
+        },
+        {
+          "path": "src/components/composites/workspace-mark/workspace-mark.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-mark/workspace-mark.tsx"
         }
       ]
     },
