@@ -65,7 +65,10 @@ jobs:
     name: Workshop
     if: vars.CI_BILLING_PAUSED != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The lane builds the workshop, installs a browser, then loads every story in
+    # both themes — 472 page loads. Forty-five minutes is comfortably above a
+    # measured run and still bounds a genuine hang.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

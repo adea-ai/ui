@@ -26,15 +26,15 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,
   /*
-   * Two workers, in CI and locally.
+   * Four workers on CI, two locally.
    *
-   * The lane serves the workshop from a single static process, and each worker
-   * loads a full story page. Six workers against one server means every page
-   * waits on the others, and tests that pass in isolation time out — a flake
-   * that looks like a component defect and is not one. The lane takes about
-   * three minutes at this width, which is cheaper than the diagnosis.
+   * The lane serves the workshop from a single static process and each worker
+   * loads a full story page, so an unbounded fan-out makes every page wait on the
+   * others — tests that pass in isolation time out, and the flake looks like a
+   * component defect. CI gets a dedicated runner and can afford four; a developer
+   * machine is usually doing something else at the same time.
    */
-  workers: 2,
+  workers: process.env['CI'] ? 4 : 2,
   reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
   /*
    * Generous, because a story page is a full component tree plus the design
