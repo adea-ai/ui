@@ -27,11 +27,27 @@ describe('the workshop theme global', () => {
     expect(missing).toEqual([])
   })
 
-  /** A theme with no class would be a variant the workshop cannot preview. */
-  test('the map has no id the catalogue does not declare', () => {
+  /**
+   * The map may carry the two conventional aliases as well as the catalogue, and it
+   * must carry nothing else: an id here that is neither is a typo that silently does
+   * nothing, and an id *missing* is the crash this file exists for.
+   */
+  test('the map is the catalogue plus the two aliases, and nothing else', () => {
     const ids = new Set(builtinThemes.map((theme) => theme.id))
-    const extra = Object.keys(themeClasses).filter((id) => !ids.has(id))
+    const extra = Object.keys(themeClasses).filter(
+      (id) => !ids.has(id) && id !== 'light' && id !== 'dark'
+    )
     expect(extra).toEqual([])
+  })
+
+  /**
+   * `globals=theme:dark` in a URL is not a catalogue id, and the interaction lane
+   * passes exactly that. Without the aliases it reaches the same lookup as a toolbar
+   * selection and throws the same error.
+   */
+  test('the bare light/dark aliases resolve, because a caller writes them', () => {
+    expect(themeClasses['light']).toBe('light')
+    expect(themeClasses['dark']).toBe('dark')
   })
 
   /**

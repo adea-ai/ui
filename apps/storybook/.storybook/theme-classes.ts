@@ -26,7 +26,8 @@ import { builtinThemes } from '@adea-ai/ui/lib/themes'
  *
  * Deriving it from the catalogue is what makes that impossible rather than unlikely:
  * a theme added to `@adea-ai/themes` is in this map by construction, and the test
- * fails loudly if the derivation is ever replaced by a literal.
+ * fails loudly if the derivation is ever replaced by a literal. The two aliases below
+ * cover the other vocabulary a caller writes by hand.
  *
  * ## Why the value is the appearance
  *
@@ -36,6 +37,22 @@ import { builtinThemes } from '@adea-ai/ui/lib/themes'
  * So the value is `light`/`dark`, not the variant id, and every theme in a family
  * maps to the appearance it declares.
  */
-export const themeClasses: Record<string, string> = Object.fromEntries(
-  builtinThemes.map((theme) => [theme.id, theme.appearance])
-)
+export const themeClasses: Record<string, string> = {
+  ...Object.fromEntries(builtinThemes.map((theme) => [theme.id, theme.appearance])),
+  /**
+   * The two conventional aliases, which are not catalogue ids and are exactly what
+   * someone writes by hand.
+   *
+   * They are here because the failure this map exists to prevent is not limited to
+   * the toolbar: a `globals=theme:dark` in a URL — which the interaction lane uses —
+   * reaches the same lookup, and an id that is missing from the map throws the same
+   * `Cannot read properties of undefined (reading 'split')`.
+   *
+   * That happened. Deriving the map from the catalogue fixed the toolbar and broke
+   * the interaction lane in the same commit, because the lane had been passing the
+   * bare `dark` that the *old* two-entry map happened to accept. The map therefore
+   * has to cover both vocabularies, not just the one the toolbar offers.
+   */
+  light: 'light',
+  dark: 'dark',
+}
