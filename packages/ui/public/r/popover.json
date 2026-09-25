@@ -1,0 +1,22 @@
+{
+  "name": "popover",
+  "type": "registry:ui",
+  "title": "Popover",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/popover/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/popover/index.ts"
+    },
+    {
+      "path": "src/components/ui/popover/popover.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/popover/popover.tsx"
+    }
+  ]
+}

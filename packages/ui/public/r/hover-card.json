@@ -1,0 +1,22 @@
+{
+  "name": "hover-card",
+  "type": "registry:ui",
+  "title": "Hover Card",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/hover-card/hover-card.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/hover-card/hover-card.tsx"
+    },
+    {
+      "path": "src/components/ui/hover-card/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/hover-card/index.ts"
+    }
+  ]
+}

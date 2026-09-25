@@ -1,0 +1,22 @@
+{
+  "name": "slider",
+  "type": "registry:ui",
+  "title": "Slider",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/slider/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/slider/index.ts"
+    },
+    {
+      "path": "src/components/ui/slider/slider.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/slider/slider.tsx"
+    }
+  ]
+}

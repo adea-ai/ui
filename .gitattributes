@@ -1,0 +1,16 @@
+# Normalize text files to LF and keep binary assets untouched.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+# Generated registry payloads are machine-written; diffing them line by line
+# adds noise without ever being read by a human.
+packages/ui/public/r/*.json -diff linguist-generated=true
+CHANGELOG.md merge=union

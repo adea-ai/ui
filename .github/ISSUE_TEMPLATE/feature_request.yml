@@ -1,0 +1,62 @@
+name: Feature request
+description: A component, a variant, or a token the system is missing.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This design system serves two applications, so a new component or a change
+        to the token set reaches every screen of both. Scope it first, then build it.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you building, and what is missing or awkward today?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change is this
+      options:
+        - A variant or size on an existing component
+        - A new primitive
+        - A new layout region or composite
+        - A new token
+        - A change to an existing token's value
+        - Documentation
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: |
+        The API you would want, if you have one. `variant` and `size` names are
+        especially welcome — appearance belongs in a named variant, not at the call
+        site, so a name is usually the whole design.
+      placeholder: |
+        <Button variant="subtle" size="sm">Preview</Button>
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: An existing component, a variant, a local class. This is what makes the gap concrete.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: consumers
+    attributes:
+      label: Who needs this
+      options:
+        - Adea only
+        - Cortana only
+        - Both
+    validations:
+      required: true

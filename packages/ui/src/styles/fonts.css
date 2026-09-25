@@ -1,0 +1,22 @@
+/* The design system's typefaces, self-hosted.
+ *
+ * Space Grotesk for the interface and JetBrains Mono for code. Both ship as
+ * variable fonts, so every weight in the system is one file per family and the
+ * type scale can move without a new asset.
+ *
+ * A desktop app must not fetch a font at runtime — the first paint after a
+ * cold start would show a fallback face and then reflow. These imports resolve
+ * from `node_modules` at build time, so the faces are in the bundle.
+ *
+ * Consumers import this after `globals.css`:
+ *
+ *   @import '@adea-ai/ui/globals.css';
+ *   @import '@adea-ai/ui/fonts.css';
+ *
+ * The `fonts` export condition carries the two families only; nothing here
+ * depends on a token, and the `--font-sans` / `--font-mono` stacks in
+ * `theme.css` name these exact family names.
+ */
+
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';

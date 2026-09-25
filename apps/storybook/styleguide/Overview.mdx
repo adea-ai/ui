@@ -1,0 +1,88 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="Overview" />
+
+# Adea UI
+
+The design system shared by **Adea** and **Cortana** — one themed component
+library, one token set, one window layout, so two separate applications read as one
+product.
+
+This workshop is the review surface. Every component in the library has a page
+here, and the reasoning behind each one is in its story comments. **If a component
+is not in this workshop, it is not finished.**
+
+## Where to start
+
+| Section         | What it answers                                                              |
+| --------------- | ---------------------------------------------------------------------------- |
+| **Conventions** | How to write a component here, and why the rules exist.                      |
+| **Foundations** | The tokens: colour, type, spacing and density, radius and elevation, motion. |
+| **Layout**      | The window: app shell, side rail, sidebar, top bar, status bar, panels.      |
+| **Primitives**  | The component library, grouped by what a component is for.                   |
+| **Composites**  | Opinionated assemblies: settings, list rows, stats.                          |
+
+## The toolbar
+
+Two controls, and both are the real mechanism rather than an approximation of it.
+
+**Theme** toggles the `dark` class on `<html>` — exactly what both applications
+do. The system is dark-first: the dark theme is the one the design language was
+drawn against, and the light theme is a full peer rather than an inversion. Look at
+both; the accent changes polarity between them.
+
+**Density** switches between the comfortable and compact row heights.
+
+## What makes this recognisably one system
+
+Three decisions, and everything else follows from them.
+
+**A blue-tinted neutral ladder with exactly one accent.** The neutrals sit at hue
+270–286 with a small chroma, which reads as a cool surface rather than a flat grey.
+The single emerald accent is used for one thing — the primary action, the selected
+destination, the focus ring — and nothing else is coloured.
+
+**Compact density.** 14px is the interface default and the two control heights that
+carry the product are 28px and 32px. This is a desktop tool used for hours at a
+time, and the extra rows are worth more than the extra legibility of 16px.
+
+**Every value is a token, and every token is measured.** No component contains a
+literal colour, size, radius or shadow, and the contrast floors the system promises
+are asserted in `packages/ui/tests/tokens.test.ts` on every build. The numbers in
+`theme.css` are solved rather than chosen — the comments there record which surface
+fixed each one.
+
+## Reading a component page
+
+Each page has **docs** generated from the story file and a **canvas** with the live
+stories. The doc comment at the top of a component says what it is _for_ and when
+to reach for a different one — `Select` versus `Combobox`, `Switch` versus
+`Checkbox`, `Dialog` versus `Sheet` versus `Drawer`. Those choices are where a
+reader gets stuck, and they are what the comment is for.
+
+The stories are the specification. They favour the awkward states — an
+indeterminate checkbox, an invalid field, a collapsed rail, a table wider than its
+pane — because those are the states a regression shows up in first.
+
+## Consuming it
+
+```sh
+bun add @adea-ai/ui
+```
+
+```css
+@import 'tailwindcss';
+@import '@adea-ai/ui/theme.css';
+@import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/fonts.css';
+```
+
+Or take a single component through the registry, without the package:
+
+```sh
+bunx shadcn@latest add https://adea-ai.github.io/ui/r/button.json
+```
+
+The full contract — the stylesheet exports, the build conditions, re-hueing the
+palette, changing density, the versioning policy — is in
+[docs/consumption.md](https://github.com/adea-ai/ui/blob/main/docs/consumption.md).

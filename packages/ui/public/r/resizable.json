@@ -1,0 +1,23 @@
+{
+  "name": "resizable",
+  "type": "registry:ui",
+  "title": "Resizable",
+  "description": "",
+  "dependencies": [
+    "@corvu/resizable@^0.2.5",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/resizable/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/resizable/index.ts"
+    },
+    {
+      "path": "src/components/ui/resizable/resizable.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/resizable/resizable.tsx"
+    }
+  ]
+}

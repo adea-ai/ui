@@ -1,0 +1,106 @@
+name: Design System Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types:
+      - ready_for_review
+      - synchronize
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-system-gates-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+# The gates the generic validation lane cannot see, because they are specific to
+# this repository's contract rather than to a TypeScript project:
+#
+#   registry   the distribution catalogue matches the source, every public export
+#              is installable, and no payload names a file that does not exist
+#   workshop   the Storybook build succeeds, then every story is loaded in a real
+#              browser and checked for accessibility violations and for the
+#              interaction each story claims to demonstrate
+#
+# Both are the checks that make "this is ready to consume" a claim with evidence
+# behind it rather than an assertion.
+jobs:
+  registry:
+    name: Registry
+    if: vars.CI_BILLING_PAUSED != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@dcc9425c4d67649ea7443d5f1df5d37e8a95b0fc # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Rebuild the registry from source
+        run: bun run registry:build
+
+      - name: Fail if the committed registry is stale
+        run: |
+          if ! git diff --exit-code --quiet packages/ui/registry.json packages/ui/public/r; then
+            echo '::error title=Registry is stale::registry.json or public/r differs from what the source produces. Run `bun run registry:build` and commit the result.'
+            git --no-pager diff --stat packages/ui/registry.json packages/ui/public/r
+            exit 1
+          fi
+
+      - name: Validate the registry
+        run: bun run registry:validate
+
+  workshop:
+    name: Workshop
+    if: vars.CI_BILLING_PAUSED != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@dcc9425c4d67649ea7443d5f1df5d37e8a95b0fc # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install the browser for the accessibility lane
+        run: bunx playwright install --with-deps chromium
+
+      # Builds the workshop, then loads every story in a real browser.
+      - name: Check every story for accessibility violations and interactions
+        run: bun run test:storybook
+
+      - name: Upload the accessibility report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: accessibility-report
+          path: apps/storybook/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload the built workshop
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static/
+          retention-days: 7
+          if-no-files-found: ignore

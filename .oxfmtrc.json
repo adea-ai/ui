@@ -1,0 +1,19 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "ignorePatterns": [
+    "CHANGELOG.md",
+    ".github/.code-foundry",
+    ".agents",
+    "dist",
+    "storybook-static",
+    "node_modules",
+    "coverage",
+    "bun.lock",
+    "apps/*/public/assets",
+    "packages/ui/registry.json",
+    "packages/ui/public/r/**"
+  ]
+}

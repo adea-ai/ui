@@ -1,0 +1,20 @@
+{
+  "name": "input-group",
+  "type": "registry:ui",
+  "title": "Input Group",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/input-group/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/input-group/index.ts"
+    },
+    {
+      "path": "src/components/ui/input-group/input-group.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/input-group/input-group.tsx"
+    }
+  ]
+}

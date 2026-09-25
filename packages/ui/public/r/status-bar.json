@@ -1,0 +1,20 @@
+{
+  "name": "status-bar",
+  "type": "registry:ui",
+  "title": "Status Bar",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/layout/status-bar/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/status-bar/index.ts"
+    },
+    {
+      "path": "src/components/layout/status-bar/status-bar.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/status-bar/status-bar.tsx"
+    }
+  ]
+}

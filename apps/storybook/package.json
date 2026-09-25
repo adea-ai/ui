@@ -1,0 +1,40 @@
+{
+  "name": "@adea-ai/storybook",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Adea design system workshop: every component, every variant, and the token galleries.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006 --host 127.0.0.1 --no-open",
+    "build-storybook": "storybook build -o storybook-static",
+    "dev": "storybook dev -p 6006 --host 127.0.0.1 --no-open",
+    "build": "storybook build -o storybook-static",
+    "lint": "oxlint",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun run build-storybook && playwright test",
+    "test:a11y": "playwright test tests/a11y.spec.ts",
+    "test:interactions": "playwright test tests/interactions.spec.ts",
+    "serve": "bun scripts/serve-workshop.ts"
+  },
+  "dependencies": {
+    "@adea-ai/ui": "workspace:*",
+    "lucide-solid": "^1.48.0",
+    "solid-js": "^1.9.15"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-links": "^10.6.0",
+    "@storybook/addon-themes": "^10.6.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.10.1",
+    "storybook": "^10.6.0",
+    "storybook-solidjs-vite": "^10.7.2",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.0.14",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}

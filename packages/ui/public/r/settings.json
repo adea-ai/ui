@@ -1,0 +1,20 @@
+{
+  "name": "settings",
+  "type": "registry:ui",
+  "title": "Settings",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/composites/settings/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/settings/index.ts"
+    },
+    {
+      "path": "src/components/composites/settings/settings.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/settings/settings.tsx"
+    }
+  ]
+}

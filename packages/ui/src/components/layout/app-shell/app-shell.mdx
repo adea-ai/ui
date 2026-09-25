@@ -1,0 +1,156 @@
+import { Canvas, Meta } from '@storybook/addon-docs/blocks'
+import * as AppShellStories from './app-shell.stories'
+
+<Meta of={AppShellStories} />
+
+# The app shell
+
+Both applications are height-locked desktop shells with the same regions in the
+same places. The shell's whole job is to be the _one_ place that decides that
+geometry, so two apps built on this library cannot disagree about how tall the top
+bar is or where the content begins.
+
+<Canvas of={AppShellStories.FullShell} />
+
+## The regions
+
+```
+┌──────┬─────────────────────────────────────────────┐
+│      │  Top bar                    48px            │
+│ Rail ├──────────┬──────────────────────────────────┤
+│      │ Sidebar  │  Main                            │
+│ 58px │  256px   │  (panels, splits, pages)         │
+│ or   │          │                                  │
+│ 236px│          │                                  │
+│      ├──────────┴──────────────────────────────────┤
+│      │  Status bar                  28px           │
+└──────┴─────────────────────────────────────────────┘
+```
+
+Every dimension is a token: `--rail-width`, `--rail-width-expanded`,
+`--sidebar-width`, `--topbar-height`, `--statusbar-height`. Overriding one in an
+app's stylesheet moves the whole region, and the story beside this page is the
+reference for how the pieces fit together.
+
+## Why the layout is locked
+
+The shell fills the viewport, each region scrolls internally, and the document
+itself never scrolls. That is not a stylistic choice — it is what stops a wheel
+event over a pane from dragging the entire window, and it is why the desktop shell
+can be driven entirely by the panes.
+
+A flex child defaults to its content size, so `min-h-0` and `min-w-0` on the main
+area are load-bearing rather than incidental. Without them a wide table or a long
+line makes the whole shell scroll horizontally instead of the pane, which is the
+bug this arrangement exists to prevent. The interaction lane asserts it directly:
+`the app shell fills the viewport without scrolling the document`.
+
+## The rail has two forms
+
+<Canvas of={AppShellStories.CollapsedRail} />
+
+Collapsed, the rail is an icon column; expanded, it carries labels. Both widths
+come from tokens.
+
+The rule that matters is that **the label is never deleted, only moved**. Collapsed,
+it becomes a tooltip _and_ a visually hidden span, so the rail stays navigable by
+screen reader, by keyboard and by voice control. An icon-only navigation with no
+accessible names is the most common failure in desktop application chrome, and it
+is the reason `SideRailItem`'s `label` prop is required rather than optional.
+
+One implementation detail is worth knowing when reading the source: the rail row
+_is_ the tooltip trigger, not a wrapper around it. That is forced by the platform —
+`pointerenter` and `focus` do not bubble, so a trigger element wrapping the real row
+would never see either and the tooltip would never open.
+
+## Assembling a shell
+
+```tsx
+import {
+  AppShell,
+  AppShellBody,
+  AppShellMain,
+  SideRail,
+  SideRailContent,
+  SideRailFooter,
+  SideRailHeader,
+  SideRailItem,
+  SidebarNav,
+  SidebarNavContent,
+  SidebarNavItem,
+  SidebarNavSection,
+  SidebarNavTitle,
+  TopBar,
+  TopBarSearch,
+  TopBarSection,
+  TopBarTitle,
+  StatusBar,
+  StatusBarItem,
+  StatusBarSpacer,
+  Panel,
+  PanelBody,
+  PanelHeader,
+  PanelTitle,
+} from '@adea-ai/ui'
+
+;<AppShell>
+  <SideRail collapsed={collapsed()}>
+    <SideRailHeader>…</SideRailHeader>
+    <SideRailContent>
+      <SideRailItem as="button" label="Dev view" active>
+        <Terminal />
+      </SideRailItem>
+    </SideRailContent>
+    <SideRailFooter>…</SideRailFooter>
+  </SideRail>
+
+  <AppShellBody>
+    <TopBar>
+      <TopBarSection>
+        <TopBarTitle>adea</TopBarTitle>
+      </TopBarSection>
+      <TopBarSearch placeholder="Search" shortcut="⌘K" />
+      <TopBarSection align="end">…</TopBarSection>
+    </TopBar>
+
+    <AppShellContent>
+      <SidebarNav>…</SidebarNav>
+      <AppShellMain>
+        <Panel>
+          <PanelHeader>
+            <PanelTitle>Content</PanelTitle>
+          </PanelHeader>
+          <PanelBody />
+        </Panel>
+      </AppShellMain>
+    </AppShellContent>
+
+    <StatusBar>
+      <StatusBarItem tone="success" dot>
+        Connected
+      </StatusBarItem>
+      <StatusBarSpacer />
+      <StatusBarItem>UTF-8</StatusBarItem>
+    </StatusBar>
+  </AppShellBody>
+</AppShell>
+```
+
+`AppShellContent` is the row between the top bar and the status bar. It holds the
+sidebar and the main area directly when the split is fixed, or a
+`ResizablePanelGroup` when the user may drag it — which is the arrangement
+`Resizable → Three panes` demonstrates.
+
+## Frameless windows
+
+On a frameless desktop window the top bar is also the drag region. It carries
+`window-drag`, and every control inside it opts back out with `window-no-drag` —
+without that, clicking a button in the title bar drags the window instead of
+pressing it.
+
+`macosInset` reserves the 84px the traffic lights occupy; `windowsInset` reserves
+142px for the Windows caption buttons. The search field is centred in what remains,
+which is why it can look off-centre in a screenshot and be correct: it is centred
+in the space the user can actually read.
+
+<Canvas of={AppShellStories.FramelessWindow} />

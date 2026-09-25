@@ -1,0 +1,22 @@
+{
+  "name": "button",
+  "type": "registry:ui",
+  "title": "Button",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/button/button.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/button/button.tsx"
+    },
+    {
+      "path": "src/components/ui/button/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/button/index.ts"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "accordion",
+  "type": "registry:ui",
+  "title": "Accordion",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/accordion/accordion.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/accordion/accordion.tsx"
+    },
+    {
+      "path": "src/components/ui/accordion/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/accordion/index.ts"
+    }
+  ]
+}

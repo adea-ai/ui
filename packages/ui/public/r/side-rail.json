@@ -1,0 +1,29 @@
+{
+  "name": "side-rail",
+  "type": "registry:ui",
+  "title": "Side Rail",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/side-rail/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/side-rail/index.ts"
+    },
+    {
+      "path": "src/components/layout/side-rail/side-rail-context.ts",
+      "type": "registry:ui",
+      "target": "components/layout/side-rail/side-rail-context.ts"
+    },
+    {
+      "path": "src/components/layout/side-rail/side-rail.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/side-rail/side-rail.tsx"
+    }
+  ]
+}

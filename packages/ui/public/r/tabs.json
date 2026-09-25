@@ -1,0 +1,22 @@
+{
+  "name": "tabs",
+  "type": "registry:ui",
+  "title": "Tabs",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/tabs/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/tabs/index.ts"
+    },
+    {
+      "path": "src/components/ui/tabs/tabs.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/tabs/tabs.tsx"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "badge",
+  "type": "registry:ui",
+  "title": "Badge",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/badge/badge.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/badge/badge.tsx"
+    },
+    {
+      "path": "src/components/ui/badge/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/badge/index.ts"
+    }
+  ]
+}

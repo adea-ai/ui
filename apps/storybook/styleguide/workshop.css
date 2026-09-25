@@ -1,0 +1,23 @@
+/* The workshop's Tailwind entry.
+ *
+ * It exists for two reasons, and both are load-bearing:
+ *
+ *   1. The design-system linter discovers the theme from `components.json`,
+ *      which names a stylesheet. Pointing that at the library's own entry means
+ *      the workshop is checked against the tokens that ship, not a copy.
+ *
+ *   2. The workshop's Tailwind root is `apps/storybook`, so automatic source
+ *      detection sees this app and *not* the library next door. Without the
+ *      explicit `@source` below, every utility used only inside a component —
+ *      `h-rail-item`, `w-rail`, the shell's `h-screen` — is absent from the
+ *      generated CSS, and the workshop renders partially unstyled while
+ *      reporting no error at all. That is a silent failure with no symptom
+ *      until someone looks at a screenshot and cannot say why the rail is the
+ *      wrong width.
+ */
+@import '@adea-ai/ui/globals.css';
+@import '@adea-ai/ui/fonts.css';
+
+/* The library, and this app's own styleguide. */
+@source '../../../packages/ui/src';
+@source './';

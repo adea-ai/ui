@@ -1,0 +1,20 @@
+{
+  "name": "input",
+  "type": "registry:ui",
+  "title": "Input",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/input/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/input/index.ts"
+    },
+    {
+      "path": "src/components/ui/input/input.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/input/input.tsx"
+    }
+  ]
+}

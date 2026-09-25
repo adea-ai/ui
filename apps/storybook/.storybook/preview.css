@@ -1,0 +1,73 @@
+/* Workshop-only chrome.
+ *
+ * Nothing here styles a design-system component — a class in this file that
+ * could be replaced by a token would be the workshop lying about the product.
+ * These rules exist for two reasons only:
+ *
+ *   1. The story canvas needs a surface. Storybook's default is white, which
+ *      would make every dark-theme review wrong.
+ *   2. The docs pages render prose, and prose has no component to style it.
+ */
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+#storybook-root {
+  min-height: 100%;
+}
+
+/* Storybook's own canvas padding: generous by default, which makes a 28px
+   control look lost. Tightened so component density is judged at its real
+   size. */
+.sb-show-main.sb-main-padded {
+  padding: 1rem;
+}
+
+.docblock-argstable,
+.sbdocs-wrapper {
+  font-family: var(--font-sans);
+}
+
+.sbdocs-wrapper {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* An MDX table is the one place docs prose needs a rule of its own. */
+.sbdocs-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.sbdocs-content th,
+.sbdocs-content td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.sbdocs-content th {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.sbdocs-content code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Full-bleed stories: a shell layout cannot be judged inside a centred box. */
+.ds-full-bleed .sb-show-main,
+.ds-full-bleed .sb-main-padded {
+  padding: 0;
+}
+
+.ds-story-frame {
+  height: 100vh;
+  width: 100%;
+}

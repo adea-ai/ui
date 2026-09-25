@@ -1,0 +1,22 @@
+{
+  "name": "list-row",
+  "type": "registry:ui",
+  "title": "List Row",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/composites/list-row/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/list-row/index.ts"
+    },
+    {
+      "path": "src/components/composites/list-row/list-row.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/list-row/list-row.tsx"
+    }
+  ]
+}

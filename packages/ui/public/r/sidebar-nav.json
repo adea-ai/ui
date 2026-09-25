@@ -1,0 +1,23 @@
+{
+  "name": "sidebar-nav",
+  "type": "registry:ui",
+  "title": "Sidebar Nav",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/layout/sidebar-nav/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/sidebar-nav/index.ts"
+    },
+    {
+      "path": "src/components/layout/sidebar-nav/sidebar-nav.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/sidebar-nav/sidebar-nav.tsx"
+    }
+  ]
+}

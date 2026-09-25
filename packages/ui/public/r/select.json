@@ -1,0 +1,23 @@
+{
+  "name": "select",
+  "type": "registry:ui",
+  "title": "Select",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/select/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/select/index.ts"
+    },
+    {
+      "path": "src/components/ui/select/select.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/select/select.tsx"
+    }
+  ]
+}

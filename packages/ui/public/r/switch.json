@@ -1,0 +1,22 @@
+{
+  "name": "switch",
+  "type": "registry:ui",
+  "title": "Switch",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/switch/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/switch/index.ts"
+    },
+    {
+      "path": "src/components/ui/switch/switch.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/switch/switch.tsx"
+    }
+  ]
+}

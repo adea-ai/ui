@@ -1,0 +1,20 @@
+{
+  "name": "avatar",
+  "type": "registry:ui",
+  "title": "Avatar",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/avatar/avatar.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/avatar/avatar.tsx"
+    },
+    {
+      "path": "src/components/ui/avatar/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/avatar/index.ts"
+    }
+  ]
+}

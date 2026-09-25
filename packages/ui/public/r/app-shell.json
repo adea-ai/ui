@@ -1,0 +1,20 @@
+{
+  "name": "app-shell",
+  "type": "registry:ui",
+  "title": "App Shell",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/layout/app-shell/app-shell.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/app-shell/app-shell.tsx"
+    },
+    {
+      "path": "src/components/layout/app-shell/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/app-shell/index.ts"
+    }
+  ]
+}

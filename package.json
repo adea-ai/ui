@@ -1,0 +1,50 @@
+{
+  "name": "adea-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Adea design system: one themed component library shared by Adea and Cortana.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@adea-ai/storybook --env-mode=loose",
+    "fmt": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "format:write": "oxfmt --write .",
+    "lint": "turbo run lint && oxlint --deny-warnings",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test && bun run test:coverage",
+    "test:unit": "turbo run test",
+    "test:coverage": "bun test packages/ui/tests --coverage",
+    "test:storybook": "bun run --cwd apps/storybook test",
+    "storybook": "bun run --cwd apps/storybook storybook",
+    "storybook:build": "bun run --cwd apps/storybook build-storybook",
+    "registry:build": "bun run --cwd packages/ui registry:build",
+    "registry:validate": "bun run --cwd packages/ui registry:validate",
+    "pack:check": "bun run --cwd packages/ui pack:check",
+    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run registry:validate && bun run build"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@shadcn/lint": "^0.2.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.10.1",
+    "bun-types": "^1.4.0",
+    "oxfmt": "^0.68.0",
+    "oxlint": "^1.83.0",
+    "release-please": "17.11.2",
+    "tailwindcss": "^4.3.3",
+    "turbo": "^2.10.12",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vite-plugin-solid": "^2.11.14"
+  },
+  "engines": {
+    "node": "24.18.0"
+  },
+  "packageManager": "bun@1.4.0"
+}

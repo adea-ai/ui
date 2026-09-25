@@ -1,0 +1,20 @@
+{
+  "name": "empty",
+  "type": "registry:ui",
+  "title": "Empty",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/empty/empty.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/empty/empty.tsx"
+    },
+    {
+      "path": "src/components/ui/empty/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/empty/index.ts"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "stat",
+  "type": "registry:ui",
+  "title": "Stat",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/composites/stat/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/stat/index.ts"
+    },
+    {
+      "path": "src/components/composites/stat/stat.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/stat/stat.tsx"
+    }
+  ]
+}

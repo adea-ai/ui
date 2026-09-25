@@ -1,0 +1,20 @@
+{
+  "name": "page",
+  "type": "registry:ui",
+  "title": "Page",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/layout/page/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/page/index.ts"
+    },
+    {
+      "path": "src/components/layout/page/page.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/page/page.tsx"
+    }
+  ]
+}

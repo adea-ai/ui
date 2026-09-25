@@ -1,0 +1,20 @@
+{
+  "name": "card",
+  "type": "registry:ui",
+  "title": "Card",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/card/card.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/card/card.tsx"
+    },
+    {
+      "path": "src/components/ui/card/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/card/index.ts"
+    }
+  ]
+}

@@ -1,0 +1,1198 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "@adea-ai/ui",
+  "homepage": "https://github.com/adea-ai/ui",
+  "items": [
+    {
+      "name": "accordion",
+      "type": "registry:ui",
+      "title": "Accordion",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/accordion/accordion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/accordion/accordion.tsx"
+        },
+        {
+          "path": "src/components/ui/accordion/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/accordion/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "alert",
+      "type": "registry:ui",
+      "title": "Alert",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/alert/alert.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/alert/alert.tsx"
+        },
+        {
+          "path": "src/components/ui/alert/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/alert/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "alert-dialog",
+      "type": "registry:ui",
+      "title": "Alert Dialog",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/alert-dialog/alert-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/alert-dialog/alert-dialog.tsx"
+        },
+        {
+          "path": "src/components/ui/alert-dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/alert-dialog/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/avatar/avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/avatar/avatar.tsx"
+        },
+        {
+          "path": "src/components/ui/avatar/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/avatar/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/badge/badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/badge/badge.tsx"
+        },
+        {
+          "path": "src/components/ui/badge/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/badge/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:ui",
+      "title": "Breadcrumb",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/breadcrumb/breadcrumb.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/breadcrumb/breadcrumb.tsx"
+        },
+        {
+          "path": "src/components/ui/breadcrumb/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/breadcrumb/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/button/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button/button.tsx"
+        },
+        {
+          "path": "src/components/ui/button/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/button/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/card/card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/card/card.tsx"
+        },
+        {
+          "path": "src/components/ui/card/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/card/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/checkbox/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox/checkbox.tsx"
+        },
+        {
+          "path": "src/components/ui/checkbox/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "collapsible",
+      "type": "registry:ui",
+      "title": "Collapsible",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/collapsible/collapsible.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/collapsible/collapsible.tsx"
+        },
+        {
+          "path": "src/components/ui/collapsible/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/collapsible/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "combobox",
+      "type": "registry:ui",
+      "title": "Combobox",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/combobox/combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combobox/combobox.tsx"
+        },
+        {
+          "path": "src/components/ui/combobox/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/combobox/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "command",
+      "type": "registry:ui",
+      "title": "Command",
+      "description": "",
+      "dependencies": [
+        "cmdk-solid@^1.2.0",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/command/command.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/command/command.tsx"
+        },
+        {
+          "path": "src/components/ui/command/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/command/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "context-menu",
+      "type": "registry:ui",
+      "title": "Context Menu",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/context-menu/context-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/context-menu/context-menu.tsx"
+        },
+        {
+          "path": "src/components/ui/context-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/context-menu/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/dialog/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialog/dialog.tsx"
+        },
+        {
+          "path": "src/components/ui/dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/dialog/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "drawer",
+      "type": "registry:ui",
+      "title": "Drawer",
+      "description": "",
+      "dependencies": [
+        "@corvu/drawer@^0.2.4"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/drawer/drawer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/drawer/drawer.tsx"
+        },
+        {
+          "path": "src/components/ui/drawer/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/drawer/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "Dropdown Menu",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/dropdown-menu/dropdown-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu/dropdown-menu.tsx"
+        },
+        {
+          "path": "src/components/ui/dropdown-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "type": "registry:ui",
+      "title": "Empty",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/empty/empty.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/empty/empty.tsx"
+        },
+        {
+          "path": "src/components/ui/empty/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/empty/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "field",
+      "type": "registry:ui",
+      "title": "Field",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/field/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/field/field.tsx"
+        },
+        {
+          "path": "src/components/ui/field/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/field/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "hover-card",
+      "type": "registry:ui",
+      "title": "Hover Card",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/hover-card/hover-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hover-card/hover-card.tsx"
+        },
+        {
+          "path": "src/components/ui/hover-card/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/hover-card/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/input/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/input/index.ts"
+        },
+        {
+          "path": "src/components/ui/input/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input/input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input-group",
+      "type": "registry:ui",
+      "title": "Input Group",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/input-group/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/input-group/index.ts"
+        },
+        {
+          "path": "src/components/ui/input-group/input-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-group/input-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/kbd/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/kbd/index.ts"
+        },
+        {
+          "path": "src/components/ui/kbd/kbd.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/kbd/kbd.tsx"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/label/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/label/index.ts"
+        },
+        {
+          "path": "src/components/ui/label/label.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/label/label.tsx"
+        }
+      ]
+    },
+    {
+      "name": "pagination",
+      "type": "registry:ui",
+      "title": "Pagination",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/pagination/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/pagination/index.ts"
+        },
+        {
+          "path": "src/components/ui/pagination/pagination.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pagination/pagination.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/popover/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/popover/index.ts"
+        },
+        {
+          "path": "src/components/ui/popover/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover/popover.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/progress/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/progress/index.ts"
+        },
+        {
+          "path": "src/components/ui/progress/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio Group",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/radio-group/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group/index.ts"
+        },
+        {
+          "path": "src/components/ui/radio-group/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group/radio-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "resizable",
+      "type": "registry:ui",
+      "title": "Resizable",
+      "description": "",
+      "dependencies": [
+        "@corvu/resizable@^0.2.5",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/resizable/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/resizable/index.ts"
+        },
+        {
+          "path": "src/components/ui/resizable/resizable.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/resizable/resizable.tsx"
+        }
+      ]
+    },
+    {
+      "name": "scroll-area",
+      "type": "registry:ui",
+      "title": "Scroll Area",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/scroll-area/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/scroll-area/index.ts"
+        },
+        {
+          "path": "src/components/ui/scroll-area/scroll-area.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/scroll-area/scroll-area.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/select/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/select/index.ts"
+        },
+        {
+          "path": "src/components/ui/select/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select/select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/separator/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/separator/index.ts"
+        },
+        {
+          "path": "src/components/ui/separator/separator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/separator/separator.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/dialog"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/sheet/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/sheet/index.ts"
+        },
+        {
+          "path": "src/components/ui/sheet/sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sheet/sheet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/skeleton/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/skeleton/index.ts"
+        },
+        {
+          "path": "src/components/ui/skeleton/skeleton.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/skeleton/skeleton.tsx"
+        }
+      ]
+    },
+    {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/slider/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/slider/index.ts"
+        },
+        {
+          "path": "src/components/ui/slider/slider.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/slider/slider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/spinner/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/spinner/index.ts"
+        },
+        {
+          "path": "src/components/ui/spinner/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spinner/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/switch/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/switch/index.ts"
+        },
+        {
+          "path": "src/components/ui/switch/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/switch/switch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:ui",
+      "title": "Table",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/table/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/table/index.ts"
+        },
+        {
+          "path": "src/components/ui/table/table.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/table/table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/tabs/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/tabs/index.ts"
+        },
+        {
+          "path": "src/components/ui/tabs/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tabs/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/textarea/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/textarea/index.ts"
+        },
+        {
+          "path": "src/components/ui/textarea/textarea.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/textarea/textarea.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/toast/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/toast/index.ts"
+        },
+        {
+          "path": "src/components/ui/toast/toast.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toast/toast.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toggle",
+      "type": "registry:ui",
+      "title": "Toggle",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/toggle/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/toggle/index.ts"
+        },
+        {
+          "path": "src/components/ui/toggle/toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toggle/toggle.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toggle-group",
+      "type": "registry:ui",
+      "title": "Toggle Group",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/toggle"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/toggle-group/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/toggle-group/index.ts"
+        },
+        {
+          "path": "src/components/ui/toggle-group/toggle-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toggle-group/toggle-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/tooltip/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/tooltip/index.ts"
+        },
+        {
+          "path": "src/components/ui/tooltip/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tooltip/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "app-shell",
+      "type": "registry:ui",
+      "title": "App Shell",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/app-shell/app-shell.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/app-shell/app-shell.tsx"
+        },
+        {
+          "path": "src/components/layout/app-shell/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/app-shell/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "page",
+      "type": "registry:ui",
+      "title": "Page",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/page/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/page/index.ts"
+        },
+        {
+          "path": "src/components/layout/page/page.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/page/page.tsx"
+        }
+      ]
+    },
+    {
+      "name": "panel",
+      "type": "registry:ui",
+      "title": "Panel",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/panel/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/panel/index.ts"
+        },
+        {
+          "path": "src/components/layout/panel/panel.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/panel/panel.tsx"
+        }
+      ]
+    },
+    {
+      "name": "side-rail",
+      "type": "registry:ui",
+      "title": "Side Rail",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/tooltip"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/side-rail/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/side-rail/index.ts"
+        },
+        {
+          "path": "src/components/layout/side-rail/side-rail-context.ts",
+          "type": "registry:ui",
+          "target": "components/layout/side-rail/side-rail-context.ts"
+        },
+        {
+          "path": "src/components/layout/side-rail/side-rail.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/side-rail/side-rail.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sidebar-nav",
+      "type": "registry:ui",
+      "title": "Sidebar Nav",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/sidebar-nav/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/sidebar-nav/index.ts"
+        },
+        {
+          "path": "src/components/layout/sidebar-nav/sidebar-nav.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/sidebar-nav/sidebar-nav.tsx"
+        }
+      ]
+    },
+    {
+      "name": "status-bar",
+      "type": "registry:ui",
+      "title": "Status Bar",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/status-bar/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/status-bar/index.ts"
+        },
+        {
+          "path": "src/components/layout/status-bar/status-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/status-bar/status-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "top-bar",
+      "type": "registry:ui",
+      "title": "Top Bar",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/layout/top-bar/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/top-bar/index.ts"
+        },
+        {
+          "path": "src/components/layout/top-bar/top-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/top-bar/top-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "list-row",
+      "type": "registry:ui",
+      "title": "List Row",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/composites/list-row/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/list-row/index.ts"
+        },
+        {
+          "path": "src/components/composites/list-row/list-row.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/list-row/list-row.tsx"
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "type": "registry:ui",
+      "title": "Settings",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/composites/settings/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/settings/index.ts"
+        },
+        {
+          "path": "src/components/composites/settings/settings.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/settings/settings.tsx"
+        }
+      ]
+    },
+    {
+      "name": "stat",
+      "type": "registry:ui",
+      "title": "Stat",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/composites/stat/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/stat/index.ts"
+        },
+        {
+          "path": "src/components/composites/stat/stat.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/stat/stat.tsx"
+        }
+      ]
+    },
+    {
+      "name": "theme",
+      "type": "registry:style",
+      "title": "Adea theme",
+      "description": "The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.",
+      "dependencies": [
+        "@fontsource-variable/jetbrains-mono@^5.3.0",
+        "@fontsource-variable/space-grotesk@^5.3.0",
+        "tw-animate-css@^1.4.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/styles/globals.css",
+          "type": "registry:style",
+          "target": "styles/globals.css"
+        },
+        {
+          "path": "src/styles/theme.css",
+          "type": "registry:style",
+          "target": "styles/theme.css"
+        },
+        {
+          "path": "src/styles/base.css",
+          "type": "registry:style",
+          "target": "styles/base.css"
+        },
+        {
+          "path": "src/styles/fonts.css",
+          "type": "registry:style",
+          "target": "styles/fonts.css"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "breadcrumb",
+  "type": "registry:ui",
+  "title": "Breadcrumb",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/breadcrumb/breadcrumb.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/breadcrumb/breadcrumb.tsx"
+    },
+    {
+      "path": "src/components/ui/breadcrumb/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/breadcrumb/index.ts"
+    }
+  ]
+}

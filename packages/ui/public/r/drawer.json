@@ -1,0 +1,22 @@
+{
+  "name": "drawer",
+  "type": "registry:ui",
+  "title": "Drawer",
+  "description": "",
+  "dependencies": [
+    "@corvu/drawer@^0.2.4"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/drawer/drawer.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/drawer/drawer.tsx"
+    },
+    {
+      "path": "src/components/ui/drawer/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/drawer/index.ts"
+    }
+  ]
+}

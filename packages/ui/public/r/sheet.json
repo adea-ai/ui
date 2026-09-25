@@ -1,0 +1,25 @@
+{
+  "name": "sheet",
+  "type": "registry:ui",
+  "title": "Sheet",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/dialog"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/sheet/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/sheet/index.ts"
+    },
+    {
+      "path": "src/components/ui/sheet/sheet.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/sheet/sheet.tsx"
+    }
+  ]
+}

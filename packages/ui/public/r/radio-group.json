@@ -1,0 +1,23 @@
+{
+  "name": "radio-group",
+  "type": "registry:ui",
+  "title": "Radio Group",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/radio-group/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/radio-group/index.ts"
+    },
+    {
+      "path": "src/components/ui/radio-group/radio-group.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/radio-group/radio-group.tsx"
+    }
+  ]
+}

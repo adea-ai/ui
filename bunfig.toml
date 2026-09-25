@@ -1,0 +1,12 @@
+[test]
+# The library is a pure component package: every module here is either a
+# component, a class-name helper, or the token/registry data the components
+# read. All of it is testable without a browser, so the bar stays high.
+coverageThreshold = { line = 0.8, function = 0.8 }
+coverageSkipTestFiles = true
+# Generated build output is not source. Storybook stories and MDX are the
+# visual review surface, exercised by the Playwright lane in
+# apps/storybook/tests, not by the unit runner.
+coveragePathIgnorePatterns = ["**/dist/**", "**/*.stories.tsx", "**/*.mdx"]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"

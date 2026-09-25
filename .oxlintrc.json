@@ -1,0 +1,123 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["@shadcn/lint"],
+  "settings": {
+    "shadcn": {
+      "ui": ["@/components", "@/components/ui", "@adea-ai/ui"],
+      "componentImports": ["^@/components/"],
+      "note": "Design-system rules: compose @adea-ai/ui components with their variants and size props, and colour them from the tokens in packages/ui/src/styles/theme.css. Never restyle a design-system component with an appearance class."
+    }
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": [
+          "layout",
+          "conventional-*",
+          "dev-*",
+          "global-*",
+          "plugin-*",
+          "plugins-*",
+          "virtual-*",
+          "visually-hidden",
+          "workspace-*"
+        ]
+      }
+    ],
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "scanAllStrings": true
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "scanAllStrings": true
+      }
+    ],
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        "allow": [
+          "conventional-*",
+          "dev-*",
+          "global-*",
+          "plugin-*",
+          "plugins-*",
+          "virtual-*",
+          "visually-hidden",
+          "workspace-*"
+        ]
+      }
+    ],
+    "shadcn/require-static-classes": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "react",
+              "react/*",
+              "react-dom",
+              "react-dom/*",
+              "@radix-ui/*",
+              "@base-ui-components/*",
+              "@base-ui/*",
+              "@ark-ui/*",
+              "@zag-js/*",
+              "react-aria*",
+              "@tanstack/react-*",
+              "vaul",
+              "sonner",
+              "next-themes",
+              "lucide-react"
+            ],
+            "message": "This is a Solid codebase \u2014 React libraries will not run. Use @kobalte/core and @corvu primitives with lucide-solid."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["packages/ui/src/components/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/no-inline-styles": "off",
+        "shadcn/require-static-classes": "off"
+      }
+    },
+    {
+      "files": ["**/*.stories.tsx", "**/*.test.ts", "**/*.test.tsx", "apps/storybook/**"],
+      "rules": {
+        "shadcn/no-restyle": "off"
+      }
+    },
+    {
+      "files": ["apps/storybook/styleguide/foundations/**"],
+      "rules": {
+        "shadcn/no-inline-styles": "off",
+        "shadcn/no-raw-colors": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/**",
+    ".turbo/**",
+    ".vite/**",
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    "storybook-static/**",
+    "packages/ui/public/r/**"
+  ]
+}

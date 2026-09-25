@@ -1,0 +1,22 @@
+{
+  "name": "field",
+  "type": "registry:ui",
+  "title": "Field",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/field/field.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/field/field.tsx"
+    },
+    {
+      "path": "src/components/ui/field/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/field/index.ts"
+    }
+  ]
+}

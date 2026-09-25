@@ -1,0 +1,20 @@
+{
+  "name": "panel",
+  "type": "registry:ui",
+  "title": "Panel",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/layout/panel/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/panel/index.ts"
+    },
+    {
+      "path": "src/components/layout/panel/panel.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/panel/panel.tsx"
+    }
+  ]
+}

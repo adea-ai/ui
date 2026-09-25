@@ -1,0 +1,22 @@
+{
+  "name": "alert-dialog",
+  "type": "registry:ui",
+  "title": "Alert Dialog",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/alert-dialog/alert-dialog.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/alert-dialog/alert-dialog.tsx"
+    },
+    {
+      "path": "src/components/ui/alert-dialog/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/alert-dialog/index.ts"
+    }
+  ]
+}

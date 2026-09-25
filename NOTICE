@@ -1,0 +1,50 @@
+Copyright 2026 0xPlayerOne
+
+The Adea UI design system is distributed under the Apache License, Version 2.0.
+You may obtain a copy of the License at:
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+---
+
+## Design language derived from KiroCrew
+
+The visual language of this design system — its surface ladder, accent role,
+spacing rhythm, control density, radius scale, focus treatment, glass surfaces,
+and scrollbar affordances — is substantially translated and modified from
+KiroCrew (https://github.com/kirodotdev/KiroCrew):
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    KiroCrew is licensed under the Apache License, Version 2.0, and includes
+    software developed at Amazon.com, Inc. (https://www.amazon.com/).
+
+The translation is deliberate and total: KiroCrew's React components and its
+bespoke CSS custom properties are re-expressed here as SolidJS components built
+on Kobalte and corvu primitives, styled through the shadcn/ui semantic token
+vocabulary carried in OKLCH. No KiroCrew source file is reproduced verbatim.
+
+## Consumed libraries
+
+Components are built on the following upstream projects. They are consumed as
+dependencies, not copied:
+
+    Kobalte (@kobalte/core)        MIT License
+    corvu (@corvu/*)               MIT License
+    shadcn/ui                      MIT License
+    SolidJS (solid-js)             MIT License
+    lucide (lucide-solid)          ISC License
+    Tailwind CSS                   MIT License
+
+The component architecture — the folder-per-component layout, the registry
+build, and the convention of composing higher-level blocks on top of an
+unmodified primitive layer — follows patterns established by the
+shadcn-storybook-template (MIT), Kibo UI (MIT), and Dice UI (MIT) projects.
+
+Origin UI / coss (AGPL-3.0-or-later) was consulted for visual ideas only. No
+code, class string, or asset from that project is reproduced here, because its
+licence is incompatible with this distribution.

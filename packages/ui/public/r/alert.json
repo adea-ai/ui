@@ -1,0 +1,22 @@
+{
+  "name": "alert",
+  "type": "registry:ui",
+  "title": "Alert",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/alert/alert.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/alert/alert.tsx"
+    },
+    {
+      "path": "src/components/ui/alert/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/alert/index.ts"
+    }
+  ]
+}

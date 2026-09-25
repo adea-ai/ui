@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in the design system is broken or looks wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Two things make a visual defect much faster to fix:
+        a screenshot, and which of the two themes it appears in.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: The Storybook title, e.g. "Layout / Side rail" or "Primitives / Forms / Select".
+      placeholder: Primitives / Overlays / Dialog
+    validations:
+      required: true
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Theme
+      options:
+        - Dark
+        - Light
+        - Both
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: apps
+    attributes:
+      label: Where you saw it
+      description: The workshop, Adea, Cortana, or somewhere else — and the version.
+      placeholder: Adea 0.55.0, installed desktop build on macOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The story URL is ideal. A code snippet is the next best thing.
+      placeholder: |
+        1. Open the workshop
+        2. Go to Layout / Side rail
+        3. Hover the Artifacts row
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or recording
+      description: Drag an image in, or paste a link. A dark-theme and a light-theme pair is ideal.
+    validations:
+      required: false

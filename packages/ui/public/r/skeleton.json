@@ -1,0 +1,20 @@
+{
+  "name": "skeleton",
+  "type": "registry:ui",
+  "title": "Skeleton",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/skeleton/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/skeleton/index.ts"
+    },
+    {
+      "path": "src/components/ui/skeleton/skeleton.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/skeleton/skeleton.tsx"
+    }
+  ]
+}

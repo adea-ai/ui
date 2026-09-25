@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["bun-types", "node"],
+    "paths": {
+      /*
+       * Resolve the design system to its source rather than to `dist`. The library
+       * declares `types` against its build output, which is correct for a consumer
+       * installing from npm — but this app is a sibling in the same workspace, and
+       * mapping to source means the workshop typechecks without a build step and
+       * cannot be reviewing a stale `dist`.
+       */
+      "@adea-ai/ui": ["../../packages/ui/src/index.ts"],
+      "@adea-ai/ui/*": ["../../packages/ui/src/*"],
+      "@/*": ["./styleguide/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "storybook-static", "tests"]
+}

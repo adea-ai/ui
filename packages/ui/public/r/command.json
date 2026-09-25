@@ -1,0 +1,23 @@
+{
+  "name": "command",
+  "type": "registry:ui",
+  "title": "Command",
+  "description": "",
+  "dependencies": [
+    "cmdk-solid@^1.2.0",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/command/command.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/command/command.tsx"
+    },
+    {
+      "path": "src/components/ui/command/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/command/index.ts"
+    }
+  ]
+}

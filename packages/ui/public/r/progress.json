@@ -1,0 +1,22 @@
+{
+  "name": "progress",
+  "type": "registry:ui",
+  "title": "Progress",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/progress/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/progress/index.ts"
+    },
+    {
+      "path": "src/components/ui/progress/progress.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/progress/progress.tsx"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "label",
+  "type": "registry:ui",
+  "title": "Label",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/label/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/label/index.ts"
+    },
+    {
+      "path": "src/components/ui/label/label.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/label/label.tsx"
+    }
+  ]
+}

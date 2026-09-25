@@ -1,0 +1,23 @@
+{
+  "name": "pagination",
+  "type": "registry:ui",
+  "title": "Pagination",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/pagination/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/pagination/index.ts"
+    },
+    {
+      "path": "src/components/ui/pagination/pagination.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/pagination/pagination.tsx"
+    }
+  ]
+}

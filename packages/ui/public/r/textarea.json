@@ -1,0 +1,20 @@
+{
+  "name": "textarea",
+  "type": "registry:ui",
+  "title": "Textarea",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/textarea/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/textarea/index.ts"
+    },
+    {
+      "path": "src/components/ui/textarea/textarea.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/textarea/textarea.tsx"
+    }
+  ]
+}
