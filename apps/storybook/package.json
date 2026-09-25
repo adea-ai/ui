@@ -12,10 +12,10 @@
     "build": "storybook build -o storybook-static",
     "lint": "oxlint",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun run build-storybook && playwright test",
+    "serve": "bun scripts/serve-workshop.ts",
+    "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/a11y.spec.ts",
-    "test:interactions": "playwright test tests/interactions.spec.ts",
-    "serve": "bun scripts/serve-workshop.ts"
+    "test:interactions": "playwright test tests/interactions.spec.ts"
   },
   "dependencies": {
     "@adea-ai/ui": "workspace:*",

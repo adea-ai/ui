@@ -19,13 +19,14 @@
     "test": "turbo run test && bun run test:coverage",
     "test:unit": "turbo run test",
     "test:coverage": "bun test packages/ui/tests --coverage",
-    "test:storybook": "bun run --cwd apps/storybook test",
+    "test:storybook": "bun run --cwd apps/storybook test:e2e",
     "storybook": "bun run --cwd apps/storybook storybook",
     "storybook:build": "bun run --cwd apps/storybook build-storybook",
     "registry:build": "bun run --cwd packages/ui registry:build",
     "registry:validate": "bun run --cwd packages/ui registry:validate",
     "pack:check": "bun run --cwd packages/ui pack:check",
-    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run registry:validate && bun run build"
+    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run registry:validate && bun run build",
+    "test:a11y": "bun run --cwd apps/storybook test:a11y"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

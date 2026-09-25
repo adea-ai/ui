@@ -83,7 +83,11 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
-      # Builds the workshop, then loads every story in a real browser.
+      - name: Build the workshop
+        run: bun run storybook:build
+
+      # Loads every story in a real browser and checks it, and presses the things
+      # a user presses in the stories that document a behaviour.
       - name: Check every story for accessibility violations and interactions
         run: bun run test:storybook
 
