@@ -5,6 +5,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuLinkItem,
+  NavigationMenuMenu,
   NavigationMenuList,
   NavigationMenuTrigger,
   NavigationMenuViewport,
@@ -35,7 +36,7 @@ export const Default: Story = {
   render: () => (
     <NavigationMenu>
       <NavigationMenuList>
-        <NavigationMenuItem>
+        <NavigationMenuMenu value="work">
           <NavigationMenuTrigger>Work</NavigationMenuTrigger>
           <NavigationMenuContent>
             <NavigationMenuLinkItem>
@@ -45,9 +46,9 @@ export const Default: Story = {
               <NavigationMenuLink href="#storybook-preview-iframe">Worktrees</NavigationMenuLink>
             </NavigationMenuLinkItem>
           </NavigationMenuContent>
-        </NavigationMenuItem>
+        </NavigationMenuMenu>
 
-        <NavigationMenuItem>
+        <NavigationMenuMenu value="build">
           <NavigationMenuTrigger>Build</NavigationMenuTrigger>
           <NavigationMenuContent>
             <NavigationMenuLinkItem>
@@ -57,7 +58,7 @@ export const Default: Story = {
               <NavigationMenuLink href="#storybook-preview-iframe">Artifacts</NavigationMenuLink>
             </NavigationMenuLinkItem>
           </NavigationMenuContent>
-        </NavigationMenuItem>
+        </NavigationMenuMenu>
 
         <NavigationMenuItem>
           <NavigationMenuLink href="#storybook-preview-iframe">Settings</NavigationMenuLink>

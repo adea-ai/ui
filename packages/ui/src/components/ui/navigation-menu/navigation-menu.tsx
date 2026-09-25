@@ -41,6 +41,17 @@ export function NavigationMenuItem(props: ComponentProps<typeof KobalteNavigatio
   return <KobalteNavigationMenu.Item class={cn('relative', local.class)} {...rest} />
 }
 
+/**
+ * One top-level entry: a trigger and the panel it opens.
+ *
+ * Required for the same reason as the menubar's — the bar tracks which entry is
+ * open so the shared viewport can move between panels — and it is what makes the
+ * panels animate as one surface rather than as separate popovers.
+ */
+export function NavigationMenuMenu(props: ComponentProps<typeof KobalteNavigationMenu.Menu>) {
+  return <KobalteNavigationMenu.Menu {...props} />
+}
+
 export function NavigationMenuTrigger(props: ComponentProps<typeof KobalteNavigationMenu.Trigger>) {
   const [local, rest] = splitProps(props, ['class', 'children'])
   return (

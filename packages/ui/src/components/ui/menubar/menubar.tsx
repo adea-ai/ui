@@ -37,6 +37,17 @@ export function Menubar(props: ComponentProps<typeof KobalteMenubar>) {
   )
 }
 
+/**
+ * One top-level menu: a trigger and the panel it opens.
+ *
+ * Required, and the reason the component is not just a row of triggers — the
+ * menubar's arrow keys move *between* menus, which only works when each trigger
+ * belongs to a menu the bar knows about. `value` names it.
+ */
+export function MenubarMenu(props: ComponentProps<typeof KobalteMenubar.Menu>) {
+  return <KobalteMenubar.Menu {...props} />
+}
+
 export function MenubarTrigger(props: ComponentProps<typeof KobalteMenubar.Trigger>) {
   const [local, rest] = splitProps(props, ['class'])
   return (

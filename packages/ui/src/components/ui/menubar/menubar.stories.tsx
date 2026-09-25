@@ -6,6 +6,7 @@ import {
   MenubarLabel,
   MenubarSeparator,
   MenubarTrigger,
+  MenubarMenu,
 } from './menubar'
 
 /**
@@ -31,28 +32,34 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <Menubar>
-      <MenubarTrigger>File</MenubarTrigger>
-      <MenubarContent>
-        <MenubarLabel>Session</MenubarLabel>
-        <MenubarItem shortcut="⌘N">New session</MenubarItem>
-        <MenubarItem shortcut="⌘O">Open project…</MenubarItem>
-        <MenubarSeparator />
-        <MenubarItem variant="destructive">Close workspace</MenubarItem>
-      </MenubarContent>
+      <MenubarMenu value="file">
+        <MenubarTrigger>File</MenubarTrigger>
+        <MenubarContent>
+          <MenubarLabel>Session</MenubarLabel>
+          <MenubarItem shortcut="⌘N">New session</MenubarItem>
+          <MenubarItem shortcut="⌘O">Open project…</MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem variant="destructive">Close workspace</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
 
-      <MenubarTrigger>Edit</MenubarTrigger>
-      <MenubarContent>
-        <MenubarItem shortcut="⌘Z">Undo</MenubarItem>
-        <MenubarItem shortcut="⇧⌘Z">Redo</MenubarItem>
-        <MenubarSeparator />
-        <MenubarItem shortcut="⌘F">Find in files…</MenubarItem>
-      </MenubarContent>
+      <MenubarMenu value="edit">
+        <MenubarTrigger>Edit</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem shortcut="⌘Z">Undo</MenubarItem>
+          <MenubarItem shortcut="⇧⌘Z">Redo</MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem shortcut="⌘F">Find in files…</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
 
-      <MenubarTrigger>View</MenubarTrigger>
-      <MenubarContent>
-        <MenubarItem>Toggle rail</MenubarItem>
-        <MenubarItem>Toggle terminal</MenubarItem>
-      </MenubarContent>
+      <MenubarMenu value="view">
+        <MenubarTrigger>View</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>Toggle rail</MenubarItem>
+          <MenubarItem>Toggle terminal</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
     </Menubar>
   ),
 }

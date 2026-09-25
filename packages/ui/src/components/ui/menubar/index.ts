@@ -5,6 +5,7 @@ export {
   MenubarGroup,
   MenubarItem,
   MenubarLabel,
+  MenubarMenu,
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarSeparator,
