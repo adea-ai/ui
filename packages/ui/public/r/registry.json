@@ -1540,6 +1540,33 @@
       ]
     },
     {
+      "name": "update-dialog",
+      "type": "registry:ui",
+      "title": "Update Dialog",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/dialog",
+        "@adea-ai/ui/progress"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/update-dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/update-dialog/index.ts"
+        },
+        {
+          "path": "src/components/composites/update-dialog/update-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/update-dialog/update-dialog.tsx"
+        }
+      ]
+    },
+    {
       "name": "workspace-mark",
       "type": "registry:ui",
       "title": "Workspace Mark",

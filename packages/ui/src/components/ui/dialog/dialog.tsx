@@ -125,3 +125,14 @@ export function DialogCloseButton(props: ComponentProps<typeof KobalteDialog.Clo
   const [local, rest] = splitProps(props, ['class'])
   return <KobalteDialog.CloseButton class={cn('focus-ring', local.class)} {...rest} />
 }
+
+/**
+ * The close control, unstyled and polymorphic — for a footer's text "Cancel" or
+ * "Close", which is a different control from the corner icon `DialogCloseButton`
+ * draws. Take it as `as={Button}` so it carries the button's variants rather than
+ * a copied class string.
+ */
+export function DialogClose(props: ComponentProps<typeof KobalteDialog.CloseButton>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return <KobalteDialog.CloseButton class={cn('focus-ring', local.class)} {...rest} />
+}
