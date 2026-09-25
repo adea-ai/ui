@@ -37,6 +37,8 @@ import {
   chartSeries,
   hasTheme,
   statusForeground,
+  primaryHover,
+  primarySubtleCss,
   syntaxRoles,
   themes as catalogue,
   themesByAppearance,
@@ -302,6 +304,21 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
     '--popover-foreground': c.popoverForeground,
     '--primary': c.primary,
     '--primary-foreground': c.primaryForeground,
+    /*
+     * The two tokens derived from the primary, and they are here rather than left to
+     * `theme.css` because they must follow `--primary` — which this function writes
+     * for *any* theme in the catalogue, not just the two defaults `theme.css` carries.
+     *
+     * `--primary-hover` is a resolved colour, not a `color-mix()`: a uniform hover
+     * step cannot be expressed as a mix (see `primaryHover`). Left out, a theme switch
+     * would keep the previous theme's hover on the new theme's primary.
+     *
+     * `--primary-subtle` is a mix over `--primary`, so it would follow on its own —
+     * it is written anyway so the pair is applied together and neither is left to
+     * depend on which stylesheet happened to load.
+     */
+    '--primary-hover': primaryHover(c.primary, theme.appearance),
+    '--primary-subtle': primarySubtleCss(theme.appearance),
     '--secondary': c.secondary,
     '--secondary-foreground': c.secondaryForeground,
     '--muted': c.muted,

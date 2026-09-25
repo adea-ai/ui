@@ -137,10 +137,20 @@
   --scrim-foreground: oklch(1 0 0);
   --scrim-edge: oklch(1 0 0);
 
-  /* A step further from the canvas than the primary itself, so a hovered primary
-     button reads as hovered rather than as a different colour. */
-  --primary-hover: color-mix(in oklch, var(--primary) 86%, var(--background) 14%);
-  --primary-subtle: color-mix(in oklch, var(--primary) 8%, transparent);
+  /*
+   * A uniform step away from the canvas, so a hovered primary button reads as
+   * hovered rather than as a second, slightly different colour.
+   *
+   * Resolved rather than a `color-mix()`, because a uniform step cannot be
+   * expressed as one: mixing a fixed share toward white or black moves an accent
+   * by a share of its headroom, which gives the light appearance a step twice the
+   * dark one's and nearly none at all on the palest accent.
+   *
+   * Both values come from @adea-ai/themes, so the accent blocks below are the same
+   * rule rather than a matching one — which is what they were not, before.
+   */
+  --primary-hover: oklch(0.4013 0.1518 253.31);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
   /*
@@ -253,10 +263,20 @@
   --diff-hunk-foreground: var(--info);
   --diff-meta-foreground: var(--muted-foreground);
 
-  /* A step further from the canvas than the primary itself, so a hovered primary
-     button reads as hovered rather than as a different colour. */
-  --primary-hover: color-mix(in oklch, var(--primary) 86%, var(--background) 14%);
-  --primary-subtle: color-mix(in oklch, var(--primary) 8%, transparent);
+  /*
+   * A uniform step away from the canvas, so a hovered primary button reads as
+   * hovered rather than as a second, slightly different colour.
+   *
+   * Resolved rather than a `color-mix()`, because a uniform step cannot be
+   * expressed as one: mixing a fixed share toward white or black moves an accent
+   * by a share of its headroom, which gives the light appearance a step twice the
+   * dark one's and nearly none at all on the palest accent.
+   *
+   * Both values come from @adea-ai/themes, so the accent blocks below are the same
+   * rule rather than a matching one — which is what they were not, before.
+   */
+  --primary-hover: oklch(0.7653 0.1518 253.31);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
   /*
@@ -298,95 +318,97 @@
  * `theme` (the default) is the monochrome primary above and needs no block.
  * ------------------------------------------------------------------------- */
 
+/* @generated accents — run `bun run theme:build` after changing the catalogue */
 [data-accent='violet'] {
-  --primary: oklch(0.4907 0.2412 292.6);
+  --primary: oklch(0.4907 0.2412 292.58);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.4407 0.2412 292.6);
-  --primary-subtle: oklch(0.4907 0.2412 292.6 / 0.1);
-  --ring: oklch(0.4907 0.2412 292.6);
+  --primary-hover: oklch(0.4407 0.2412 292.58);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.4907 0.2412 292.58);
 }
 .dark[data-accent='violet'] {
-  --primary: oklch(0.709 0.1592 293.5);
+  --primary: oklch(0.709 0.1592 293.54);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.759 0.1592 293.5);
-  --primary-subtle: oklch(0.709 0.1592 293.5 / 0.16);
-  --ring: oklch(0.709 0.1592 293.5);
+  --primary-hover: oklch(0.759 0.1592 293.54);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.709 0.1592 293.54);
 }
 
 [data-accent='blue'] {
-  --primary: oklch(0.5461 0.2152 262.9);
+  --primary: oklch(0.5461 0.2152 262.88);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.4961 0.2152 262.9);
-  --primary-subtle: oklch(0.5461 0.2152 262.9 / 0.1);
-  --ring: oklch(0.5461 0.2152 262.9);
+  --primary-hover: oklch(0.4961 0.2152 262.88);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5461 0.2152 262.88);
 }
 .dark[data-accent='blue'] {
-  --primary: oklch(0.7137 0.1434 254.6);
+  --primary: oklch(0.7137 0.1434 254.62);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.7637 0.1434 254.6);
-  --primary-subtle: oklch(0.7137 0.1434 254.6 / 0.16);
-  --ring: oklch(0.7137 0.1434 254.6);
+  --primary-hover: oklch(0.7637 0.1434 254.62);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7137 0.1434 254.62);
 }
 
 [data-accent='green'] {
-  --primary: oklch(0.5273 0.1371 150.1);
+  --primary: oklch(0.5273 0.1371 150.07);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.4773 0.1371 150.1);
-  --primary-subtle: oklch(0.5273 0.1371 150.1 / 0.1);
-  --ring: oklch(0.5273 0.1371 150.1);
+  --primary-hover: oklch(0.4773 0.1371 150.07);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5273 0.1371 150.07);
 }
 .dark[data-accent='green'] {
-  --primary: oklch(0.8003 0.1821 151.7);
+  --primary: oklch(0.8003 0.1821 151.71);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.8503 0.1821 151.7);
-  --primary-subtle: oklch(0.8003 0.1821 151.7 / 0.16);
-  --ring: oklch(0.8003 0.1821 151.7);
+  --primary-hover: oklch(0.8503 0.1363 151.71);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.8003 0.1821 151.71);
 }
 
 [data-accent='amber'] {
   --primary: oklch(0.5553 0.1455 49);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.5053 0.1455 49);
-  --primary-subtle: oklch(0.5553 0.1455 49 / 0.1);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5553 0.1455 49);
 }
 .dark[data-accent='amber'] {
-  --primary: oklch(0.8369 0.1644 84.4);
+  --primary: oklch(0.8369 0.1644 84.43);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.8869 0.1644 84.4);
-  --primary-subtle: oklch(0.8369 0.1644 84.4 / 0.16);
-  --ring: oklch(0.8369 0.1644 84.4);
+  --primary-hover: oklch(0.8869 0.0991 84.43);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.8369 0.1644 84.43);
 }
 
 [data-accent='cyan'] {
-  --primary: oklch(0.5198 0.0936 223.1);
+  --primary: oklch(0.5198 0.0936 223.13);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.4698 0.0936 223.1);
-  --primary-subtle: oklch(0.5198 0.0936 223.1 / 0.1);
-  --ring: oklch(0.5198 0.0936 223.1);
+  --primary-hover: oklch(0.4698 0.0936 223.13);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5198 0.0936 223.13);
 }
 .dark[data-accent='cyan'] {
-  --primary: oklch(0.7971 0.1339 211.5);
+  --primary: oklch(0.7971 0.1339 211.53);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.8471 0.1339 211.5);
-  --primary-subtle: oklch(0.7971 0.1339 211.5 / 0.16);
-  --ring: oklch(0.7971 0.1339 211.5);
+  --primary-hover: oklch(0.8471 0.102 211.53);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7971 0.1339 211.53);
 }
 
 [data-accent='pink'] {
-  --primary: oklch(0.5246 0.199 4);
+  --primary: oklch(0.5246 0.199 3.96);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.4746 0.199 4);
-  --primary-subtle: oklch(0.5246 0.199 4 / 0.1);
-  --ring: oklch(0.5246 0.199 4);
+  --primary-hover: oklch(0.4746 0.199 3.96);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5246 0.199 3.96);
 }
 .dark[data-accent='pink'] {
-  --primary: oklch(0.7253 0.1752 349.8);
+  --primary: oklch(0.7253 0.1752 349.76);
   --primary-foreground: oklch(0 0 0);
-  --primary-hover: oklch(0.7753 0.1752 349.8);
-  --primary-subtle: oklch(0.7253 0.1752 349.8 / 0.16);
-  --ring: oklch(0.7253 0.1752 349.8);
+  --primary-hover: oklch(0.7753 0.1752 349.76);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7253 0.1752 349.76);
 }
+/* @end generated accents */
 
 /* ---------------------------------------------------------------------------
  * 3b. The font axis

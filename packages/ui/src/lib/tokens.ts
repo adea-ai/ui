@@ -17,6 +17,8 @@
  * token exists" a property the build enforces rather than a promise.
  */
 
+import { ACCENTS } from '@adea-ai/themes'
+
 export type TokenKind =
   | 'color'
   | 'dimension'
@@ -609,48 +611,7 @@ export const accentPresets: readonly AccentPreset[] = Object.freeze([
     description:
       "The variant's own primary. Neutral in adea's palette, so the interface stays monochrome.",
   },
-  {
-    id: 'violet',
-    label: 'Violet',
-    description: 'The default brand accent.',
-    light: '#6d28d9',
-    dark: '#a78bfa',
-  },
-  {
-    id: 'blue',
-    label: 'Blue',
-    description: 'Cool and conventional. Reads as informational.',
-    light: '#2563eb',
-    dark: '#60a5fa',
-  },
-  {
-    id: 'green',
-    label: 'Green',
-    description: 'Reads as confirmatory, which competes with the success status.',
-    light: '#15803d',
-    dark: '#4ade80',
-  },
-  {
-    id: 'amber',
-    label: 'Amber',
-    description: 'Warm and attention-drawing. Competes with the warning status.',
-    light: '#b45309',
-    dark: '#fbbf24',
-  },
-  {
-    id: 'cyan',
-    label: 'Cyan',
-    description: 'Quiet and technical. The least saturated of the set.',
-    light: '#0e7490',
-    dark: '#22d3ee',
-  },
-  {
-    id: 'pink',
-    label: 'Pink',
-    description: 'The loudest of the set. Use where the accent is decorative.',
-    light: '#be185d',
-    dark: '#f472b6',
-  },
+  ...ACCENTS,
 ])
 
 /**

@@ -18,8 +18,16 @@
  *
  * So the declarations are generated. `theme.css` keeps everything that is not a
  * theme — the radius, density, typography, elevation, motion and z-index scales, the
- * font axis, the accent blocks and the Tailwind bridge — and the colour declarations
- * for the two defaults come from here.
+ * font axis and the Tailwind bridge — and three regions come from here: the two
+ * defaults' colour declarations, and the accent blocks.
+ *
+ * The accent blocks joined them for the reason the defaults did. They were written
+ * by hand, and the *hover* rule in particular existed twice: once here, as a
+ * `color-mix()` toward `--background`, and once per accent as a literal. The two
+ * disagreed — the generated default moved toward the canvas and every accent moved
+ * away — so the default primary button hovered backwards and selecting any accent
+ * silently corrected it. One rule, emitted from one place, is what makes that
+ * impossible rather than unlikely.
  *
  * ## What is not generated
  *
@@ -40,7 +48,16 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { contrastRatio, formatOklch, parseColor, shiftLightness } from '@adea-ai/themes'
+import {
+  ACCENTS,
+  accentRoles,
+  contrastRatio,
+  formatOklch,
+  parseColor,
+  primaryHover,
+  primarySubtleCss,
+  shiftLightness,
+} from '@adea-ai/themes'
 
 import { themeById, themeCssVariables, type ThemeVariant } from '../src/lib/themes'
 
@@ -72,10 +89,20 @@ function blockOpener(scope: 'root' | 'dark'): string {
  */
 function derivedDeclarations(theme: ThemeVariant): string[] {
   return [
-    `  /* A step further from the canvas than the primary itself, so a hovered primary`,
-    `     button reads as hovered rather than as a different colour. */`,
-    `  --primary-hover: color-mix(in oklch, var(--primary) 86%, var(--background) 14%);`,
-    `  --primary-subtle: color-mix(in oklch, var(--primary) 8%, transparent);`,
+    `  /*`,
+    `   * A uniform step away from the canvas, so a hovered primary button reads as`,
+    `   * hovered rather than as a second, slightly different colour.`,
+    `   *`,
+    `   * Resolved rather than a \`color-mix()\`, because a uniform step cannot be`,
+    `   * expressed as one: mixing a fixed share toward white or black moves an accent`,
+    `   * by a share of its headroom, which gives the light appearance a step twice the`,
+    `   * dark one's and nearly none at all on the palest accent.`,
+    `   *`,
+    `   * Both values come from @adea-ai/themes, so the accent blocks below are the same`,
+    `   * rule rather than a matching one — which is what they were not, before.`,
+    `   */`,
+    `  --primary-hover: ${primaryHover(theme.colors.primary, theme.appearance)};`,
+    `  --primary-subtle: ${primarySubtleCss(theme.appearance)};`,
     `  /* The window chrome, one step off the canvas. */`,
     `  --chrome: var(--surface);`,
     `  /*`,
@@ -282,6 +309,77 @@ function generate(theme: ThemeVariant): string {
  * the whole block body is taken as the region, which is right because the block existed
  * only to hold colours.
  */
+/** The markers around the generated accent blocks. */
+const ACCENT_OPEN =
+  '/* @generated accents — run `bun run theme:build` after changing the catalogue */'
+const ACCENT_CLOSE = '/* @end generated accents */'
+
+/** The five declarations one accent sets. */
+function accentDeclarations(appearance: 'light' | 'dark', preset: (typeof ACCENTS)[number]) {
+  const roles = accentRoles(preset, appearance)
+  return [
+    `  --primary: ${roles.primary};`,
+    `  --primary-foreground: ${roles.primaryForeground};`,
+    `  --primary-hover: ${roles.primaryHover};`,
+    `  --primary-subtle: ${roles.primarySubtle};`,
+    `  --ring: ${roles.ring};`,
+  ]
+}
+
+/**
+ * The twelve accent blocks, from the catalogue's preset list.
+ *
+ * A block sets five properties and no more. `--primary-hover` and `--primary-subtle`
+ * are expressions over `--primary`, so they are identical in every block by
+ * construction — which is the point: they used to be five hand-written literals per
+ * block, and the default's rule disagreed with all twelve of them.
+ *
+ * `[data-accent]` is the light block and `.dark[data-accent]` the dark one, because
+ * the accent is a selection on the same element that carries the theme rather than a
+ * theme of its own. The default (`theme`) sets no `data-accent` and needs no block.
+ */
+function accentBlocks(): string {
+  return ACCENTS.map((preset) =>
+    [
+      `[data-accent='${preset.id}'] {`,
+      ...accentDeclarations('light', preset),
+      `}`,
+      `.dark[data-accent='${preset.id}'] {`,
+      ...accentDeclarations('dark', preset),
+      `}`,
+    ].join('\n')
+  ).join('\n\n')
+}
+
+/**
+ * Replaces the run of accent blocks.
+ *
+ * Unlike a single block, this region is bounded by the section comment that follows
+ * it rather than by brace counting: it is twelve blocks, and the first run has no
+ * markers to find.
+ */
+function replaceAccentRegion(css: string, body: string): string {
+  const openIndex = css.indexOf(ACCENT_OPEN)
+
+  if (openIndex !== -1) {
+    const closeIndex = css.indexOf(ACCENT_CLOSE, openIndex)
+    if (closeIndex === -1) throw new Error('theme.css has an accent marker with no end marker')
+    return (
+      css.slice(0, openIndex) +
+      `${ACCENT_OPEN}\n${body}\n${ACCENT_CLOSE}` +
+      css.slice(closeIndex + ACCENT_CLOSE.length)
+    )
+  }
+
+  const first = css.indexOf("[data-accent='")
+  if (first === -1) throw new Error('theme.css has no accent blocks to replace')
+  const lineStart = css.lastIndexOf('\n', first) + 1
+  const nextSection = css.indexOf('/* ---', first)
+  if (nextSection === -1) throw new Error('theme.css has no section after the accent blocks')
+
+  return `${css.slice(0, lineStart)}${ACCENT_OPEN}\n${body}\n${ACCENT_CLOSE}\n\n${css.slice(nextSection)}`
+}
+
 function replaceRegion(css: string, scope: 'root' | 'dark', body: string): string {
   const { open, close } = markers(scope)
   const opener = blockOpener(scope)
@@ -319,10 +417,9 @@ async function main(): Promise<void> {
   const dark = themeById('adea-dark')
   if (!light || !dark) throw new Error('the catalogue is missing a default theme')
 
-  const generated = replaceRegion(
-    replaceRegion(original, 'root', generate(light)),
-    'dark',
-    generate(dark)
+  const generated = replaceAccentRegion(
+    replaceRegion(replaceRegion(original, 'root', generate(light)), 'dark', generate(dark)),
+    accentBlocks()
   )
 
   if (check) {
