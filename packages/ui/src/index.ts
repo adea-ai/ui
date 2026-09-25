@@ -76,6 +76,9 @@ export * from './components/layout/sidebar-nav'
 export * from './components/layout/status-bar'
 export * from './components/layout/top-bar'
 
+/* --- Conversation -------------------------------------------------------- */
+export * from './components/conversation'
+
 /* --- Theming ------------------------------------------------------------- */
 export * from './components/theme'
 

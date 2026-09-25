@@ -72,7 +72,8 @@
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
     "registry:build": "bun scripts/build-registry.ts",
     "registry:validate": "bun scripts/validate-registry.ts",
-    "pack:check": "bun scripts/check-pack.ts"
+    "pack:check": "bun scripts/check-pack.ts",
+    "check:tree-shaking": "bun scripts/check-tree-shaking.ts"
   },
   "dependencies": {
     "@corvu/calendar": "^0.1.2",

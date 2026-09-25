@@ -61,6 +61,14 @@ jobs:
       - name: Validate the registry
         run: bun run registry:validate
 
+      # A consumer's real question is not "is the package small" but "does
+      # importing one component pull in the other fifty-eight". Measured, not
+      # asserted: two bundles are built and the ratio between them is the gate.
+      - name: Build the library, then prove it tree-shakes
+        run: |
+          bun run --cwd packages/ui build
+          bun run check:tree-shaking
+
   workshop:
     name: Workshop
     if: vars.CI_BILLING_PAUSED != 'true'
