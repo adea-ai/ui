@@ -27,13 +27,28 @@ export type ScrollAreaProps = ComponentProps<'div'> & {
 }
 
 export function ScrollArea(props: ScrollAreaProps) {
-  const [local, rest] = splitProps(props, ['class', 'orientation', 'fade', 'hideScrollbar'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'orientation',
+    'fade',
+    'hideScrollbar',
+    'tabIndex',
+  ])
 
   return (
     <div
       data-slot="scroll-area"
+      /*
+       * Focusable, because that is what makes a scroll region reachable from the
+       * keyboard. A `div` with `overflow: auto` scrolls with a mouse or a
+       * trackpad and not at all with the arrow keys until it can take focus, so
+       * a long list inside one is unreachable without a pointer. The cost is a
+       * focus ring around the region, which is correct: it *is* focusable, and
+       * `outline-none` keeps the ring to the drawn one.
+       */
+      tabIndex={local.tabIndex ?? 0}
       class={cn(
-        'relative min-h-0 min-w-0',
+        'relative min-h-0 min-w-0 outline-none focus-visible:ring-3 focus-visible:ring-primary-subtle',
         {
           'overflow-y-auto overflow-x-hidden':
             local.orientation === 'vertical' || local.orientation === undefined,

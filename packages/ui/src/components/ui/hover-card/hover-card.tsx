@@ -41,7 +41,7 @@ export function HoverCardContent(props: ComponentProps<typeof KobalteHoverCard.C
         {...rest}
       >
         {local.children}
-        <KobalteHoverCard.Arrow class={popoverArrow} />
+        <KobalteHoverCard.Arrow aria-hidden="true" class={popoverArrow} />
       </KobalteHoverCard.Content>
     </KobalteHoverCard.Portal>
   )

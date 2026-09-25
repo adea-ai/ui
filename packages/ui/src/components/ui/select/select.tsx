@@ -148,7 +148,7 @@ export function SelectContent(props: ComponentProps<typeof KobalteSelect.Content
       >
         {local.children}
         <KobalteSelect.Listbox class="flex flex-col" />
-        <KobalteSelect.Arrow class={popoverArrow} />
+        <KobalteSelect.Arrow aria-hidden="true" class={popoverArrow} />
       </KobalteSelect.Content>
     </KobalteSelect.Portal>
   )

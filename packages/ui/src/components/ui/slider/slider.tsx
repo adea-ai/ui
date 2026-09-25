@@ -30,6 +30,8 @@ export function Slider(props: SliderProps) {
     'thumbClass',
     'valueLabel',
     'children',
+    'aria-label',
+    'aria-labelledby',
   ])
 
   return (
@@ -60,6 +62,8 @@ export function Slider(props: SliderProps) {
       </KobalteSlider.Track>
       {local.children}
       <KobalteSlider.Thumb
+        aria-label={local['aria-label']}
+        aria-labelledby={local['aria-labelledby']}
         class={cn(
           'border-primary bg-background block size-4 shrink-0 rounded-full border-2 shadow-xs',
           'transition-[color,box-shadow] ease-out outline-none',

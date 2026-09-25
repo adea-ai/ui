@@ -36,13 +36,21 @@ export type ResizableHandleProps = ComponentProps<typeof Resizable.Handle> & {
   class?: string
   /** Draw a visible grip in the middle of the divider. */
   withHandle?: boolean
+  /**
+   * The divider's accessible name. It is a focusable control — arrow keys move
+   * the split — so it needs one; without it a screen reader announces an
+   * unlabelled button between the two panels.
+   */
+  label?: string
 }
 
 export function ResizableHandle(props: ResizableHandleProps) {
-  const [local, rest] = splitProps(props, ['class', 'withHandle'])
+  const [local, rest] = splitProps(props, ['class', 'withHandle', 'label'])
 
   return (
     <Resizable.Handle
+      aria-label={local.label ?? 'Resize panels'}
+      aria-orientation="vertical"
       class={cn(
         'group/resize bg-border relative flex w-px shrink-0 items-center justify-center',
         /* Widen the hit target without moving the visual line: the divider is
