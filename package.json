@@ -1,6 +1,6 @@
 {
   "name": "adea-ui",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "The Adea design system: one themed component library shared by Adea and Cortana.",
   "license": "Apache-2.0",
