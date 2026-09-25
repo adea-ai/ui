@@ -23,7 +23,8 @@ import { fetchStories, openStory } from './stories'
 
 const stories = await fetchStories()
 
-const THEMES = ['dark', 'light'] as const
+/** The two default variants. A catalogue theme earns this when it becomes a default. */
+const THEMES = ['adea-dark', 'adea-light'] as const
 
 test.describe.configure({ mode: 'parallel' })
 

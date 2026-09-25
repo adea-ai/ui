@@ -1,4 +1,13 @@
-import { accentPresets, TooltipProvider } from '@adea-ai/ui'
+import {
+  accentPresets,
+  builtinThemes,
+  defaultDarkThemeId,
+  defaultLightThemeId,
+  fontOptions,
+  ThemeProvider,
+  themeById,
+  TooltipProvider,
+} from '@adea-ai/ui'
 import { withThemeByClassName } from '@storybook/addon-themes'
 import type { Decorator, Preview } from 'storybook-solidjs-vite'
 
@@ -49,33 +58,68 @@ import './preview.css'
  * a white sheet with white text. The addon exists because the docs container and
  * the preview are two documents, and it handles both.
  */
-const withAccentAndDensity: Decorator = (Story, context) => {
-  const root = document.documentElement
-  const density = (context.globals['density'] as string | undefined) ?? 'comfortable'
+/**
+ * The workshop runs on the library's own provider.
+ *
+ * Not a re-implementation of it: the theme control sets the same preference an
+ * application sets, and `ThemeProvider` applies it the same way. That is what makes
+ * the workshop a preview of the product rather than a picture of it, and it is why
+ * a theme added to the catalogue appears in the toolbar with no change here.
+ *
+ * A variant declares its own appearance, so the picker pins the variant in the slot
+ * that matches — the light/dark pair a user configures is still what an application
+ * stores, but in the workshop there is one control rather than three.
+ */
+const withWorkshopTheme: Decorator = (Story, context) => {
+  const themeId = (context.globals['theme'] as string | undefined) ?? defaultDarkThemeId
   const accent = (context.globals['accent'] as string | undefined) ?? 'theme'
+  const font = (context.globals['font'] as string | undefined) ?? 'space-grotesk'
+  const density = (context.globals['density'] as string | undefined) ?? 'comfortable'
+  const variant = themeById(themeId) ?? themeById(defaultDarkThemeId)!
 
-  root.dataset['density'] = density
-  // `theme` means "no override", so the attribute is removed rather than set to a
-  // value no block matches — an unmatched value would leave the tokens at whatever
-  // the previous selection left behind.
-  if (accent === 'theme') root.removeAttribute('data-accent')
-  else root.dataset['accent'] = accent
+  document.documentElement.dataset['density'] = density
 
-  return <TooltipProvider>{Story()}</TooltipProvider>
+  return (
+    <ThemeProvider
+      storageKey="adea-workshop-appearance"
+      initial={{
+        appearance: variant.appearance,
+        lightThemeId: variant.appearance === 'light' ? variant.id : defaultLightThemeId,
+        darkThemeId: variant.appearance === 'dark' ? variant.id : defaultDarkThemeId,
+        accent,
+        font,
+      }}
+    >
+      <TooltipProvider>{Story()}</TooltipProvider>
+    </ThemeProvider>
+  )
 }
 
 const preview: Preview = {
   globalTypes: {
     theme: {
       name: 'Theme',
-      description: 'The design system ships dark-first, with a light theme as an equal.',
-      defaultValue: 'dark',
+      description:
+        "Every theme in the library catalogue. The professional sets are other people's palettes, validated against the contrast floors rather than hand-checked.",
+      defaultValue: defaultDarkThemeId,
       toolbar: {
         icon: 'mirror',
-        items: [
-          { value: 'dark', icon: 'moon', title: 'Dark' },
-          { value: 'light', icon: 'sun', title: 'Light' },
-        ],
+        items: builtinThemes.map((theme) => ({
+          value: theme.id,
+          title: `${theme.familyLabel} ${theme.label}`,
+        })),
+        showName: true,
+        dynamicTitle: true,
+      },
+    },
+    font: {
+      name: 'Typeface',
+      description:
+        'The interface face. Space Grotesk is the default the language was drawn against.',
+      defaultValue: 'space-grotesk',
+      toolbar: {
+        icon: 'type',
+        items: fontOptions.map((option) => ({ value: option.id, title: option.label })),
         showName: true,
         dynamicTitle: true,
       },
@@ -118,7 +162,7 @@ const preview: Preview = {
       // scrollbars, form controls and the caret are painted by the engine.
       parentSelector: 'html',
     }),
-    withAccentAndDensity,
+    withWorkshopTheme,
   ],
   parameters: {
     layout: 'centered',

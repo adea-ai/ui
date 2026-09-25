@@ -136,8 +136,19 @@ export function SideRailSection(props: ComponentProps<'div'> & { label?: string 
 export const sideRailItemClass = [
   'group/rail-item flex h-rail-item min-w-0 w-full items-center gap-2.5 rounded-md px-3 text-sm font-medium',
   'group-data-[collapsed=true]/rail:justify-center group-data-[collapsed=true]/rail:px-0',
-  'transition-colors ease-out outline-none select-none',
+  'transition-[color,background-color,transform] ease-out outline-none select-none',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
+  /*
+   * The donor's row scales up slightly under the pointer and down under a press.
+   * It is a CSS transform rather than a motion-library gesture because the two are
+   * the same thing here and the transform costs nothing at runtime: no wrapper
+   * element, no listener, and it works on whatever element a caller renders the row
+   * as — an anchor, a button, a router's own link.
+   *
+   * The collapsed rail opts out: a 1.02 scale on a 74px column pushes the row past
+   * the rail's own edge, which reads as a glitch rather than as feedback.
+   */
+  'hover:scale-[1.02] active:scale-[0.97] group-data-[collapsed=true]/rail:hover:scale-100 group-data-[collapsed=true]/rail:active:scale-[0.98]',
   '[&_svg]:size-4 [&_svg]:shrink-0',
 ].join(' ')
 

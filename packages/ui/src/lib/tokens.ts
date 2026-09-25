@@ -361,12 +361,42 @@ export const typographyTokens: TokenDefinition[] = [
   {
     name: 'font-sans',
     kind: 'font-family',
-    description: 'Geist Variable, then the platform stack. The one family both applications share.',
+    description: 'The selected interface face. Space Grotesk unless the font axis says otherwise.',
   },
   {
     name: 'font-mono',
     kind: 'font-family',
-    description: 'Geist Mono Variable, then the platform stack. Code, terminals, ids, paths.',
+    description: 'The selected monospace face. Code, terminals, ids, paths.',
+  },
+  {
+    name: 'font-family-space-grotesk',
+    kind: 'font-family',
+    description: 'The interface default, and the face the visual language was drawn against.',
+  },
+  {
+    name: 'font-family-jetbrains-mono',
+    kind: 'font-family',
+    description: 'The monospace default. Code, terminals, diffs.',
+  },
+  {
+    name: 'font-family-geist',
+    kind: 'font-family',
+    description: 'An alternative interface face. cortana already ships it.',
+  },
+  {
+    name: 'font-family-geist-mono',
+    kind: 'font-family',
+    description: 'The monospace counterpart to Geist.',
+  },
+  {
+    name: 'font-family-system',
+    kind: 'font-family',
+    description: "The platform's own interface face. First-class, not a fallback.",
+  },
+  {
+    name: 'font-family-system-mono',
+    kind: 'font-family',
+    description: "The platform's own monospace face.",
   },
   {
     name: 'text-2xs',
@@ -608,6 +638,58 @@ export const accentPresets: readonly AccentPreset[] = Object.freeze([
     description: 'The loudest of the set. Use where the accent is decorative.',
     light: '#be185d',
     dark: '#f472b6',
+  },
+])
+
+/**
+ * The font axis.
+ *
+ * The family is a selection, like the accent: `data-font` sits on the same element
+ * and each option swaps the interface face. `space-grotesk` is the default because
+ * it is the face the visual language was drawn against, and `system` is a
+ * first-class option rather than a fallback — an application that wants the
+ * platform's own face should be able to say so without losing the rest of the
+ * system.
+ */
+export type FontOption = {
+  /** The `data-font` value. `space-grotesk` is the default and needs no attribute. */
+  id: string
+  label: string
+  description: string
+  /** Which of the two stacks this option sets. */
+  stack: 'sans' | 'mono' | 'both'
+}
+
+export const fontOptions: readonly FontOption[] = Object.freeze([
+  {
+    id: 'space-grotesk',
+    label: 'Space Grotesk',
+    description: 'The default, and the face the visual language was drawn against.',
+    stack: 'both',
+  },
+  {
+    id: 'system',
+    label: 'System',
+    description: "The platform's own face. What a terminal or editor usually wants.",
+    stack: 'both',
+  },
+  {
+    id: 'geist',
+    label: 'Geist',
+    description: 'The face cortana already ships. Neutral and wide.',
+    stack: 'both',
+  },
+  {
+    id: 'geist-mono',
+    label: 'Geist Mono',
+    description: 'Monospace throughout, for someone who wants a uniform texture.',
+    stack: 'both',
+  },
+  {
+    id: 'jetbrains-mono',
+    label: 'JetBrains Mono',
+    description: 'Monospace throughout, with coding ligatures off.',
+    stack: 'both',
   },
 ])
 

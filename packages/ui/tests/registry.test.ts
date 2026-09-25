@@ -47,13 +47,19 @@ describe('registry', () => {
 
   test('declares the peer item for every cross-component import', () => {
     // These two genuinely reach into another component's folder: Sheet reuses the
-    // dialog's overlay so the two scrims cannot diverge, and the rail reuses the
-    // tooltip. If cross-item detection ever stops working, they are what notices.
+    // dialog's overlay so the two scrims cannot diverge, and ToggleGroup reuses the
+    // Toggle's variants so a group item and a standalone toggle cannot drift. If
+    // cross-item detection ever stops working, they are what notices.
+    //
+    // The rail used to be a third: it reused Tooltip. It no longer does — the
+    // collapsed rail's flyout is its own portalled element, because a standard
+    // tooltip could not be made flush with the row or carry the icon and the chord.
+    // This assertion is what noticed the dependency had gone.
     const sheet = registryItems.find((item) => item.name === 'sheet')
-    const sideRail = registryItems.find((item) => item.name === 'side-rail')
+    const toggleGroup = registryItems.find((item) => item.name === 'toggle-group')
 
     expect(sheet?.registryDependencies ?? []).toContain('@adea-ai/ui/dialog')
-    expect(sideRail?.registryDependencies ?? []).toContain('@adea-ai/ui/tooltip')
+    expect(toggleGroup?.registryDependencies ?? []).toContain('@adea-ai/ui/toggle')
   })
 
   test('a component that composes around a slot rather than importing controls has no peers', () => {

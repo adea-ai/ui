@@ -371,6 +371,36 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * 3b. The font axis
+ *
+ * A selection, like the accent. `data-font` sits on the same element as `dark` and
+ * `data-accent`; the default (absent) is Space Grotesk, which is what the visual
+ * language was drawn against.
+ *
+ * `system` is deliberately first-class rather than a fallback: an application that
+ * wants the platform's own face — which is what a terminal and a code editor
+ * usually look best in — should be able to say so without losing the rest of the
+ * system.
+ * ------------------------------------------------------------------------- */
+
+[data-font='system'] {
+  --font-sans: var(--font-family-system);
+  --font-mono: var(--font-family-system-mono);
+}
+[data-font='geist'] {
+  --font-sans: var(--font-family-geist);
+  --font-mono: var(--font-family-geist-mono);
+}
+[data-font='geist-mono'] {
+  --font-sans: var(--font-family-geist-mono);
+  --font-mono: var(--font-family-geist-mono);
+}
+[data-font='jetbrains-mono'] {
+  --font-sans: var(--font-family-jetbrains-mono);
+  --font-mono: var(--font-family-jetbrains-mono);
+}
+
+/* ---------------------------------------------------------------------------
  * 4. Non-colour scales
  *
  * Outside the theme blocks because they do not change with polarity — only with a
@@ -386,17 +416,28 @@
   --radius-2xl: 1.125rem; /* 18px */
   --radius: var(--radius-lg);
 
-  /* Type. Geist for the interface, Geist Mono for code, terminals and anything a
-     user compares character by character. Both ship from `@fontsource-variable`
-     via `fonts.css`; the fallback chains end in the generic family, so a consumer
-     that skips the font import still renders correctly in another face.
-     Geist is the choice because cortana already ships it, it is shadcn's own
-     baseline, and it is what the reference template uses — one family across the
-     organisation rather than a third. */
-  --font-sans:
-    'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono:
-    'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* --- Type ---------------------------------------------------------------
+   * The families are declared once, and `--font-sans`/`--font-mono` resolve from
+   * a *selection* rather than naming one face directly. That is what makes the
+   * family a user preference — the same shape as the accent axis — instead of a
+   * hard-coded choice an application cannot override without restating the
+   * stacks.
+   *
+   * Every stack ends in the generic family, so a consumer that skips the font
+   * import still renders correctly, just in another face.
+   */
+  --font-family-space-grotesk: 'Space Grotesk Variable', 'Space Grotesk', sans-serif;
+  --font-family-jetbrains-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
+  --font-family-geist: 'Geist Variable', 'Geist', sans-serif;
+  --font-family-geist-mono: 'Geist Mono Variable', 'Geist Mono', monospace;
+  --font-family-system: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-family-system-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Space Grotesk is the default because it is the face the visual language was
+     drawn against: the donor this system's structure comes from sets it, and its
+     slightly narrow, geometric forms are part of the look. */
+  --font-sans: var(--font-family-space-grotesk);
+  --font-mono: var(--font-family-jetbrains-mono);
 
   /* Type scale. Each rung carries its own line-height because the ratio is not
      constant: small text needs more leading to stay readable, display text needs
@@ -494,6 +535,20 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * 4b. Named CSS hooks
+ *
+ * The sanctioned escape hatch for values that are *data* rather than design
+ * decisions: a theme preview paints another variant's colours, and those are not
+ * tokens of the active theme. A hook takes the value through a custom property so
+ * the component never writes a literal colour and the linter can still see that
+ * nothing raw is being styled.
+ * ------------------------------------------------------------------------- */
+
+.theme-preview-edge {
+  border-color: var(--preview-edge, var(--border));
+}
+
+/* ---------------------------------------------------------------------------
  * 5. Tailwind namespace mapping
  *
  * `@theme inline` publishes the tokens above as Tailwind utilities. Every
@@ -572,6 +627,12 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-family-space-grotesk: var(--font-family-space-grotesk);
+  --font-family-jetbrains-mono: var(--font-family-jetbrains-mono);
+  --font-family-geist: var(--font-family-geist);
+  --font-family-geist-mono: var(--font-family-geist-mono);
+  --font-family-system: var(--font-family-system);
+  --font-family-system-mono: var(--font-family-system-mono);
 
   --text-2xs: var(--text-2xs);
   --text-2xs--line-height: var(--text-2xs--line-height);

@@ -59,6 +59,9 @@ export * from './components/ui/toggle'
 export * from './components/ui/toggle-group'
 export * from './components/ui/tooltip'
 
+/* --- Motion -------------------------------------------------------------- */
+export * from './components/motion'
+
 /* --- Layout -------------------------------------------------------------- */
 export * from './components/layout/app-shell'
 export * from './components/layout/page'
@@ -67,6 +70,9 @@ export * from './components/layout/side-rail'
 export * from './components/layout/sidebar-nav'
 export * from './components/layout/status-bar'
 export * from './components/layout/top-bar'
+
+/* --- Theming ------------------------------------------------------------- */
+export * from './components/theme'
 
 /* --- Composites ---------------------------------------------------------- */
 export * from './components/composites/list-row'
@@ -86,18 +92,39 @@ export {
   type VariantProps,
 } from './lib/variants'
 export {
+  builtinThemes,
+  contrastRatio,
+  defaultDarkThemeId,
+  defaultLightThemeId,
+  themeById,
+  themeCssVariables,
+  themeFamilies,
+  themesForAppearance,
+  validateTheme,
+  validateThemeRegistry,
+  type ThemeAppearance,
+  type ThemeColors,
+  type ThemeEditorPalette,
+  type ThemeFinding,
+  type ThemeProvenance,
+  type ThemeTerminalPalette,
+  type ThemeVariant,
+} from './lib/themes'
+export {
   accentPresets,
   allTokens,
   colorTokens,
   densityTokens,
   designTokens,
   elevationTokens,
+  fontOptions,
   motionTokens,
   radiusTokens,
   typographyTokens,
   undocumentedTokenAliases,
   zIndexTokens,
   type AccentPreset,
+  type FontOption,
   type TokenDefinition,
   type TokenKind,
 } from './lib/tokens'

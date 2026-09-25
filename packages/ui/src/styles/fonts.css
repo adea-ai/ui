@@ -1,22 +1,26 @@
 /* The design system's typefaces, self-hosted.
  *
- * Geist for the interface and Geist Mono for code. Both ship as variable fonts,
- * so every weight in the system is one file per family and the type scale can move
- * without a new asset.
+ * Four families, all variable, all resolved from `node_modules` at build time —
+ * a desktop app must not fetch a font at runtime, or the first paint after a cold
+ * start shows a fallback face and then reflows.
  *
- * A desktop app must not fetch a font at runtime — the first paint after a cold
- * start would show a fallback face and then reflow. These imports resolve from
- * `node_modules` at build time, so the faces are in the bundle.
+ *   Space Grotesk   the interface default, and the face the visual language was
+ *                   drawn against
+ *   JetBrains Mono  code, terminals, ids, paths
+ *   Geist           an alternative interface face; cortana already ships it
+ *   Geist Mono      its monospace counterpart
+ *
+ * The family is a *selection*, not a constant: `theme.css` exposes a `data-font`
+ * axis, so a user can pick a face the way they pick an accent, and the system
+ * default (`system`) is always available for someone who wants their OS's own.
  *
  * Consumers import this after the theme:
  *
  *   @import '@adea-ai/ui/globals.css';
  *   @import '@adea-ai/ui/fonts.css';
- *
- * Geist rather than a third family: cortana already ships it, it is shadcn's own
- * baseline, and it is what the reference template uses. The `--font-sans` and
- * `--font-mono` stacks in `theme.css` name these exact family names.
  */
 
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
