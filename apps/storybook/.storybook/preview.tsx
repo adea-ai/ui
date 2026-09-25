@@ -9,6 +9,7 @@ import {
   TooltipProvider,
 } from '@adea-ai/ui'
 import { withThemeByClassName } from '@storybook/addon-themes'
+import { themeClasses } from './theme-classes'
 import type { Decorator, Preview } from 'storybook-solidjs-vite'
 
 /**
@@ -156,26 +157,10 @@ const preview: Preview = {
   },
   decorators: [
     withThemeByClassName({
-      /**
-       * Derived from the catalogue, and it has to cover **every** id the `theme`
-       * global can hold.
-       *
-       * This map is not just configuration: `withThemeByClassName` also registers
-       * the `theme` global itself, and at render time it looks the selected id up
-       * here and splits the result into classes. A hand-written
-       * `{ light: 'light', dark: 'dark' }` therefore throws
-       * `Cannot read properties of undefined (reading 'split')` the moment anyone
-       * picks a catalogue variant, because `themes['catppuccin-mocha']` is
-       * undefined. Deriving it means a theme added to the catalogue cannot break
-       * the workshop — the same reason the accent list below is read from the
-       * library rather than restated.
-       *
-       * The value is the *appearance*, not the variant id: the addon's job here is
-       * the `dark` class for Storybook's own docs chrome, which knows two states.
-       * The variant itself is applied by `withWorkshopTheme` through the library's
-       * provider.
-       */
-      themes: Object.fromEntries(builtinThemes.map((theme) => [theme.id, theme.appearance])),
+      // Derived, and it must cover every id the `theme` global can hold — the
+      // addon splits `themes[selected]` at render time and throws on a miss.
+      // `theme-classes.ts` explains why, and the unit test pins it.
+      themes: themeClasses,
       defaultTheme: defaultDarkThemeId,
       // The canvas is the app surface, so `color-scheme` follows the theme too —
       // scrollbars, form controls and the caret are painted by the engine.

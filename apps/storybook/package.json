@@ -13,6 +13,7 @@
     "lint": "oxlint",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "serve": "bun scripts/serve-workshop.ts",
+    "test": "bun test tests/unit",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/a11y.spec.ts",
     "test:interactions": "playwright test tests/interactions.spec.ts"
