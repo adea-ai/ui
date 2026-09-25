@@ -1,4 +1,3 @@
-import { createSignal } from 'solid-js'
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { UpdateDialog, type UpdateAdapter, type UpdateState } from './update-dialog'
 
@@ -134,26 +133,27 @@ export const BrowserRuntime: Story = {
   args: { adapter: demoAdapter([base], false), appName: 'Adea' },
 }
 
-/** A version whose notes arrive as markdown — stripped to text, not rendered. */
+/**
+ * Open on mount, so the dialog's *content* is in the accessibility scan. Every
+ * other story here is trigger-based and closed, which means the panel — the
+ * progress bar, the release-notes scroller, the changelog scroller — has never
+ * been checked by the lane. This one is, and it is the story that found the
+ * scrollers that needed their own tab stop.
+ *
+ * The trigger is still rendered, so the dialog is reachable again after closing.
+ */
 export const WithReleaseNotes: Story = {
-  render: () => {
-    const [open, setOpen] = createSignal(true)
-    return (
-      <UpdateDialog
-        appName="Adea"
-        open={open()}
-        onOpenChange={setOpen}
-        adapter={demoAdapter([
-          {
-            ...base,
-            phase: 'available',
-            availableVersion: '0.56.0',
-            releaseDate: '2026-09-24',
-            releaseNotes: NOTES,
-            releaseUrl: 'https://example.com/releases',
-          },
-        ])}
-      />
-    )
+  args: {
+    defaultOpen: true,
+    adapter: demoAdapter([
+      {
+        ...base,
+        phase: 'available',
+        availableVersion: '0.56.0',
+        releaseDate: '2026-09-24',
+        releaseNotes: NOTES,
+        releaseUrl: 'https://example.com/releases',
+      },
+    ]),
   },
 }

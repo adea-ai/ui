@@ -59,6 +59,8 @@ export type BoardProps<T> = {
   children: (item: T, state: { dragging: boolean }) => JSX.Element
   /** Shown when a column has no items. */
   emptyColumn?: (column: BoardColumn) => JSX.Element
+  /** The board's accessible name. Defaults to "Board". */
+  label?: string
   class?: string
 }
 
@@ -77,6 +79,7 @@ export function Board<T>(props: BoardProps<T>) {
     'onMove',
     'children',
     'emptyColumn',
+    'label',
     'class',
   ])
 
@@ -131,7 +134,18 @@ export function Board<T>(props: BoardProps<T>) {
   }
 
   return (
-    <div class={cn('flex min-h-0 gap-4 overflow-x-auto pb-2', local.class)}>
+    /*
+      `role="region"` + `tabindex="0"` because the board scrolls horizontally and a
+      keyboard user has to be able to scroll it — axe's `scrollable-region-focusable`.
+      It is not enough that the cards are focusable: a board with empty columns, or
+      with more columns than fit, has nothing focusable to scroll from.
+    */
+    <div
+      class={cn('flex min-h-0 gap-4 overflow-x-auto pb-2', local.class)}
+      role="region"
+      aria-label={local.label ?? 'Board'}
+      tabindex="0"
+    >
       <For each={local.columns}>
         {(column) => {
           const items = () => byColumn().get(column.id) ?? []

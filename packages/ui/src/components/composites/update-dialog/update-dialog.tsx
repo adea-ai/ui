@@ -124,6 +124,12 @@ export type UpdateDialogProps = {
   desktopOnlyMessage?: string
   /** A controlled open state. Omit for the trigger to manage its own. */
   open?: boolean
+  /**
+   * Start open, uncontrolled — for a caller that opens the dialog because it found
+   * something ("an update is available") rather than because the user asked. The
+   * trigger is still rendered, so the dialog is reachable again after closing.
+   */
+  defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   /** Render only the panel, for a caller that provides its own dialog. */
   class?: string
@@ -154,11 +160,12 @@ export function UpdateDialog(props: UpdateDialogProps) {
     'fallbackVersion',
     'desktopOnlyMessage',
     'open',
+    'defaultOpen',
     'onOpenChange',
     'class',
   ])
 
-  const [uncontrolledOpen, setUncontrolledOpen] = createSignal(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = createSignal(local.defaultOpen ?? false)
   const open = () => local.open ?? uncontrolledOpen()
   const setOpen = (next: boolean) => {
     if (local.open === undefined) setUncontrolledOpen(next)
@@ -459,9 +466,17 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   v{state()?.availableVersion}
                 </Badge>
               </div>
-              <p class="max-h-52 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground">
+              {/* A long text block with no focusable descendant: it needs its own tab
+                  stop, named by the heading above it, or a keyboard user cannot
+                  scroll it (`scrollable-region-focusable`). */}
+              <div
+                class="max-h-52 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground"
+                role="region"
+                aria-labelledby="update-release-notes"
+                tabindex="0"
+              >
                 {notes()}
-              </p>
+              </div>
             </section>
           </Show>
 
@@ -473,9 +488,17 @@ export function UpdateDialog(props: UpdateDialogProps) {
               <p class="text-xs text-muted-foreground">
                 A plain-text history of the installed release channel.
               </p>
-              <p class="max-h-72 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground">
+              {/* A long text block with no focusable descendant: it needs its own tab
+                  stop, named by the heading above it, or a keyboard user cannot
+                  scroll it (`scrollable-region-focusable`). */}
+              <div
+                class="max-h-72 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground"
+                role="region"
+                aria-labelledby="update-changelog"
+                tabindex="0"
+              >
                 {changelog()}
-              </p>
+              </div>
             </section>
           </Show>
         </div>

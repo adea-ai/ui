@@ -76,7 +76,14 @@ export function ThreadPanel(props: ThreadPanelProps) {
         <div class="bg-muted/40 shrink-0 border-b border-border px-3 py-2">{local.root}</div>
       </Show>
 
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">{local.children}</div>
+      <div
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        role="region"
+        aria-label="Thread replies"
+        tabindex="0"
+      >
+        {local.children}
+      </div>
 
       <Show when={local.composer}>
         <div class="shrink-0 border-t border-border p-2">{local.composer}</div>
