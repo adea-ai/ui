@@ -3,6 +3,14 @@ import { Carousel, CarouselSlide } from './carousel'
 
 const slides = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
 
+const slide = (label: string, slidesToShow?: number) => (
+  <CarouselSlide slidesToShow={slidesToShow}>
+    <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">
+      {label}
+    </div>
+  </CarouselSlide>
+)
+
 const meta = {
   title: 'UI/Carousel',
   component: Carousel,
@@ -15,21 +23,10 @@ const meta = {
       },
     },
   },
-  decorators: [
-    () => (
-      <div class="w-[36rem]">
-        <Carousel dots>
-          {slides.map((slide) => (
-            <CarouselSlide>
-              <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">
-                {slide}
-              </div>
-            </CarouselSlide>
-          ))}
-        </Carousel>
-      </div>
-    ),
-  ],
+  // The slides are the required prop, so they live in the meta and the default
+  // story renders from them. The variants supply their own `render` instead.
+  args: { dots: true, children: slides.map((label) => slide(label)) },
+  decorators: [() => <div class="w-[36rem]" />],
 } satisfies Meta<typeof Carousel>
 
 export default meta
@@ -41,15 +38,7 @@ export const Default: Story = {}
 export const TwoUp: Story = {
   render: () => (
     <div class="w-[36rem]">
-      <Carousel dots>
-        {slides.map((slide) => (
-          <CarouselSlide slidesToShow={2}>
-            <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">
-              {slide}
-            </div>
-          </CarouselSlide>
-        ))}
-      </Carousel>
+      <Carousel dots>{slides.map((label) => slide(label, 2))}</Carousel>
     </div>
   ),
 }
@@ -59,13 +48,7 @@ export const Looping: Story = {
   render: () => (
     <div class="w-[36rem]">
       <Carousel loop dots>
-        {slides.map((slide) => (
-          <CarouselSlide>
-            <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">
-              {slide}
-            </div>
-          </CarouselSlide>
-        ))}
+        {slides.map((label) => slide(label))}
       </Carousel>
     </div>
   ),
@@ -73,30 +56,14 @@ export const Looping: Story = {
 
 /** A single slide: no dots, and the controls disable at the ends. */
 export const SingleSlide: Story = {
-  render: () => (
-    <div class="w-[36rem]">
-      <Carousel>
-        <CarouselSlide>
-          <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">
-            the only slide
-          </div>
-        </CarouselSlide>
-      </Carousel>
-    </div>
-  ),
+  render: () => <div class="w-[36rem]">{<Carousel>{slide('the only slide')}</Carousel>}</div>,
 }
 
 export const Vertical: Story = {
   render: () => (
     <div class="h-64">
       <Carousel orientation="vertical" dots>
-        {slides.map((slide) => (
-          <CarouselSlide>
-            <div class="m-1 grid h-24 place-items-center rounded-lg border border-border bg-card text-sm">
-              {slide}
-            </div>
-          </CarouselSlide>
-        ))}
+        {slides.map((label) => slide(label))}
       </Carousel>
     </div>
   ),

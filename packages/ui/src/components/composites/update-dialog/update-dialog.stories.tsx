@@ -41,6 +41,9 @@ const meta = {
   title: 'Composites/Update Dialog',
   component: UpdateDialog,
   tags: ['autodocs'],
+  // `adapter` is required, so the meta carries one; a story that supplies its own
+  // `render` overrides it.
+  args: { adapter: demoAdapter([base]), appName: 'Adea' },
   parameters: {
     docs: {
       description: {

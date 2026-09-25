@@ -16,6 +16,7 @@ const meta = {
   title: 'UI/Code Block',
   component: CodeBlock,
   tags: ['autodocs'],
+  args: { code: sample, language: 'tsx' },
   parameters: {
     docs: {
       description: {

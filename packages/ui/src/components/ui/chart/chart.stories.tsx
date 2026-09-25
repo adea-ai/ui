@@ -11,11 +11,13 @@ import {
 } from './chart'
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+const sessions = [{ label: 'Sessions', data: [12, 19, 14, 22, 28, 31] }]
 
 const meta = {
   title: 'UI/Chart',
   component: LineChart,
   tags: ['autodocs'],
+  args: { labels: months, series: sessions },
   parameters: {
     docs: {
       description: {

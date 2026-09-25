@@ -7,6 +7,7 @@ const meta = {
   title: 'UI/Entity Icon',
   component: EntityIcon,
   tags: ['autodocs'],
+  args: { name: 'Kitchen' },
   parameters: {
     docs: {
       description: {

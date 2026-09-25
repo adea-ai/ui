@@ -33,6 +33,7 @@ const meta = {
   title: 'UI/Diff Block',
   component: DiffBlock,
   tags: ['autodocs'],
+  args: { patch, showLineNumbers: true },
   parameters: {
     docs: {
       description: {

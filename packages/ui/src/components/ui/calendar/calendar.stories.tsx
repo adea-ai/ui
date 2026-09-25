@@ -7,6 +7,7 @@ const meta = {
   title: 'UI/Calendar',
   component: CalendarSurface,
   tags: ['autodocs'],
+  args: { mode: 'single' },
   parameters: {
     docs: {
       description: {
@@ -63,13 +64,30 @@ export const TwoMonths: Story = {
   },
 }
 
-/** Days outside the month are shown but dimmed — a grid with holes is harder to read. */
-export const WithOutsideDays: Story = {
+/**
+ * Outside days are disabled by default: they are drawn but not selectable, so a
+ * click cannot land on a date belonging to the neighbouring month. Turning that
+ * off makes them selectable.
+ */
+export const WithSelectableOutsideDays: Story = {
   render: () => {
     const [day, setDay] = createSignal<Date | null>(null)
     return (
-      <CalendarSurface mode="single" value={day()} onValueChange={setDay} outsideDays="visible" />
+      <CalendarSurface
+        mode="single"
+        disableOutsideDays={false}
+        value={day()}
+        onValueChange={setDay}
+      />
     )
+  },
+}
+
+/** Six weeks always, so the grid does not change height between months. */
+export const FixedWeeks: Story = {
+  render: () => {
+    const [day, setDay] = createSignal<Date | null>(null)
+    return <CalendarSurface mode="single" fixedWeeks value={day()} onValueChange={setDay} />
   },
 }
 

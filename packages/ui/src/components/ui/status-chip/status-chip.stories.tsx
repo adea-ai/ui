@@ -6,6 +6,7 @@ const meta = {
   title: 'UI/Status Chip',
   component: StatusChip,
   tags: ['autodocs'],
+  args: { label: 'Ready', tone: 'success' },
   parameters: {
     docs: {
       description: {

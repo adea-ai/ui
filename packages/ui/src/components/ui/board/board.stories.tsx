@@ -48,6 +48,16 @@ const meta = {
   title: 'UI/Board',
   component: Board,
   tags: ['autodocs'],
+  // The required props, so a story that supplies only a `render` is still typed.
+  args: {
+    columns,
+    items: initial,
+    itemId: (task: Task) => task.id,
+    itemColumn: (task: Task) => columnOf[task.id] ?? 'planned',
+    canDrop: (_task: Task, from: string, to: string) => (legal[from] ?? []).includes(to),
+    onMove: () => undefined,
+    children: (task: Task) => <BoardCardBody>{task.title}</BoardCardBody>,
+  },
   parameters: {
     docs: {
       description: {

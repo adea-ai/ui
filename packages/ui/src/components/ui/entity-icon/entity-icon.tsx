@@ -67,8 +67,13 @@ export type EntityIconProps = Omit<ComponentProps<'span'>, 'children'> &
   EntityIconVariantProps & {
     /** The entity's name. Used for the accessible label and, via `fallback`, the monogram. */
     name: string
-    /** A logo or icon component — a Lucide icon, a brand mark. */
-    icon?: Component
+    /**
+     * A logo or icon — a Lucide icon reference (`icon={Wrench}`) or an element
+     * (`icon={<Wrench />}`). Both are accepted because both are what a caller
+     * naturally writes, and the difference is an implementation detail they should
+     * not have to know.
+     */
+    icon?: Component | JSX.Element
     /** Glyph for an entity with no icon. Defaults to the name's first two letters. */
     fallback?: (name: string) => JSX.Element
     /** A corner badge: a status dot, an unread count, an installed tick. */
@@ -88,6 +93,21 @@ export function monogram(name: string): string {
   return name.trim().slice(0, 2)
 }
 
+/**
+ * A glyph is either a component reference or an element, and the two render
+ * differently — `Dynamic` for the first, the element itself for the second. The
+ * union is discriminated so the branch is checked rather than cast.
+ */
+type Glyph = { kind: 'component'; value: Component } | { kind: 'element'; value: JSX.Element }
+
+function Glyph(props: { glyph: Glyph }) {
+  return props.glyph.kind === 'component' ? (
+    <Dynamic component={props.glyph.value} />
+  ) : (
+    props.glyph.value
+  )
+}
+
 export function EntityIcon(props: EntityIconProps) {
   const [local, rest] = splitProps(props, [
     'name',
@@ -101,6 +121,14 @@ export function EntityIcon(props: EntityIconProps) {
     'class',
   ])
 
+  const glyph = (): Glyph | undefined => {
+    const icon = local.icon
+    if (!icon) return undefined
+    return typeof icon === 'function'
+      ? { kind: 'component', value: icon as Component }
+      : { kind: 'element', value: icon as JSX.Element }
+  }
+
   return (
     <span
       class={cn(
@@ -113,10 +141,10 @@ export function EntityIcon(props: EntityIconProps) {
       {...rest}
     >
       <Show
-        when={local.icon}
+        when={glyph()}
         fallback={local.fallback ? local.fallback(local.name) : monogram(local.name)}
       >
-        {(icon) => <Dynamic component={icon()} />}
+        {(value) => <Glyph glyph={value()} />}
       </Show>
       <Show when={local.badge}>
         <span class="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4">{local.badge}</span>
