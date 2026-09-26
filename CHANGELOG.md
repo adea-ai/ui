@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/adea-ai/ui/compare/v0.2.1...v0.3.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **theme:** adopt adea's palette, Geist, and the accent axis ([#4](https://github.com/adea-ai/ui/issues/4))
+
+### Features
+
+* **theme:** adopt adea's palette, Geist, and the accent axis ([#4](https://github.com/adea-ai/ui/issues/4)) ([f42bf14](https://github.com/adea-ai/ui/commit/f42bf14384f492f2164e4779b53daf639e2343cc))
+
 ## [0.2.1](https://github.com/adea-ai/ui/compare/v0.2.0...v0.2.1) (2026-09-25)
 
 
