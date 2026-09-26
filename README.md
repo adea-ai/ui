@@ -239,3 +239,12 @@ technology acceptance and production Adea/Cortana adoption remain pending. Actua
 packed-renderer measurements belong to the dependency integration checkpoint;
 source-only changes do not refresh that evidence. The existing packed-model probe remains a pure subpath
 check and does not certify the renderer or library root.
+
+### Optional engines and breaking root-export migration
+
+Core controls may be imported from `@adea-ai/ui` without chart/carousel peers.
+Charts, chart helpers/types, carousels and carousel helpers/types are public only
+through `@adea-ai/ui/components/ui/chart` and
+`@adea-ai/ui/components/ui/carousel`. Install their corresponding optional peers
+when using those entries. Migrate existing root imports to those subpaths; this
+intentional breaking change is declared in the commit and release notes.
