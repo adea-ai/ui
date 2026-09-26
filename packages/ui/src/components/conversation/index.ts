@@ -5,7 +5,11 @@ export {
   type ConversationAvatarKind,
   type ConversationAvatarProps,
 } from './conversation-avatar'
-export { ConversationSurface, type ConversationSurfaceProps } from './conversation-surface'
+export {
+  ConversationSurface,
+  type ConversationSurfaceProps,
+  type ConversationReadingPosition,
+} from './conversation-surface'
 export {
   ComposerAttachmentButton,
   ComposerHint,

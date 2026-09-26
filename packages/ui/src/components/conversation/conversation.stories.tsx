@@ -261,6 +261,23 @@ export const Surface: Story = {
   ),
 }
 
+/** Returning to history consumes a host snapshot without treating restoration as consent to follow. */
+export const SurfaceRestored: Story = {
+  render: () => (
+    <div class="flex h-96 w-[44rem] flex-col">
+      <ConversationSurface
+        role="region"
+        aria-label="Restored transcript"
+        initialReadingPosition={{ top: 100, following: false }}
+      >
+        {Array.from({ length: 30 }, (_, index) => (
+          <p class="p-4">Earlier message {index + 1}</p>
+        ))}
+      </ConversationSurface>
+    </div>
+  ),
+}
+
 /** Stream/resize/collapse the transcript, then scroll up: layout is not consent to follow. */
 export const SurfaceFollowing: Story = {
   render: () => {

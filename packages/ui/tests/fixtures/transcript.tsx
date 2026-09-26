@@ -1,7 +1,10 @@
 import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import { Button } from '../../src/components/ui/button/button'
-import { ConversationSurface } from '../../src/components/conversation/conversation-surface'
+import {
+  ConversationSurface,
+  type ConversationReadingPosition,
+} from '../../src/components/conversation/conversation-surface'
 import '../../src/styles/globals.css'
 
 function Fixture() {
@@ -9,6 +12,27 @@ function Fixture() {
   const [following, setFollowing] = createSignal(true)
   const [key, setKey] = createSignal('first')
   const [scrollEvents, setScrollEvents] = createSignal(0)
+  let readingPosition: ConversationReadingPosition | undefined
+  function RestorableTranscript() {
+    return (
+      <ConversationSurface
+        role="region"
+        aria-label="Restored transcript"
+        follow={following()}
+        initialReadingPosition={readingPosition}
+        onReadingPositionChange={(position) => {
+          readingPosition = position
+        }}
+      >
+        {Array.from({ length: 30 }, (_, index) => (
+          <p class="p-4">Saved message {index + 1}</p>
+        ))}
+        <p data-stream class="whitespace-pre-wrap p-4">
+          First chunk
+        </p>
+      </ConversationSurface>
+    )
+  }
   return (
     <main>
       <div class="flex flex-wrap items-center gap-2 p-2">
@@ -49,6 +73,9 @@ function Fixture() {
               First chunk
             </p>
           </ConversationSurface>
+        </div>
+        <div class="flex h-96 flex-col">
+          <RestorableTranscript />
         </div>
       </Show>
     </main>
