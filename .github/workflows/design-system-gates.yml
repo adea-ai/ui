@@ -152,6 +152,10 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
+      - name: Install WebKit for component input contracts
+        if: matrix.shard == '1/4'
+        run: bunx playwright install --with-deps webkit
+
       - name: Download the built workshop
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
@@ -161,6 +165,12 @@ jobs:
       - name: Check this slice's stories for accessibility violations and interactions
         working-directory: apps/storybook
         run: bunx playwright test --shard=${{ matrix.shard }}
+
+      # Component tests bundle their own real entry and need no server. Run
+      # once after the workshop shard, retaining both reports in this artifact.
+      - name: Check controlled component interactions
+        if: matrix.shard == '1/4'
+        run: bun run test:components
 
       - name: Upload the accessibility report
         if: always()

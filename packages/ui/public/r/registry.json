@@ -1748,6 +1748,11 @@
           "target": "components/conversation/conversation-surface.tsx"
         },
         {
+          "path": "src/components/conversation/ime-guard.ts",
+          "type": "registry:ui",
+          "target": "components/conversation/ime-guard.ts"
+        },
+        {
           "path": "src/components/conversation/index.ts",
           "type": "registry:ui",
           "target": "components/conversation/index.ts"

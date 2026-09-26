@@ -28,6 +28,7 @@
     "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run --cwd packages/ui theme:check && bun run registry:validate && bun run build && bun run check:tree-shaking && bun run pack:check && bun run check:packed-consumer",
     "test:a11y": "bun run --cwd apps/storybook test:a11y",
     "check:tree-shaking": "bun run --cwd packages/ui check:tree-shaking",
+    "test:components": "bun run --cwd apps/storybook test:components",
     "check:packed-consumer": "bun run --cwd packages/ui check:packed-consumer"
   },
   "devDependencies": {
