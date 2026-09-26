@@ -25,6 +25,9 @@ In the app's stylesheet, after Tailwind:
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
 @import '@adea-ai/ui/fonts.css'; /* optional: the self-hosted typefaces */
+/* Tailwind ignores node_modules: register the components you use plus shared helpers. */
+@source '../node_modules/@adea-ai/ui/src/components/ui/button';
+@source '../node_modules/@adea-ai/ui/src/lib/variants.ts';
 ```
 
 If the app does not already import Tailwind, one line does everything:
@@ -33,6 +36,15 @@ If the app does not already import Tailwind, one line does everything:
 @import '@adea-ai/ui/globals.css';
 @import '@adea-ai/ui/fonts.css';
 ```
+
+Tailwind must discover the packaged class strings. Adjust these `@source` paths
+relative to your stylesheet. Include each composition's nested primitives too:
+`ModalDialog` needs `ui/modal-dialog`, `ui/dialog`, and `ui/button`.
+The shared `lib/variants.ts` defines control sizes; overlays also need `lib/overlay.ts`
+for their fills, placement, and motion.
+Registering all of `src/components` is simpler but emits utilities for unused
+components; selective discovery keeps CSS ownership and measured budgets explicit.
+Importing `globals.css` also requires discovery of the components and helpers.
 
 Then wrap the app in `ThemeProvider`. **This is not optional**, and the reason is
 worth stating plainly, because the older version of this document told you to
@@ -409,3 +421,10 @@ import is either satisfied by this package or is not.
 
 The two applications must not both exist as component libraries in the long run —
 the point of this repository is that they are one.
+
+The packed core fixtures enforce complete CSS discovery, including shared helpers:
+Button is 32,155 raw CSS bytes, ModalDialog is 39,385, and AppShell is 25,389.
+Their CSS caps are 32/40/32 KiB respectively. Dialog's earlier partial fixture
+measured 25,088 bytes because it omitted dialog/button sources and overlay helpers;
+that was incomplete styling, not a usable baseline. Existing JavaScript budgets
+remain unchanged. Optional Chart/Carousel CSS caps are 28/35 KiB.

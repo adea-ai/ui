@@ -116,7 +116,21 @@ try {
             join(dir, 'style.css'),
             "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
               (sample.source
-                ? `@source '../node_modules/@adea-ai/ui/src/components/${sample.source}';\n`
+                ? `@source '../node_modules/@adea-ai/ui/src/components/${sample.source}';\n` +
+                  (sample.name.startsWith('button') ||
+                  sample.name === 'overlay' ||
+                  sample.name === 'carousel-subpath'
+                    ? "@source '../node_modules/@adea-ai/ui/src/lib/variants.ts';\n"
+                    : '') +
+                  (sample.name === 'overlay'
+                    ? "@source '../node_modules/@adea-ai/ui/src/lib/overlay.ts';\n"
+                    : '') +
+                  (sample.name === 'overlay'
+                    ? "@source '../node_modules/@adea-ai/ui/src/components/ui/{dialog,button}';\n"
+                    : '') +
+                  (sample.name === 'carousel-subpath'
+                    ? "@source '../node_modules/@adea-ai/ui/src/components/ui/button';\n"
+                    : '')
                 : '')
           )
           const result = await build({
@@ -190,17 +204,13 @@ try {
             .join('\n')
           if (sample.name.startsWith('button') && !css.includes('.bg-primary'))
             throw new Error('Packed Button is missing its Tailwind utility')
+          if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
+            throw new Error('Packed Button is missing shared control sizing')
+          if (sample.name === 'overlay' && !css.includes('.bg-popover'))
+            throw new Error('Packed dialog is missing shared overlay styling')
           if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
             throw new Error('Fonts were shipped without fonts.css')
           const bytes = gzipSync(code).length
-          if (sample.name.startsWith('button') && bytes > 40 * 1024)
-            throw new Error(`Button exceeds existing 40 KiB gzip budget: ${bytes}`)
-          if (phase === 'core' && Buffer.byteLength(css) > 32 * 1024)
-            throw new Error('Core CSS exceeds measured 32 KiB cap')
-          if ((sample.name === 'overlay' || sample.name === 'shell') && bytes > 32 * 1024)
-            throw new Error('Overlay/shell exceeds measured 32 KiB gzip cap')
-          if (phase === 'optional' && bytes > 180 * 1024)
-            throw new Error('Optional entry exceeds existing 180 KiB gzip budget')
           report.push({
             condition,
             sample: sample.name,
@@ -211,6 +221,24 @@ try {
             solidRuntimes: solidRoots.size,
             modules: modules.length,
           })
+          if (sample.name.startsWith('button') && bytes > 40 * 1024)
+            throw new Error(`Button exceeds existing 40 KiB gzip budget: ${bytes}`)
+          // Complete discovered CSS: Button 32,155; dialog 39,385; shell 25,389.
+          // The dialog's earlier 25,088 measurement omitted nested primitives/helpers.
+          const cssCapKiB =
+            sample.name === 'overlay'
+              ? 40
+              : sample.name === 'chart-subpath'
+                ? 28
+                : sample.name === 'carousel-subpath'
+                  ? 35
+                  : 32
+          if (Buffer.byteLength(css) > cssCapKiB * 1024)
+            throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
+          if ((sample.name === 'overlay' || sample.name === 'shell') && bytes > 32 * 1024)
+            throw new Error('Overlay/shell exceeds measured 32 KiB gzip cap')
+          if (phase === 'optional' && bytes > 180 * 1024)
+            throw new Error('Optional entry exceeds existing 180 KiB gzip budget')
         } catch (error) {
           failures.push(`${condition}/${sample.name}: ${String(error).slice(0, 240)}`)
         }
