@@ -118,3 +118,30 @@ one theme.
 ## Licence
 
 Apache-2.0.
+
+## Binary layout model checkpoint
+
+UI issue #22 extracts the existing attributed bb/Muxy Adea adaptation rather
+than introducing another layout tree. `createLayoutState`, `splitPane`,
+`movePane`, `closePane`, `undoClosePane`, `focusPane`, `swapPanes`,
+`resizeSplit`, `normalizeLayout` and the reading-order helpers are pure.
+Leaves extend `{kind: 'leaf', id: string}` with any host-owned payload. Closing
+the last leaf calls an injected placeholder factory; it never selects a harness,
+starts a terminal or deletes a project. Eight leaves/depth eight and 10–90%
+ratios preserve the accepted contract. Construct or validate a tree before
+editing it; the shared constructor validates visual structure and identities,
+while applications still decode/scoped-persist preferences and retain unknown
+future versions for recovery.
+
+This is an unshipped model checkpoint, not the full shell renderer. The
+maintained accessible renderer, stable content ownership, composed shell story,
+consumer interactions, production adoption and release remain required stages.
+No persistent state, session services, native drag region or host framework is
+imported into this model.
+
+`bun run check:packed-layout` packs the real artifact, installs it in a disposable
+consumer with peers omitted and scripts disabled, and exercises the direct model
+subpath in native Node and the Solid source condition. It verifies zero runtime
+imports and a 3 KiB gzip model budget (measured baseline: 2,455 bytes). This is
+model-subpath evidence; it does not waive UI #16's package attribution/conditional
+export corrections or the separate root compatibility gate.
