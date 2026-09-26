@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["playwright.layout.config.ts", "tests/component-split-layout.spec.ts"],
+  "exclude": ["node_modules", "storybook-static"]
+}

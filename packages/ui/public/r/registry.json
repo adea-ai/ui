@@ -1530,6 +1530,47 @@
       ]
     },
     {
+      "name": "split-layout",
+      "type": "registry:ui",
+      "title": "Split Layout",
+      "description": "Issue-backed binary layout with stable opaque leaf owners; scoped persistence belongs to the host.",
+      "dependencies": [
+        "@corvu/resizable@^0.2.5",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/split-layout/drop.ts",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/drop.ts"
+        },
+        {
+          "path": "src/components/layout/split-layout/geometry.ts",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/geometry.ts"
+        },
+        {
+          "path": "src/components/layout/split-layout/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/index.ts"
+        },
+        {
+          "path": "src/components/layout/split-layout/model.ts",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/model.ts"
+        },
+        {
+          "path": "src/components/layout/split-layout/split-layout.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/split-layout.tsx"
+        }
+      ]
+    },
+    {
       "name": "status-bar",
       "type": "registry:ui",
       "title": "Status Bar",
@@ -1777,6 +1818,7 @@
       "title": "Conversation",
       "description": "",
       "dependencies": [
+        "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
@@ -1790,6 +1832,16 @@
         "lib"
       ],
       "files": [
+        {
+          "path": "src/components/conversation/atomic/chat-composer.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/chat-composer.tsx"
+        },
+        {
+          "path": "src/components/conversation/atomic/index.ts",
+          "type": "registry:ui",
+          "target": "components/conversation/index.ts"
+        },
         {
           "path": "src/components/conversation/busy-send-button.tsx",
           "type": "registry:ui",
@@ -1821,6 +1873,11 @@
           "target": "components/conversation/index.ts"
         },
         {
+          "path": "src/components/conversation/internal/chat-composer-shell.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/chat-composer-shell.tsx"
+        },
+        {
           "path": "src/components/conversation/message-composer.tsx",
           "type": "registry:ui",
           "target": "components/conversation/message-composer.tsx"
@@ -1829,6 +1886,11 @@
           "path": "src/components/conversation/message-row.tsx",
           "type": "registry:ui",
           "target": "components/conversation/message-row.tsx"
+        },
+        {
+          "path": "src/components/conversation/paste-token-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/paste-token-editor.tsx"
         },
         {
           "path": "src/components/conversation/paste-tokens.ts",
