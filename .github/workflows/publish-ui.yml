@@ -170,6 +170,9 @@ jobs:
       - name: Verify packed conversation composition
         working-directory: packages/ui
         run: bun run check:packed-conversation
+      - name: Verify packed appearance interactions and SSR
+        working-directory: packages/ui
+        run: bun run check:packed-appearance
 
       - name: Pack
         if: ${{ inputs.dry-run != true }}

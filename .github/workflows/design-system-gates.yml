@@ -80,6 +80,8 @@ jobs:
 
       - name: Verify packed conversation composition
         run: bun run check:packed-conversation
+      - name: Verify packed appearance interactions and SSR
+        run: bun run check:packed-appearance
 
   # The build is its own job so the slices below do not each repeat it. It is also
   # what makes the sharding honest: every slice runs against the *same* artifact, so
@@ -158,7 +160,7 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
-      - name: Install WebKit for component input contracts
+      - name: Install WebKit for component interaction contracts
         if: matrix.shard == '1/4'
         run: bunx playwright install --with-deps webkit
 
