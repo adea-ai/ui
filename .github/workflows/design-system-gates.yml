@@ -167,7 +167,7 @@ jobs:
   # whole lane with it.
   workshop:
     name: Workshop (${{ matrix.shard }})
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
     needs: [changes, workshop-build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
