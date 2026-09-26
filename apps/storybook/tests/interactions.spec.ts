@@ -87,6 +87,25 @@ test.describe('overlays', () => {
   })
 })
 
+test.describe('update dialog', () => {
+  test('release documents expose one named, focusable scroll region each', async ({ page }) => {
+    await openStory(page, 'composites-update-dialog--with-release-notes', 'adea-dark')
+
+    const releaseNotes = page.getByRole('region', { name: 'What changed in this release' })
+    const changelog = page.getByRole('region', { name: 'Installed changelog' })
+
+    // The outer layout groups must not become duplicate landmarks. The scrollable
+    // documents are the landmarks because they are the elements a keyboard user
+    // must reach to read content that can extend beyond the visible panel.
+    await expect(releaseNotes).toHaveCount(1)
+    await expect(releaseNotes).toHaveAttribute('tabindex', '0')
+    await expect(releaseNotes).toContainText('worktree materialisation')
+    await expect(changelog).toHaveCount(1)
+    await expect(changelog).toHaveAttribute('tabindex', '0')
+    await expect(changelog).toContainText('0.55.0')
+  })
+})
+
 test.describe('the shell', () => {
   test('a collapsed rail keeps its destinations named', async ({ page }) => {
     await openStory(page, 'layout-side-rail--collapsed', 'adea-dark')

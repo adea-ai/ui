@@ -457,7 +457,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
           </Show>
 
           <Show when={notes()}>
-            <section class="flex flex-col gap-2" aria-labelledby="update-release-notes">
+            <div class="flex flex-col gap-2">
               <div class="flex items-center gap-2">
                 <h2 id="update-release-notes" class="text-sm font-semibold">
                   What changed in this release
@@ -477,11 +477,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
               >
                 {notes()}
               </div>
-            </section>
+            </div>
           </Show>
 
           <Show when={changelog()}>
-            <section class="flex flex-col gap-2" aria-labelledby="update-changelog">
+            <div class="flex flex-col gap-2">
               <h2 id="update-changelog" class="text-sm font-semibold">
                 Installed changelog
               </h2>
@@ -499,7 +499,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
               >
                 {changelog()}
               </div>
-            </section>
+            </div>
           </Show>
         </div>
 
