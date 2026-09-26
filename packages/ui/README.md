@@ -118,3 +118,31 @@ one theme.
 ## Licence
 
 Apache-2.0.
+
+### Controlled appearance editor
+
+`AppearanceEditor` and `AppearancePopover` retain the accepted Zeron-derived
+System/Light/Dark miniature cards, independent light/dark theme rows, palette
+swatches, default/preset/custom accent choices and Theme default/Frosted/Opaque
+surface choices. The popup supports live host preview and Save/Cancel/Reset;
+Kobalte owns radio, menu, focus and dismissal behavior. `SelectContent.portalMount`
+lets a nested menu remain within its enclosing modal's accessible subtree.
+
+Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices from
+`@adea-ai/themes`, including any validated accent overlay. The editor imports
+only their types. Hosts own saved-ID recovery, validation, draft snapshots,
+System appearance resolution, native transparency, live application tokens,
+Save persistence and restoration on Cancel/dismissal. `saving`,
+`saveDisabledReason`, `recoveryNotice`, `customAccentError`, and
+`surfaceCapability` expose those outcomes; an unavailable import or Frosted
+capability stays visibly unavailable. App-specific persisted versions and the
+legacy `translucent` value need an app-owned adapter to the editor's `theme`
+surface selection. The library does not silently migrate stored preferences.
+
+The component browser lane uses a real Vite/Solid/Tailwind build in headless
+Chromium without an app server. It checks keyboard mode selection, nested menu
+accessibility and Escape, live-preview rollback, valid/invalid custom accents,
+Save pending state, mobile selection and 320/768/1024/1440px layouts. A separate native Node server-render fixture verifies the composed editor without
+browser or application globals. These checks
+are component integration evidence; they do not certify application persistence,
+native effects, packaged applications or manual assistive technology acceptance.

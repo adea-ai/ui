@@ -1,0 +1,51 @@
+{
+  "name": "appearance-editor",
+  "type": "registry:ui",
+  "title": "Appearance Editor",
+  "description": "",
+  "dependencies": [
+    "@adea-ai/themes@^0.4.1",
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/input",
+    "@adea-ai/ui/popover",
+    "@adea-ai/ui/select",
+    "@adea-ai/ui/switch",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/appearance-choices.tsx"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/appearance-editor.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/appearance-editor.tsx"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/appearance-rows.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/appearance-rows.tsx"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/appearance-types.ts",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/appearance-types.ts"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/index.ts"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/theme-preview.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/theme-preview.tsx"
+    }
+  ]
+}

@@ -98,6 +98,7 @@ export * from './components/composites/account-menu'
 export * from './components/composites/list-row'
 export * from './components/composites/settings'
 export * from './components/composites/stat'
+export * from './components/composites/appearance-editor'
 export * from './components/composites/update-dialog'
 export * from './components/composites/workspace-mark'
 

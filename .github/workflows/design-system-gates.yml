@@ -156,6 +156,12 @@ jobs:
         working-directory: apps/storybook
         run: bunx playwright test --shard=${{ matrix.shard }}
 
+      # Component tests bundle their own real entry and need no server. Run
+      # once after the workshop shard, retaining both reports in this artifact.
+      - name: Check controlled component interactions
+        if: matrix.shard == '1/4'
+        run: bun run test:components
+
       - name: Upload the accessibility report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

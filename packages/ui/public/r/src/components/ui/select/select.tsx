@@ -129,11 +129,16 @@ export function SelectValue(props: SelectValueProps) {
  * which is what makes a Select able to render a typed option rather than a
  * string; `children` here is for content above the list, such as a filter hint.
  */
-export function SelectContent(props: ComponentProps<typeof KobalteSelect.Content>) {
-  const [local, rest] = splitProps(props, ['class', 'children'])
+export type SelectContentProps = ComponentProps<typeof KobalteSelect.Content> & {
+  /** Keep a nested menu inside its enclosing modal's accessible subtree. */
+  portalMount?: HTMLElement
+}
+
+export function SelectContent(props: SelectContentProps) {
+  const [local, rest] = splitProps(props, ['class', 'children', 'portalMount'])
 
   return (
-    <KobalteSelect.Portal>
+    <KobalteSelect.Portal mount={local.portalMount}>
       <KobalteSelect.Content
         class={cn(
           'bg-popover text-popover-foreground rounded-xl border border-border shadow-lg',
