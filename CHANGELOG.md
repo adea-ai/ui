@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.61.1](https://github.com/adea-ai/ui/compare/v0.61.0...v0.61.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **publish:** the dry-run guard skipped the publish on the event it exists for ([#11](https://github.com/adea-ai/ui/issues/11)) ([f99e05e](https://github.com/adea-ai/ui/commit/f99e05e434c6c527c9b8601a70be585d5d9cd646))
+* **registry:** a peer was matched by string prefix, so `toggle` claimed `toggle-group` ([#15](https://github.com/adea-ai/ui/issues/15)) ([f1a6e64](https://github.com/adea-ai/ui/commit/f1a6e6496686dcb4473dfecdcf0e131821d7e600))
+* **registry:** make the shadcn install path work at all ([#13](https://github.com/adea-ai/ui/issues/13)) ([bea7e7c](https://github.com/adea-ai/ui/commit/bea7e7cc10011128eedd40fb0627a68e71398746))
+
+
+### Documentation
+
+* correct the consumption guide, and document the provider ([#14](https://github.com/adea-ai/ui/issues/14)) ([fa664ee](https://github.com/adea-ai/ui/commit/fa664eea8385a304a839d4058d34b603576a3690))
+
 ## [0.61.0](https://github.com/adea-ai/ui/compare/v0.60.2...v0.61.0) (2026-09-26)
 
 
