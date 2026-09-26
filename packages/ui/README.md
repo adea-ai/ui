@@ -1,7 +1,7 @@
 # @adea-ai/ui
 
-The Adea design system: the one themed component library that Adea and Cortana
-both build on. Neither app implements its own components.
+The shared Solid component library for Adea and Cortana. Applications retain
+their domain compositions, persistence, services, and native capabilities.
 
 ```sh
 bun add @adea-ai/ui
@@ -18,7 +18,7 @@ never use.
 Import the stylesheet, wrap your app in the provider, done.
 
 ```tsx
-import { ThemeProvider } from '@adea-ai/ui'
+import { ThemeProvider } from '@adea-ai/ui/components/theme'
 import '@adea-ai/ui/globals.css'
 
 export function App() {
@@ -33,6 +33,32 @@ export function App() {
 `ThemeProvider` is what applies a theme, an accent and a typeface, and what
 persists the choice. Without it you get the two default variants and nothing
 else.
+
+Folder subpaths such as `@adea-ai/ui/components/ui/button` resolve the folder's
+public index under the types, Solid source, development, and compiled conditions.
+The package includes source for Solid compilation and Tailwind discovery, and
+compiled JavaScript plus declarations for other supported consumers. License and
+donor notices travel in `dist/LICENSE` and `dist/NOTICE`.
+
+Tailwind ignores dependency directories by default. Register the component
+directories your application uses in its stylesheet, relative to that stylesheet:
+
+```css
+@import 'tailwindcss';
+@import '@adea-ai/ui/theme.css';
+@import '@adea-ai/ui/base.css';
+@source '../node_modules/@adea-ai/ui/src/components/ui/button';
+```
+
+`globals.css` combines Tailwind, base styles, and theme tokens. Fonts require a
+separate explicit `@adea-ai/ui/fonts.css` import. The packed-artifact gate expands
+all component and library export conditions and rejects leaked story/test files,
+including declaration output.
+
+The root barrel currently also resolves optional chart/carousel peers during
+bundling. A clean root-import consumer without those peers fails; use dedicated
+component subpaths for lightweight consumers while that compatibility contract is
+being resolved. Optional installation metadata alone does not prove elimination.
 
 ## Theming
 

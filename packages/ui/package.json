@@ -48,15 +48,15 @@
       "import": "./dist/index.js"
     },
     "./components/*": {
-      "types": "./dist/components/*.d.ts",
-      "solid": "./src/components/*",
-      "development": "./src/components/*",
-      "import": "./dist/components/*.js"
+      "types": "./dist/components/*/index.d.ts",
+      "solid": "./src/components/*/index.ts",
+      "development": "./src/components/*/index.ts",
+      "import": "./dist/components/*/index.js"
     },
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",
-      "solid": "./src/lib/*",
-      "development": "./src/lib/*",
+      "solid": "./src/lib/*.ts",
+      "development": "./src/lib/*.ts",
       "import": "./dist/lib/*.js"
     },
     "./globals.css": "./src/styles/globals.css",
@@ -77,7 +77,8 @@
     "pack:check": "bun scripts/check-pack.ts",
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
     "theme:build": "bun scripts/build-default-theme.ts",
-    "theme:check": "bun scripts/build-default-theme.ts --check"
+    "theme:check": "bun scripts/build-default-theme.ts --check",
+    "check:packed-consumer": "bun scripts/check-packed-consumer.ts"
   },
   "dependencies": {
     "@adea-ai/themes": "^0.4.1",
