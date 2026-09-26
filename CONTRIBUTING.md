@@ -18,6 +18,7 @@ Requirements: **Bun 1.4** and **Node 24.18**, both pinned in `.mise.toml`.
 git clone https://github.com/adea-ai/ui.git
 cd ui
 bun install
+bunx playwright install chromium webkit
 bun run storybook        # http://127.0.0.1:6006
 ```
 

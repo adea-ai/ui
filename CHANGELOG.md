@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.63.2](https://github.com/adea-ai/ui/compare/v0.63.1...v0.63.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* preserve composer IME input ownership ([#18](https://github.com/adea-ai/ui/issues/18)) ([0232a72](https://github.com/adea-ai/ui/commit/0232a728e532f37a0f188f7a50e58ffdc9931164))
+
+## [0.63.1](https://github.com/adea-ai/ui/compare/v0.63.0...v0.63.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **ci:** avoid redundant workshop metadata and builds ([#28](https://github.com/adea-ai/ui/issues/28)) ([145e345](https://github.com/adea-ai/ui/commit/145e34515c2fb23aa51c798609c2d9d7f294096c))
+* **ci:** update runtime pins and refresh review policy ([#29](https://github.com/adea-ai/ui/issues/29)) ([d0c6968](https://github.com/adea-ai/ui/commit/d0c6968d6f51b93638634553654f1e3554fbf33e))
+
+## [0.63.0](https://github.com/adea-ai/ui/compare/v0.62.0...v0.63.0) (2026-09-26)
+
+
+### Features
+
+* share controlled appearance editor with packed interaction gates ([#17](https://github.com/adea-ai/ui/issues/17)) ([5b63458](https://github.com/adea-ai/ui/commit/5b63458994e7936f8453607a93b7c923e9b2c61d))
+
+## [0.62.0](https://github.com/adea-ai/ui/compare/v0.61.1...v0.62.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* make core imports independent of optional engines ([#16](https://github.com/adea-ai/ui/issues/16))
+
+### Bug Fixes
+
+* make core imports independent of optional engines ([#16](https://github.com/adea-ai/ui/issues/16)) ([cae276d](https://github.com/adea-ai/ui/commit/cae276d3736a326a1645f061e335e1a84c60f604))
+
 ## [0.61.1](https://github.com/adea-ai/ui/compare/v0.61.0...v0.61.1) (2026-09-26)
 
 

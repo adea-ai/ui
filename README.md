@@ -8,8 +8,20 @@ components.
 
 ```sh
 bun install
+bun run build            # the library and declarations
+bun run storybook:build  # the full workshop bundle
 bun run storybook        # the workshop: every component, every variant, both themes
 ```
+
+`build` produces the publishable library. CI builds the workshop once in its
+dedicated gate and shares that artifact across the four browser shards.
+`bun run verify` includes both builds and the package checks. Workshop prop
+documentation is extracted from local components; dependency TSX is excluded
+from extraction while its imported types remain available.
+
+Draft pull requests allocate no Registry or Workshop runners. Mark a prepared
+pull request ready to run the complete gates; later ready-PR updates rerun them.
+Returning to draft cancels the active gate run. Pushes to `main` retain all gates.
 
 ---
 
