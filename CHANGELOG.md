@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.64.0](https://github.com/adea-ai/ui/compare/v0.63.4...v0.64.0) (2026-09-26)
+
+
+### Features
+
+* translate busy composer actions and fix icon geometry ([#20](https://github.com/adea-ai/ui/issues/20)) ([af800da](https://github.com/adea-ai/ui/commit/af800dad1979ff8c2b2159af31c80d97e09b0ec4))
+
 ## [0.63.4](https://github.com/adea-ai/ui/compare/v0.63.3...v0.63.4) (2026-09-26)
 
 
