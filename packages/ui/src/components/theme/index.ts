@@ -11,9 +11,11 @@ export {
   ThemeProvider,
   defaultThemeSelection,
   inlineScriptLiteral,
+  resolvedDensity,
   themeScript,
   useTheme,
   type ThemeContextValue,
+  type ThemeDensity,
   type ThemeProviderProps,
   type ThemeSelection,
 } from './theme-provider'

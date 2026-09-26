@@ -78,8 +78,13 @@ const withWorkshopTheme: Decorator = (Story, context) => {
   const density = (context.globals['density'] as string | undefined) ?? 'comfortable'
   const variant = themeById(themeId) ?? themeById(defaultDarkThemeId)!
 
-  document.documentElement.dataset['density'] = density
-
+  // Density is passed to the provider rather than written here.
+  //
+  // `data-density` is the provider's to set, like `data-accent` and `data-font`:
+  // it was written directly from this decorator for as long as density had no
+  // implementation, and leaving both in place would mean two writers for one
+  // attribute — where the workshop's value and the stored preference disagree, the
+  // last one to run wins, and which that is depends on effect ordering.
   return (
     <ThemeProvider
       storageKey="adea-workshop-appearance"
@@ -89,6 +94,7 @@ const withWorkshopTheme: Decorator = (Story, context) => {
         darkThemeId: variant.appearance === 'dark' ? variant.id : defaultDarkThemeId,
         accent,
         font,
+        density,
       }}
     >
       <TooltipProvider>{Story()}</TooltipProvider>
@@ -142,7 +148,8 @@ const preview: Preview = {
     },
     density: {
       name: 'Density',
-      description: 'The compact rung tightens row and control heights.',
+      description:
+        'The compact rung moves the control ladder one step tighter, so a control keeps its place in the ladder rather than becoming a different control.',
       defaultValue: 'comfortable',
       toolbar: {
         icon: 'component',
