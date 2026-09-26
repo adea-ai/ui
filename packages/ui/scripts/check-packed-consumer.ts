@@ -225,7 +225,9 @@ try {
             if (/\/components\/theme\//.test(id)) return true
             if (
               /\/components\/conversation\//.test(id) &&
-              !['conversation-transcript', 'conversation-composer', 'busy-send'].includes(sample.name)
+              !['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                sample.name
+              )
             )
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
@@ -287,7 +289,9 @@ try {
           const cssCapKiB =
             sample.name === 'overlay'
               ? 40
-              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(sample.name)
+              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                    sample.name
+                  )
                 ? 42
                 : sample.name === 'chart-subpath'
                   ? 28
