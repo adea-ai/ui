@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.0](https://github.com/adea-ai/ui/compare/v0.62.0...v0.63.0) (2026-09-26)
+
+
+### Features
+
+* share controlled appearance editor with packed interaction gates ([#17](https://github.com/adea-ai/ui/issues/17)) ([5b63458](https://github.com/adea-ai/ui/commit/5b63458994e7936f8453607a93b7c923e9b2c61d))
+
 ## [0.62.0](https://github.com/adea-ai/ui/compare/v0.61.1...v0.62.0) (2026-09-26)
 
 
