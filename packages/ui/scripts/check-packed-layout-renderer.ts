@@ -99,6 +99,7 @@ try {
     'Copyright (c) 2026 Muxy',
     'Permission is hereby granted, free of charge',
     'Binary frame renderer continuation',
+    'pane-drag continuation',
   ])
     if (!notice.includes(text)) throw new Error(`Packed NOTICE lost ${text}`)
   if (!license.includes('Apache License')) throw new Error('Packed Apache LICENSE missing')
@@ -134,7 +135,7 @@ try {
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 52,
+      checks: 72,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',

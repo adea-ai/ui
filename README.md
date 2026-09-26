@@ -250,3 +250,15 @@ technology acceptance and production Adea/Cortana adoption remain pending. Actua
 packed-renderer measurements belong to the dependency integration checkpoint;
 source-only changes do not refresh that evidence. The existing packed-model probe remains a pure subpath
 check and does not certify the renderer or library root.
+
+### Installed pane movement checkpoint
+
+The movement continuation reuses 36 source cases per export condition (72 checks).
+It measures 31,797/31,870 gzip JS bytes (compiled/source) and 33,357 raw CSS bytes,
+within the unchanged 32 KiB/34 KiB budgets. Gates retain one Solid runtime/one JS
+chunk, external dependencies, optional-heavy exclusions and packed attribution.
+Pointer edge placement, foreign/plaintext/stale drop rejection, cancellation,
+removed-source cleanup and injected keyboard actions join the retained renderer
+checks. Narrow examples put movement in the toolbar and keep optional header
+controls compact. Native editor/terminal, hydration, manual AT and actual
+Adea/Cortana production paths remain separate acceptance gates.
