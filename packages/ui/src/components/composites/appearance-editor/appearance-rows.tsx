@@ -37,6 +37,19 @@ import {
 } from '../../ui/dropdown-menu/dropdown-menu'
 import { PalettePreview } from './theme-preview'
 
+const DIALOG_FOCUS_STOP_SELECTOR =
+  'a[href], area[href], button, input, select, textarea, iframe, [tabindex], [contenteditable]'
+
+function isDialogFocusStop(element: HTMLElement) {
+  return (
+    element.tabIndex >= 0 &&
+    !element.matches(':disabled') &&
+    element.getAttribute('aria-disabled') !== 'true' &&
+    element.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
+    element.getClientRects().length > 0
+  )
+}
+
 export function SettingsRow(props: {
   title: string
   icon: JSX.Element
@@ -67,6 +80,11 @@ export function SettingsRow(props: {
   )
 }
 
+/**
+ * A compact persistent theme choice. Kobalte handles menu navigation and
+ * dismissal; this row preserves its parent dialog's Tab order because menus
+ * consume Tab by default.
+ */
 export function ThemeRow(props: {
   appearance: 'light' | 'dark'
   selectedId: string
@@ -88,6 +106,38 @@ export function ThemeRow(props: {
       options().find((theme) => theme.id === props.preview.id)
   )
   const label = () => (props.appearance === 'light' ? 'Light theme' : 'Dark theme')
+  const moveFocusOnTab = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab' || event.isComposing) return
+
+    // Kobalte consumes Tab in menus; preserve the enclosing dialog's tab order.
+    event.preventDefault()
+    event.stopPropagation()
+
+    const parentDialog = portalMount()?.closest('[role="dialog"]')
+    const trigger = triggerElement()
+    if (!trigger) return
+
+    const focusStops = parentDialog
+      ? Array.from(parentDialog.querySelectorAll<HTMLElement>(DIALOG_FOCUS_STOP_SELECTOR)).filter(
+          (element) =>
+            element !== trigger &&
+            isDialogFocusStop(element) &&
+            element.closest('[role="menu"], [hidden], [inert], [aria-hidden="true"]') === null
+        )
+      : []
+    const isAfterTrigger = (element: HTMLElement) =>
+      !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
+    const isBeforeTrigger = (element: HTMLElement) =>
+      !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING)
+    const direction = event.shiftKey ? -1 : 1
+    const adjacent =
+      direction > 0
+        ? (focusStops.find(isAfterTrigger) ?? focusStops[0])
+        : (focusStops.filter(isBeforeTrigger).at(-1) ?? focusStops.at(-1))
+
+    // The modal dialog remains the Tab boundary; only the menu popup is skipped.
+    ;(adjacent ?? trigger).focus({ preventScroll: true })
+  }
   return (
     <SettingsRow title={label()} icon={<Palette />}>
       <div ref={setPortalMount}>
@@ -118,6 +168,20 @@ export function ThemeRow(props: {
           <DropdownMenuContent
             portalMount={portalMount()}
             class="max-h-(--kb-popper-content-available-height) w-(--kb-popper-anchor-width) min-w-32 overflow-x-hidden overflow-y-auto"
+            onInteractOutside={(event) => {
+              if (event.detail.originalEvent.type !== 'pointerdown') return
+              const parentDialog = portalMount()?.closest('[role="dialog"]')
+              const target = event.detail.originalEvent.target
+              if (!(target instanceof Element) || !parentDialog?.contains(target)) return
+
+              const focusStop = target.closest<HTMLElement>(DIALOG_FOCUS_STOP_SELECTOR)
+              if (focusStop && isDialogFocusStop(focusStop)) {
+                setRestoreTriggerFocus(false)
+                setFocusOutsideTarget(focusStop)
+              } else {
+                setRestoreTriggerFocus(true)
+              }
+            }}
             onFocusOutside={(event) => {
               // The containing dialog may reclaim focus momentarily as the
               // menu mounts. Keep that internal handoff from dismissing it;
@@ -127,6 +191,7 @@ export function ThemeRow(props: {
               if (target === parentDialog) {
                 event.preventDefault()
               } else if (target instanceof HTMLElement && parentDialog?.contains(target)) {
+                setRestoreTriggerFocus(false)
                 setFocusOutsideTarget(target)
               }
             }}
@@ -171,10 +236,13 @@ export function ThemeRow(props: {
                 parentDialog &&
                 activeElement instanceof HTMLElement &&
                 activeElement !== parentDialog &&
-                parentDialog.contains(activeElement)
+                parentDialog.contains(activeElement) &&
+                activeElement.closest('[role="menu"]') === null
               ) {
                 // Preserve a real in-dialog focus target instead of restoring
-                // the stale element captured when the menu first mounted.
+                // the stale element captured when the menu first mounted. A
+                // focused menu item is about to unmount, so Kobalte must restore
+                // focus to the trigger instead.
                 event.preventDefault()
               }
             }}
@@ -182,6 +250,7 @@ export function ThemeRow(props: {
             <DropdownMenuRadioGroup
               value={selected()?.id ?? ''}
               aria-label={`${label()} options`}
+              on:keydown={moveFocusOnTab}
               onChange={(id) => {
                 if (!props.disabled && typeof id === 'string') props.onSelect(id)
               }}

@@ -393,8 +393,10 @@ and publication; textarea editing and production adoption remain separate gates.
 System/Light/Dark miniature cards, independent light/dark theme rows, palette
 swatches, default/preset/custom accent choices and Theme default/Frosted/Opaque
 surface choices. The popup supports live host preview and Save/Cancel/Reset;
-Kobalte owns radio, menu, focus and dismissal behavior. `DropdownMenuContent.portalMount`
-lets the theme menu remain within its enclosing modal's accessible subtree.
+Kobalte provides radio navigation, selection, dismissal and focus restoration. Since
+its menus prevent Tab, the theme row carries Tab and Shift+Tab through the enclosing
+dialog's focus order. `DropdownMenuContent.portalMount` keeps the theme menu within
+its enclosing modal's accessible subtree.
 
 Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices from
 `@adea-ai/themes`, including any validated accent overlay. The editor imports

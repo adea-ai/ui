@@ -318,6 +318,48 @@ test('theme menu dismisses on pointer interaction elsewhere in its dialog', asyn
   await expect(dialog).toBeVisible()
 })
 
+test('theme menu restores trigger focus when dismissed by nonfocusable dialog content', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = dialog.getByRole('menu')
+  const firstTheme = menu.getByRole('menuitemradio').first()
+  await page.keyboard.press('Home')
+  await expect(firstTheme).toBeFocused()
+
+  await dialog.getByRole('heading', { name: 'Dark theme', exact: true }).click()
+
+  await expect(menu).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+})
+
+test('theme menu Tab exits to the next or previous control in its dialog', async ({ page }) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = dialog.getByRole('menu')
+  const firstTheme = menu.getByRole('menuitemradio').first()
+  await page.keyboard.press('Home')
+  await expect(firstTheme).toBeFocused()
+
+  await page.keyboard.press('Tab')
+  await expect(menu).toHaveCount(0)
+  await expect(
+    dialog.getByRole('radiogroup', { name: 'Accent' }).getByRole('radio', { name: 'Theme default' })
+  ).toBeFocused()
+
+  await trigger.click()
+  const previousMenu = dialog.getByRole('menu')
+  await page.keyboard.press('Home')
+  await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
+
+  await page.keyboard.press('Shift+Tab')
+  await expect(previousMenu).toHaveCount(0)
+  await expect(dialog.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+})
+
 test.describe('narrow theme picker', () => {
   // Fix the viewport before beforeEach opens the popup: selection tests must not
   // race the asynchronous position update of an already-open, resized overlay.
