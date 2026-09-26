@@ -176,6 +176,7 @@ Stories cover before-typing, working,
 unavailable and read-only states. `bun run test:components` checks the isolated
 Solid composition headlessly in Chromium and WebKit. Full Chat composition,
 packed distribution and real consumer/native acceptance remain separate gates.
+
 ## Transcript follow
 
 `ConversationSurface` follows streamed text, earlier-row growth, turn collapse
