@@ -11,12 +11,13 @@
     "dev": "storybook dev -p 6006 --host 127.0.0.1 --no-open",
     "build": "storybook build -o storybook-static",
     "lint": "oxlint",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.layout.json --noEmit",
     "serve": "bun scripts/serve-workshop.ts",
     "test": "bun test tests/unit",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/a11y.spec.ts",
-    "test:interactions": "playwright test tests/interactions.spec.ts"
+    "test:interactions": "playwright test tests/interactions.spec.ts",
+    "test:layout": "playwright test --config=playwright.layout.config.ts"
   },
   "dependencies": {
     "@adea-ai/ui": "workspace:*",

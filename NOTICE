@@ -89,3 +89,15 @@ harness launch and process authority are excluded. Nearest test behavior from
 Adea `packages/dev-view/tests/layout.test.ts` and bb `ops.test.ts` is preserved
 where it applies to the accepted binary model. The accessible renderer and
 application adoption remain separate gates under UI issue #22.
+
+### Binary frame renderer continuation
+
+`geometry.ts` translates `areaFrames` from the pinned Muxy source above. Its
+fractional frames, horizontal/vertical offsets and exact node references are
+retained; ratio repair uses the accepted 0.1–0.9 range rather than Muxy's 0–1.
+`split-layout.tsx` adapts the accepted Adea pane-header/close/focus behavior
+through generic callbacks, stable keyed leaf owners and Corvu separators.
+It excludes application commands, persistence, harness/thread authority and
+manual pointer listeners. This renderer is independently written against the
+accepted model; it is not a port of Muxy's native UI or an additional layout tree.
+The MIT attribution and permission above cover the translated frame algorithm.

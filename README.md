@@ -214,3 +214,22 @@ are re-expressed here as Solid components on Kobalte and corvu, using shadcn's
 semantic token vocabulary. No KiroCrew source file is reproduced verbatim. See
 [NOTICE](NOTICE) for the full attribution and for the upstream licences of the
 libraries this system is built on.
+
+### Binary renderer continuation (UI #22)
+
+`SplitLayout` renders the accepted binary model with stable opaque leaf owners.
+Pass an accessor-aware `renderLeaf`, labelled panes, a controlled resize callback
+and optional close callback returning the surviving focus ID. Content remains
+mounted across split/resize/move; the host retains runtime/session/editor identity,
+authorization and persisted layout scope. Close destroys only the removed owner.
+Separators use Corvu pointer/keyboard behavior with physical ARIA orientation,
+10–90 percent limits and references to the visible regions. Focus restoration is
+instance scoped, cancels on disposal and respects newer external focus.
+
+Three stories cover two panes, nested directions and the eight-pane limit. Run
+`bun run test:layout` for isolated headless Chromium/WebKit interaction, light/dark
+automated accessibility, CSP geometry and native Node SSR evidence. This is a
+renderer foundation: user-facing move menus/drag intents, manual assistive
+technology acceptance, actual packed-renderer budgets and production Adea/Cortana
+adoption remain pending. The existing packed-model probe remains a pure subpath
+check and does not certify the renderer or library root.
