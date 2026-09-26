@@ -41,6 +41,16 @@
       "target": "components/conversation/message-row.tsx"
     },
     {
+      "path": "src/components/conversation/scroll-follow-core.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/scroll-follow-core.ts"
+    },
+    {
+      "path": "src/components/conversation/scroll-follow.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/scroll-follow.ts"
+    },
+    {
       "path": "src/components/conversation/thread-panel.tsx",
       "type": "registry:ui",
       "target": "components/conversation/thread-panel.tsx"
