@@ -47,6 +47,14 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
+test('the send control keeps a measurable themed control height', async ({ page }) => {
+  const control = page.getByRole('button', { name: 'Send message', exact: true })
+  await expect(control).toBeVisible()
+  await expect
+    .poll(() => control.evaluate((element) => parseFloat(getComputedStyle(element).height)))
+    .toBeGreaterThan(0)
+})
+
 test('plain Enter sends and Shift+Enter keeps the soft break', async ({ page }) => {
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
   await box.press('Enter')
@@ -154,16 +162,15 @@ test('a menu or host that already claimed Enter retains its input ownership', as
 test('repeated composition ends cannot release the latest commit window early', async ({
   page,
 }) => {
-  await page.clock.install()
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
-  await box.dispatchEvent('compositionstart')
-  await box.dispatchEvent('compositionend')
-  await page.clock.runFor(40)
-  await box.dispatchEvent('compositionend')
-  await page.clock.runFor(20)
+  await box.evaluate((element) => {
+    element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+    element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }))
+    element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }))
+  })
   await box.dispatchEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
   await expect(page.getByLabel('Send count')).toHaveText('0')
-  await page.clock.runFor(40)
+  await page.waitForTimeout(60)
   await box.dispatchEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
   await expect(page.getByLabel('Send count')).toHaveText('1')
 })

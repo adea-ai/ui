@@ -10,7 +10,15 @@ import solid from 'vite-plugin-solid'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-consumer-'))
-const coreSamples = [
+type PackedSample = {
+  name: string
+  imports: string
+  jsx: string
+  source?: string
+  sources?: string[]
+}
+
+const coreSamples: PackedSample[] = [
   { name: 'baseline', imports: '', jsx: '<button>Baseline</button>', source: '' },
   {
     name: 'button-root',
@@ -29,6 +37,19 @@ const coreSamples = [
     imports: "import { ModalDialog } from '@adea-ai/ui'",
     jsx: '<ModalDialog open onClose={() => {}} title="Details">Content</ModalDialog>',
     source: 'ui/modal-dialog',
+  },
+  {
+    name: 'conversation-composer',
+    imports: "import { MessageComposer } from '@adea-ai/ui/components/conversation'",
+    jsx: '<MessageComposer value="Draft" onValueChange={() => {}} onSubmit={() => {}} />',
+    sources: [
+      'components/conversation/message-composer.tsx',
+      'components/ui/textarea/textarea.tsx',
+      'components/ui/spinner/spinner.tsx',
+      'components/ui/kbd/kbd.tsx',
+      'components/ui/button/button.tsx',
+      'lib/variants.ts',
+    ],
   },
   {
     name: 'shell',
@@ -72,7 +93,7 @@ try {
   }
   const report: unknown[] = []
   const failures: string[] = []
-  const optionalSamples = [
+  const optionalSamples: PackedSample[] = [
     {
       name: 'chart-subpath',
       imports:
@@ -115,23 +136,27 @@ try {
           writeFileSync(
             join(dir, 'style.css'),
             "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
-              (sample.source
-                ? `@source '../node_modules/@adea-ai/ui/src/components/${sample.source}';\n` +
-                  (sample.name.startsWith('button') ||
-                  sample.name === 'overlay' ||
-                  sample.name === 'carousel-subpath'
-                    ? "@source '../node_modules/@adea-ai/ui/src/lib/variants.ts';\n"
-                    : '') +
-                  (sample.name === 'overlay'
-                    ? "@source '../node_modules/@adea-ai/ui/src/lib/overlay.ts';\n"
-                    : '') +
-                  (sample.name === 'overlay'
-                    ? "@source '../node_modules/@adea-ai/ui/src/components/ui/{dialog,button}';\n"
-                    : '') +
-                  (sample.name === 'carousel-subpath'
-                    ? "@source '../node_modules/@adea-ai/ui/src/components/ui/button';\n"
-                    : '')
-                : '')
+              (sample.sources
+                ? sample.sources
+                    .map((path) => `@source '../node_modules/@adea-ai/ui/src/${path}';\n`)
+                    .join('')
+                : sample.source
+                  ? `@source '../node_modules/@adea-ai/ui/src/components/${sample.source}';\n` +
+                    (sample.name.startsWith('button') ||
+                    sample.name === 'overlay' ||
+                    sample.name === 'carousel-subpath'
+                      ? "@source '../node_modules/@adea-ai/ui/src/lib/variants.ts';\n"
+                      : '') +
+                    (sample.name === 'overlay'
+                      ? "@source '../node_modules/@adea-ai/ui/src/lib/overlay.ts';\n"
+                      : '') +
+                    (sample.name === 'overlay'
+                      ? "@source '../node_modules/@adea-ai/ui/src/components/ui/{dialog,button}';\n"
+                      : '') +
+                    (sample.name === 'carousel-subpath'
+                      ? "@source '../node_modules/@adea-ai/ui/src/components/ui/button';\n"
+                      : '')
+                  : '')
           )
           const result = await build({
             root: dir,
@@ -171,11 +196,9 @@ try {
           if (uiModules.some((id) => id.includes(condition === 'compiled' ? '/src/' : '/dist/')))
             throw new Error('Mixed UI export conditions')
           const forbidden = modules.filter((id) => {
-            if (
-              /xterm|codemirror|shiki|storybook|\/components\/(?:theme|conversation)|\/lib\/themes/.test(
-                id
-              )
-            )
+            if (/xterm|codemirror|shiki|storybook|\/lib\/themes/.test(id)) return true
+            if (/\/components\/theme\//.test(id)) return true
+            if (/\/components\/conversation\//.test(id) && sample.name !== 'conversation-composer')
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
             if (/embla/.test(id)) return sample.name !== 'carousel-subpath'
@@ -206,6 +229,8 @@ try {
             throw new Error('Packed Button is missing its Tailwind utility')
           if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
             throw new Error('Packed Button is missing shared control sizing')
+          if (sample.name === 'conversation-composer' && !css.includes('.h-control-md'))
+            throw new Error('Packed MessageComposer is missing shared control sizing')
           if (sample.name === 'overlay' && !css.includes('.bg-popover'))
             throw new Error('Packed dialog is missing shared overlay styling')
           if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
@@ -228,11 +253,13 @@ try {
           const cssCapKiB =
             sample.name === 'overlay'
               ? 40
-              : sample.name === 'chart-subpath'
-                ? 28
-                : sample.name === 'carousel-subpath'
-                  ? 35
-                  : 32
+              : sample.name === 'conversation-composer'
+                ? 42
+                : sample.name === 'chart-subpath'
+                  ? 28
+                  : sample.name === 'carousel-subpath'
+                    ? 35
+                    : 32
           if (Buffer.byteLength(css) > cssCapKiB * 1024)
             throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
           if ((sample.name === 'overlay' || sample.name === 'shell') && bytes > 32 * 1024)
