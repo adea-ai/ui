@@ -69,14 +69,66 @@ jobs:
           bun run --cwd packages/ui build
           bun run check:tree-shaking
 
-  workshop:
-    name: Workshop
+  # The build is its own job so the slices below do not each repeat it. It is also
+  # what makes the sharding honest: every slice runs against the *same* artifact, so
+  # a failure in one cannot come from a different build.
+  workshop-build:
+    name: Workshop build
     if: vars.CI_BILLING_PAUSED != 'true'
     runs-on: ubuntu-latest
-    # The lane builds the workshop, installs a browser, then loads every story in
-    # both themes — 472 page loads. Forty-five minutes is comfortably above a
-    # measured run and still bounds a genuine hang.
-    timeout-minutes: 45
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the workshop
+        run: bun run storybook:build
+
+      - name: Upload the built workshop
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static/
+          retention-days: 7
+
+  # Loads every story in a real browser and checks it, and presses the things a user
+  # presses in the stories that document a behaviour.
+  #
+  # **Sharded, because coverage grew and the job did not.** The lane was written for
+  # two themes over ~236 stories — 472 page loads, which is what the old comment here
+  # said — and it now runs seven themes over 431 stories, because the catalogue gained
+  # themes and the sample that guards the bridge gained cases. That is 3,017 page
+  # loads, a 6.4x increase, and it started exceeding the 45-minute ceiling: the job
+  # was *cancelled* at the timeout rather than failing, which reads as an
+  # infrastructure problem and hides that the lane was simply too big.
+  #
+  # Sharding is the fix rather than a smaller sample, because the sample is chosen
+  # adversarially (see `SAMPLED_THEMES`) and each case in it was added for a reason.
+  # Playwright's `--shard` splits by test, so four slices are the same coverage at
+  # roughly a quarter of the wall time, and a hang in one slice no longer takes the
+  # whole lane with it.
+  workshop:
+    name: Workshop (${{ matrix.shard }})
+    if: vars.CI_BILLING_PAUSED != 'true'
+    needs: workshop-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # A slice that fails must not cancel the others: the report is more useful
+      # complete, and the shards are independent.
+      fail-fast: false
+      matrix:
+        shard: ['1/4', '2/4', '3/4', '4/4']
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -94,28 +146,21 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
-      - name: Build the workshop
-        run: bun run storybook:build
+      - name: Download the built workshop
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static/
 
-      # Loads every story in a real browser and checks it, and presses the things
-      # a user presses in the stories that document a behaviour.
-      - name: Check every story for accessibility violations and interactions
-        run: bun run test:storybook
+      - name: Check this slice's stories for accessibility violations and interactions
+        working-directory: apps/storybook
+        run: bunx playwright test --shard=${{ matrix.shard }}
 
       - name: Upload the accessibility report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: accessibility-report
+          name: accessibility-report-${{ strategy.job-index }}
           path: apps/storybook/test-results/
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload the built workshop
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: storybook-static
-          path: apps/storybook/storybook-static/
           retention-days: 7
           if-no-files-found: ignore
