@@ -10,6 +10,7 @@ import {
 } from 'solid-js'
 import { accentPresets, fontOptions } from '#lib/tokens'
 import {
+  accentVariables,
   builtinThemes,
   defaultDarkThemeId,
   defaultLightThemeId,
@@ -60,6 +61,14 @@ export type ThemeSelection = {
   accent: string
   /** A `fontOptions` id, or `space-grotesk` for the default. */
   font: string
+  /**
+   * `comfortable` is the system's default geometry; `compact` moves the control
+   * ladder down one rung.
+   *
+   * Optional, and defaulted on read, so a preference stored before density existed
+   * keeps working and `ThemeSelection` stays assignable without it.
+   */
+  density?: ThemeDensity
 }
 
 export const defaultThemeSelection: ThemeSelection = {
@@ -68,6 +77,27 @@ export const defaultThemeSelection: ThemeSelection = {
   darkThemeId: defaultDarkThemeId,
   accent: 'theme',
   font: 'space-grotesk',
+  density: 'comfortable',
+}
+
+/**
+ * The two density rungs.
+ *
+ * `comfortable` is the geometry in `theme.css`, so it is the absence of an
+ * attribute rather than a value: a document that ships no `data-density` at all
+ * renders correctly, which is what keeps this additive.
+ */
+export type ThemeDensity = 'comfortable' | 'compact'
+
+/**
+ * A stored selection's density, defaulted.
+ *
+ * The stored value is read through here rather than trusted, because a preference
+ * written before density existed has no `density` key and a hand-edited store may
+ * hold anything.
+ */
+export function resolvedDensity(selection: ThemeSelection): ThemeDensity {
+  return selection.density === 'compact' ? 'compact' : 'comfortable'
 }
 
 export type ThemeContextValue = {
@@ -172,10 +202,20 @@ export function ThemeProvider(props: ThemeProviderProps) {
     const active = variant()
 
     // The variant's roles, as properties. `--primary` and `--ring` are written here
-    // too, and the accent block below overrides them when one is selected — the
-    // same precedence the product applies, where an accent selection wins over the
-    // variant's own primary.
-    for (const [name, value] of Object.entries(themeCssVariables(active))) {
+    // too, and an accent selection is layered over them below.
+    //
+    // The accent is applied *here* rather than left to the `[data-accent]` blocks in
+    // `theme.css`, because this loop writes inline custom properties and an inline
+    // declaration outranks every stylesheet selector however specific it is. The
+    // blocks still exist and are still correct — they are what styles the window
+    // before this runs — but they cannot win from here, so leaving the accent to
+    // them meant the attribute was set, the rules were present, and nothing
+    // changed on screen.
+    const properties = { ...themeCssVariables(active) }
+    const accent = accentVariables(selection().accent, resolvedAppearance())
+    if (accent) Object.assign(properties, accent)
+
+    for (const [name, value] of Object.entries(properties)) {
       root.style.setProperty(name, value)
     }
 
@@ -189,6 +229,13 @@ export function ThemeProvider(props: ThemeProviderProps) {
 
     if (selection().font === 'space-grotesk') root.removeAttribute('data-font')
     else root.dataset['font'] = selection().font
+
+    // Density is a pure token shift, so unlike the colour axes there is nothing to
+    // compute: the attribute selects a block in `theme.css`. It is applied here for
+    // the same reason as the others — this is the one place that knows what the
+    // current selection is, and it is the only writer of these attributes.
+    if (resolvedDensity(selection()) === 'comfortable') root.removeAttribute('data-density')
+    else root.dataset['density'] = resolvedDensity(selection())
   })
 
   const value: ThemeContextValue = {
@@ -258,5 +305,5 @@ export function inlineScriptLiteral(value: string): string {
  * documented there.
  */
 export function themeScript(storageKey = 'adea-appearance'): string {
-  return `(function(){try{var s=localStorage.getItem(${inlineScriptLiteral(storageKey)});var p=s?JSON.parse(s):{};var a=p.appearance||'system';var d=a==='dark'||(a==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';if(p.accent&&p.accent!=='theme')r.dataset.accent=p.accent;if(p.font&&p.font!=='space-grotesk')r.dataset.font=p.font;}catch(e){}})();`
+  return `(function(){try{var s=localStorage.getItem(${inlineScriptLiteral(storageKey)});var p=s?JSON.parse(s):{};var a=p.appearance||'system';var d=a==='dark'||(a==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';if(p.accent&&p.accent!=='theme')r.dataset.accent=p.accent;if(p.font&&p.font!=='space-grotesk')r.dataset.font=p.font;if(p.density==='compact')r.dataset.density='compact';}catch(e){}})();`
 }

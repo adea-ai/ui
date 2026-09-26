@@ -442,6 +442,29 @@
  * word-spacing-(--ui-word-spacing)`. Body copy does not need them — it wraps.
  * ------------------------------------------------------------------------- */
 
+/* The default, and it has to be declared *before* the blocks below.
+ *
+ * `:root` and `[data-font='…']` have the same specificity, so the later one wins
+ * outright — there is no cascade subtlety here, only a position in the file. Written
+ * after them, where it naturally belongs next to the `--font-family-*` stacks it
+ * references, the default shadowed all five selections: every typeface resolved to
+ * Space Grotesk while the toolbar reported something else.
+ *
+ * So the default lives here instead, in its own two-line block, and the stacks stay
+ * where they are. The references resolve fine even though `--font-family-*` is
+ * declared further down, because a custom property is resolved where it is used
+ * rather than where it is declared. What matters is the order of two declarations of
+ * the *same* property, and this is the only one.
+ *
+ * `tests/appearance-axes.test.ts` asserts both the order and that there is exactly
+ * one such default, because "a block above the default is doing nothing" is invisible
+ * to review and to every behavioural test.
+ */
+:root {
+  --font-sans: var(--font-family-space-grotesk);
+  --font-mono: var(--font-family-jetbrains-mono);
+}
+
 [data-font='system'] {
   --font-sans: var(--font-family-system);
   --font-mono: var(--font-family-system-mono);
@@ -462,6 +485,23 @@
   --ui-tracking: -0.04em;
   --ui-word-spacing: -2.5px;
 }
+
+/* The default, and it has to be declared *above* the blocks above.
+ *
+ * `:root` and `[data-font='…']` have the same specificity, so the later one wins
+ * outright. With the default written after them — which is where it naturally
+ * belongs, next to the stacks it references — every `[data-font]` block was
+ * dead: all five typefaces resolved to Space Grotesk while the toolbar reported a
+ * different selection.
+ *
+ * The references resolve fine from here even though `--font-family-*` is declared
+ * further down, because a custom property is resolved where it is used rather than
+ * where it is declared. The ordering that matters is between two declarations of
+ * the *same* property, and there is only one of those below.
+ *
+ * `tests/appearance-axes.test.ts` asserts this order, because "the block is above
+ * the default" is invisible to review and to every behavioural test.
+ */
 
 /* ---------------------------------------------------------------------------
  * 4. Non-colour scales
@@ -503,9 +543,11 @@
 
   /* Space Grotesk is the default because it is the face the visual language was
      drawn against: the donor this system's structure comes from sets it, and its
-     slightly narrow, geometric forms are part of the look. */
-  --font-sans: var(--font-family-space-grotesk);
-  --font-mono: var(--font-family-jetbrains-mono);
+     slightly narrow, geometric forms are part of the look. The declaration of that
+     default is not here but in the small `:root` block above the `[data-font]`
+     blocks, because it has to precede them; `tests/appearance-axes.test.ts` holds
+     that ordering, and it is why this comment points elsewhere rather than
+     restating a value. */
 
   /* Type scale. Each rung carries its own line-height because the ratio is not
      constant: small text needs more leading to stay readable, display text needs
@@ -547,6 +589,12 @@
   --row-height-sm: 1.75rem;
   --row-height-md: 2rem;
   --row-height-lg: 2.25rem;
+
+  /* Space Grotesk is the default because it is the face the visual language was
+     drawn against: the donor this system's structure comes from sets it, and its
+     slightly narrow, geometric forms are part of the look. The *selection* that
+     picks between it and the other four is the `:root` block above, which has to
+     precede every `[data-font]` block for the reason given there. */
 
   /* Shell geometry. One place to change how wide a rail or sidebar is, so the two
      consumer apps cannot disagree. 74px is the figure KiroCrew's own layout hook
@@ -591,6 +639,44 @@
   --z-menu: 140;
   --z-tooltip: 160;
   --z-toast: 180;
+}
+
+/* Compact density: the whole control ladder one rung tighter.
+ *
+ * It is a *shift* rather than a second set of numbers chosen by eye, so the
+ * relationship between the rungs is identical at either density and a control keeps
+ * its place in the ladder. Height moves by 4px per rung and padding by 2px, which is
+ * the step each already uses, and the row heights move by the same 4px. A `sm`
+ * control goes from 28px to 24px — the `xs` control's comfortable height. That is the
+ * intended meaning, not an oversight.
+ *
+ * 16px at `2xs` is the floor. One rung below it would be 12px, under the minimum
+ * comfortable touch target, so the ladder compresses from the bottom rather than
+ * overflowing.
+ *
+ * `comfortable` is the *absence* of this attribute, so a document that ships no
+ * `data-density` at all renders exactly as it did before density was selectable.
+ * That is what makes this additive: the ladder in `:root` is never overridden, only
+ * shadowed, and nothing outside this block declares these properties.
+ */
+[data-density='compact'] {
+  --control-height-2xs: 1rem; /* 16px — the floor */
+  --control-height-xs: 1.25rem; /* 20px */
+  --control-height-sm: 1.5rem; /* 24px */
+  --control-height-md: 1.75rem; /* 28px */
+  --control-height-lg: 2rem; /* 32px */
+  --control-height-xl: 2.25rem; /* 36px */
+
+  --control-padding-2xs: 0.25rem;
+  --control-padding-xs: 0.375rem;
+  --control-padding-sm: 0.5rem;
+  --control-padding-md: 0.625rem;
+  --control-padding-lg: 0.75rem;
+  --control-padding-xl: 0.875rem;
+
+  --row-height-sm: 1.5rem;
+  --row-height-md: 1.75rem;
+  --row-height-lg: 2rem;
 }
 
 .dark {

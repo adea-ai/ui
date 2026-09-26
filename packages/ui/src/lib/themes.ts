@@ -34,7 +34,10 @@
  */
 
 import {
+  ACCENTS,
+  accentRoles,
   chartSeries,
+  getAccent,
   hasTheme,
   statusForeground,
   primaryHover,
@@ -281,6 +284,50 @@ export function themeFamilies(): { family: string; label: string; themes: ThemeV
     families.set(theme.family, entry)
   }
   return [...families.values()]
+}
+
+/** The accent presets, in the order a picker should show them. */
+export const accents = ACCENTS
+
+/**
+ * The properties an accent selection overrides, as CSS custom properties.
+ *
+ * ## Why this exists rather than relying on the `[data-accent]` blocks
+ *
+ * `theme.css` carries a `[data-accent='…']` block per preset, and those blocks are
+ * correct — but they are unreachable at runtime. `ThemeProvider` writes a theme's
+ * whole role set onto `<html>` as *inline* custom properties, and an inline
+ * declaration outranks any stylesheet selector regardless of specificity. The
+ * attribute was set, the rules existed, the values were right, and every one of the
+ * seven accents rendered as the same blue.
+ *
+ * The blocks are kept, because they are what styles the window between the document
+ * arriving and the provider mounting — which is the whole reason `themeScript`
+ * exists. But the authoritative value has to be applied by the same code that
+ * applies the theme, from the same source, or the two can drift again. So both the
+ * provider and the CSS generator call `accentRoles` out of `@adea-ai/themes`, and
+ * `tests/appearance-axes.test.ts` asserts the two agree value for value.
+ *
+ * Returns `undefined` for `theme` — the variant's own primary — and for an id the
+ * catalogue does not have, so a stale stored preference falls back to the theme
+ * rather than blanking the primary.
+ */
+export function accentVariables(
+  accentId: string,
+  appearance: ThemeAppearance
+): Record<string, string> | undefined {
+  if (accentId === 'theme') return undefined
+  const preset = getAccent(accentId)
+  if (!preset) return undefined
+
+  const roles = accentRoles(preset, appearance)
+  return {
+    '--primary': roles.primary,
+    '--primary-foreground': roles.primaryForeground,
+    '--primary-hover': roles.primaryHover,
+    '--primary-subtle': roles.primarySubtle,
+    '--ring': roles.ring,
+  }
 }
 
 /**
