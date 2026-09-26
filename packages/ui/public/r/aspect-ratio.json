@@ -4,7 +4,9 @@
   "title": "Aspect Ratio",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/aspect-ratio/aspect-ratio.tsx",

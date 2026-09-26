@@ -1,0 +1,18 @@
+/* The Adea design system's prebuilt stylesheet.
+ *
+ * Import this one file to get Tailwind, the base layer, every token, and the
+ * named utilities the components use. It is the entry the shadcn CLI and
+ * @shadcn/lint discover, so it must stay the file that imports Tailwind.
+ *
+ *   @import '@adea-ai/ui/globals.css';
+ *   @import '@adea-ai/ui/fonts.css';   <- optional, self-hosted typefaces
+ *
+ * A consumer that already imports Tailwind itself should import `theme.css`
+ * and `base.css` directly instead, and must not import this file.
+ *
+ * Tokens live in `theme.css` only. This file must never duplicate them.
+ */
+
+@import 'tailwindcss';
+@import './base.css';
+@import './theme.css';

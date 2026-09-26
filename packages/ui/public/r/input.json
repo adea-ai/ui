@@ -4,7 +4,9 @@
   "title": "Input",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/input/index.ts",

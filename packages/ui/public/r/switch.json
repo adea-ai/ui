@@ -6,7 +6,9 @@
   "dependencies": [
     "@kobalte/core@^0.13.14"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/switch/index.ts",

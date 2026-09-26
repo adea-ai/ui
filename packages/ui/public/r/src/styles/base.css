@@ -1,0 +1,644 @@
+/* ============================================================================
+ * Adea base layer
+ * ============================================================================
+ *
+ * Framework-neutral CSS that the components depend on but that carries no
+ * token values (those live in `theme.css`):
+ *
+ *   - the component-state variants Kobalte and corvu emit data attributes for
+ *   - keyframes and entrance animations
+ *   - the named utilities the design system exposes to consumers
+ *   - the base layer: focus ring, scrollbars, selection, reduced-motion
+ *
+ * Everything here ships as CSS. Nothing in this file may be duplicated in a
+ * component's class list.
+ * ========================================================================== */
+
+@import 'tw-animate-css';
+
+/* --- State variants ------------------------------------------------------
+ * Kobalte and corvu communicate state through data attributes. Spelling the
+ * mapping once here means a component writes `data-open:opacity-100` and gets
+ * the right behaviour from either library.
+ * ------------------------------------------------------------------------ */
+@custom-variant data-open {
+  &:where([data-state='open']),
+  &:where([data-open]:not([data-open='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state='closed']),
+  &:where([data-closed]:not([data-closed='false'])) {
+    @slot;
+  }
+}
+
+/* Kobalte marks every expanded disclosure and every open overlay with
+   `data-expanded`; the `data-state` spelling is kept too so a component
+   written against either protocol behaves the same. */
+@custom-variant data-expanded {
+  &:where([data-state='expanded']),
+  &:where([data-expanded]:not([data-expanded='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state='checked']),
+  &:where([data-checked]:not([data-checked='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state='unchecked']),
+  &:where([data-unchecked]:not([data-unchecked='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected='true']) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled='true']),
+  &:where([data-disabled]:not([data-disabled='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-highlighted {
+  &:where([data-highlighted]) {
+    @slot;
+  }
+}
+
+@custom-variant data-invalid {
+  &:where([data-invalid='true']),
+  &:where([data-invalid]:not([data-invalid='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state='active']),
+  &:where([data-active]:not([data-active='false'])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation='horizontal']) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation='vertical']) {
+    @slot;
+  }
+}
+
+/* --- Keyframes -----------------------------------------------------------
+ * Entrances only. Exits reuse the same geometry inverted through
+ * `tw-animate-css`, and state changes use a transition rather than a keyframe
+ * so they stay interruptible.
+ * ------------------------------------------------------------------------ */
+@theme inline {
+  @keyframes ds-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes ds-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes ds-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0 0;
+    }
+  }
+
+  @keyframes ds-indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(400%);
+    }
+  }
+
+  @keyframes ds-caret {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+/* --- Named utilities ----------------------------------------------------- */
+
+/**
+ * Visible to a screen reader, invisible on screen.
+ *
+ * This is the single most important utility in the system and it must be
+ * available in every build, which is why it lives here rather than in the
+ * optional stylesheet. `display: none` would remove the content from the
+ * accessibility tree as well; this clips it to a pixel instead, so the text is
+ * still announced, still translatable, and still reachable by find-in-page.
+ */
+@utility visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/**
+ * Reverses `visually-hidden` at a breakpoint, for a label that is only visible
+ * when there is room for it. Written as a companion because the two rules have
+ * to travel together to stay correct.
+ */
+@utility visually-hidden-until-* {
+  @media (width >= --value(--breakpoint-*)) {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/**
+ * The drag region of a frameless desktop window.
+ *
+ * Both macOS and Windows need draggable chrome and both need the controls
+ * inside it to opt back out — otherwise a button in the title bar drags the
+ * window instead of pressing. Keeping the pair together keeps the opt-out next
+ * to the opt-in instead of in a platform switch.
+ */
+@utility window-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+@utility window-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/**
+ * Inset the shell clear of the native window controls: the macOS traffic-light
+ * cluster (84px) and the Windows caption overlay (142px).
+ *
+ * Applied to the top bar's inline padding so its content box is what remains,
+ * which is why the search field stays optically centred in the space the user
+ * can actually see rather than in the window.
+ */
+@utility window-inset-macos {
+  padding-inline-start: 84px;
+}
+
+@utility window-inset-windows {
+  padding-inline-end: 142px;
+}
+
+/**
+ * iOS/macOS display-cutout and home-indicator insets, resolved once.
+ *
+ * `--safe-top` is deliberately 0 outside a standalone display: with browser
+ * chrome on screen the user agent's own bar already clears the status bar, so a
+ * non-zero `env()` there paints a dead band above the header.
+ */
+@utility p-safe {
+  padding-top: var(--safe-top, env(safe-area-inset-top, 0px));
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/**
+ * Truncate to one line inside a flex child.
+ *
+ * Tailwind's `truncate` is the same declaration; this exists as a named
+ * intent so a reviewer can see that `min-width: 0` — the part that is easy to
+ * forget and that makes the ellipsis actually appear inside a flex row — was
+ * deliberate rather than incidental.
+ */
+@utility text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/**
+ * A fade at the top and bottom edge of a scroll box, so a long list reads as
+ * continuing rather than ending at the fold.
+ */
+@utility scroll-shadow-y {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 2rem,
+    #000 calc(100% - 2rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 2rem,
+    #000 calc(100% - 2rem),
+    transparent 100%
+  );
+}
+
+/**
+ * A hairline rule that survives a fractional device pixel ratio. Used for the
+ * rail and panel divides, where a blurry seam is the first thing the eye finds.
+ */
+@utility hairline-x {
+  background-image: linear-gradient(to right, var(--border), var(--border));
+  background-size: 1px 100%;
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+@utility hairline-y {
+  background-image: linear-gradient(to bottom, var(--border), var(--border));
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+}
+
+@utility animate-rise {
+  animation: ds-rise var(--duration-slow) var(--ease-out) backwards;
+}
+
+@utility animate-scale-in {
+  animation: ds-scale-in var(--duration-normal) var(--ease-out) backwards;
+}
+
+@utility animate-indeterminate {
+  animation: ds-indeterminate 1.4s ease-in-out infinite;
+}
+
+@utility animate-caret {
+  animation: ds-caret 1.1s step-end infinite;
+}
+
+/* A skeleton shimmer that pauses for reduced motion — see the media query at
+   the foot of this file. */
+@utility animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--foreground) 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: ds-shimmer 1.6s ease-in-out infinite;
+}
+
+/**
+ * A streaming caret: the block that trails the last character of a turn that is
+ * still arriving. It is a caret rather than a spinner because the text is already
+ * readable and growing — the reader wants to know *where* the stream is, not that
+ * something is happening somewhere.
+ *
+ * `inline-block` with a `1ch` width so it sits in the text flow, and the blink is
+ * a step rather than a fade so it reads as a terminal cursor. It is removed under
+ * `prefers-reduced-motion` — the accessibility block below zeroes the duration,
+ * which would leave a static block; the component hides it there instead.
+ */
+@utility streaming-caret {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1em;
+  margin-left: 0.1em;
+  translate: 0 0.1em;
+  background: var(--foreground);
+  animation: ds-caret 1s steps(2, start) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes ds-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The glass treatment used by the top bar, the rail, and floating overlays.
+   `--glass-*` are private: a consumer chooses *whether* to be glassy through
+   the component prop, not by reaching for these. */
+@utility glass-panel {
+  background: color-mix(in oklch, var(--chrome) calc(var(--chrome-alpha) * 100%), transparent);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+@utility glass-surface {
+  background: color-mix(in oklch, var(--card) 72%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+}
+
+/* The focus ring. Applied by components that cannot use the global outline
+   because they need the ring to follow their own radius. */
+@utility focus-ring {
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px var(--primary-subtle);
+  }
+}
+
+/* --- Scrollbars ----------------------------------------------------------
+ * Themed, thin, and out of the way. A default scrollbar is the single most
+ * obvious "this is a web page" tell in a desktop application: on macOS it is
+ * an overlay that vanishes, but on Windows and Linux it is a 15px chrome bar
+ * with the platform's own palette, which no theme can reach.
+ *
+ * The thumb is `--muted` at rest and `--foreground` on hover, so it is visible
+ * against every surface without a per-theme value, and it never competes with
+ * content for attention.
+ * ------------------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: var(--muted);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox, which has no ::-webkit-scrollbar. */
+@supports (scrollbar-width: thin) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) transparent;
+  }
+}
+
+/**
+ * An auto-hiding scrollbar, for a horizontal scroller inside a bordered
+ * surface — a code block, a diff, a wide table. The bar appears on hover and
+ * while the region has focus, so the surface reads as continuous code at rest
+ * and the affordance is there the moment a reader needs it.
+ */
+@utility scroll-fade {
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    transition: background var(--duration-normal) var(--ease-out);
+  }
+
+  &:hover::-webkit-scrollbar-thumb,
+  &:focus-within::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground);
+  }
+
+  @supports (scrollbar-width: thin) {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    &:hover,
+    &:focus-within {
+      scrollbar-color: var(--muted-foreground) transparent;
+    }
+  }
+}
+
+/* --- Base layer ---------------------------------------------------------- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border);
+  }
+
+  * {
+    /* A ring is drawn outside the box so it can never shift layout. */
+    outline-color: var(--ring);
+    outline-offset: 2px;
+  }
+
+  html {
+    /* From Chromium 140 the viewport propagates overscroll-behavior from the
+       ROOT element, so a `body` declaration is ignored and the macOS
+       rubber-band bounce returns inside a desktop webview. */
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* The interface default: 14px/1.55, matching the `text-sm` rung. */
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    transition:
+      background-color var(--duration-normal) var(--ease-out),
+      color var(--duration-normal) var(--ease-out);
+  }
+
+  /* Keyboard focus only. `:focus-visible` rather than `:focus` so a pointer
+     click never paints a ring. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--primary-subtle);
+    color: var(--foreground);
+  }
+
+  /* Product expectation: every enabled control shows the pointer cursor
+     regardless of Tailwind preflight. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab']:not([aria-disabled='true']),
+  [role='menuitem']:not([aria-disabled='true']),
+  [role='option']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    letter-spacing: inherit;
+  }
+
+  /* Scrollbars. The thumb is `--muted-foreground`, the lightest rung that
+     clears the WCAG 1.4.11 3:1 non-text floor against every surface a scroll
+     box sits on; it darkens to `--foreground` on hover so the affordance
+     reads as live. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--muted-foreground) 75%, transparent);
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-feature-settings: 'liga' 0;
+  }
+}
+
+/* --- Accessibility overrides ---------------------------------------------
+ * Kept last so they win the cascade against the rules above.
+ * ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .glass-surface {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--background) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: var(--foreground);
+  }
+
+  .glass-panel,
+  .glass-surface {
+    background: var(--background) !important;
+    border: 1px solid var(--foreground) !important;
+  }
+}
+
+/* An engine without backdrop-filter would render the glass tint alone, which
+   is 3-8% alpha — effectively a transparent panel. Fall back to a solid
+   surface instead, keeping borders and shadows so panels stay delimited. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-surface {
+    background: var(--background) !important;
+  }
+}

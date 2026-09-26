@@ -12,7 +12,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/accordion/accordion.tsx",
@@ -34,7 +36,9 @@
       "dependencies": [
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/alert/alert.tsx",
@@ -56,7 +60,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/alert-dialog/alert-dialog.tsx",
@@ -76,7 +82,9 @@
       "title": "Aspect Ratio",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/aspect-ratio/aspect-ratio.tsx",
@@ -96,7 +104,9 @@
       "title": "Avatar",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/avatar/avatar.tsx",
@@ -118,7 +128,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/badge/badge.tsx",
@@ -138,7 +150,9 @@
       "title": "Board",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/board/board.tsx",
@@ -160,7 +174,9 @@
       "dependencies": [
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/breadcrumb/breadcrumb.tsx",
@@ -182,7 +198,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/button/button.tsx",
@@ -203,7 +221,8 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
-        "@adea-ai/ui/separator"
+        "@adea-ai/ui/separator",
+        "lib"
       ],
       "files": [
         {
@@ -228,7 +247,8 @@
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/button"
+        "@adea-ai/ui/button",
+        "lib"
       ],
       "files": [
         {
@@ -249,7 +269,9 @@
       "title": "Card",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/card/card.tsx",
@@ -274,7 +296,8 @@
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/button"
+        "@adea-ai/ui/button",
+        "lib"
       ],
       "files": [
         {
@@ -298,7 +321,9 @@
         "chart.js",
         "solid-chartjs"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/chart/chart.tsx",
@@ -321,7 +346,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/checkbox/checkbox.tsx",
@@ -344,7 +371,8 @@
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/button"
+        "@adea-ai/ui/button",
+        "lib"
       ],
       "files": [
         {
@@ -367,7 +395,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/collapsible/collapsible.tsx",
@@ -390,7 +420,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/combobox/combobox.tsx",
@@ -413,7 +445,9 @@
         "cmdk-solid@^1.2.0",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/command/command.tsx",
@@ -436,7 +470,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/context-menu/context-menu.tsx",
@@ -459,7 +495,8 @@
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/button"
+        "@adea-ai/ui/button",
+        "lib"
       ],
       "files": [
         {
@@ -483,7 +520,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/dialog/dialog.tsx",
@@ -503,7 +542,9 @@
       "title": "Diff Block",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/diff-block/diff-block.tsx",
@@ -525,7 +566,9 @@
       "dependencies": [
         "@corvu/drawer@^0.2.4"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/drawer/drawer.tsx",
@@ -548,7 +591,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/dropdown-menu/dropdown-menu.tsx",
@@ -568,7 +613,9 @@
       "title": "Empty",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/empty/empty.tsx",
@@ -588,7 +635,9 @@
       "title": "Entity Icon",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/entity-icon/entity-icon.tsx",
@@ -610,7 +659,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/field/field.tsx",
@@ -632,7 +683,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/hover-card/hover-card.tsx",
@@ -652,7 +705,9 @@
       "title": "Input",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/input/index.ts",
@@ -672,7 +727,9 @@
       "title": "Input Group",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/input-group/index.ts",
@@ -694,7 +751,9 @@
       "dependencies": [
         "@corvu/otp-field@^0.1.4"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/input-otp/index.ts",
@@ -714,7 +773,9 @@
       "title": "Item",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/item/index.ts",
@@ -734,7 +795,9 @@
       "title": "Kbd",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/kbd/index.ts",
@@ -754,7 +817,9 @@
       "title": "Label",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/label/index.ts",
@@ -777,7 +842,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/menubar/index.ts",
@@ -798,7 +865,8 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
-        "@adea-ai/ui/dialog"
+        "@adea-ai/ui/dialog",
+        "lib"
       ],
       "files": [
         {
@@ -822,7 +890,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/navigation-menu/index.ts",
@@ -845,7 +915,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/pagination/index.ts",
@@ -867,7 +939,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/popover/index.ts",
@@ -889,7 +963,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/progress/index.ts",
@@ -912,7 +988,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/radio-group/index.ts",
@@ -935,7 +1013,9 @@
         "@corvu/resizable@^0.2.5",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/resizable/index.ts",
@@ -955,7 +1035,9 @@
       "title": "Scroll Area",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/scroll-area/index.ts",
@@ -978,7 +1060,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/select/index.ts",
@@ -1000,7 +1084,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/separator/index.ts",
@@ -1024,7 +1110,8 @@
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/dialog"
+        "@adea-ai/ui/dialog",
+        "lib"
       ],
       "files": [
         {
@@ -1045,7 +1132,9 @@
       "title": "Skeleton",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/skeleton/index.ts",
@@ -1067,7 +1156,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/slider/index.ts",
@@ -1089,7 +1180,9 @@
       "dependencies": [
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/spinner/index.ts",
@@ -1110,7 +1203,8 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
-        "@adea-ai/ui/tooltip"
+        "@adea-ai/ui/tooltip",
+        "lib"
       ],
       "files": [
         {
@@ -1133,7 +1227,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/switch/index.ts",
@@ -1153,7 +1249,9 @@
       "title": "Table",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/table/index.ts",
@@ -1175,7 +1273,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/tabs/index.ts",
@@ -1195,7 +1295,9 @@
       "title": "Textarea",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/textarea/index.ts",
@@ -1218,7 +1320,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/toast/index.ts",
@@ -1240,7 +1344,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/toggle/index.ts",
@@ -1263,7 +1369,8 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/toggle"
+        "@adea-ai/ui/toggle",
+        "lib"
       ],
       "files": [
         {
@@ -1286,7 +1393,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/ui/tooltip/index.ts",
@@ -1306,7 +1415,9 @@
       "title": "App Shell",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/app-shell/app-shell.tsx",
@@ -1326,7 +1437,9 @@
       "title": "Page",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/page/index.ts",
@@ -1346,7 +1459,9 @@
       "title": "Panel",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/panel/index.ts",
@@ -1368,7 +1483,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/side-rail/index.ts",
@@ -1396,7 +1513,9 @@
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/sidebar-nav/index.ts",
@@ -1416,7 +1535,9 @@
       "title": "Status Bar",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/status-bar/index.ts",
@@ -1436,7 +1557,9 @@
       "title": "Top Bar",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/layout/top-bar/index.ts",
@@ -1460,7 +1583,8 @@
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
-        "@adea-ai/ui/dropdown-menu"
+        "@adea-ai/ui/dropdown-menu",
+        "lib"
       ],
       "files": [
         {
@@ -1483,7 +1607,9 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/composites/list-row/index.ts",
@@ -1503,7 +1629,9 @@
       "title": "Settings",
       "description": "",
       "dependencies": [],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/composites/settings/index.ts",
@@ -1525,7 +1653,9 @@
       "dependencies": [
         "lucide-solid@^1.48.0"
       ],
-      "registryDependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
       "files": [
         {
           "path": "src/components/composites/stat/index.ts",
@@ -1551,7 +1681,8 @@
         "@adea-ai/ui/badge",
         "@adea-ai/ui/button",
         "@adea-ai/ui/dialog",
-        "@adea-ai/ui/progress"
+        "@adea-ai/ui/progress",
+        "lib"
       ],
       "files": [
         {
@@ -1573,7 +1704,8 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
-        "@adea-ai/ui/tooltip"
+        "@adea-ai/ui/tooltip",
+        "lib"
       ],
       "files": [
         {
@@ -1601,7 +1733,8 @@
         "@adea-ai/ui/code-block",
         "@adea-ai/ui/kbd",
         "@adea-ai/ui/spinner",
-        "@adea-ai/ui/textarea"
+        "@adea-ai/ui/textarea",
+        "lib"
       ],
       "files": [
         {
@@ -1633,6 +1766,70 @@
           "path": "src/components/conversation/thread-panel.tsx",
           "type": "registry:ui",
           "target": "components/conversation/thread-panel.tsx"
+        }
+      ]
+    },
+    {
+      "name": "theming",
+      "type": "registry:ui",
+      "title": "Theming",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/radio-group",
+        "@adea-ai/ui/toggle",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/theme/appearance-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/appearance-panel.tsx"
+        },
+        {
+          "path": "src/components/theme/index.ts",
+          "type": "registry:ui",
+          "target": "components/theming/index.ts"
+        },
+        {
+          "path": "src/components/theme/theme-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-picker.tsx"
+        },
+        {
+          "path": "src/components/theme/theme-provider.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-provider.tsx"
+        },
+        {
+          "path": "src/components/theme/theme-toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-toggle.tsx"
+        }
+      ]
+    },
+    {
+      "name": "motion",
+      "type": "registry:ui",
+      "title": "Motion",
+      "description": "",
+      "dependencies": [
+        "solid-motionone@^1.0.4"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/motion/index.ts",
+          "type": "registry:ui",
+          "target": "components/motion/index.ts"
+        },
+        {
+          "path": "src/components/motion/presence.tsx",
+          "type": "registry:ui",
+          "target": "components/motion/presence.tsx"
         }
       ]
     },
@@ -1669,6 +1866,56 @@
           "path": "src/styles/fonts.css",
           "type": "registry:style",
           "target": "styles/fonts.css"
+        }
+      ]
+    },
+    {
+      "name": "lib",
+      "type": "registry:lib",
+      "title": "Class-name and token helpers",
+      "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
+      "dependencies": [
+        "@adea-ai/themes@^0.4.1",
+        "class-variance-authority@^0.7.1",
+        "clsx@^2.1.1",
+        "tailwind-merge@^3.7.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/lib/keyed-rows.ts",
+          "type": "registry:lib",
+          "target": "lib/keyed-rows.ts"
+        },
+        {
+          "path": "src/lib/overlay.ts",
+          "type": "registry:lib",
+          "target": "lib/overlay.ts"
+        },
+        {
+          "path": "src/lib/themes.ts",
+          "type": "registry:lib",
+          "target": "lib/themes.ts"
+        },
+        {
+          "path": "src/lib/tokens.ts",
+          "type": "registry:lib",
+          "target": "lib/tokens.ts"
+        },
+        {
+          "path": "src/lib/utils.ts",
+          "type": "registry:lib",
+          "target": "lib/utils.ts"
+        },
+        {
+          "path": "src/lib/variants.ts",
+          "type": "registry:lib",
+          "target": "lib/variants.ts"
+        },
+        {
+          "path": "src/lib/version-notes.ts",
+          "type": "registry:lib",
+          "target": "lib/version-notes.ts"
         }
       ]
     }

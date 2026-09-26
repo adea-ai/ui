@@ -4,7 +4,9 @@
   "title": "Empty",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/empty/empty.tsx",

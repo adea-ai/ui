@@ -4,7 +4,9 @@
   "title": "Panel",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/layout/panel/index.ts",

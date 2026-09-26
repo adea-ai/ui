@@ -10,7 +10,8 @@
     "@adea-ai/ui/badge",
     "@adea-ai/ui/button",
     "@adea-ai/ui/dialog",
-    "@adea-ai/ui/progress"
+    "@adea-ai/ui/progress",
+    "lib"
   ],
   "files": [
     {

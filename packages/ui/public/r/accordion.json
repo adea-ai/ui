@@ -7,7 +7,9 @@
     "@kobalte/core@^0.13.14",
     "lucide-solid@^1.48.0"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/accordion/accordion.tsx",

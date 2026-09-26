@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { designTokens } from '../src/lib/tokens'
-import { registryItems } from '../scripts/registry-core'
+import { publicRegistryDir, registryItems } from '../scripts/registry-core'
 import { validateRegistry } from '../scripts/validate-registry'
 
 /**
@@ -66,9 +68,39 @@ describe('registry', () => {
     // `settings` is label, description and a control slot. It takes whatever the
     // caller passes, so it must not depend on the controls a particular page uses —
     // a peer here would drag Switch and Input into a project that wanted neither.
+    //
+    // The `lib` peer is excluded from the assertion rather than the other way round.
+    // It is not a control: it is the class-name and token helpers, which every
+    // copied component needs in order to compile at all. Demanding an empty peer
+    // list would mean demanding a component that cannot be built.
     const settings = registryItems.find((item) => item.name === 'settings')
+    const peers = (settings?.registryDependencies ?? []).filter((name) => name !== 'lib')
 
-    expect(settings?.registryDependencies ?? []).toEqual([])
+    expect(peers).toEqual([])
+  })
+
+  test('every component that needs the helpers declares the lib peer', () => {
+    // The other half of the same contract: a payload that imports the helpers
+    // without declaring the peer installs a file that cannot resolve them, and
+    // nothing else in the suite would notice — the file exists, the item is valid,
+    // and the consumer's build is what fails.
+    for (const item of registryItems) {
+      for (const file of item.files) {
+        const served = join(publicRegistryDir, file.path)
+        if (!existsSync(served)) continue
+        // The served copy's relative specifier, not `lib/`: the word appears in
+        // prose and in unrelated paths, and a check loose enough to match those
+        // would pass on a payload that never declares the peer.
+        const reaches = /(?:from|import)\s*['"][^'"]*\blib\/[\w-]+['"]/.test(
+          readFileSync(served, 'utf8')
+        )
+        if (!reaches) continue
+        expect(
+          item.registryDependencies ?? [],
+          `${item.name} reaches into lib/ from ${file.path} but does not declare the lib peer`
+        ).toContain('lib')
+      }
+    }
   })
 
   test('every style item ships the whole token set', () => {

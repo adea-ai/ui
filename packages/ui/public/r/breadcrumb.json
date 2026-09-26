@@ -6,7 +6,9 @@
   "dependencies": [
     "lucide-solid@^1.48.0"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/breadcrumb/breadcrumb.tsx",

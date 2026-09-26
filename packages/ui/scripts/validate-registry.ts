@@ -19,13 +19,58 @@
  *                consumer gets a file importing a path that does not exist
  *   exports      a component reachable from the package but absent from the
  *                registry, so it cannot be taken individually
+ *   served       a payload whose file is not in the published tree, or whose
+ *                published copy carries an import the consumer cannot resolve —
+ *                the registry looked complete and every install 404'd
  *   staleness    a committed registry.json that no longer matches the source
  */
 
 import { readFileSync } from 'node:fs'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
-import { packageRoot, registry, registryItems } from './registry-core'
+import { dirname, join, resolve as resolvePath } from 'node:path'
+import { packageRoot, publicRegistryDir, registry, registryItems } from './registry-core'
+
+/**
+ * Assert that a published file is something a consumer could actually build.
+ *
+ * The registry's whole promise is "paste this and it works", and two things break
+ * that silently. A `#lib/…` specifier is this package's private `imports` map: it
+ * resolves inside the package and nowhere else, so a consumer receives a file their
+ * bundler cannot read. A relative specifier that reaches a file the registry does not
+ * serve is the same failure one hop further out. Neither produces an error at install
+ * time — only in the consumer's build, which is the worst place to find it.
+ */
+function checkServedImports(
+  itemName: string,
+  path: string,
+  servedFile: string,
+  findings: string[]
+): void {
+  const source = readFileSync(servedFile, 'utf8')
+
+  for (const match of source.matchAll(/(['"])#([\w/.-]+)\1/g)) {
+    findings.push(
+      `${itemName}: served "${path}" imports "${match[2]}" through the #lib map, which only resolves inside this package.`
+    )
+  }
+
+  for (const match of source.matchAll(/(?:from|import)\s*(['"])(\.[^'"]*)\1/g)) {
+    const specifier = match[2] ?? ''
+    const base = resolvePath(dirname(servedFile), specifier)
+    // A relative specifier has to reach a file the registry actually serves. The
+    // literal path is tried first, because a stylesheet import already carries its
+    // extension — `globals.css` is nothing but `@import './base.css'`, and probing
+    // only for `.ts`/`.tsx` called every one of them dangling. Then the shapes a
+    // consumer's bundler synthesises: an extensionless TypeScript import, and a
+    // directory import.
+    const candidates = [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')]
+    if (!candidates.some((candidate) => existsSync(candidate))) {
+      findings.push(
+        `${itemName}: served "${path}" imports "${specifier}", which resolves to nothing in the published tree.`
+      )
+    }
+  }
+}
 
 const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
   dependencies: Record<string, string>
@@ -65,11 +110,40 @@ export function validateRegistry(): string[] {
       if (!existsSync(join(packageRoot, file.path))) {
         findings.push(`${item.name}: file "${file.path}" does not exist.`)
       }
-      if (!file.target.startsWith('components/') && !file.target.startsWith('styles/')) {
+      // `lib/` is a legal target. The previous allowlist was `components/` and
+      // `styles/` only, which did not merely reject the helpers — it *forbade*
+      // them, so the one shape a copied component needs in order to compile could
+      // never be published. The check now asks whether the target is inside the
+      // consumer's project at all, which is the property that actually matters.
+      if (
+        !file.target.startsWith('components/') &&
+        !file.target.startsWith('styles/') &&
+        !file.target.startsWith('lib/')
+      ) {
         findings.push(
-          `${item.name}: target "${file.target}" is outside components/ or styles/, so the shadcn CLI will refuse it.`
+          `${item.name}: target "${file.target}" is outside components/, styles/ or lib/, so the shadcn CLI will refuse it.`
         )
       }
+    }
+
+    // --- every served file must exist and be installable -------------------
+    // The payload promises a file at a URL. Checking that the *source* exists is
+    // not the same claim: for the whole life of this registry the payloads pointed
+    // at `src/`, the source existed, and every URL 404'd because the publish step
+    // shipped only the JSON. So the served tree is checked as its own artifact.
+    for (const file of item.files) {
+      const served = join(publicRegistryDir, file.path)
+      if (!existsSync(served)) {
+        findings.push(
+          `${item.name}: "${file.path}" is not in the served tree at public/r/. The payload points at it, so it would 404.`
+        )
+        continue
+      }
+      // Two things must hold of the served copy for a consumer to be able to build
+      // it: it must not still carry this package's private `#lib` map, which
+      // resolves here and nowhere else, and every relative import must reach a file
+      // that is actually served.
+      checkServedImports(item.name, file.path, served, findings)
     }
 
     // --- npm dependencies are declared --------------------------------------
@@ -85,9 +159,12 @@ export function validateRegistry(): string[] {
 
     // --- cross-item dependencies resolve ------------------------------------
     for (const dependency of item.registryDependencies) {
+      // A peer is named either bare (`lib`) for an item in this registry, or
+      // `@adea-ai/ui/<slug>`. Both forms occur, so both are accepted, and anything
+      // else is an error rather than a silent no-op.
       const name = dependency.replace('@adea-ai/ui/', '')
       if (!itemNames.has(name)) {
-        findings.push(`${item.name}: registry dependency "@adea-ai/ui/${name}" is not an item.`)
+        findings.push(`${item.name}: registry dependency "${dependency}" is not an item.`)
       }
       if (name === item.name) {
         findings.push(`${item.name}: depends on itself.`)
@@ -107,6 +184,12 @@ export function validateRegistry(): string[] {
         exported.includes(`./components/ui/${item.name}`) ||
         exported.includes(`./components/layout/${item.name}`) ||
         exported.includes(`./components/composites/${item.name}`) ||
+        // A `self` root is exported one level up, at `./components/<dir>`, because
+        // the folder *is* the component — and the directory is not always the item
+        // name, which is how the theming runtime became `theming`.
+        exported.includes(`./components/theme`) ||
+        exported.includes(`./components/motion`) ||
+        exported.includes(`./components/conversation`) ||
         exported.includes(`./components/${item.name}'`)
 
       if (!reachable) {

@@ -7,7 +7,9 @@
     "chart.js",
     "solid-chartjs"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/chart/chart.tsx",

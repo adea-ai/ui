@@ -6,7 +6,9 @@
   "dependencies": [
     "@corvu/otp-field@^0.1.4"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/input-otp/index.ts",

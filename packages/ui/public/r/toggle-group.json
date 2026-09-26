@@ -7,7 +7,8 @@
     "@kobalte/core@^0.13.14"
   ],
   "registryDependencies": [
-    "@adea-ai/ui/toggle"
+    "@adea-ai/ui/toggle",
+    "lib"
   ],
   "files": [
     {

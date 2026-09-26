@@ -4,7 +4,9 @@
   "title": "Input Group",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/input-group/index.ts",

@@ -5,7 +5,8 @@
   "description": "",
   "dependencies": [],
   "registryDependencies": [
-    "@adea-ai/ui/dialog"
+    "@adea-ai/ui/dialog",
+    "lib"
   ],
   "files": [
     {
