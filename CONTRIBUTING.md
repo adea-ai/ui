@@ -18,6 +18,7 @@ Requirements: **Bun 1.4** and **Node 24.18**, both pinned in `.mise.toml`.
 git clone https://github.com/adea-ai/ui.git
 cd ui
 bun install
+bunx playwright install chromium webkit
 bun run storybook        # http://127.0.0.1:6006
 ```
 
@@ -54,8 +55,10 @@ containing:
 
 Then:
 
-1. Export it from `packages/ui/src/index.ts`. A component that is not exported is
-   not part of the contract, and `tests/registry.test.ts` will say so.
+1. Give it a public component subpath for all supported export conditions. Export
+   core controls from `packages/ui/src/index.ts`; optional-peer components stay
+   on their subpaths so core imports do not require their engines. Registry and
+   packed-consumer tests enforce reachability.
 2. Run `bun run registry:build`. The registry derives each item's files, its npm
    dependencies and its cross-component dependencies from the source — nothing is
    hand-maintained, and the committed catalogue is checked against the source.

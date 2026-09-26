@@ -47,9 +47,9 @@
     },
     "packages/ui": {
       "name": "@adea-ai/ui",
-      "version": "0.2.1",
+      "version": "0.61.1",
       "dependencies": {
-        "@adea-ai/themes": "^0.4.1",
+        "@adea-ai/themes": "^0.5.0",
         "@corvu/calendar": "^0.1.2",
         "@corvu/drawer": "^0.2.4",
         "@corvu/otp-field": "^0.1.4",
@@ -97,7 +97,7 @@
   "packages": {
     "@adea-ai/storybook": ["@adea-ai/storybook@workspace:apps/storybook"],
 
-    "@adea-ai/themes": ["@adea-ai/themes@0.4.1", "", {}, "sha512-8P3rDfEwbNDkql9vVNMjNHwUU7ypCJ5tbzc2rwClhq5nb7PFMgCCDaYAKajMcTNkRx4XSHjJpyo8lyo3shspaA=="],
+    "@adea-ai/themes": ["@adea-ai/themes@0.5.0", "", {}, "sha512-n1jtsjoL8jDGhvyqL1rYSMG51I3xOKY0iJgt9zSh1BE1GbjxbcFb4L8RvbShW2axvxWPgTYDGlZo5EYIarEBiw=="],
 
     "@adea-ai/ui": ["@adea-ai/ui@workspace:packages/ui"],
 

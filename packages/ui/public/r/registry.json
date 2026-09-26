@@ -1600,6 +1600,57 @@
       ]
     },
     {
+      "name": "appearance-editor",
+      "type": "registry:ui",
+      "title": "Appearance Editor",
+      "description": "",
+      "dependencies": [
+        "@adea-ai/themes@^0.5.0",
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/input",
+        "@adea-ai/ui/popover",
+        "@adea-ai/ui/select",
+        "@adea-ai/ui/switch",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/appearance-choices.tsx"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/appearance-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/appearance-editor.tsx"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/appearance-rows.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/appearance-rows.tsx"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/appearance-types.ts",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/appearance-types.ts"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/index.ts"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/theme-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/theme-preview.tsx"
+        }
+      ]
+    },
+    {
       "name": "list-row",
       "type": "registry:ui",
       "title": "List Row",
@@ -1875,7 +1926,7 @@
       "title": "Class-name and token helpers",
       "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
       "dependencies": [
-        "@adea-ai/themes@^0.4.1",
+        "@adea-ai/themes@^0.5.0",
         "class-variance-authority@^0.7.1",
         "clsx@^2.1.1",
         "tailwind-merge@^3.7.0"

@@ -69,6 +69,18 @@ jobs:
           bun run --cwd packages/ui build
           bun run check:tree-shaking
 
+      - name: Verify the publishable archive
+        run: bun run pack:check
+
+      - name: Verify packed consumers
+        run: bun run check:packed-consumer
+
+      - name: Install browsers for packed appearance interactions
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed appearance interactions and SSR
+        run: bun run check:packed-appearance
+
   # The build is its own job so the slices below do not each repeat it. It is also
   # what makes the sharding honest: every slice runs against the *same* artifact, so
   # a failure in one cannot come from a different build.
@@ -146,6 +158,10 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
+      - name: Install WebKit for component interaction contracts
+        if: matrix.shard == '1/4'
+        run: bunx playwright install --with-deps webkit
+
       - name: Download the built workshop
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
@@ -155,6 +171,12 @@ jobs:
       - name: Check this slice's stories for accessibility violations and interactions
         working-directory: apps/storybook
         run: bunx playwright test --shard=${{ matrix.shard }}
+
+      # Component tests bundle their own real entry and need no server. Run
+      # once after the workshop shard, retaining both reports in this artifact.
+      - name: Check controlled component interactions
+        if: matrix.shard == '1/4'
+        run: bun run test:components
 
       - name: Upload the accessibility report
         if: always()

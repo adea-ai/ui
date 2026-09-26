@@ -171,32 +171,38 @@ export function validateRegistry(): string[] {
       }
     }
 
-    // --- a component item must be reachable from the package root ----------
+    // Optional-peer components are public through subpaths without making core
+    // root consumers resolve their engines. Validate all four folder conditions;
+    // pack:check separately checks the built artifacts inside the actual tarball.
     if (item.type === 'registry:ui' && item.name !== 'theme') {
-      // The root export list is what a consumer sees; an item that is not in it
-      // is a component the registry can install but the package does not admit
-      // to having.
-      //
-      // A `self` root (the conversation module) is exported one level up, at
-      // `./components/<name>`, because the folder *is* the component.
-      const exported = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8')
-      const reachable =
-        exported.includes(`./components/ui/${item.name}`) ||
-        exported.includes(`./components/layout/${item.name}`) ||
-        exported.includes(`./components/composites/${item.name}`) ||
-        // A `self` root is exported one level up, at `./components/<dir>`, because
-        // the folder *is* the component — and the directory is not always the item
-        // name, which is how the theming runtime became `theming`.
-        exported.includes(`./components/theme`) ||
-        exported.includes(`./components/motion`) ||
-        exported.includes(`./components/conversation`) ||
-        exported.includes(`./components/${item.name}'`)
-
-      if (!reachable) {
-        findings.push(
-          `${item.name}: not exported from src/index.ts, so it is installable from the registry but absent from the package.`
+      const index = item.files.find(
+        (file) => file.path.startsWith('src/components/') && file.path.endsWith('/index.ts')
+      )
+      const component = index?.path.slice('src/components/'.length, -'/index.ts'.length)
+      const key = component ? `./components/${component}` : undefined
+      const entry = (key && packageJson.exports[key]) ?? packageJson.exports['./components/*']
+      const targets =
+        entry && typeof entry === 'object' ? (entry as Record<string, unknown>) : undefined
+      const expected = component
+        ? {
+            types: `./dist/components/${component}/index.d.ts`,
+            solid: `./src/components/${component}/index.ts`,
+            development: `./src/components/${component}/index.ts`,
+            import: `./dist/components/${component}/index.js`,
+          }
+        : undefined
+      if (
+        !expected ||
+        !targets ||
+        Object.entries(expected).some(
+          ([condition, target]) =>
+            typeof targets[condition] !== 'string' ||
+            (targets[condition] as string).replaceAll('*', component!) !== target
         )
-      }
+      )
+        findings.push(
+          `${item.name}: no complete public component subpath for types/Solid/development/compiled consumers.`
+        )
     }
   }
 
