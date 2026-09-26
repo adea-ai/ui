@@ -239,6 +239,26 @@ complete shell composition, production adoption and release remain required.
 No persistent state, session services, native drag region or host framework is
 imported into this model.
 
+### Host pane presentation hooks
+
+`SplitLayout` can keep its default pane header while allowing a host to supply
+inline visible content with `renderPaneLabel`, opt pane regions into keyboard
+Tab navigation with `paneTabIndex={0}`, and provide a domain-specific splitter
+name with `labelForSeparator`. Pane regions remain programmatically focusable
+by default (`paneTabIndex={-1}`), and separators keep their orientation-based
+names unless the host supplies a label.
+
+`renderPaneLabel` receives a stable `Accessor<L>` once for each leaf owner.
+Read `leaf()` inside the returned JSX so Solid tracks payload changes while the
+same pane owner is retained during split and move operations. This visible
+header content does not define the region's accessible name or the close
+button's name: both continue to come from `labelForLeaf`, so hosts should
+provide an accessible domain label there as well.
+
+The `HostPresentation` story shows a decorative icon and host title, keyboard
+pane stops, and a workspace-specific separator name. A narrow-width component
+fixture also checks that a long host title does not widen its pane header.
+
 `bun run check:packed-layout` packs the real artifact, installs it in a disposable
 consumer with peers omitted and scripts disabled, and exercises the direct model
 subpath in native Node and the Solid source condition. It verifies zero runtime

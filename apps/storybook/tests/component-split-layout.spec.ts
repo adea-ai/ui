@@ -20,6 +20,34 @@ async function act(page: import('@playwright/test').Page, detail: string) {
     detail
   )
 }
+test('host header content, pane Tab stops and separator names remain independent', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await act(page, 'host-presentation')
+  const region = page.getByRole('region', { name: 'Host region host-a', exact: true })
+  await expect(region.locator('[data-host-label]')).toHaveText('Host header host-a')
+  await expect(region.locator('header [aria-hidden="true"]')).toHaveText('⌘')
+  await expect(region).toHaveAttribute('tabindex', '0')
+  const narrowHeader = page
+    .getByRole('region', { name: 'Host region host-b', exact: true })
+    .locator('header')
+  await expect(narrowHeader.locator('[data-host-label]')).toContainText('long filename')
+  expect(await narrowHeader.evaluate((header) => header.scrollWidth <= header.clientWidth)).toBe(
+    true
+  )
+  await region.focus()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('textbox', { name: 'Host editor host-a', exact: true })).toBeFocused()
+  const separator = page.getByRole('separator', { name: 'Resize workspace panes', exact: true })
+  await separator.focus()
+  await separator.press('ArrowRight')
+  await expect(separator).toHaveAttribute('aria-valuenow', '55')
+  await expect(page.getByRole('region', { name: 'Pane a', exact: true })).toHaveAttribute(
+    'tabindex',
+    '-1'
+  )
+})
 test('split, resize and cross-parent move preserve the editor owner, DOM, value and caret', async ({
   page,
 }) => {

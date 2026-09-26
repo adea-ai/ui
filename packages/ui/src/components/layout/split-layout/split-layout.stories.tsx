@@ -31,7 +31,7 @@ const meta = {
 } satisfies Meta<typeof SplitLayout>
 export default meta
 type Story = StoryObj<typeof meta>
-function Demo(props: { nested?: boolean; eight?: boolean }) {
+function Demo(props: { nested?: boolean; eight?: boolean; hostPresentation?: boolean }) {
   let initial: SplitLayoutState<SplitLayoutLeaf> = createLayoutState({ kind: 'leaf', id: 'editor' })
   initial = splitPane(initial, 'editor', {
     direction: 'row',
@@ -111,7 +111,23 @@ function Demo(props: { nested?: boolean; eight?: boolean }) {
         <SplitLayout
           state={state()}
           label="Example work panes"
-          labelForLeaf={(leaf) => leaf.id}
+          labelForLeaf={(leaf) =>
+            props.hostPresentation
+              ? `${leaf.id === 'terminal' ? 'Terminal' : 'Editor'} pane`
+              : leaf.id
+          }
+          renderPaneLabel={
+            props.hostPresentation
+              ? (leaf) => (
+                  <>
+                    <span aria-hidden="true">{leaf().id === 'terminal' ? '⌘' : '◇'}</span>
+                    <span class="truncate">{leaf().id === 'terminal' ? 'Terminal' : 'Editor'}</span>
+                  </>
+                )
+              : undefined
+          }
+          paneTabIndex={props.hostPresentation ? 0 : undefined}
+          labelForSeparator={props.hostPresentation ? () => 'Resize workspace panes' : undefined}
           onMove={(id, target, intent) =>
             setState((s) =>
               movePane(s, id, target, intent.placement, intent.direction, `move-${++sequence}`)
@@ -158,3 +174,4 @@ function Demo(props: { nested?: boolean; eight?: boolean }) {
 export const TwoPanes: Story = { render: () => <Demo /> }
 export const NestedDirections: Story = { render: () => <Demo nested /> }
 export const EightPanes: Story = { render: () => <Demo eight /> }
+export const HostPresentation: Story = { render: () => <Demo hostPresentation /> }

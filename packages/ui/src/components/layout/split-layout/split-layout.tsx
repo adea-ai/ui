@@ -29,9 +29,16 @@ import {
 export type SplitLayoutProps<L extends SplitLayoutLeaf> = {
   state: SplitLayoutState<L>
   label: string
+  /** Accessible name for a pane region and its close button. */
   labelForLeaf: (leaf: L) => string
   /** Called once per stable leaf owner; the accessor tracks opaque payload replacement. */
   renderLeaf: (leaf: Accessor<L>) => JSX.Element
+  /** Inline visible header composition, separate from the region and close-button name. */
+  renderPaneLabel?: (leaf: Accessor<L>) => JSX.Element
+  /** Whether pane regions participate in sequential keyboard navigation; defaults to programmatic focus only. */
+  paneTabIndex?: 0 | -1
+  /** Accessible splitter name; defaults to the current orientation-specific label. */
+  labelForSeparator?: (branch: SplitLayoutBranch<L>) => string
   onResize: (splitId: string, ratio: number) => void
   onFocus?: (leafId: string) => void
   /** Host performs the model transition and returns the surviving focus destination. */
@@ -171,6 +178,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
           const initial = leafMap().get(id)!
           const leaf = () => leafMap().get(id) ?? initial
           const content = props.renderLeaf(leaf)
+          const paneLabel = props.renderPaneLabel?.(leaf)
           const actions = props.renderPaneActions?.(leaf)
           const intent = () => (drop()?.id === id ? drop()?.intent : undefined)
           onCleanup(() => {
@@ -183,7 +191,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
               id={domId(id)}
               role="region"
               aria-label={props.labelForLeaf(leaf())}
-              tabIndex={-1}
+              tabIndex={props.paneTabIndex ?? -1}
               data-pane-id={id}
               data-focused={props.state.focusedLeafId === id ? '' : undefined}
               data-drop-direction={intent()?.direction}
@@ -250,7 +258,9 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                   {props.onMove ? (
                     <GripVertical class="size-3 shrink-0" aria-hidden="true" />
                   ) : null}
-                  <span class="truncate">{props.labelForLeaf(leaf())}</span>
+                  <span class="min-w-0 flex-1 truncate">
+                    {paneLabel ?? props.labelForLeaf(leaf())}
+                  </span>
                 </span>
                 {actions}
                 {props.onClose ? (
@@ -310,7 +320,8 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
               />
               <Resizable.Handle
                 aria-label={
-                  branch().direction === 'row' ? 'Resize pane columns' : 'Resize pane rows'
+                  props.labelForSeparator?.(branch()) ??
+                  (branch().direction === 'row' ? 'Resize pane columns' : 'Resize pane rows')
                 }
                 aria-orientation={branch().direction === 'row' ? 'vertical' : 'horizontal'}
                 aria-controls={listLeaves(branch())

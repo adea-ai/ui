@@ -19,6 +19,15 @@ function Fixture() {
   const [unmounts, setUnmounts] = createSignal(0)
   const [visible, setVisible] = createSignal(true)
   const [moves, setMoves] = createSignal(0)
+  const [hostPresentation, setHostPresentation] = createSignal(false)
+  const [hostState, setHostState] = createSignal(
+    splitPane(createLayoutState({ kind: 'leaf', id: 'host-a' }), 'host-a', {
+      direction: 'row',
+      placement: 'after',
+      leaf: { kind: 'leaf', id: 'host-b' },
+      splitId: 'host-split',
+    })
+  )
   let nextMove = 0
   const act = (event: Event) => {
     const detail = (event as CustomEvent<string>).detail
@@ -60,6 +69,7 @@ function Fixture() {
         )
     }
     if (detail === 'unmount') setVisible(false)
+    if (detail === 'host-presentation') setHostPresentation(true)
     if (detail === 'resize') setState((s) => resizeSplit(s, 'ab', 0.7))
   }
   window.addEventListener('layout-fixture', act)
@@ -146,6 +156,29 @@ function Fixture() {
           onMove={() => setMoves((count) => count + 1)}
         />
       </div>
+      <Show when={hostPresentation()}>
+        <div class="h-32">
+          <SplitLayout
+            state={hostState()}
+            label="Host work panes"
+            labelForLeaf={(leaf) => `Host region ${leaf.id}`}
+            paneTabIndex={0}
+            renderPaneLabel={(leaf) => (
+              <>
+                <span aria-hidden="true">⌘</span>
+                <span data-host-label="">
+                  Host header {leaf().id}
+                  {leaf().id === 'host-b' ? ' with a long filename that should truncate' : ''}
+                </span>
+              </>
+            )}
+            labelForSeparator={() => 'Resize workspace panes'}
+            renderLeaf={(leaf) => <textarea aria-label={`Host editor ${leaf().id}`} />}
+            onFocus={(id) => setHostState((state) => focusPane(state, id))}
+            onResize={(id, ratio) => setHostState((state) => resizeSplit(state, id, ratio))}
+          />
+        </div>
+      </Show>
     </main>
   )
 }
