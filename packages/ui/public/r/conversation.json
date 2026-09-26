@@ -8,13 +8,20 @@
   ],
   "registryDependencies": [
     "@adea-ai/ui/button",
+    "@adea-ai/ui/button-group",
     "@adea-ai/ui/code-block",
+    "@adea-ai/ui/dropdown-menu",
     "@adea-ai/ui/kbd",
     "@adea-ai/ui/spinner",
     "@adea-ai/ui/textarea",
     "lib"
   ],
   "files": [
+    {
+      "path": "src/components/conversation/busy-send-button.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/busy-send-button.tsx"
+    },
     {
       "path": "src/components/conversation/conversation-avatar.tsx",
       "type": "registry:ui",

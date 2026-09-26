@@ -1,3 +1,4 @@
+export { BusySendButton, type BusySendMode, type BusySendButtonProps } from './busy-send-button'
 export {
   ConversationAvatar,
   type ConversationAvatarKind,
