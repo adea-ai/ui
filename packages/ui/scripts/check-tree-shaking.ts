@@ -56,35 +56,47 @@ const BUDGETS = {
 }
 
 /**
- * The components worth a published number, each imported on its own from the
- * package root — the way a consumer imports them, so a barrel that stops shaking
+ * The components worth a published number, each imported through its documented
+ * public entry — so a barrel that stops shaking
  * shows up here and not only in the one-component check.
  */
-const SAMPLES: readonly { name: string; names: readonly string[]; note: string }[] = [
-  { name: 'Button', names: ['Button'], note: 'the floor: no dependency of its own' },
-  { name: 'Board', names: ['Board'], note: 'no dependency' },
-  { name: 'CodeBlock', names: ['CodeBlock'], note: 'lucide icons' },
-  { name: 'DiffBlock', names: ['DiffBlock'], note: 'lucide icons' },
-  { name: 'MessageRow', names: ['MessageRow'], note: 'conversation layer, no dependency' },
-  { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog' },
-  { name: 'NavigationMenu', names: ['NavigationMenu'], note: 'Kobalte navigation menu' },
-  { name: 'CalendarSurface', names: ['CalendarSurface'], note: 'corvu calendar' },
-  { name: 'Carousel', names: ['Carousel'], note: 'embla' },
-  { name: 'LineChart', names: ['LineChart'], note: 'chart.js, line controller only' },
-  {
-    name: 'AllCharts',
-    names: [
-      'LineChart',
-      'BarChart',
-      'RadarChart',
-      'PolarAreaChart',
-      'DonutChart',
-      'ScatterChart',
-      'BubbleChart',
-    ],
-    note: 'every chart controller',
-  },
-]
+const SAMPLES: readonly { name: string; names: readonly string[]; note: string; entry?: string }[] =
+  [
+    { name: 'Button', names: ['Button'], note: 'the floor: no dependency of its own' },
+    { name: 'Board', names: ['Board'], note: 'no dependency' },
+    { name: 'CodeBlock', names: ['CodeBlock'], note: 'lucide icons' },
+    { name: 'DiffBlock', names: ['DiffBlock'], note: 'lucide icons' },
+    { name: 'MessageRow', names: ['MessageRow'], note: 'conversation layer, no dependency' },
+    { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog' },
+    { name: 'NavigationMenu', names: ['NavigationMenu'], note: 'Kobalte navigation menu' },
+    { name: 'CalendarSurface', names: ['CalendarSurface'], note: 'corvu calendar' },
+    {
+      name: 'Carousel',
+      names: ['Carousel'],
+      note: 'embla optional subpath',
+      entry: '/components/ui/carousel',
+    },
+    {
+      name: 'LineChart',
+      names: ['LineChart'],
+      note: 'chart.js optional subpath, line controller only',
+      entry: '/components/ui/chart',
+    },
+    {
+      name: 'AllCharts',
+      entry: '/components/ui/chart',
+      names: [
+        'LineChart',
+        'BarChart',
+        'RadarChart',
+        'PolarAreaChart',
+        'DonutChart',
+        'ScatterChart',
+        'BubbleChart',
+      ],
+      note: 'every chart controller',
+    },
+  ]
 
 /** Bytes as a human-readable size, for the report and the findings. */
 function kb(bytes: number): string {
@@ -111,7 +123,13 @@ async function bundle(entrySource: string, dir: string, name: string): Promise<B
     },
     resolve: {
       // The built package, so this measures what ships rather than the source.
-      alias: { '@adea-ai/ui': join(DIST, 'index.js') },
+      alias: [
+        { find: /^@adea-ai\/ui$/, replacement: join(DIST, 'index.js') },
+        {
+          find: /^@adea-ai\/ui\/components\/(.*)$/,
+          replacement: join(DIST, 'components/$1/index.js'),
+        },
+      ],
       conditions: ['import', 'module', 'browser', 'default'],
     },
   })
@@ -133,7 +151,11 @@ try {
     dir,
     'one'
   )
-  const whole = await bundle(`export * from '@adea-ai/ui'\n`, dir, 'whole')
+  const whole = await bundle(
+    `export * from '@adea-ai/ui'\nexport * from '@adea-ai/ui/components/ui/chart'\nexport * from '@adea-ai/ui/components/ui/carousel'\n`,
+    dir,
+    'whole'
+  )
   const ratio = one.gzip / whole.gzip
 
   console.log('tree-shaking:')
@@ -145,11 +167,11 @@ try {
   )
   console.log(`  ratio          ${(ratio * 100).toFixed(1)}% of the whole library`)
 
-  console.log('\n  per component, imported from the package root:')
+  console.log('\n  per component, imported through documented public entries:')
   const sizes = new Map<string, BundleSize>()
   for (const sample of SAMPLES) {
     const size = await bundle(
-      `import { ${sample.names.join(', ')} } from '@adea-ai/ui'\n` +
+      `import { ${sample.names.join(', ')} } from '@adea-ai/ui${sample.entry ?? ''}'\n` +
         `console.log(${sample.names.join(', ')})\n`,
       dir,
       `sample-${sample.name}`

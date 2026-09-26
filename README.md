@@ -214,3 +214,12 @@ are re-expressed here as Solid components on Kobalte and corvu, using shadcn's
 semantic token vocabulary. No KiroCrew source file is reproduced verbatim. See
 [NOTICE](NOTICE) for the full attribution and for the upstream licences of the
 libraries this system is built on.
+
+### Optional engines and breaking root-export migration
+
+Core controls may be imported from `@adea-ai/ui` without chart/carousel peers.
+Charts, chart helpers/types, carousels and carousel helpers/types are public only
+through `@adea-ai/ui/components/ui/chart` and
+`@adea-ai/ui/components/ui/carousel`. Install their corresponding optional peers
+when using those entries. Migrate existing root imports to those subpaths; this
+intentional breaking change is declared in the commit and release notes.

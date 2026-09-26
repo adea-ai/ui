@@ -10,8 +10,8 @@
  *   import '@adea-ai/ui/fonts.css'
  *
  * Everything here is covered by the Storybook workshop in `apps/storybook`,
- * which is also where the reasoning behind each component is written down. If a
- * component is not exported here, it is not part of the contract.
+ * which is also where the reasoning behind each component is written down. An
+ * optional-peer component lives on its documented component subpath rather than here.
  */
 
 /* --- Primitives ---------------------------------------------------------- */
@@ -26,8 +26,6 @@ export * from './components/ui/breadcrumb'
 export * from './components/ui/button'
 export * from './components/ui/button-group'
 export * from './components/ui/calendar'
-export * from './components/ui/carousel'
-export * from './components/ui/chart'
 export * from './components/ui/card'
 export * from './components/ui/checkbox'
 export * from './components/ui/collapsible'
