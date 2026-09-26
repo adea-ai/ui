@@ -18,7 +18,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test && bun run test:coverage",
     "test:unit": "turbo run test",
-    "test:coverage": "bun test packages/ui/tests --coverage",
+    "test:coverage": "bun test --conditions=browser packages/ui/tests --coverage",
     "test:storybook": "bun run --cwd apps/storybook test:e2e",
     "storybook": "bun run --cwd apps/storybook storybook",
     "storybook:build": "bun run --cwd apps/storybook build-storybook",
