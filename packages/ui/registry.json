@@ -1835,12 +1835,12 @@
         {
           "path": "src/components/conversation/atomic/chat-composer.tsx",
           "type": "registry:ui",
-          "target": "components/conversation/chat-composer.tsx"
+          "target": "components/conversation/atomic/chat-composer.tsx"
         },
         {
           "path": "src/components/conversation/atomic/index.ts",
           "type": "registry:ui",
-          "target": "components/conversation/index.ts"
+          "target": "components/conversation/atomic/index.ts"
         },
         {
           "path": "src/components/conversation/busy-send-button.tsx",
@@ -1875,7 +1875,7 @@
         {
           "path": "src/components/conversation/internal/chat-composer-shell.tsx",
           "type": "registry:ui",
-          "target": "components/conversation/chat-composer-shell.tsx"
+          "target": "components/conversation/internal/chat-composer-shell.tsx"
         },
         {
           "path": "src/components/conversation/message-composer.tsx",

@@ -45,7 +45,7 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, posix, relative, resolve } from 'node:path'
+import { dirname, join, posix, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -307,7 +307,7 @@ function buildItems() {
         path: relative(PACKAGE_ROOT, file),
         type: 'registry:ui' as const,
         target: folder.self
-          ? `components/${folder.slug}/${file.split('/').at(-1)}`
+          ? `components/${folder.slug}/${relative(folder.dir, file).split(sep).join('/')}`
           : `components/${folder.group}/${folder.slug}/${file.split('/').at(-1)}`,
       })),
     }
