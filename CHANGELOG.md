@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.63.1](https://github.com/adea-ai/ui/compare/v0.63.0...v0.63.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **ci:** avoid redundant workshop metadata and builds ([#28](https://github.com/adea-ai/ui/issues/28)) ([145e345](https://github.com/adea-ai/ui/commit/145e34515c2fb23aa51c798609c2d9d7f294096c))
+* **ci:** update runtime pins and refresh review policy ([#29](https://github.com/adea-ai/ui/issues/29)) ([d0c6968](https://github.com/adea-ai/ui/commit/d0c6968d6f51b93638634553654f1e3554fbf33e))
+
 ## [0.63.0](https://github.com/adea-ai/ui/compare/v0.62.0...v0.63.0) (2026-09-26)
 
 
