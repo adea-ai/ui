@@ -8,6 +8,8 @@ import {
   resizeSplit,
   closePane,
   focusPane,
+  neighborLeaf,
+  countLeaves,
   type SplitLayoutLeaf,
 } from '../../src/components/layout/split-layout/model'
 import '../../src/styles/globals.css'
@@ -16,6 +18,8 @@ function Fixture() {
   const [mounts, setMounts] = createSignal(0)
   const [unmounts, setUnmounts] = createSignal(0)
   const [visible, setVisible] = createSignal(true)
+  const [moves, setMoves] = createSignal(0)
+  let nextMove = 0
   const act = (event: Event) => {
     const detail = (event as CustomEvent<string>).detail
     if (detail === 'split')
@@ -70,6 +74,20 @@ function Fixture() {
       <h1>Binary pane fixture</h1>
       <output aria-label="Mounts">{mounts()}</output>
       <output aria-label="Unmounts">{unmounts()}</output>
+      <output aria-label="Moves">{moves()}</output>
+      <button
+        type="button"
+        aria-label="Move focused pane before previous pane"
+        disabled={!neighborLeaf(state(), state().focusedLeafId, -1)}
+        onClick={() => {
+          const id = state().focusedLeafId
+          const previous = neighborLeaf(state(), id, -1)
+          if (previous)
+            setState((s) => movePane(s, id, previous.id, 'before', 'row', `toolbar-${++nextMove}`))
+        }}
+      >
+        Move pane left
+      </button>
       <div class="h-96">
         <Show when={visible()}>
           <SplitLayout
@@ -77,8 +95,39 @@ function Fixture() {
             label="Work panes"
             labelForLeaf={(leaf) => `Pane ${leaf.id}`}
             renderLeaf={(leaf) => <Content leaf={leaf} />}
+            renderPaneActions={(leaf) => (
+              <Show when={countLeaves(state().center) <= 2}>
+                <button
+                  type="button"
+                  aria-label={`Move ${leaf().id} before previous pane`}
+                  disabled={!neighborLeaf(state(), leaf().id, -1)}
+                  onClick={() => {
+                    const previous = neighborLeaf(state(), leaf().id, -1)
+                    if (previous)
+                      setState((s) =>
+                        movePane(
+                          s,
+                          leaf().id,
+                          previous.id,
+                          'before',
+                          'row',
+                          `keyboard-${++nextMove}`
+                        )
+                      )
+                  }}
+                >
+                  ←
+                </button>
+              </Show>
+            )}
             onFocus={(id) => setState((s) => focusPane(s, id))}
             onResize={(id, ratio) => setState((s) => resizeSplit(s, id, ratio))}
+            onMove={(id, target, intent) => {
+              setMoves((count) => count + 1)
+              setState((s) =>
+                movePane(s, id, target, intent.placement, intent.direction, `drop-${++nextMove}`)
+              )
+            }}
             onClose={(id) => {
               const next = closePane(state(), id, () => ({ kind: 'leaf', id: 'placeholder' }))
               setState(next)
@@ -94,6 +143,7 @@ function Fixture() {
           labelForLeaf={() => 'Other pane'}
           renderLeaf={() => <input aria-label="Other editor" />}
           onResize={() => {}}
+          onMove={() => setMoves((count) => count + 1)}
         />
       </div>
     </main>

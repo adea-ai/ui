@@ -225,7 +225,7 @@ in headless Chromium/WebKit (52 cases). Required SSR independently uses the
 installed Solid source pipeline, compiles server output and executes it in native
 Node; compiled browser code is not presented as server-renderable.
 
-The fixture measures 30,370/30,383 gzip JS bytes (compiled/source) and 32,705 raw
+The pre-movement checkpoint at `827e597` measures 30,370/30,383 gzip JS bytes (compiled/source) and 32,705 raw
 CSS bytes. Budgets are 32 KiB gzip JS and 34 KiB raw CSS. Gates also require one
 Solid runtime, one JS chunk, external Solid/Corvu imports, unmixed UI browser
 conditions, packed Apache LICENSE/full donor MIT NOTICE, and absence of charts,
@@ -234,3 +234,19 @@ CSS is generated externally from explicit component sources, theme and base
 styles. This is installed-artifact evidence for the selected renderer, not an
 Adea/Cortana production mount, full shell, hydration/native editor/manual AT or
 required root-import compatibility certificate.
+
+### Pane movement source continuation
+
+Three stories cover two panes, nested directions and the eight-pane limit. Run
+`bun run test:layout` for isolated headless Chromium/WebKit interaction, light/dark
+automated accessibility, CSP geometry and native Node SSR evidence. This is a
+renderer foundation. Optional `onMove` enables pane-title dragging with typed
+closest-edge feedback. Only a live drag from this instance can invoke the host;
+foreign/plaintext/stale drops are rejected, and disposal/cancellation clears feedback.
+`renderPaneActions` supplies stable accessor-aware host controls. The stories show
+keyboard-accessible movement through those controls, plus toolbar split and undo.
+Application shortcuts and persisted transitions remain host owned. Manual assistive
+technology acceptance and production Adea/Cortana adoption remain pending. Actual
+packed-renderer measurements belong to the dependency integration checkpoint;
+source-only changes do not refresh that evidence. The existing packed-model probe remains a pure subpath
+check and does not certify the renderer or library root.

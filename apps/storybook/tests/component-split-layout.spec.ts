@@ -189,3 +189,99 @@ for (const width of [320, 1440])
       await layout.screenshot({ path: testInfo.outputPath(`split-${theme}-${width}.png`) })
     })
   }
+
+test('pane header pointer drag moves at the chosen edge without remounting editors', async ({
+  page,
+}) => {
+  await act(page, 'split')
+  const field = page.getByRole('textbox', { name: 'Editor a' })
+  await field.fill('Retained through pointer move')
+  const source = page
+    .getByRole('group', { name: 'Work panes', exact: true })
+    .locator('[data-pane-id="a"] [data-pane-drag-handle]')
+  const target = page.getByRole('region', { name: 'Pane b' })
+  const box = (await target.boundingBox())!
+  await source.dragTo(target, { targetPosition: { x: box.width - 4, y: box.height / 2 } })
+  await expect(page.getByLabel('Moves', { exact: true })).toHaveText('1')
+  const panes = page.getByRole('group', { name: 'Work panes', exact: true }).getByRole('region')
+  await expect(panes.first()).toHaveAttribute('data-pane-id', 'b')
+  await expect(field).toHaveValue('Retained through pointer move')
+  await expect(page.getByLabel('Mounts', { exact: true })).toHaveText('2')
+  await expect(page.getByLabel('Unmounts')).toHaveText('0')
+  await expect(page.locator('[data-drop-direction]')).toHaveCount(0)
+})
+test('foreign layout and forged plaintext drops cannot invoke host moves', async ({ page }) => {
+  await act(page, 'split')
+  const source = page.locator('[data-pane-id="a"] [data-pane-drag-handle]').first()
+  await source.dragTo(page.getByRole('region', { name: 'Other pane' }))
+  await expect(page.getByLabel('Moves', { exact: true })).toHaveText('0')
+  await page.getByRole('region', { name: 'Pane b' }).evaluate((target) => {
+    const dataTransfer = new DataTransfer()
+    dataTransfer.setData('text/plain', 'a')
+    target.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer }))
+    target.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer }))
+  })
+  await expect(page.getByLabel('Moves', { exact: true })).toHaveText('0')
+  await expect(page.locator('[data-drop-direction]')).toHaveCount(0)
+})
+
+test('injected pane actions give keyboard users the same host-owned move transition', async ({
+  page,
+}) => {
+  await act(page, 'split')
+  const field = page.getByRole('textbox', { name: 'Editor b' })
+  await field.fill('Keyboard draft')
+  const action = page.getByRole('button', { name: 'Move b before previous pane' })
+  await action.focus()
+  await action.press('Enter')
+  await expect(
+    page.getByRole('group', { name: 'Work panes', exact: true }).getByRole('region').first()
+  ).toHaveAttribute('data-pane-id', 'b')
+  await expect(field).toHaveValue('Keyboard draft')
+  await expect(page.getByLabel('Unmounts')).toHaveText('0')
+  await expect(action).toBeDisabled()
+})
+
+for (const cancel of ['dragend', 'close'] as const)
+  test(`a ${cancel} clears drop feedback and invalidates the active drag payload`, async ({
+    page,
+  }) => {
+    await act(page, 'split')
+    await page.evaluate((reason) => {
+      const root = document.querySelector('[aria-label="Work panes"]')!
+      const source = root.querySelector('[data-pane-id="a"] [data-pane-drag-handle]')!
+      const target = root.querySelector('[data-pane-id="b"]')!
+      const box = target.getBoundingClientRect()
+      const dataTransfer = new DataTransfer()
+      source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer }))
+      target.dispatchEvent(
+        new DragEvent('dragover', {
+          bubbles: true,
+          dataTransfer,
+          clientX: box.right - 4,
+          clientY: box.top + box.height / 2,
+        })
+      )
+      if (
+        target.getAttribute('data-drop-direction') !== 'row' ||
+        target.getAttribute('data-drop-placement') !== 'after'
+      )
+        throw new Error('Missing edge-specific drop feedback')
+      if (reason === 'dragend')
+        source.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer }))
+      else (root.querySelector('[aria-label="Close Pane a"]') as HTMLButtonElement).click()
+      target.dispatchEvent(
+        new DragEvent('drop', {
+          bubbles: true,
+          dataTransfer,
+          clientX: box.right - 4,
+          clientY: box.top + box.height / 2,
+        })
+      )
+    }, cancel)
+    await expect(page.getByLabel('Moves', { exact: true })).toHaveText('0')
+    await expect(page.locator('[data-drop-direction]')).toHaveCount(0)
+    await expect(
+      page.getByRole('group', { name: 'Work panes', exact: true }).getByRole('status')
+    ).toBeEmpty()
+  })
