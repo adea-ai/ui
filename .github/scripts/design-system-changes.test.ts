@@ -135,3 +135,40 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
     rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('the actual aggregate gate rejects failed, cancelled, missing and required skipped lanes', () => {
+  const workflow = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/design-system-gates.yml', import.meta.url), 'utf8')
+  ) as { jobs: Record<string, { steps: { run: string }[] }> }
+  const script = workflow.jobs['workshop-gate'].steps[0].run
+  const defaults = {
+    SCOPE_RESULT: 'success',
+    WORKSHOP_NEEDED: 'true',
+    COMPONENTS_NEEDED: 'true',
+    BUILD_RESULT: 'success',
+    STORIES_RESULT: 'success',
+    COMPONENTS_RESULT: 'success',
+  }
+  const passes = (overrides: Record<string, string>) =>
+    Bun.spawnSync(['bash', '-c', script], {
+      env: { ...process.env, ...defaults, ...overrides },
+    }).exitCode === 0
+  expect(passes({})).toBe(true)
+  for (const key of ['SCOPE_RESULT', 'BUILD_RESULT', 'STORIES_RESULT', 'COMPONENTS_RESULT']) {
+    for (const value of ['failure', 'cancelled', 'skipped', '']) {
+      expect(passes({ [key]: value })).toBe(false)
+    }
+  }
+  expect(
+    passes({
+      WORKSHOP_NEEDED: 'false',
+      BUILD_RESULT: 'skipped',
+      STORIES_RESULT: 'skipped',
+    })
+  ).toBe(true)
+  expect(passes({ COMPONENTS_NEEDED: 'false', COMPONENTS_RESULT: 'skipped' })).toBe(true)
+  expect(
+    passes({ WORKSHOP_NEEDED: 'false', BUILD_RESULT: 'failure', STORIES_RESULT: 'skipped' })
+  ).toBe(false)
+  expect(passes({ COMPONENTS_NEEDED: 'false', COMPONENTS_RESULT: 'cancelled' })).toBe(false)
+})
