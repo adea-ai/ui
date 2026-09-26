@@ -27,7 +27,7 @@ export default defineConfig({
    * collects `*.test.ts` as well as `*.spec.ts`. Without this, `playwright test`
    * tries to run a `bun:test` file and fails on the import.
    */
-  testIgnore: ['**/unit/**'],
+  testIgnore: ['**/unit/**', '**/component-*.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,
