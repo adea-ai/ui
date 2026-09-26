@@ -50,6 +50,41 @@ test('the popup and nested controls retain their shared CSS contract', async ({ 
       (element) => element.nextElementSibling?.getBoundingClientRect().height ?? 0
     )
   ).toBeGreaterThan(16)
+  await page.getByRole('button', { name: /^Dark theme/ }).click()
+  const list = page.getByRole('listbox')
+  await expect(list).toBeVisible()
+  const menu = await list.evaluate((element) => {
+    const content = element.parentElement
+    if (!content) throw new Error('Missing Select content')
+    const style = getComputedStyle(content)
+    return {
+      background: style.backgroundColor,
+      overflowX: style.overflowX,
+      minWidth: Number.parseFloat(style.minWidth),
+      rem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+    }
+  })
+  expect(menu.background).not.toBe('rgba(0, 0, 0, 0)')
+  expect(menu.overflowX).toBe('hidden')
+  expect(menu.minWidth).toBeCloseTo(menu.rem * 8, 1)
+  await page.keyboard.press('Escape')
+  await page.getByText('Custom', { exact: true }).click()
+  const input = await page.getByRole('textbox', { name: 'Custom accent' }).evaluate((element) => {
+    const style = getComputedStyle(element)
+    const probe = document.createElement('div')
+    probe.style.height = 'var(--control-height-md)'
+    element.parentElement?.append(probe)
+    const expected = probe.getBoundingClientRect().height
+    probe.remove()
+    return {
+      height: element.getBoundingClientRect().height,
+      expected,
+      border: style.borderTopWidth,
+    }
+  })
+  expect(input.expected).toBeGreaterThan(20)
+  expect(input.height).toBeCloseTo(input.expected, 1)
+  expect(Number.parseFloat(input.border)).toBeGreaterThan(0)
 })
 
 test('the narrow popup keeps its final actions inside the viewport after scrolling', async ({
