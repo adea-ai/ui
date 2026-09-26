@@ -393,8 +393,8 @@ and publication; textarea editing and production adoption remain separate gates.
 System/Light/Dark miniature cards, independent light/dark theme rows, palette
 swatches, default/preset/custom accent choices and Theme default/Frosted/Opaque
 surface choices. The popup supports live host preview and Save/Cancel/Reset;
-Kobalte owns radio, menu, focus and dismissal behavior. `SelectContent.portalMount`
-lets a nested menu remain within its enclosing modal's accessible subtree.
+Kobalte owns radio, menu, focus and dismissal behavior. `DropdownMenuContent.portalMount`
+lets the theme menu remain within its enclosing modal's accessible subtree.
 
 Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices from
 `@adea-ai/themes`, including any validated accent overlay. The editor imports
@@ -409,8 +409,9 @@ surface selection. The library does not silently migrate stored preferences.
 
 The component browser lane uses a real Vite/Solid/Tailwind build in headless
 Chromium without an app server. It checks keyboard mode selection, nested menu
-accessibility and Escape, live-preview rollback, valid/invalid custom accents,
-Save pending state, mobile selection and 320/768/1024/1440px layouts. A separate native Node server-render fixture verifies the composed editor without
+accessibility, focus and pointer dismissal, Escape, live-preview rollback,
+valid/invalid custom accents, Save pending state, mobile selection and
+320/768/1024/1440px layouts. A separate native Node server-render fixture verifies the composed editor without
 browser or application globals. These checks
 are component integration evidence; they do not certify application persistence,
 native effects, packaged applications or manual assistive technology acceptance.
@@ -418,8 +419,9 @@ native effects, packaged applications or manual assistive technology acceptance.
 ### Packed appearance contract
 
 `bun run check:packed-appearance` installs the actual tarball without optional
-Chart/Carousel engines, then reuses all appearance interactions in Chromium and
-WebKit against compiled and Solid entries (60 cases). The same fixture verifies
+Chart/Carousel engines, then reuses all 20 component cases per engine against
+compiled and Solid entries (80 execution runs total).
+The same fixture verifies
 Solid source SSR in native Node. Keyboard choices, live preview, save/cancel/reset,
 nested dismissal, validation, pending save, narrow layouts with reachable footer actions, and automated accessibility
 are covered. Production persistence, native transparency, hydration and manual AT

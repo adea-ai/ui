@@ -24,16 +24,17 @@
 // Retains the compact divided row and palette-preview selector from the pinned
 // Zeron/Adea composition; Kobalte owns option navigation and nested dismissal.
 import type { AdeaTheme, AdeaThemeRecord } from '@adea-ai/themes'
-import { Show, createMemo, createSignal, type JSX } from 'solid-js'
-import { Palette } from 'lucide-solid'
+import { For, Show, createMemo, createSignal, type JSX } from 'solid-js'
+import { ChevronDown, Palette } from 'lucide-solid'
 import { cn } from '../../../lib/utils'
+import { Button } from '../../ui/button/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../ui/select/select'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '../../ui/dropdown-menu/dropdown-menu'
 import { PalettePreview } from './theme-preview'
 
 export function SettingsRow(props: {
@@ -75,6 +76,9 @@ export function ThemeRow(props: {
   onSelect: (id: string) => void
 }) {
   const [portalMount, setPortalMount] = createSignal<HTMLDivElement>()
+  const [triggerElement, setTriggerElement] = createSignal<HTMLButtonElement>()
+  const [focusOutsideTarget, setFocusOutsideTarget] = createSignal<HTMLElement>()
+  const [restoreTriggerFocus, setRestoreTriggerFocus] = createSignal(false)
   const options = createMemo(() =>
     props.themes.filter((theme) => theme.appearance === props.appearance)
   )
@@ -87,35 +91,118 @@ export function ThemeRow(props: {
   return (
     <SettingsRow title={label()} icon={<Palette />}>
       <div ref={setPortalMount}>
-        <Select
+        <DropdownMenu
           modal={false}
-          options={options()}
-          value={selected()}
-          optionValue="id"
-          optionTextValue="name"
-          disabled={props.disabled || options().length === 0}
-          onChange={(theme) => {
-            if (theme) props.onSelect(theme.id)
+          onOpenChange={(open) => {
+            if (open) {
+              setFocusOutsideTarget(undefined)
+              setRestoreTriggerFocus(false)
+            }
           }}
-          itemComponent={(item) => (
-            <SelectItem item={item.item}>
-              <PalettePreview theme={item.item.rawValue} />
-              {item.item.rawValue.name}
-            </SelectItem>
-          )}
         >
-          <SelectTrigger size="sm" aria-label={label()} class="w-full sm:w-52">
-            <SelectValue>
-              {() => (
-                <>
-                  <PalettePreview theme={props.preview} />
-                  <span>{selected()?.name ?? props.preview.name}</span>
-                </>
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent portalMount={portalMount()} />
-        </Select>
+          <DropdownMenuTrigger
+            ref={setTriggerElement}
+            as={Button}
+            variant="outline"
+            size="sm"
+            aria-label={label()}
+            disabled={props.disabled || options().length === 0}
+            class="w-full justify-between sm:w-52"
+          >
+            <span class="flex min-w-0 flex-1 items-center gap-2">
+              <PalettePreview theme={props.preview} />
+              <span class="min-w-0 flex-1 truncate">{selected()?.name ?? props.preview.name}</span>
+            </span>
+            <ChevronDown aria-hidden="true" class="shrink-0 text-muted-foreground" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            portalMount={portalMount()}
+            class="max-h-(--kb-popper-content-available-height) w-(--kb-popper-anchor-width) min-w-32 overflow-x-hidden overflow-y-auto"
+            onFocusOutside={(event) => {
+              // The containing dialog may reclaim focus momentarily as the
+              // menu mounts. Keep that internal handoff from dismissing it;
+              // focus moving to any other target still closes the menu.
+              const parentDialog = portalMount()?.closest('[role="dialog"]')
+              const target = event.detail.originalEvent.target
+              if (target === parentDialog) {
+                event.preventDefault()
+              } else if (target instanceof HTMLElement && parentDialog?.contains(target)) {
+                setFocusOutsideTarget(target)
+              }
+            }}
+            onEscapeKeyDown={() => setRestoreTriggerFocus(true)}
+            onCloseAutoFocus={(event) => {
+              const shouldRestore = restoreTriggerFocus()
+              const focusTarget = focusOutsideTarget()
+              setFocusOutsideTarget(undefined)
+              setRestoreTriggerFocus(false)
+              if (shouldRestore) {
+                // The saved focus may be the containing dialog rather than
+                // the trigger when WebKit opens this menu from a pointer click.
+                event.preventDefault()
+                triggerElement()?.focus({ preventScroll: true })
+                return
+              }
+
+              const parentDialog = portalMount()?.closest('[role="dialog"]')
+              if (focusTarget?.isConnected && parentDialog?.contains(focusTarget)) {
+                // FocusOutside records the intended in-dialog destination;
+                // preserve it across Kobalte's deferred stale-focus restore.
+                event.preventDefault()
+                queueMicrotask(() => {
+                  const activeElement = document.activeElement
+                  const isMenuFocus =
+                    activeElement instanceof HTMLElement &&
+                    activeElement.closest('[role="menu"]') !== null
+                  if (
+                    activeElement !== focusTarget &&
+                    (activeElement === document.body ||
+                      activeElement === parentDialog ||
+                      isMenuFocus)
+                  ) {
+                    focusTarget.focus({ preventScroll: true })
+                  }
+                })
+                return
+              }
+
+              const activeElement = document.activeElement
+              if (
+                parentDialog &&
+                activeElement instanceof HTMLElement &&
+                activeElement !== parentDialog &&
+                parentDialog.contains(activeElement)
+              ) {
+                // Preserve a real in-dialog focus target instead of restoring
+                // the stale element captured when the menu first mounted.
+                event.preventDefault()
+              }
+            }}
+          >
+            <DropdownMenuRadioGroup
+              value={selected()?.id ?? ''}
+              aria-label={`${label()} options`}
+              onChange={(id) => {
+                if (!props.disabled && typeof id === 'string') props.onSelect(id)
+              }}
+            >
+              <For each={options()}>
+                {(theme) => (
+                  <DropdownMenuRadioItem
+                    value={theme.id}
+                    textValue={theme.name}
+                    closeOnSelect={true}
+                    disabled={props.disabled}
+                    onSelect={() => setRestoreTriggerFocus(true)}
+                  >
+                    <PalettePreview theme={theme} />
+                    <span class="min-w-0 flex-1 truncate">{theme.name}</span>
+                  </DropdownMenuRadioItem>
+                )}
+              </For>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </SettingsRow>
   )

@@ -95,7 +95,7 @@ try {
     )
   writeFileSync(
     join(consumer, 'style.css'),
-    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,popover,select,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
@@ -117,7 +117,7 @@ try {
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 60,
+      checks: 80,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Controlled editor host fixture; production persistence, native transparency, hydration and manual AT remain separate.',
