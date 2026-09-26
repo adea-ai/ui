@@ -79,6 +79,7 @@ export * from './components/ui/tooltip'
 export * from './components/motion'
 
 /* --- Layout -------------------------------------------------------------- */
+export * from './components/layout/split-layout'
 export * from './components/layout/app-shell'
 export * from './components/layout/page'
 export * from './components/layout/panel'
