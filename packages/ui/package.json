@@ -25,6 +25,8 @@
     "!src/**/*.stories.tsx",
     "!src/**/*.stories.ts",
     "!src/**/*.mdx",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
     "!src/**/__screenshots__",
     "registry.json",
     "README.md"

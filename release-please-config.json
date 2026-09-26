@@ -19,7 +19,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "adea-ui"
+      "package-name": "@adea-ai/ui"
     }
   },
   "extra-files": [
