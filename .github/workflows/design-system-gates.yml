@@ -75,6 +75,12 @@ jobs:
       - name: Verify packed consumers
         run: bun run check:packed-consumer
 
+      - name: Install headless engines for packed composition contracts
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed conversation composition
+        run: bun run check:packed-conversation
+
   # The build is its own job so the slices below do not each repeat it. It is also
   # what makes the sharding honest: every slice runs against the *same* artifact, so
   # a failure in one cannot come from a different build.

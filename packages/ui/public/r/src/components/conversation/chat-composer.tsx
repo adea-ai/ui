@@ -39,7 +39,7 @@ export type ChatComposerProps = {
   /** Opt-in and controlled: the library neither persists nor broadcasts it. */
   collapse?: { value: boolean; onChange: (value: boolean) => void }
   controlRef?: (control: ChatComposerControl | undefined) => void
-  /** Host payload eligibility by action; reference-only drafts may queue but not steer. */
+  /** Host payload eligibility by action; explicit false refuses even a nonempty draft. */
   sendableActions?: Partial<Record<'send' | BusySendMode, boolean>>
   busy?: Omit<BusySendButtonProps, 'onFire' | 'disabled' | 'alternateActionHint'>
   knowledge?: JSX.Element
@@ -157,7 +157,7 @@ export function ChatComposer(props: ChatComposerProps) {
   const canSend = (selected: 'send' | BusySendMode = action()) =>
     !unavailable() &&
     !pending() &&
-    (props.value.trim().length > 0 || props.sendableActions?.[selected]) &&
+    (props.sendableActions?.[selected] ?? props.value.trim().length > 0) &&
     !(selected !== 'send' && props.busy?.unavailable?.[selected])
   const submit = async (selected: 'send' | BusySendMode = action()) => {
     if (!canSend(selected)) return
@@ -352,9 +352,9 @@ export function ChatComposer(props: ChatComposerProps) {
                     <BusySendButton
                       {...busy()}
                       alternateActionHint={
-                        busy().unavailable?.[busy().mode === 'steer' ? 'queue' : 'steer']
-                          ? undefined
-                          : 'Ctrl/Cmd+Enter uses the other action'
+                        canSend(busy().mode === 'steer' ? 'queue' : 'steer')
+                          ? 'Ctrl/Cmd+Enter uses the other action'
+                          : undefined
                       }
                       disabled={!canSend()}
                       onFire={() => {

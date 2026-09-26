@@ -202,24 +202,24 @@ The output records retained module paths, JS/gzip/CSS totals, font exclusion and
 one Solid runtime. Its first measured baseline was 23,880/23,936 gzip JS bytes
 (compiled/Solid) and 40,203 raw CSS bytes. The fixture gates 26 KiB gzip JS and
 42 KiB raw CSS, alongside independent module exclusions. The packed Apache license
-and all three selected KiroCrew attribution sections must be present. This pilot adds no server
+and all four selected KiroCrew attribution sections must be present. This pilot adds no server
 and removes its temporary consumer.
 
 A separate packed busy-action fixture imports only `BusySendButton`. Both
 conditions and engines check disabled firing with live mode selection, the scoped
 Tab cycle, focus restoration, action-only execution, unavailable-mode recovery
 and square-control token delivery (24 check groups, plus the conversation's 28).
-Its measured gzip JS baseline is 50,308/50,470 bytes with a separate 50 KiB cap;
+Its measured gzip JS baseline is 50,308/50,429 bytes with a separate 50 KiB cap;
 both fixtures share the 42 KiB raw CSS cap. Their module graphs must exclude each
 other's unrelated components as well as charts, editors, terminal/highlighter,
 theme JS, fonts and workshop assets. Tailwind scans the required external source
 folders explicitly; this check does not assume consumer node_modules scanning.
 
 This lane complements `check:packed-consumer`; it does not replace its required
-root imports, lightweight controls, overlay and shell checks. The known optional
-chart/carousel root-export compatibility decision remains unresolved. A passing
-subpath pilot does not certify root resolution, native SSR, the full Chat donor
-composition, rendered Dev/Chat state restoration or production adoption.
+root imports, lightweight controls, overlay and shell checks. Chart and Carousel use explicit optional-engine subpaths; core root imports do not
+require their peers. The root-contract lane independently checks that API. These
+composition fixtures do not certify full donor Chat, rendered Dev/Chat state
+restoration or production adoption.
 
 ## Licence
 
@@ -265,13 +265,15 @@ The shared input guards pending delivery, reports failure, visibly blocks
 unsupported delivery and fences local feedback on `resetKey`. Enter follows the
 controlled busy mode, while Ctrl/Cmd+Enter requests the other supported busy
 action. `sendableActions` declares non-text payload eligibility per action: a
-reference-only draft can send or queue without becoming steerable. Mode selection
+reference-only draft can send or queue without becoming steerable. Explicit false
+also vetoes delivery when the draft contains text; alternate-action hints appear
+only when that action is eligible. Mode selection
 itself never fires. `approvalFocus` is host-derived
 presentation, not a permission decision. Agent and model controls remain distinct
 host contributions in `context`.
 
-This is an unshipped composition pilot for UI issue #21, dependent on the original
-packing/IME/follow/busy PRs in this integration branch. It is not full donor Chat,
+This is an unshipped release proposal for UI issue #21, dependent on the
+packing/IME/follow/busy PRs #16/#18/#19/#20. It is not full donor Chat,
 canonical runtime restoration or application adoption. The donor's paste-token
 editor, sent-prompt undo/history, manual resize, upload/skill/voice/optimizer and
 stop/resume operations are not claimed by these ports. They require their own
@@ -281,9 +283,37 @@ The composed-input packed fixture checks collapse/draft retention, shelf unmount
 focus restoration, failed-delivery recovery, controlled busy mode, its alternate
 gesture, native IME defaults and external Tailwind styles under both exports and
 both engines, including reference-only queue eligibility/steer refusal and the
-pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,345/53,437 bytes with a 54 KiB cap
-and 33,201 raw CSS bytes under the shared 42 KiB cap. The three fixtures total 96
-check groups, retain one Solid runtime/JS chunk each, and exclude unrelated units.
+pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,344/53,435 bytes with a 54 KiB cap
+and 42,366 raw CSS bytes under the shared 42 KiB cap. The three browser fixtures total 100
+check groups, with the native Node SSR expanded/collapsed checks reported separately, retain one Solid runtime/JS chunk each, and exclude unrelated units.
 All four selected Kiro NOTICE sections and the license must survive the tarball.
 Native CSS content sizing replaces live-field measurement on the two verified
 engines, both of which support it; legacy-engine fallback is not claimed.
+
+The release gate `bun run check:packed-conversation` installs the actual tarball
+with optional engines absent, checks compiled and Solid browser conditions in
+Chromium and WebKit, and compiles installed Solid source for native Node SSR.
+The expanded server output includes the input and context; collapsed output
+keeps the draft preview while omitting both. Browser cases check opaque menu
+surfaces, control sizing, streaming follow, IME ownership, draft recovery,
+collapse/focus, busy actions and pending spinner styling.
+
+External CSS discovery includes the exact component files used by the fixture,
+Button's `src/lib/variants.ts`, and menu compositions' `src/lib/overlay.ts`.
+`node_modules` is excluded from automatic Tailwind scanning; importing a
+stylesheet alone does not discover these shared class strings. Stories are
+excluded from discovery. Complete measured raw CSS is 37,060 bytes for plain
+conversation, 40,644 for busy controls, and 42,366 for composed input; all remain
+under the existing 42 KiB cap. Existing gzip JS caps remain 26, 50 and 54 KiB,
+respectively. This fixture proves the published component contract; mounted
+Adea/Cortana services, hydration and manual IME/assistive-technology acceptance
+remain application evidence lanes.
+
+`sendableActions` is the host's payload eligibility contract: explicit `false`
+refuses that action even with typed text, explicit `true` supports structured
+payloads without text, and omitted entries fall back to nonempty text. Selecting
+an unavailable action cannot override this contract through keyboard delivery.
+
+Local packed interaction gates require `bunx playwright install chromium webkit`
+after dependency installation. On Linux, use `--with-deps` when required system
+libraries are absent. Automation uses headless disposable browser contexts.

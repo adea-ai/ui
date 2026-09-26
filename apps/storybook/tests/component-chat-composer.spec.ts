@@ -316,9 +316,31 @@ test('reference-only drafts queue without allowing a steer gesture', async ({ pa
   await page.getByRole('menuitemradio', { name: /Queue/ }).click()
   await expect(page.getByLabel('Submitted action')).toHaveText('none')
   await expect(page.getByRole('button', { name: 'Queue message', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Send options' }).click()
+  await expect(page.getByText('Ctrl/Cmd+Enter uses the other action', { exact: true })).toHaveCount(
+    0
+  )
+  await page.keyboard.press('Escape')
   await page.getByRole('textbox', { name: 'Message', exact: true }).press('Control+Enter')
   await expect(page.getByLabel('Submitted action')).toHaveText('none')
   await page.getByRole('button', { name: 'Queue message', exact: true }).click()
+  await expect(page.getByLabel('Submitted action')).toHaveText('queue')
+  await expect(page.getByLabel('Sent')).toHaveText('1')
+})
+
+test('host payload eligibility can refuse steering even when a draft contains text', async ({
+  page,
+}) => {
+  const field = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Recover delivery' }).click()
+  await field.fill('Context that cannot be steered')
+  await page.getByRole('button', { name: 'Stage references' }).click()
+  await page.getByRole('button', { name: 'Run busy' }).click()
+  await expect(page.getByRole('button', { name: 'Steer', exact: true })).toBeDisabled()
+  await field.press('Enter')
+  await expect(page.getByLabel('Submitted action')).toHaveText('none')
+  await expect(field).toHaveValue('Context that cannot be steered')
+  await field.press('Control+Enter')
   await expect(page.getByLabel('Submitted action')).toHaveText('queue')
   await expect(page.getByLabel('Sent')).toHaveText('1')
 })

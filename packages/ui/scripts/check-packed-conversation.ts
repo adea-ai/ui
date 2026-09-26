@@ -1,6 +1,6 @@
 /** Actual tarball pilot for the pending shared conversation composition. */
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -132,11 +132,15 @@ try {
       },
     })
   )
-  execFileSync('bun', ['install', '--ignore-scripts'], {
+  execFileSync('bun', ['install', '--ignore-scripts', '--omit=optional'], {
     cwd: consumer,
     stdio: 'pipe',
     timeout: 120_000,
   })
+  for (const peer of ['chart.js', 'solid-chartjs', 'embla-carousel', 'embla-carousel-solid']) {
+    if (existsSync(join(consumer, 'node_modules', peer)))
+      throw new Error(`Optional engine installed in core composition: ${peer}`)
+  }
   const notice = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/NOTICE'), 'utf8')
   for (const heading of [
     'Composer IME input ownership translated from KiroCrew',
@@ -152,6 +156,62 @@ try {
     )
   )
     throw new Error('Packed LICENSE missing')
+  // Required production SSR lane compiles installed Solid source, then runs
+  // native Node. Browser-compiled output is deliberately not server input.
+  const serverEntry = join(consumer, 'composed-server.tsx')
+  writeFileSync(
+    serverEntry,
+    readFileSync(join(root, 'tests/fixtures/chat-composer-ssr.tsx'), 'utf8').replace(
+      '../../src/components/conversation/chat-composer',
+      '@adea-ai/ui/components/conversation'
+    )
+  )
+  const serverBuild = await build({
+    root: consumer,
+    configFile: false,
+    logLevel: 'warn',
+    plugins: [solid({ ssr: true })],
+    resolve: { conditions: ['solid', 'node', 'import'] },
+    ssr: { noExternal: true },
+    build: { write: false, minify: false, ssr: serverEntry },
+  })
+  const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
+    .flatMap((output) => ('output' in output ? output.output : []))
+    .filter((asset) => asset.type === 'chunk')
+  if (serverChunks.length !== 1) throw new Error('Expected one packed SSR chunk')
+  const serverChunk = serverChunks[0]
+  if (!serverChunk) throw new Error('Missing packed SSR chunk')
+  const serverModules = Object.keys(serverChunk.modules)
+  const serverUi = serverModules.filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+  if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
+    throw new Error('Packed SSR did not select unmixed Solid source')
+  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+  writeFileSync(
+    join(consumer, 'render.mjs'),
+    "import { renderComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderComposer(false),renderComposer(true)]));"
+  )
+  const [expanded, collapsed] = JSON.parse(
+    execFileSync('node', [join(consumer, 'render.mjs')], {
+      cwd: consumer,
+      encoding: 'utf8',
+      timeout: 30_000,
+    })
+  ) as string[]
+  if (
+    !expanded?.includes('data-slot="composer-input"') ||
+    !expanded.includes('data-slot="composer-context"') ||
+    collapsed?.includes('data-slot="composer-input"') ||
+    collapsed?.includes('data-slot="composer-context"') ||
+    !collapsed?.includes('Show the message input') ||
+    !collapsed.includes('A server-side draft')
+  )
+    throw new Error('Packed native Node SSR lost expanded/collapsed composition')
+  results.push({
+    pilot: 'composed',
+    condition: 'solid-ssr-native-node',
+    checks: ['expanded-input-context', 'collapsed-draft-preview'],
+    retainedModules: serverModules,
+  })
   for (const pilot of ['conversation', 'busy', 'composed'] as const) {
     for (const condition of ['compiled', 'solid'] as const) {
       const dir = join(consumer, pilot + '-' + condition)
@@ -168,16 +228,29 @@ try {
         join(dir, 'style.css'),
         "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
           (pilot === 'conversation'
-            ? ['conversation', 'ui/button', 'ui/textarea', 'ui/spinner', 'ui/kbd']
+            ? [
+                'components/conversation/conversation-surface.tsx',
+                'components/conversation/message-composer.tsx',
+                'components/ui/textarea/textarea.tsx',
+                'components/ui/spinner/spinner.tsx',
+                'components/ui/kbd/kbd.tsx',
+              ]
             : [
-                ...(pilot === 'composed' ? ['conversation/chat-composer.tsx', 'ui/spinner'] : []),
-                'conversation/busy-send-button.tsx',
-                'ui/button',
-                'ui/button-group',
-                'ui/dropdown-menu',
+                ...(pilot === 'composed'
+                  ? [
+                      'components/conversation/chat-composer.tsx',
+                      'components/ui/spinner/spinner.tsx',
+                    ]
+                  : []),
+                'components/conversation/busy-send-button.tsx',
+                'components/ui/button-group/button-group.tsx',
+                'components/ui/separator/separator.tsx',
+                'components/ui/dropdown-menu/dropdown-menu.tsx',
+                'lib/overlay.ts',
               ]
           )
-            .map((path) => `@source '../node_modules/@adea-ai/ui/src/components/${path}';\n`)
+            .concat(['components/ui/button/button.tsx', 'lib/variants.ts'])
+            .map((path) => `@source '../node_modules/@adea-ai/ui/src/${path}';\n`)
             .join('')
       )
       const result = await build({
@@ -256,6 +329,15 @@ try {
         .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
         .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
         .join('\n')
+      console.log(
+        JSON.stringify({
+          pilot,
+          condition,
+          js: Buffer.byteLength(code),
+          gzip: gzipSync(code).length,
+          css: Buffer.byteLength(css),
+        })
+      )
       if (
         gzipSync(code).length >
         (pilot === 'conversation'
@@ -283,6 +365,13 @@ try {
             const field = page.getByRole('textbox', { name: 'Message', exact: true })
             await field.fill('A packed unsent draft')
             await page.getByRole('button', { name: 'Message input options' }).press('ArrowDown')
+            const menu = page.getByRole('menu')
+            await expect(menu).toBeVisible()
+            if (
+              (await menu.evaluate((element) => getComputedStyle(element).backgroundColor)) ===
+              'rgba(0, 0, 0, 0)'
+            )
+              throw new Error('Packed composer options surface CSS missing')
             await page.getByRole('menuitem', { name: /Collapse the message input/ }).click()
             const bar = page.getByRole('button', { name: 'Show the message input', exact: true })
             await expect(bar).toBeFocused()
@@ -325,7 +414,14 @@ try {
             await expect(
               page.getByRole('button', { name: 'Queue message', exact: true })
             ).toBeEnabled()
+            await page.getByRole('button', { name: 'Send options' }).click()
+            await expect(
+              page.getByText('Ctrl/Cmd+Enter uses the other action', { exact: true })
+            ).toHaveCount(0)
+            await page.keyboard.press('Escape')
+            await field.fill('Contextual text that cannot be steered')
             await field.press('Control+Enter')
+            await expect(field).toHaveValue('Contextual text that cannot be steered')
             await expect(page.getByLabel('Sent')).toHaveText('3')
             await expect(page.getByLabel('Submitted action')).toHaveText('steer')
             await field.press('Enter')
@@ -359,6 +455,7 @@ try {
                 'alternate-busy-action',
                 'reference-only-queue',
                 'reference-only-steer-refusal',
+                'host-action-mask-with-text',
                 'pending-delivery-style',
                 'native-ime-default',
                 'tailwind-style',
@@ -376,6 +473,13 @@ try {
             await expect(trigger).toBeVisible()
             await expect(page.getByRole('button', { name: 'Steer', exact: true })).toBeDisabled()
             await trigger.press('ArrowDown')
+            const menu = page.getByRole('menu')
+            await expect(menu).toBeVisible()
+            if (
+              (await menu.evaluate((element) => getComputedStyle(element).backgroundColor)) ===
+              'rgba(0, 0, 0, 0)'
+            )
+              throw new Error('Packed dropdown surface CSS missing')
             const steer = page.getByRole('menuitemradio', { name: /Steer/ })
             const queue = page.getByRole('menuitemradio', { name: /Queue/ })
             await expect(steer).toBeFocused()

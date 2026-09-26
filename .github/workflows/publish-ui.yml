@@ -164,6 +164,13 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-consumer
 
+      - name: Install headless engines for packed composition contracts
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed conversation composition
+        working-directory: packages/ui
+        run: bun run check:packed-conversation
+
       - name: Pack
         if: ${{ inputs.dry-run != true }}
         working-directory: packages/ui
