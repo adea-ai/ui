@@ -199,6 +199,15 @@ describe('paste token model', () => {
     )
   })
 
+  test('assigns repeated identical paste contents to distinct block tokens', () => {
+    const first = block({ id: 'first-copy', seq: 1, lines: 3, content: 'A\nB\nC' })
+    const second = block({ id: 'second-copy', seq: 2, lines: 3, content: first.content })
+
+    expect(recollapsePastes('before A\nB\nC middle A\nB\nC after', [first, second])).toBe(
+      `before ${formatToken(first)} middle ${formatToken(second)} after`
+    )
+  })
+
   test('leaves unmatched content alone and replaces a large paste with a small marker', () => {
     const paste = block({ id: 'large', seq: 7, lines: 30_001, content: 'x\n'.repeat(30_000) })
     expect(recollapsePastes('nothing here', [paste])).toBe('nothing here')
