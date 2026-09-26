@@ -41,7 +41,7 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: Build and pack without publishing
+        description: Build, verify and pack without publishing
         type: boolean
         default: true
       method:
@@ -51,6 +51,21 @@ on:
           - oidc
           - token
         default: oidc
+
+# The publish steps are guarded by `inputs.dry-run != true`, never by
+# `!= false`, and the difference is the whole behaviour of this workflow.
+#
+# A tag push has no `inputs` at all, so `inputs.dry-run` is `null`. GitHub coerces
+# a null against a boolean by casting both to a number, so `null` and `false` are
+# the *same value* to that comparison: `null != false` is false. Guarding on
+# `!= false` therefore skips the publish on exactly the event it exists for, and
+# `!= true` is what actually means "publish unless someone explicitly asked for a
+# dry run".
+#
+# It failed silently — the run was green, the gates were green, and nothing was
+# published — which is why this is written down rather than left as a condition to
+# re-derive. A workflow whose success cannot be distinguished from a workflow that
+# did nothing needs its intent in the file, not just in the reader's head.
 
 permissions:
   contents: read
@@ -166,26 +181,26 @@ jobs:
           '
 
       - name: Pack
-        if: ${{ inputs.dry-run != false }}
+        if: ${{ inputs.dry-run != true }}
         working-directory: packages/ui
         run: npm pack
 
       # Two steps rather than one conditional command, so a failure names the
       # method that failed instead of reporting a bare 401.
       - name: Publish (trusted publishing)
-        if: ${{ inputs.dry-run != false && env.PUBLISH_METHOD == 'oidc' }}
+        if: ${{ inputs.dry-run != true && env.PUBLISH_METHOD == 'oidc' }}
         working-directory: packages/ui
         run: npm publish --access public --provenance
 
       - name: Publish (org token)
-        if: ${{ inputs.dry-run != false && env.PUBLISH_METHOD == 'token' }}
+        if: ${{ inputs.dry-run != true && env.PUBLISH_METHOD == 'token' }}
         working-directory: packages/ui
         env:
           NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
         run: npm publish --access public --provenance
 
       - name: Confirm the release is what consumers get
-        if: ${{ inputs.dry-run != false }}
+        if: ${{ inputs.dry-run != true }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
