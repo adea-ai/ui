@@ -431,6 +431,7 @@ not just the editor primitive.
 Local packed interaction gates require `bunx playwright install chromium webkit`
 after dependency installation. On Linux, use `--with-deps` when the required
 system libraries are absent. All automation runs headless with disposable profiles.
+
 ## Paste-token model (issue #532 selected unit)
 
 `@adea-ai/ui/components/conversation` also exports the pure paste-token model:
