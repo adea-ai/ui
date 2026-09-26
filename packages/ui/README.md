@@ -373,6 +373,15 @@ imports and a 3 KiB gzip model budget (measured baseline: 2,455 bytes). This is
 model-subpath evidence; it does not waive UI #16's package attribution/conditional
 export corrections or the separate root compatibility gate.
 
+`bun run check:packed-paste-model` installs the actual archive with peer and
+optional packages omitted. It verifies the direct
+`@adea-ai/ui/components/conversation/paste-tokens` entry in native Node and the
+Solid source condition, a strict clean TypeScript consumer without ambient types,
+round-trip/range/pruning and invalid-metadata behavior, and exact packed
+LICENSE/NOTICE fidelity. The pure compiled module retains zero runtime imports
+and stays within a 3 KiB gzip budget. This gate runs in local verification, CI
+and publication; textarea editing and production adoption remain separate gates.
+
 ### Controlled appearance editor
 
 `AppearanceEditor` and `AppearancePopover` retain the accepted Zeron-derived

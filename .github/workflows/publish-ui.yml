@@ -164,6 +164,10 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-consumer
 
+      - name: Verify packed pure paste model
+        working-directory: packages/ui
+        run: bun run check:packed-paste-model
+
       - name: Install headless engines for packed composition contracts
         run: bunx playwright install --with-deps chromium webkit
 
