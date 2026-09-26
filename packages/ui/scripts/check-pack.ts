@@ -23,11 +23,17 @@
  * check that silently builds is a check that hides a broken build.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const packageRoot = resolve(import.meta.dir, '..')
-const manifest = await Bun.file(resolve(packageRoot, 'package.json')).json()
+const manifest: {
+  files?: string[]
+  exports: Record<string, string | Record<string, string>>
+  name: string
+  version: string
+  private?: boolean
+} = await Bun.file(resolve(packageRoot, 'package.json')).json()
 
 if (!existsSync(resolve(packageRoot, 'dist'))) {
   console.error('pack:check — dist/ is absent. Run `bun run build` first.')
@@ -51,14 +57,52 @@ const entryPoints = [
   'dist/index.d.ts',
   'src/index.ts',
   'package.json',
+  'dist/NOTICE',
+  'dist/LICENSE',
   ...(manifest.files ?? []).filter((entry: string) => entry.endsWith('.css')),
 ]
+
+// Expand the public conditions against source files, not against whatever the
+// build happened to emit. A missing component entry must fail rather than vanish
+// from the set being checked.
+const sourceFiles = readdirSync(resolve(packageRoot, 'src'), { recursive: true })
+  .map(String)
+  .filter((file) => !/\.(stories|test)\.|\.mdx$/.test(file))
+const componentEntries = sourceFiles.filter(
+  (file) => file.startsWith('components/') && file.endsWith('/index.ts')
+)
+for (const source of componentEntries) {
+  const component = source.slice('components/'.length, -'/index.ts'.length)
+  const conditions = manifest.exports['./components/*']
+  if (!conditions || typeof conditions === 'string')
+    throw new Error('Missing component export conditions')
+  for (const target of Object.values(conditions) as string[]) {
+    entryPoints.push(target.replace('./', '').replaceAll('*', component))
+  }
+}
+for (const source of sourceFiles.filter(
+  (file) => file.startsWith('lib/') && file.endsWith('.ts')
+)) {
+  const lib = source.slice('lib/'.length, -'.ts'.length)
+  const conditions = manifest.exports['./lib/*']
+  if (!conditions || typeof conditions === 'string')
+    throw new Error('Missing library export conditions')
+  for (const target of Object.values(conditions)) {
+    entryPoints.push(target.replace('./', '').replaceAll('*', lib))
+  }
+}
+for (const [specifier, entry] of Object.entries(manifest.exports)) {
+  if (specifier.includes('*')) continue
+  for (const target of typeof entry === 'string' ? [entry] : Object.values(entry)) {
+    if (typeof target === 'string') entryPoints.push(target.replace('./', ''))
+  }
+}
 
 for (const entry of entryPoints) {
   if (!files.includes(entry)) failures.push(`entry point missing from the tarball: ${entry}`)
 }
 
-const leaked = files.filter((file) => /\.(stories\.tsx?|mdx|test\.tsx?)$/.test(file))
+const leaked = files.filter((file) => /\.(stories|test)\.|\.mdx$/.test(file))
 if (leaked.length > 0) {
   failures.push(
     `review surface shipped to consumers: ${leaked.slice(0, 8).join(', ')}${

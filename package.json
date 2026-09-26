@@ -26,9 +26,10 @@
     "registry:build": "bun run --cwd packages/ui registry:build",
     "registry:validate": "bun run --cwd packages/ui registry:validate",
     "pack:check": "bun run --cwd packages/ui pack:check",
-    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run --cwd packages/ui theme:check && bun run registry:validate && bun run build && bun run check:tree-shaking",
+    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run --cwd packages/ui theme:check && bun run registry:validate && bun run build && bun run check:tree-shaking && bun run pack:check && bun run check:packed-consumer",
     "test:a11y": "bun run --cwd apps/storybook test:a11y",
-    "check:tree-shaking": "bun run --cwd packages/ui check:tree-shaking"
+    "check:tree-shaking": "bun run --cwd packages/ui check:tree-shaking",
+    "check:packed-consumer": "bun run --cwd packages/ui check:packed-consumer"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
