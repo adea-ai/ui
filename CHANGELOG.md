@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.2](https://github.com/adea-ai/ui/compare/v0.63.1...v0.63.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* preserve composer IME input ownership ([#18](https://github.com/adea-ai/ui/issues/18)) ([0232a72](https://github.com/adea-ai/ui/commit/0232a728e532f37a0f188f7a50e58ffdc9931164))
+
 ## [0.63.1](https://github.com/adea-ai/ui/compare/v0.63.0...v0.63.1) (2026-09-26)
 
 
