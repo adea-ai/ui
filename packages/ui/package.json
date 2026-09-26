@@ -1,6 +1,6 @@
 {
   "name": "@adea-ai/ui",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "The Adea design system: Kobalte-backed Solid components, semantic OKLCH tokens, and the app-shell layout primitives shared by Adea and Cortana.",
   "keywords": [
     "adea",
