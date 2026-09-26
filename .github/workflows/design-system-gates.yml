@@ -83,6 +83,8 @@ jobs:
 
       - name: Verify packed conversation composition
         run: bun run check:packed-conversation
+      - name: Verify packed pane model and renderer
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer
       - name: Verify packed appearance interactions and SSR
         run: bun run check:packed-appearance
 

@@ -64,7 +64,13 @@
     "./base.css": "./src/styles/base.css",
     "./fonts.css": "./src/styles/fonts.css",
     "./registry.json": "./registry.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./components/layout/split-layout/model": {
+      "types": "./dist/components/layout/split-layout/model.d.ts",
+      "solid": "./src/components/layout/split-layout/model.ts",
+      "development": "./src/components/layout/split-layout/model.ts",
+      "import": "./dist/components/layout/split-layout/model.js"
+    }
   },
   "scripts": {
     "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
@@ -78,8 +84,10 @@
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
     "theme:build": "bun scripts/build-default-theme.ts",
     "theme:check": "bun scripts/build-default-theme.ts --check",
+    "check:packed-layout": "node scripts/check-packed-layout.mjs",
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
     "check:packed-conversation": "bun scripts/check-packed-conversation.ts",
+    "check:packed-layout-renderer": "bun scripts/check-packed-layout-renderer.ts",
     "check:packed-appearance": "bun scripts/check-packed-appearance.ts"
   },
   "dependencies": {

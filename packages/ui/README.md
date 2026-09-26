@@ -318,6 +318,56 @@ Local packed interaction gates require `bunx playwright install chromium webkit`
 after dependency installation. On Linux, use `--with-deps` when required system
 libraries are absent. Automation uses headless disposable browser contexts.
 
+## Binary layout model checkpoint
+
+UI issue #22 extracts the existing attributed bb/Muxy Adea adaptation rather
+than introducing another layout tree. `createLayoutState`, `splitPane`,
+`movePane`, `closePane`, `undoClosePane`, `focusPane`, `swapPanes`,
+`resizeSplit`, `normalizeLayout` and the reading-order helpers are pure.
+Leaves extend `{kind: 'leaf', id: string}` with any host-owned payload. Closing
+the last leaf calls an injected placeholder factory; it never selects a harness,
+starts a terminal or deletes a project. Eight leaves/depth eight and 10–90%
+ratios preserve the accepted contract. Construct or validate a tree before
+editing it; the shared constructor validates visual structure and identities,
+while applications still decode/scoped-persist preferences and retain unknown
+future versions for recovery.
+
+The model and maintained accessible renderer are implemented in this draft.
+Stable content ownership and movement are exercised in component fixtures.
+The packed renderer gate includes the UI #20 size-token correction and the host
+presentation fixture. It checks the real package in compiled and Solid
+conditions; complete shell composition, production adoption and release remain
+required.
+No persistent state, session services, native drag region or host framework is
+imported into this model.
+
+### Host pane presentation hooks
+
+`SplitLayout` can keep its default pane header while allowing a host to supply
+inline visible content with `renderPaneLabel`, opt pane regions into keyboard
+Tab navigation with `paneTabIndex={0}`, and provide a domain-specific splitter
+name with `labelForSeparator`. Pane regions remain programmatically focusable
+by default (`paneTabIndex={-1}`), and separators keep their orientation-based
+names unless the host supplies a label.
+
+`renderPaneLabel` receives a stable `Accessor<L>` once for each leaf owner.
+Read `leaf()` inside the returned JSX so Solid tracks payload changes while the
+same pane owner is retained during split and move operations. This visible
+header content does not define the region's accessible name or the close
+button's name: both continue to come from `labelForLeaf`, so hosts should
+provide an accessible domain label there as well.
+
+The `HostPresentation` story shows a decorative icon and host title, keyboard
+pane stops, and a workspace-specific separator name. A narrow-width component
+fixture also checks that a long host title does not widen its pane header.
+
+`bun run check:packed-layout` packs the real artifact, installs it in a disposable
+consumer with peers omitted and scripts disabled, and exercises the direct model
+subpath in native Node and the Solid source condition. It verifies zero runtime
+imports and a 3 KiB gzip model budget (measured baseline: 2,455 bytes). This is
+model-subpath evidence; it does not waive UI #16's package attribution/conditional
+export corrections or the separate root compatibility gate.
+
 ### Controlled appearance editor
 
 `AppearanceEditor` and `AppearancePopover` retain the accepted Zeron-derived
