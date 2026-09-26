@@ -153,6 +153,78 @@ The toolbar switches theme, accent, typeface and density live, which is the
 fastest way to see how a component behaves across the catalogue rather than in
 one theme.
 
+## Composer keyboard behavior
+
+`MessageComposer` preserves native IME candidate commits and suppresses sending
+during composition, including the 50 ms commit window when browser flags have
+already cleared. A separate Enter sends after that window; Shift+Enter remains
+a soft break. A host or menu that already prevented the event keeps ownership.
+The selected KiroCrew textarea guard is translated to Solid ownership; it adds
+no document listener or application session state. Source and license details
+are retained in `NOTICE`.
+
+Run `bun run test:components` for the built Solid component contracts in
+Chromium and WebKit. The event-sequence tests exercise browser handling of
+composition flags, timers and focus recovery; manual operating-system IME
+acceptance and each application's mounted chat journey remain separate gates.
+
+## Transcript follow
+
+`ConversationSurface` follows streamed text, earlier-row growth, turn collapse
+and pane resizing using the KiroCrew plain-scroller decision contract. A
+deliberate upward scroll releases follow, including small moves near the bottom.
+Returning to the bottom or choosing **Jump to latest** re-arms it; the action
+does not estimate unread messages from pixel distance. Instant pins keep
+self-scroll attribution synchronized. Keyboard jumping returns focus to the
+transcript when its jump control disappears; automatic pins never move focus.
+
+`threshold` controls jump-button visibility (80px by default), independently of
+follow intent. `follow={false}` is fully inert: positioning belongs to the host,
+with no observer or mount pin. Re-enabling it explicitly re-arms at the bottom;
+it is not an automatic restore-and-resume flag. An optional `resetKey` also
+re-arms follow when that identity changes. Canonical
+session identity, durable restoration and virtualized transcript windows remain
+application-owned. `ref` and `onScroll` still reach the inner scroller.
+
+`bun run test:components` checks the built component in Chromium and WebKit.
+The `SurfaceFollowing` story exercises streaming, collapse and pane resizing;
+source/license/test provenance is recorded in `NOTICE`.
+
+## Packed conversation pilot
+
+After building, run `bun run check:packed-conversation` to pack the actual npm
+artifact and install it into a disposable consumer without optional heavy peers.
+The composition imports the documented conversation subpath and builds under
+both default compiled and Solid source conditions. Headless Chromium and WebKit
+check failed-draft retention, recovery, native IME candidate defaults and commit
+latch, reader intent, keyboard jump focus and external Tailwind utility delivery.
+The output records retained module paths, JS/gzip/CSS totals, font exclusion and
+one Solid runtime. Its first measured baseline was 23,880/23,936 gzip JS bytes
+(compiled/Solid) and 40,203 raw CSS bytes. The fixture gates 26 KiB gzip JS and
+42 KiB raw CSS, alongside independent module exclusions. The packed Apache license
+and all four selected KiroCrew attribution sections must be present. This pilot adds no server
+and removes its temporary consumer.
+
+A separate packed busy-action fixture imports only `BusySendButton`. Both
+conditions and engines check disabled firing with live mode selection, the scoped
+Tab cycle, focus restoration, action-only execution, unavailable-mode recovery
+and square-control token delivery (24 check groups, plus the conversation's 28).
+Its measured gzip JS baseline is 50,308/50,429 bytes with a separate 50 KiB cap;
+both fixtures share the 42 KiB raw CSS cap. Their module graphs must exclude each
+other's unrelated components as well as charts, editors, terminal/highlighter,
+theme JS, fonts and workshop assets. Tailwind scans the required external source
+folders explicitly; this check does not assume consumer node_modules scanning.
+
+This lane complements `check:packed-consumer`; it does not replace its required
+root imports, lightweight controls, overlay and shell checks. Chart and Carousel use explicit optional-engine subpaths; core root imports do not
+require their peers. The root-contract lane independently checks that API. These
+composition fixtures do not certify full donor Chat, rendered Dev/Chat state
+restoration or production adoption.
+
+## Licence
+
+Apache-2.0.
+
 ## Busy composer action
 
 Square icon controls use the control-height tokens through the Tailwind `--size`
@@ -177,46 +249,74 @@ unavailable and read-only states. `bun run test:components` checks the isolated
 Solid composition headlessly in Chromium and WebKit. Full Chat composition,
 packed distribution and real consumer/native acceptance remain separate gates.
 
-## Transcript follow
+## Composed Chat input pilot
 
-`ConversationSurface` follows streamed text, earlier-row growth, turn collapse
-and pane resizing using the KiroCrew plain-scroller decision contract. A
-deliberate upward scroll releases follow, including small moves near the bottom.
-Returning to the bottom or choosing **Jump to latest** re-arms it; the action
-does not estimate unread messages from pixel distance. Instant pins keep
-self-scroll attribution synchronized. Keyboard jumping returns focus to the
-transcript when its jump control disappears; automatic pins never move focus.
+`ChatComposer` translates the pinned Kiro composer hierarchy: knowledge context,
+follow-ups and adjacent band, approval/notices, staged content, input/action
+rows and the context shelf. It composes the existing IME and busy-action units.
+Its optional controlled `collapse` contract unmounts input and shelf and replaces
+them with a labeled bar showing the waiting draft's first line. Collapse keeps
+the host draft and caret selection; `controlRef` exposes instance-scoped
+`focus()`/`expandAndFocus()` instead of a global shortcut or broadcast.
 
-`threshold` controls jump-button visibility (80px by default), independently of
-follow intent. `follow={false}` is fully inert: positioning belongs to the host,
-with no observer or mount pin. Re-enabling it explicitly re-arms at the bottom;
-it is not an automatic restore-and-resume flag. An optional `resetKey` also
-re-arms follow when that identity changes. Canonical
-session identity, durable restoration and virtualized transcript windows remain
-application-owned. `ref` and `onScroll` still reach the inner scroller.
+The host supplies `value`, `onValueChange` and `onSubmit({text, action})`; it owns
+attachments and runtime authority and clears its draft only after confirmation.
+The shared input guards pending delivery, reports failure, visibly blocks
+unsupported delivery and fences local feedback on `resetKey`. Enter follows the
+controlled busy mode, while Ctrl/Cmd+Enter requests the other supported busy
+action. `sendableActions` declares non-text payload eligibility per action: a
+reference-only draft can send or queue without becoming steerable. Explicit false
+also vetoes delivery when the draft contains text; alternate-action hints appear
+only when that action is eligible. Mode selection
+itself never fires. `approvalFocus` is host-derived
+presentation, not a permission decision. Agent and model controls remain distinct
+host contributions in `context`.
 
-`bun run test:components` checks the built component in Chromium and WebKit.
-The `SurfaceFollowing` story exercises streaming, collapse and pane resizing;
-source/license/test provenance is recorded in `NOTICE`.
+This is an unshipped release proposal for UI issue #21, dependent on the
+packing/IME/follow/busy PRs #16/#18/#19/#20. It is not full donor Chat,
+canonical runtime restoration or application adoption. The donor's paste-token
+editor, sent-prompt undo/history, manual resize, upload/skill/voice/optimizer and
+stop/resume operations are not claimed by these ports. They require their own
+mapped reusable behavior or application composition as the owning issues specify.
 
-## Composer keyboard behavior
+The composed-input packed fixture checks collapse/draft retention, shelf unmount,
+focus restoration, failed-delivery recovery, controlled busy mode, its alternate
+gesture, native IME defaults and external Tailwind styles under both exports and
+both engines, including reference-only queue eligibility/steer refusal and the
+pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,344/53,435 bytes with a 54 KiB cap
+and 42,366 raw CSS bytes under the shared 42 KiB cap. The three browser fixtures total 100
+check groups, with the native Node SSR expanded/collapsed checks reported separately, retain one Solid runtime/JS chunk each, and exclude unrelated units.
+All four selected Kiro NOTICE sections and the license must survive the tarball.
+Native CSS content sizing replaces live-field measurement on the two verified
+engines, both of which support it; legacy-engine fallback is not claimed.
 
-`MessageComposer` preserves native IME candidate commits and suppresses sending
-during composition, including the 50 ms commit window when browser flags have
-already cleared. A separate Enter sends after that window; Shift+Enter remains
-a soft break. A host or menu that already prevented the event keeps ownership.
-The selected KiroCrew textarea guard is translated to Solid ownership; it adds
-no document listener or application session state. Source and license details
-are retained in `NOTICE`.
+The release gate `bun run check:packed-conversation` installs the actual tarball
+with optional engines absent, checks compiled and Solid browser conditions in
+Chromium and WebKit, and compiles installed Solid source for native Node SSR.
+The expanded server output includes the input and context; collapsed output
+keeps the draft preview while omitting both. Browser cases check opaque menu
+surfaces, control sizing, streaming follow, IME ownership, draft recovery,
+collapse/focus, busy actions and pending spinner styling.
 
-Run `bun run test:components` for the built Solid component contracts in
-Chromium and WebKit. The event-sequence tests exercise browser handling of
-composition flags, timers and focus recovery; manual operating-system IME
-acceptance and each application's mounted chat journey remain separate gates.
+External CSS discovery includes the exact component files used by the fixture,
+Button's `src/lib/variants.ts`, and menu compositions' `src/lib/overlay.ts`.
+`node_modules` is excluded from automatic Tailwind scanning; importing a
+stylesheet alone does not discover these shared class strings. Stories are
+excluded from discovery. Complete measured raw CSS is 37,060 bytes for plain
+conversation, 40,644 for busy controls, and 42,366 for composed input; all remain
+under the existing 42 KiB cap. Existing gzip JS caps remain 26, 50 and 54 KiB,
+respectively. This fixture proves the published component contract; mounted
+Adea/Cortana services, hydration and manual IME/assistive-technology acceptance
+remain application evidence lanes.
 
-## Licence
+`sendableActions` is the host's payload eligibility contract: explicit `false`
+refuses that action even with typed text, explicit `true` supports structured
+payloads without text, and omitted entries fall back to nonempty text. Selecting
+an unavailable action cannot override this contract through keyboard delivery.
 
-Apache-2.0.
+Local packed interaction gates require `bunx playwright install chromium webkit`
+after dependency installation. On Linux, use `--with-deps` when required system
+libraries are absent. Automation uses headless disposable browser contexts.
 
 ## Binary layout model checkpoint
 

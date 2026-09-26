@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.65.1](https://github.com/adea-ai/ui/compare/v0.65.0...v0.65.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **storybook:** enforce readiness and unique dialog landmarks ([#31](https://github.com/adea-ai/ui/issues/31)) ([4b16312](https://github.com/adea-ai/ui/commit/4b163121f6514bbb718b05b9cf271077cca9522d))
+
 ## [0.65.0](https://github.com/adea-ai/ui/compare/v0.64.0...v0.65.0) (2026-09-26)
 
 

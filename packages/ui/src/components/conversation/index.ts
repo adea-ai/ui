@@ -1,3 +1,4 @@
+export { ChatComposer, type ChatComposerProps, type ChatComposerControl } from './chat-composer'
 export { BusySendButton, type BusySendMode, type BusySendButtonProps } from './busy-send-button'
 export {
   ConversationAvatar,
