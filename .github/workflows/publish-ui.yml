@@ -20,6 +20,19 @@ name: Publish the design system
 # build is this workflow's responsibility. Skipping it publishes a tarball whose
 # `exports` map points at `./dist/index.js` and does not contain it — a package
 # that installs and then fails to resolve its own entry point.
+#
+# ## Why the publish is OIDC and not the org token
+#
+# `@adea-ai/ui` has a trusted publisher configured on npm for *this* repository,
+# so the publish authenticates with the run's OIDC identity and npm mints a
+# short-lived token from it. That is the path this workflow takes, and it is
+# also why `NPM_TOKEN` is deliberately not injected: the org secret is available
+# here, and setting it would silently win over trusted publishing, handing the
+# release a long-lived credential it no longer needs and masking a broken
+# trusted-publisher configuration behind a token that still works.
+#
+# Trusted publishing needs npm 11.5.1 or newer. The version is pinned below
+# rather than trusted to whatever the runner image ships.
 
 on:
   push:
@@ -31,6 +44,13 @@ on:
         description: Build and pack without publishing
         type: boolean
         default: true
+      method:
+        description: How to authenticate to the registry
+        type: choice
+        options:
+          - oidc
+          - token
+        default: oidc
 
 permissions:
   contents: read
@@ -48,10 +68,14 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      # Provenance attestation signs the tarball with this run's OIDC identity.
+      # Trusted publishing: npm exchanges this run's OIDC identity for a
+      # short-lived publish token. Absent this, the publish cannot authenticate.
       id-token: write
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Resolved per-event below; a tag push has no inputs, so `oidc` is the
+      # default there and matches the configured trusted publisher.
+      PUBLISH_METHOD: ${{ inputs.method || 'oidc' }}
+      NPM_TOKEN: ${{ inputs.method == 'token' && secrets.NPM_TOKEN || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -69,6 +93,28 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+
+      # Trusted publishing is implemented in the npm CLI, not in a GitHub
+      # action, and it landed in 11.5.1. Older npm ignores the OIDC token and
+      # falls back to anonymous, which fails with a 401 that reads like a
+      # permissions problem rather than a version problem.
+      - name: Pin an npm that can do trusted publishing
+        run: |
+          set -euo pipefail
+          needed="11.5.1"
+          if [ "$(printf '%s\n%s\n' "$needed" "$(npm --version | cut -d. -f1-2)" | sort -V | head -1)" != "$needed" ]; then
+            echo "::error title=npm is too old for trusted publishing::needs >= ${needed}, runner has $(npm --version)"
+            exit 1
+          fi
+          npm --version
+
+      - name: Report the authentication method
+        run: |
+          echo "publishing with: ${PUBLISH_METHOD}"
+          if [ "${PUBLISH_METHOD}" = "oidc" ] && [ -n "${NPM_TOKEN}" ]; then
+            echo "::error title=Trusted publishing would be bypassed::PUBLISH_METHOD is oidc but NPM_TOKEN is set, so the token path would win. Unset the org secret for this job."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -124,9 +170,18 @@ jobs:
         working-directory: packages/ui
         run: npm pack
 
-      - name: Publish
-        if: ${{ inputs.dry-run != false }}
+      # Two steps rather than one conditional command, so a failure names the
+      # method that failed instead of reporting a bare 401.
+      - name: Publish (trusted publishing)
+        if: ${{ inputs.dry-run != false && env.PUBLISH_METHOD == 'oidc' }}
         working-directory: packages/ui
+        run: npm publish --access public --provenance
+
+      - name: Publish (org token)
+        if: ${{ inputs.dry-run != false && env.PUBLISH_METHOD == 'token' }}
+        working-directory: packages/ui
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
         run: npm publish --access public --provenance
 
       - name: Confirm the release is what consumers get
