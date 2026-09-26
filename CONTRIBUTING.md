@@ -126,3 +126,25 @@ as described in [LICENSE](LICENSE). If your contribution is derived from another
 project, say so in the pull request and in [NOTICE](NOTICE) — this repository
 carries an attribution for the design language it was drawn from and expects the
 same standard for anything added.
+
+## Workshop CI
+
+The workshop builds once, then runs its complete story/theme accessibility and
+interaction sweep in ten Playwright shards. Component interaction contracts run
+in parallel in their own lane. The required `Workshop` context succeeds only
+when the build, every shard, and component contracts succeed.
+
+The explicit accessibility sweep sets Storybook's supported `a11y.manual` global
+for its own navigation so each story is analyzed once by Playwright. It still
+checks every story across the two default and five sampled themes with the same
+WCAG rules. Ordinary review
+and interaction URLs retain the addon's automatic analysis and manual panel.
+
+PR changes select Registry, Workshop, and Component interactions independently.
+Markdown documentation outside the published UI package skips these expensive
+gates; published docs/notices and registry payload changes retain distribution
+checks. Story harness changes retain Workshop, component-test changes retain
+Component interactions, and shared/unknown inputs retain both. Component/token
+source, dependency/toolchain changes, and all main pushes retain the full suite.
+The filter uses immutable PR refs and the merge-base diff; unavailable refs fall
+back to full coverage. A filter-test failure fails the required Workshop gate.

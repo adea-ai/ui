@@ -31,9 +31,34 @@ concurrency:
 # Draft edits run these gates locally. The ready transition allocates validation
 # runners; returning to draft cancels the prior run through the concurrency group.
 jobs:
+  changes:
+    name: Gate scope
+    if: vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      registry: ${{ steps.scope.outputs.registry }}
+      workshop: ${{ steps.scope.outputs.workshop }}
+      components: ${{ steps.scope.outputs.components }}
+    steps:
+      - name: Checkout complete history for the immutable PR diff
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+      - name: Verify change classification
+        run: bun test ./.github/scripts/design-system-changes.test.ts
+      - name: Select needed gates
+        id: scope
+        run: bun .github/scripts/design-system-changes.mjs
   registry:
     name: Registry
-    if: vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: changes
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -96,7 +121,8 @@ jobs:
   # a failure in one cannot come from a different build.
   workshop-build:
     name: Workshop build
-    if: vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: changes
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -136,13 +162,13 @@ jobs:
   #
   # Sharding is the fix rather than a smaller sample, because the sample is chosen
   # adversarially (see `SAMPLED_THEMES`) and each case in it was added for a reason.
-  # Playwright's `--shard` splits by test, so four slices are the same coverage at
-  # roughly a quarter of the wall time, and a hang in one slice no longer takes the
+  # Playwright's `--shard` splits by test, so ten slices preserve the same coverage at
+  # roughly a tenth of the unsharded wall time, and a hang in one slice no longer takes the
   # whole lane with it.
   workshop:
     name: Workshop (${{ matrix.shard }})
-    if: vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
-    needs: workshop-build
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
+    needs: [changes, workshop-build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -150,7 +176,7 @@ jobs:
       # complete, and the shards are independent.
       fail-fast: false
       matrix:
-        shard: ['1/4', '2/4', '3/4', '4/4']
+        shard: ['1/10', '2/10', '3/10', '4/10', '5/10', '6/10', '7/10', '8/10', '9/10', '10/10']
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -168,10 +194,6 @@ jobs:
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
-      - name: Install WebKit for component input and interaction contracts
-        if: matrix.shard == '1/4'
-        run: bunx playwright install --with-deps webkit
-
       - name: Download the built workshop
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
@@ -182,12 +204,6 @@ jobs:
         working-directory: apps/storybook
         run: bunx playwright test --shard=${{ matrix.shard }}
 
-      # Component tests bundle their own real entry and need no server. Run
-      # once after the workshop shard, retaining both reports in this artifact.
-      - name: Check controlled component interactions
-        if: matrix.shard == '1/4'
-        run: bun run test:components
-
       - name: Upload the accessibility report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -196,3 +212,72 @@ jobs:
           path: apps/storybook/test-results/
           retention-days: 7
           if-no-files-found: ignore
+
+  # These tests bundle the actual component entry themselves. They need neither
+  # the workshop build nor its story sweep, so running after shard one only
+  # lengthened the critical path.
+  components:
+    name: Component interactions
+    needs: changes
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Install headless component engines
+        run: bunx playwright install --with-deps chromium webkit
+      - name: Check controlled component interactions
+        run: bun run test:components
+      - name: Upload component report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: component-interactions-report
+          path: apps/storybook/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # A stable required context covers every matrix member and the independent
+  # component lane. always() ensures failed/cancelled prerequisites fail this
+  # gate instead of silently skipping it. Worker count can then change without
+  # replacing required contexts in the repository ruleset again.
+  workshop-gate:
+    name: Workshop
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: [changes, workshop-build, workshop, components]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every workshop and component check
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          WORKSHOP_NEEDED: ${{ needs.changes.outputs.workshop }}
+          COMPONENTS_NEEDED: ${{ needs.changes.outputs.components }}
+          BUILD_RESULT: ${{ needs.workshop-build.result }}
+          STORIES_RESULT: ${{ needs.workshop.result }}
+          COMPONENTS_RESULT: ${{ needs.components.result }}
+        run: |
+          if [ "$SCOPE_RESULT" != success ]; then
+            echo '::error::Gate-scope validation failed; full fallback checks cannot hide that failure.'
+            exit 1
+          fi
+          if [ "$SCOPE_RESULT" = success ] && [ "$WORKSHOP_NEEDED" = false ] && [ "$BUILD_RESULT" = skipped ] && [ "$STORIES_RESULT" = skipped ]; then
+            BUILD_RESULT=success
+            STORIES_RESULT=success
+          fi
+          if [ "$SCOPE_RESULT" = success ] && [ "$COMPONENTS_NEEDED" = false ] && [ "$COMPONENTS_RESULT" = skipped ]; then
+            COMPONENTS_RESULT=success
+          fi
+          if [ "$BUILD_RESULT" != success ] || [ "$STORIES_RESULT" != success ] || [ "$COMPONENTS_RESULT" != success ]; then
+            echo '::error::Workshop build, every story shard, and component interactions must all succeed.'
+            exit 1
+          fi

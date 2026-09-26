@@ -24,6 +24,8 @@ const storyFinishedListenerPages = new WeakSet<import('@playwright/test').Page>(
 
 export type OpenStoryOptions = {
   baseUrl?: string
+  /** Only the explicit all-story Axe sweep owns automated analysis. */
+  a11yOwner?: 'playwright'
 }
 
 type StoryViolation = {
@@ -328,10 +330,18 @@ export async function openStory(
   id: string,
   theme: string,
   options: OpenStoryOptions = {}
-): Promise<void> {
+): Promise<StoryFinishedResult> {
   await installStoryFinishedListener(page)
-  await page.goto(storyUrl(id, theme, options.baseUrl), { waitUntil: 'domcontentloaded' })
+  const url = new URL(storyUrl(id, theme, options.baseUrl))
+  if (options.a11yOwner === 'playwright') {
+    // Storybook 10's supported nested boolean global skips only the addon's
+    // automatic afterEach Axe run. The explicit Playwright sweep still runs
+    // every story/theme, and normal review/interaction URLs stay unchanged.
+    url.searchParams.set('globals', `${url.searchParams.get('globals')};a11y.manual:!true`)
+  }
+  await page.goto(url.toString(), { waitUntil: 'domcontentloaded' })
   const result = await waitForStoryFinished(page, id)
   if (result.status !== 'success') throw await storyFinishedError(page, result)
   await waitForStoryReady(page, theme)
+  return result
 }

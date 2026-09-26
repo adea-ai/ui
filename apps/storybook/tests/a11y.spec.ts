@@ -72,7 +72,10 @@ test.describe('storybook accessibility', () => {
       for (const story of stories) {
         test(`${story.title} › ${story.name}`, async ({ page }) => {
           // Waits for the story to mount, and fails visibly if it threw.
-          await openStory(page, story.id, theme)
+          const finished = await openStory(page, story.id, theme, { a11yOwner: 'playwright' })
+          // A story overriding this global would accidentally reinstate the
+          // duplicate analysis; reject it instead of claiming the fast path.
+          expect(finished.reporters.some((reporter) => reporter.type === 'a11y')).toBe(false)
 
           /*
            * WCAG rules only, deliberately.
