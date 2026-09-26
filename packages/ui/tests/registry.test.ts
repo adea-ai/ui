@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { designTokens } from '../src/lib/tokens'
 import { publicRegistryDir, registryItems } from '../scripts/registry-core'
 import { validateRegistry } from '../scripts/validate-registry'
@@ -62,6 +70,56 @@ describe('registry', () => {
 
     expect(sheet?.registryDependencies ?? []).toContain('@adea-ai/ui/dialog')
     expect(toggleGroup?.registryDependencies ?? []).toContain('@adea-ai/ui/toggle')
+  })
+
+  test('every item installs into a tree where every import resolves', () => {
+    // The end-to-end check, and the only one that can see a *wrong but plausible*
+    // peer. `theming` once declared `toggle` when it reached `toggle-group` — both
+    // are real items, the peer name resolves, the payload is well-formed, and every
+    // check that reads the catalogue passes. It was caught by installing it and
+    // finding an import of a file that was never written.
+    //
+    // So this materialises each item plus its peers into a temporary tree, the way
+    // the CLI would, and resolves every relative import in the result. A component
+    // whose peer is misnamed fails here rather than in a consumer's build.
+    for (const item of registryItems) {
+      const tree = join(mkdtempSync(join(tmpdir(), 'registry-')), 'project')
+      const written = new Set<string>()
+
+      const install = (name: string): void => {
+        if (written.has(name)) return
+        written.add(name)
+        const entry = registryItems.find((candidate) => candidate.name === name)
+        if (!entry) return
+        for (const peer of entry.registryDependencies) {
+          install(peer.replace('@adea-ai/ui/', ''))
+        }
+        for (const file of entry.files) {
+          const served = join(publicRegistryDir, file.path)
+          if (!existsSync(served)) continue
+          const destination = join(tree, file.target)
+          mkdirSync(dirname(destination), { recursive: true })
+          writeFileSync(destination, readFileSync(served, 'utf8'))
+        }
+      }
+      install(item.name)
+
+      for (const file of readdirSync(tree, { recursive: true })) {
+        if (!/\.(ts|tsx)$/.test(file.toString())) continue
+        const absolute = join(tree, file.toString())
+        const source = readFileSync(absolute, 'utf8')
+        for (const match of source.matchAll(/(?:from|import)\s*(['"])(\.[^'"]*)\1/g)) {
+          const specifier = match[2] ?? ''
+          const base = resolve(dirname(absolute), specifier)
+          const candidates = [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')]
+          expect(
+            candidates.some((candidate) => existsSync(candidate)),
+            `${item.name}: installing it leaves "${specifier}" — imported by ${file} — pointing at nothing. ` +
+              'A peer is misnamed, or the served tree is incomplete.'
+          ).toBe(true)
+        }
+      }
+    }
   })
 
   test('a component that composes around a slot rather than importing controls has no peers', () => {
