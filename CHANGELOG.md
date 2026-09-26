@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.3](https://github.com/adea-ai/ui/compare/v0.63.2...v0.63.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **ci:** defer design system runners until review readiness ([#33](https://github.com/adea-ai/ui/issues/33)) ([554ca38](https://github.com/adea-ai/ui/commit/554ca38384194972e280ca4de599843c52cd7ae1))
+
 ## [0.63.2](https://github.com/adea-ai/ui/compare/v0.63.1...v0.63.2) (2026-09-26)
 
 
