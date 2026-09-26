@@ -64,7 +64,13 @@
     "./base.css": "./src/styles/base.css",
     "./fonts.css": "./src/styles/fonts.css",
     "./registry.json": "./registry.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./components/layout/split-layout/model": {
+      "types": "./dist/components/layout/split-layout/model.d.ts",
+      "solid": "./src/components/layout/split-layout/model.ts",
+      "development": "./src/components/layout/split-layout/model.ts",
+      "import": "./dist/components/layout/split-layout/model.js"
+    }
   },
   "scripts": {
     "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",

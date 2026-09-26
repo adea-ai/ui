@@ -164,6 +164,13 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-consumer
 
+      - name: Install headless engines for packed pane contracts
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed pane model and renderer
+        working-directory: packages/ui
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer
+
       - name: Pack
         if: ${{ inputs.dry-run != true }}
         working-directory: packages/ui

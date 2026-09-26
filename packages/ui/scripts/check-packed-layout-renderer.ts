@@ -111,16 +111,34 @@ try {
       join(consumer, name),
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
     )
+  // The renderer's only shared Button is ghost/icon-xs. Discover its complete
+  // class contract from the actual installed public helper, including base and
+  // tactile classes, without emitting unrelated Button variants. Browser cases
+  // require the real close control's square geometry and keyboard focus ring.
+  const closeButtonClasses = JSON.parse(
+    await run(
+      'node',
+      [
+        '--input-type=module',
+        '-e',
+        "import { buttonVariants } from '@adea-ai/ui/components/ui/button'; console.log(JSON.stringify(buttonVariants({variant:'ghost',size:'icon-xs'})))",
+      ],
+      consumer,
+      {},
+      true
+    )
+  ) as string
   writeFileSync(
     join(consumer, 'style.css'),
-    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n"
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
+      `@source inline(${JSON.stringify(closeButtonClasses)});\n`
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
       [
         'test',
-        '--config=playwright.components.config.ts',
+        '--config=playwright.layout.config.ts',
         'component-split-layout.spec.ts',
         '--output',
         `test-results/packed-layout-${condition}`,

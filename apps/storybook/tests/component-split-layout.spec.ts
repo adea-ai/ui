@@ -76,7 +76,27 @@ test('closing focuses the host-selected survivor and removes only the closed own
   page,
 }) => {
   await act(page, 'split')
-  await page.getByRole('button', { name: 'Close Pane b' }).click()
+  const close = page.getByRole('button', { name: 'Close Pane b' })
+  const geometry = await close.evaluate((element) => {
+    const probe = document.createElement('div')
+    probe.style.height = 'var(--control-height-xs)'
+    element.append(probe)
+    const expected = probe.getBoundingClientRect().height
+    probe.remove()
+    const box = element.getBoundingClientRect()
+    return { width: box.width, height: box.height, expected }
+  })
+  expect(geometry.expected).toBeGreaterThan(16)
+  expect(geometry.width).toBeCloseTo(geometry.expected, 1)
+  expect(geometry.height).toBeCloseTo(geometry.expected, 1)
+  await close.focus()
+  // Exercise keyboard focus styling; programmatic focus alone can follow the
+  // browser's previous pointer modality without matching :focus-visible.
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Shift+Tab')
+  await expect(close).toBeFocused()
+  expect(await close.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none')
+  await close.click()
   await expect(page.getByLabel('Unmounts')).toHaveText('1')
   await expect(page.getByRole('region', { name: 'Pane a' })).toBeFocused()
   await expect(page.getByRole('textbox', { name: 'Editor b' })).toHaveCount(0)

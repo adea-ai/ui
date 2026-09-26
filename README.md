@@ -249,34 +249,35 @@ through `@adea-ai/ui/components/ui/chart` and
 when using those entries. Migrate existing root imports to those subpaths; this
 intentional breaking change is declared in the commit and release notes.
 
-### Actual packed binary renderer checkpoint
+### Packed pane release gate
 
 Run `bun run check:packed-layout-renderer` after the library build. It installs
-the actual tarball in a disposable consumer with lifecycle scripts disabled,
-required Solid peers retained and optional chart/carousel peers omitted. The
-same renderer interaction suite runs against compiled and Solid browser exports
-in headless Chromium/WebKit (52 cases). Required SSR independently uses the
-installed Solid source pipeline, compiles server output and executes it in native
-Node; compiled browser code is not presented as server-renderable.
+the actual tarball with lifecycle scripts disabled and optional chart/carousel
+engines absent, then runs the same 36 interaction/SSR cases per compiled/Solid
+browser condition in headless Chromium/WebKit. Required server rendering compiles
+installed Solid source and executes the result in native Node; browser-compiled
+output is not treated as server code. `bun run check:packed-layout` independently
+checks the explicit pure-model subpath and full packed attribution.
 
-The fixture measures 30,370/30,383 gzip JS bytes (compiled/source) and 32,705 raw
-CSS bytes. Budgets are 32 KiB gzip JS and 34 KiB raw CSS. Gates also require one
-Solid runtime, one JS chunk, external Solid/Corvu imports, unmixed UI browser
-conditions, packed Apache LICENSE/full donor MIT NOTICE, and absence of charts,
-carousel, terminal/editor/highlighter, conversation, theme-engine and font assets.
-CSS is generated externally from explicit component sources, theme and base
-styles. This is installed-artifact evidence for the selected renderer, not an
-Adea/Cortana production mount, full shell, hydration/native editor/manual AT or
-required root-import compatibility certificate.
+CSS discovery is explicit (`source(none)`): the host fixture and renderer sources,
+plus the close button's complete classes returned by the installed public
+`buttonVariants({ variant: 'ghost', size: 'icon-xs' })`. This includes the base,
+tactile, focus, disabled, ghost and square-icon styles. The fixture uses exactly
+that shared Button; host header actions are native buttons. Unused Button variants
+and unrelated automatically discovered CSS are excluded. Positive browser checks
+require the close button's actual token-sized square and keyboard focus ring.
 
-### Installed pane movement checkpoint
+The current compiled measurement is 31,797 gzip JS bytes and 33,632 raw CSS bytes,
+within the unchanged 32 KiB/34 KiB caps. Gates require one Solid runtime/chunk,
+unmixed browser exports, external Solid/Corvu imports, full Apache LICENSE and
+donor MIT NOTICE, and no chart/carousel, terminal/editor/highlighter, conversation,
+theme-engine or font assets. Earlier partial CSS measurements are historical,
+not complete-control acceptance evidence. The full current run remains blocked
+by the separately queued UI #20 square-control token prerequisite; it has not
+passed all 72 cases or been released.
 
-The movement continuation reuses 36 source cases per export condition (72 checks).
-It measures 31,797/31,870 gzip JS bytes (compiled/source) and 33,357 raw CSS bytes,
-within the unchanged 32 KiB/34 KiB budgets. Gates retain one Solid runtime/one JS
-chunk, external dependencies, optional-heavy exclusions and packed attribution.
-Pointer edge placement, foreign/plaintext/stale drop rejection, cancellation,
-removed-source cleanup and injected keyboard actions join the retained renderer
-checks. Narrow examples put movement in the toolbar and keep optional header
-controls compact. Native editor/terminal, hydration, manual AT and actual
-Adea/Cortana production paths remain separate acceptance gates.
+These checks are enforced by local verification, PR and publish workflows.
+Install headless Chromium/WebKit with `bunx playwright install chromium webkit`
+before local packed/browser verification. Actual Adea/Cortana production mounts,
+full shell/persistence, hydration, native editor/terminal and manual AT remain
+separate acceptance gates.

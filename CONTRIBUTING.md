@@ -14,6 +14,9 @@ worth agreeing on the shape before writing it.
 
 Requirements: **Bun 1.4** and **Node 24.18**, both pinned in `.mise.toml`.
 
+`bun run verify` includes packed pane browser contracts. Install headless engines
+first with `bunx playwright install chromium webkit`; Linux CI uses `--with-deps`.
+
 ```sh
 git clone https://github.com/adea-ai/ui.git
 cd ui

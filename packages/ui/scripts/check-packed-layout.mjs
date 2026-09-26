@@ -25,6 +25,16 @@ try {
     cwd: consumer,
     stdio: 'pipe',
   })
+  const installed = join(consumer, 'node_modules/@adea-ai/ui')
+  const license = readFileSync(join(installed, 'dist/LICENSE'), 'utf8')
+  const notice = readFileSync(join(installed, 'dist/NOTICE'), 'utf8')
+  if (
+    !license.includes('Apache License') ||
+    !notice.includes('Copyright (c) 2026 Michael Yong') ||
+    !notice.includes('Copyright (c) 2026 Muxy') ||
+    !notice.includes('Permission is hereby granted, free of charge')
+  )
+    throw Error('Packed layout license or MIT attribution is missing')
   const probe = `import { createLayoutState, splitPane, closePane, undoClosePane, movePane, countLeaves, listLeaves } from '@adea-ai/ui/components/layout/split-layout/model';
  const first={kind:'leaf',id:'first',opaque:{fixture:true}};
  const second={kind:'leaf',id:'second',opaque:{fixture:false}};
@@ -56,7 +66,9 @@ try {
       modelGzipBytes: gzipSync(model).length,
       imports: 0,
       gzipBudget: 3 * 1024,
-      limitations: 'Direct model subpath only; UI16 packaging and root gate remain separate.',
+      attribution: 'packed Apache LICENSE and full MIT donor NOTICE retained',
+      limitations:
+        'Direct model subpath only; required root compatibility and app gates remain separate.',
     })
   )
 } finally {
