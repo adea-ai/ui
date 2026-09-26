@@ -4,7 +4,9 @@
   "title": "Textarea",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/textarea/index.ts",

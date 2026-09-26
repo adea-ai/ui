@@ -8,7 +8,8 @@
   ],
   "registryDependencies": [
     "@adea-ai/ui/button",
-    "@adea-ai/ui/dropdown-menu"
+    "@adea-ai/ui/dropdown-menu",
+    "lib"
   ],
   "files": [
     {

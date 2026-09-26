@@ -1,0 +1,42 @@
+{
+  "name": "theming",
+  "type": "registry:ui",
+  "title": "Theming",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/radio-group",
+    "@adea-ai/ui/toggle",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/theme/appearance-panel.tsx",
+      "type": "registry:ui",
+      "target": "components/theming/appearance-panel.tsx"
+    },
+    {
+      "path": "src/components/theme/index.ts",
+      "type": "registry:ui",
+      "target": "components/theming/index.ts"
+    },
+    {
+      "path": "src/components/theme/theme-picker.tsx",
+      "type": "registry:ui",
+      "target": "components/theming/theme-picker.tsx"
+    },
+    {
+      "path": "src/components/theme/theme-provider.tsx",
+      "type": "registry:ui",
+      "target": "components/theming/theme-provider.tsx"
+    },
+    {
+      "path": "src/components/theme/theme-toggle.tsx",
+      "type": "registry:ui",
+      "target": "components/theming/theme-toggle.tsx"
+    }
+  ]
+}

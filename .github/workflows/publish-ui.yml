@@ -208,9 +208,26 @@ jobs:
           # `latest` is the tag every unpinned install resolves, so it is the
           # thing that actually has to be right — not merely the version's
           # existence on the registry.
-          latest="$(npm view @adea-ai/ui dist-tags.latest)"
-          echo "latest is ${latest}"
-          if [ "${latest}" != "${VERSION}" ]; then
-            echo "::error title=latest did not advance::@adea-ai/ui@${VERSION} published but latest is ${latest}. Another publisher may own this package name — check whether adea-ai/adea is still publishing packages/ui."
-            exit 1
-          fi
+          #
+          # This polls, because the registry is not readable the instant the publish
+          # returns. npm answers a successful publish with "your package is being
+          # processed and may take a few minutes to become available", and on 0.61.0
+          # `latest` was still the old version roughly a minute later; the check read
+          # it once, saw the old value, and failed a release that had in fact
+          # succeeded. A single read cannot distinguish "still propagating" from
+          # "another publisher owns this name", and reporting the second as the first
+          # is how a green publish gets investigated as a red one.
+          #
+          # Ten minutes is well past the propagation npm documents, so anything still
+          # wrong at that point is a real conflict and worth failing on.
+          for attempt in $(seq 1 20); do
+            latest="$(npm view @adea-ai/ui dist-tags.latest 2>/dev/null || echo '')"
+            echo "attempt ${attempt}/20: latest is ${latest:-<unreadable>}"
+            if [ "${latest}" = "${VERSION}" ]; then
+              echo "@adea-ai/ui@${VERSION} is what consumers get"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error title=latest did not advance::@adea-ai/ui@${VERSION} published but latest is still ${latest:-<unreadable>} after 10 minutes. Another publisher may own this package name — check whether adea-ai/adea is still publishing packages/ui."
+          exit 1

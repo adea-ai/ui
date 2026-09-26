@@ -24,6 +24,14 @@ concurrency:
 # generated from source and committed, so this lane only has to serve them —
 # it deliberately does not rebuild, because a page that differs from the
 # committed registry is worse than no page at all.
+#
+# The payloads are not self-contained: each one's `files[].path` names a file the
+# CLI fetches from this site, so the tree has to be published too. Copying only the
+# JSON — which is what this lane used to do — left every one of the 74 items
+# resolving to a 404: the payload served fine, the file it pointed at did not exist,
+# and the whole install path failed with an error that named neither. `public/r/**`
+# rather than `public/r/*.json` is the fix, and it is the difference between a
+# registry that works and one that looks like it works.
 jobs:
   publish:
     name: Publish
@@ -47,11 +55,30 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site/r
-          cp packages/ui/public/r/*.json _site/r/
-          cp packages/ui/registry.json _site/r/registry.json
+          # The whole published tree: the payloads and the files they point at.
+          cp -R packages/ui/public/r/. _site/r/
           # A consumer landing on the bare origin should learn what this is
           # rather than see a directory listing.
           cp apps/storybook/styleguide/registry-index.html _site/index.html 2>/dev/null || true
+          # The payloads make promises this site can check, and should: every
+          # `files[].path` a payload names must exist in what is being published.
+          node -e '
+            const fs = require("fs")
+            const path = require("path")
+            const root = process.argv[1]
+            let missing = 0
+            for (const name of fs.readdirSync(root).filter((n) => n.endsWith(".json"))) {
+              const item = JSON.parse(fs.readFileSync(path.join(root, name), "utf8"))
+              for (const file of item.files ?? []) {
+                if (!fs.existsSync(path.join(root, file.path))) {
+                  console.error(`::error title=${item.name} points at an unpublished file::${file.path}`)
+                  missing++
+                }
+              }
+            }
+            console.log(missing === 0 ? "every payload resolves to a published file" : `${missing} payload file(s) missing`)
+            process.exit(missing === 0 ? 0 : 1)
+          ' "$PWD/_site/r"
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

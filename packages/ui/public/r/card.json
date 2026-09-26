@@ -4,7 +4,9 @@
   "title": "Card",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/card/card.tsx",

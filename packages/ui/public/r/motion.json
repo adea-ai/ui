@@ -1,0 +1,22 @@
+{
+  "name": "motion",
+  "type": "registry:ui",
+  "title": "Motion",
+  "description": "",
+  "dependencies": [
+    "solid-motionone@^1.0.4"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/motion/index.ts",
+      "type": "registry:ui",
+      "target": "components/motion/index.ts"
+    },
+    {
+      "path": "src/components/motion/presence.tsx",
+      "type": "registry:ui",
+      "target": "components/motion/presence.tsx"
+    }
+  ]
+}

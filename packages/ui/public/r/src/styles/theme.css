@@ -1,0 +1,864 @@
+/* ============================================================================
+ * Adea design tokens
+ * ============================================================================
+ *
+ * This file is the single source of truth for the design system. Components
+ * reference only the semantic tokens declared here; no component may carry a
+ * literal colour, size, radius, or shadow.
+ *
+ * Three vocabularies meet here, and each is deliberate:
+ *
+ *   - shadcn/ui supplies the *names* (background, primary, muted, accent,
+ *     border, ring, sidebar-*). Keeping them means every shadcn convention,
+ *     example, and migration guide applies unchanged, and @shadcn/lint reads the
+ *     system without special configuration.
+ *   - OKLCH supplies the *format*. Every colour is perceptually uniform, so a
+ *     lightness step reads as the same step in every hue and a re-hue does not
+ *     need its ramp re-derived by eye.
+ *   - **`@adea-ai/themes` supplies the values.** The two default themes are composed
+ *     there from upstream palettes — Aardvark Ink's canvas and greyscale for Adea
+ *     Dark, Nord Light's for Adea Light, and GitHub's hues for both — and normalized
+ *     against measured contrast floors. The colour declarations in sections 1 and 2
+ *     are *generated* from that catalogue (`bun run theme:build`) rather than written
+ *     here; everything else in this file is this system's own.
+ *
+ * ## The accent is a selection, not a constant
+ *
+ * Each default theme has one interactive colour of its own — the two are the same
+ * hue at different lightnesses, which is what makes them a pair — and a user can
+ * override it with an independently chosen **accent**, which replaces the primary, its
+ * label and the focus ring. That model is preserved here as the `[data-accent]` blocks
+ * below, and it is why nothing in this system should hard-code a hue.
+ *
+ * ## Provenance
+ *
+ * The *structure* — the surface ladder, the control and row ladders, the shell
+ * geometry, the focus treatment, the motion — is translated from KiroCrew
+ * (Apache-2.0; see NOTICE). The *palette* is adea's. An earlier revision of this
+ * file took KiroCrew's colours as well, which changed the product's appearance for
+ * no reason: the neutrals became blue-tinted, the primary became an emerald adea
+ * never had, and the destructive colour became a saturated red. Corrected.
+ * ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * 1. Colour — light theme (the default)
+ *
+ * Contrast: body text 8.6:1 on the canvas and 7.7:1 on a card, `--muted-foreground`
+ * 5.5:1 on the canvas and 5.0:1 on a card, `--primary-foreground` on `--primary`
+ * 5.9:1. Measured rather than estimated; `tests/tokens.test.ts` asserts each pairing.
+ * ------------------------------------------------------------------------- */
+:root {
+  /* @generated theme:root — run `bun run theme:build` after changing the catalogue */
+  /* The canvas and its text */
+  --background: oklch(0.933 0.016 261.79);
+  --foreground: oklch(0.3697 0.0285 266.52);
+
+  /* Raised surfaces */
+  --card: oklch(0.898 0.0108 261.79);
+  --card-foreground: oklch(0.3697 0.0285 266.52);
+  --popover: oklch(0.868 0.0151 261.79);
+  --popover-foreground: oklch(0.3697 0.0285 266.52);
+  --surface-hover: oklch(0.833 0.0209 261.79);
+  --surface-active: oklch(0.783 0.0144 261.79);
+
+  --surface: var(--background);
+  --surface-raised: var(--card);
+  --surface-overlay: var(--popover);
+
+  /* The interactive colour */
+  --primary: oklch(0.4513 0.1518 253.31);
+  --primary-foreground: oklch(0.9513 0.0074 260.73);
+  --ring: oklch(0.4513 0.1518 253.31);
+  --accent: oklch(0.833 0.0209 261.79);
+  --accent-foreground: oklch(0.3697 0.0285 266.52);
+
+  /* Neutral fills and secondary text */
+  --secondary: oklch(0.898 0.0108 261.79);
+  --secondary-foreground: oklch(0.3697 0.0285 266.52);
+  --muted: oklch(0.898 0.0108 261.79);
+  --muted-foreground: oklch(0.474 0.0245 265.01);
+
+  /* Status. The fills are catalogue roles; the labels are measured. */
+  --destructive: oklch(0.4705 0.1626 25.78);
+  --destructive-foreground: oklch(0.933 0.016 261.79);
+  --success: oklch(0.4311 0.1809 145.62);
+  --success-foreground: oklch(0.933 0.016 261.79);
+  --warning: oklch(0.4556 0.1401 79.91);
+  --warning-foreground: oklch(0.933 0.016 261.79);
+  --info: oklch(0.4915 0.1155 202.14);
+  --info-foreground: oklch(0.933 0.016 261.79);
+  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
+  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
+  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
+
+  /* Lines */
+  --border: oklch(0.783 0.0144 261.79);
+  --input: oklch(0.783 0.0144 261.79);
+
+  /* The primary, so a focus ring is the interactive colour. */
+  --ring: var(--primary);
+
+  /* The sidebar */
+  --sidebar: oklch(0.898 0.0108 261.79);
+  --sidebar-foreground: oklch(0.3697 0.0285 266.52);
+  --sidebar-accent: oklch(0.833 0.0209 261.79);
+  --sidebar-border: oklch(0.783 0.0144 261.79);
+  --sidebar-muted-foreground: oklch(0.474 0.0245 265.01);
+
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
+
+  /* Charts */
+  --chart-1: oklch(0.4513 0.1518 253.31);
+  --chart-2: oklch(0.4683 0.1668 301.69);
+  --chart-3: oklch(0.4915 0.1155 202.14);
+  --chart-4: oklch(0.4311 0.1809 145.62);
+  --chart-5: oklch(0.4556 0.1401 79.91);
+  --chart-6: oklch(0.4705 0.1626 25.78);
+
+  /* Diff surfaces, over the status roles. */
+  --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
+  --diff-add-foreground: var(--success);
+  --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
+  --diff-delete-foreground: var(--destructive);
+  --diff-hunk: color-mix(in oklch, var(--info) 14%, transparent);
+  --diff-hunk-foreground: var(--info);
+  --diff-meta-foreground: var(--muted-foreground);
+
+  /*
+   * The modal veil. One value in both appearances because a scrim sits over
+   * media rather than over the application — a video, a screenshot — and a veil
+   * that changed with the theme would be a veil that is wrong half the time.
+   */
+  --scrim: oklch(0.1919 0.025 264.7);
+  --scrim-foreground: oklch(1 0 0);
+  --scrim-edge: oklch(1 0 0);
+
+  /*
+   * A uniform step away from the canvas, so a hovered primary button reads as
+   * hovered rather than as a second, slightly different colour.
+   *
+   * Resolved rather than a `color-mix()`, because a uniform step cannot be
+   * expressed as one: mixing a fixed share toward white or black moves an accent
+   * by a share of its headroom, which gives the light appearance a step twice the
+   * dark one's and nearly none at all on the palest accent.
+   *
+   * Both values come from @adea-ai/themes, so the accent blocks below are the same
+   * rule rather than a matching one — which is what they were not, before.
+   */
+  --primary-hover: oklch(0.4013 0.1518 253.31);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  /* The window chrome, one step off the canvas. */
+  --chrome: var(--surface);
+  /*
+   * Below the canvas: a code well, an inset panel. Not a catalogue role, because
+   * the catalogue's ladder only goes *up* from the canvas — the four rungs it
+   * derives are all surfaces something sits on. This is the one value in the
+   * ladder that runs the other way, so it is computed rather than mapped.
+   *
+   * Darker in both appearances, which is the rule the ladder does not follow: a
+   * raised surface is lighter than the canvas on a dark theme and darker on a
+   * light one, but a sunken one is *always* darker, because the metaphor is a
+   * well cut into the page rather than a panel laid on it.
+   */
+  --surface-sunken: oklch(0.913 0.008 261.79);
+  --chrome-alpha: 0.9;
+
+  color-scheme: light;
+  /* @end generated theme:root */
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. Colour — dark theme
+ *
+ * adea's dark theme is a *soft* neutral rather than a near-black: the canvas is a
+ * light grey and the primary is near-white. That is the product's existing look,
+ * and it is deliberately not the near-black blue-tinted dark of the donor this
+ * system's structure came from.
+ *
+ * Contrast: body text 14.9:1, `--muted-foreground` 6.1:1 on the canvas and 4.9:1
+ * on a card, `--primary-foreground` on `--primary` 10.4:1.
+ * ------------------------------------------------------------------------- */
+.dark {
+  /* @generated theme:dark — run `bun run theme:build` after changing the catalogue */
+  /* The canvas and its text */
+  --background: oklch(0.1918 0.0238 265.37);
+  --foreground: oklch(0.7933 0.0217 261.76);
+
+  /* Raised surfaces */
+  --card: oklch(0.2268 0.0288 265.37);
+  --card-foreground: oklch(0.7933 0.0217 261.76);
+  --popover: oklch(0.2568 0.033 265.37);
+  --popover-foreground: oklch(0.7933 0.0217 261.76);
+  --surface-hover: oklch(0.2918 0.038 265.37);
+  --surface-active: oklch(0.3418 0.0214 265.37);
+
+  --surface: var(--background);
+  --surface-raised: var(--card);
+  --surface-overlay: var(--popover);
+
+  /* The interactive colour */
+  --primary: oklch(0.7153 0.1518 253.31);
+  --primary-foreground: oklch(0.1918 0.0238 265.37);
+  --ring: oklch(0.7153 0.1518 253.31);
+  --accent: oklch(0.2918 0.038 265.37);
+  --accent-foreground: oklch(0.7933 0.0217 261.76);
+
+  /* Neutral fills and secondary text */
+  --secondary: oklch(0.2268 0.0288 265.37);
+  --secondary-foreground: oklch(0.7933 0.0217 261.76);
+  --muted: oklch(0.2268 0.0288 265.37);
+  --muted-foreground: oklch(0.6308 0.0224 262.91);
+
+  /* Status. The fills are catalogue roles; the labels are measured. */
+  --destructive: oklch(0.7345 0.1626 25.78);
+  --destructive-foreground: oklch(0.1918 0.0238 265.37);
+  --success: oklch(0.6951 0.1809 145.62);
+  --success-foreground: oklch(0.1918 0.0238 265.37);
+  --warning: oklch(0.7196 0.1401 79.91);
+  --warning-foreground: oklch(0.1918 0.0238 265.37);
+  --info: oklch(0.7555 0.1155 202.14);
+  --info-foreground: oklch(0.1918 0.0238 265.37);
+  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
+  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
+  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
+
+  /* Lines */
+  --border: oklch(0.3418 0.0214 265.37);
+  --input: oklch(0.3418 0.0214 265.37);
+
+  /* The primary, so a focus ring is the interactive colour. */
+  --ring: var(--primary);
+
+  /* The sidebar */
+  --sidebar: oklch(0.2268 0.0288 265.37);
+  --sidebar-foreground: oklch(0.7933 0.0217 261.76);
+  --sidebar-accent: oklch(0.2918 0.038 265.37);
+  --sidebar-border: oklch(0.3418 0.0214 265.37);
+  --sidebar-muted-foreground: oklch(0.6308 0.0224 262.91);
+
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
+
+  /* Charts */
+  --chart-1: oklch(0.7153 0.1518 253.31);
+  --chart-2: oklch(0.7323 0.1668 301.69);
+  --chart-3: oklch(0.7555 0.1155 202.14);
+  --chart-4: oklch(0.6951 0.1809 145.62);
+  --chart-5: oklch(0.7196 0.1401 79.91);
+  --chart-6: oklch(0.7345 0.1626 25.78);
+
+  /* Diff surfaces, over the status roles. */
+  --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
+  --diff-add-foreground: var(--success);
+  --diff-delete: color-mix(in oklch, var(--destructive) 18%, transparent);
+  --diff-delete-foreground: var(--destructive);
+  --diff-hunk: color-mix(in oklch, var(--info) 14%, transparent);
+  --diff-hunk-foreground: var(--info);
+  --diff-meta-foreground: var(--muted-foreground);
+
+  /*
+   * A uniform step away from the canvas, so a hovered primary button reads as
+   * hovered rather than as a second, slightly different colour.
+   *
+   * Resolved rather than a `color-mix()`, because a uniform step cannot be
+   * expressed as one: mixing a fixed share toward white or black moves an accent
+   * by a share of its headroom, which gives the light appearance a step twice the
+   * dark one's and nearly none at all on the palest accent.
+   *
+   * Both values come from @adea-ai/themes, so the accent blocks below are the same
+   * rule rather than a matching one — which is what they were not, before.
+   */
+  --primary-hover: oklch(0.7653 0.1518 253.31);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  /* The window chrome, one step off the canvas. */
+  --chrome: var(--surface);
+  /*
+   * Below the canvas: a code well, an inset panel. Not a catalogue role, because
+   * the catalogue's ladder only goes *up* from the canvas — the four rungs it
+   * derives are all surfaces something sits on. This is the one value in the
+   * ladder that runs the other way, so it is computed rather than mapped.
+   *
+   * Darker in both appearances, which is the rule the ladder does not follow: a
+   * raised surface is lighter than the canvas on a dark theme and darker on a
+   * light one, but a sunken one is *always* darker, because the metaphor is a
+   * well cut into the page rather than a panel laid on it.
+   */
+  --surface-sunken: oklch(0.1718 0.0199 265.37);
+  --chrome-alpha: 0.9;
+
+  color-scheme: dark;
+  /* @end generated theme:dark */
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. The accent axis
+ *
+ * adea's six accents, as a selection rather than a constant. `data-accent` sits on
+ * the same element as `dark` — in both applications that is `<html>` — and each
+ * block overrides the roles an accent owns: the interactive primary, its label,
+ * its hover rung, its tint and the focus ring.
+ *
+ * The values are adea's accent presets, passed through the same two rules
+ * `deriveAccentRoles` applies in the product:
+ *
+ *   1. **A 3:1 interaction minimum against the surface the accent is drawn on**,
+ *      so an accent can never ship unreadable on its own background.
+ *   2. **A label chosen by measurement, not convention** — black or white,
+ *      whichever wins on contrast. The accent flips polarity between the themes
+ *      for exactly this reason: a bright violet in dark mode carries a black
+ *      label, and the same accent's deep light-mode form carries a white one.
+ *
+ * `theme` (the default) is the monochrome primary above and needs no block.
+ * ------------------------------------------------------------------------- */
+
+/* @generated accents — run `bun run theme:build` after changing the catalogue */
+[data-accent='violet'] {
+  --primary: oklch(0.4907 0.2412 292.58);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4407 0.2412 292.58);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.4907 0.2412 292.58);
+}
+.dark[data-accent='violet'] {
+  --primary: oklch(0.709 0.1592 293.54);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.759 0.1592 293.54);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.709 0.1592 293.54);
+}
+
+[data-accent='blue'] {
+  --primary: oklch(0.5461 0.2152 262.88);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4961 0.2152 262.88);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5461 0.2152 262.88);
+}
+.dark[data-accent='blue'] {
+  --primary: oklch(0.7137 0.1434 254.62);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.7637 0.1434 254.62);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7137 0.1434 254.62);
+}
+
+[data-accent='green'] {
+  --primary: oklch(0.5273 0.1371 150.07);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4773 0.1371 150.07);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5273 0.1371 150.07);
+}
+.dark[data-accent='green'] {
+  --primary: oklch(0.8003 0.1821 151.71);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8503 0.1363 151.71);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.8003 0.1821 151.71);
+}
+
+[data-accent='amber'] {
+  --primary: oklch(0.5553 0.1455 49);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.5053 0.1455 49);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5553 0.1455 49);
+}
+.dark[data-accent='amber'] {
+  --primary: oklch(0.8369 0.1644 84.43);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8869 0.0991 84.43);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.8369 0.1644 84.43);
+}
+
+[data-accent='cyan'] {
+  --primary: oklch(0.5198 0.0936 223.13);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4698 0.0936 223.13);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5198 0.0936 223.13);
+}
+.dark[data-accent='cyan'] {
+  --primary: oklch(0.7971 0.1339 211.53);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.8471 0.102 211.53);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7971 0.1339 211.53);
+}
+
+[data-accent='pink'] {
+  --primary: oklch(0.5246 0.199 3.96);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.4746 0.199 3.96);
+  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
+  --ring: oklch(0.5246 0.199 3.96);
+}
+.dark[data-accent='pink'] {
+  --primary: oklch(0.7253 0.1752 349.76);
+  --primary-foreground: oklch(0 0 0);
+  --primary-hover: oklch(0.7753 0.1752 349.76);
+  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ring: oklch(0.7253 0.1752 349.76);
+}
+/* @end generated accents */
+
+/* ---------------------------------------------------------------------------
+ * 3b. The font axis
+ *
+ * A selection, like the accent. `data-font` sits on the same element as `dark` and
+ * `data-accent`; the default (absent) is Space Grotesk, which is what the visual
+ * language was drawn against.
+ *
+ * `system` is deliberately first-class rather than a fallback: an application that
+ * wants the platform's own face — which is what a terminal and a code editor
+ * usually look best in — should be able to say so without losing the rest of the
+ * system.
+ *
+ * ## Width compensation
+ *
+ * A monospace face is roughly 20% wider than Space Grotesk at the same size, and
+ * every measurement in this library — control heights, a rail's label budget, a
+ * button's padding — was drawn against the proportional face. Switching the UI
+ * font to mono without compensating therefore overflows exactly the tight places:
+ * a rail label truncates, a two-word button wraps, a status pill clips.
+ *
+ * `--ui-tracking` and `--ui-word-spacing` are the remedy, and they are tokens
+ * rather than one blanket rule because the two families want *opposite*
+ * treatment. Mono's space character is a full advance-width cell — three times
+ * Space Grotesk's — so a two-word label reads as two floating words and needs
+ * negative word spacing; its glyphs also carry more sidebearing, so a tighter
+ * track is safe. Neither correction is wanted on a proportional face, which is
+ * why the defaults are `normal`.
+ *
+ * Apply them where chrome is measured: `tracking-(--ui-tracking)
+ * word-spacing-(--ui-word-spacing)`. Body copy does not need them — it wraps.
+ * ------------------------------------------------------------------------- */
+
+/* The default, and it has to be declared *before* the blocks below.
+ *
+ * `:root` and `[data-font='…']` have the same specificity, so the later one wins
+ * outright — there is no cascade subtlety here, only a position in the file. Written
+ * after them, where it naturally belongs next to the `--font-family-*` stacks it
+ * references, the default shadowed all five selections: every typeface resolved to
+ * Space Grotesk while the toolbar reported something else.
+ *
+ * So the default lives here instead, in its own two-line block, and the stacks stay
+ * where they are. The references resolve fine even though `--font-family-*` is
+ * declared further down, because a custom property is resolved where it is used
+ * rather than where it is declared. What matters is the order of two declarations of
+ * the *same* property, and this is the only one.
+ *
+ * `tests/appearance-axes.test.ts` asserts both the order and that there is exactly
+ * one such default, because "a block above the default is doing nothing" is invisible
+ * to review and to every behavioural test.
+ */
+:root {
+  --font-sans: var(--font-family-space-grotesk);
+  --font-mono: var(--font-family-jetbrains-mono);
+}
+
+[data-font='system'] {
+  --font-sans: var(--font-family-system);
+  --font-mono: var(--font-family-system-mono);
+}
+[data-font='geist'] {
+  --font-sans: var(--font-family-geist);
+  --font-mono: var(--font-family-geist-mono);
+}
+[data-font='geist-mono'] {
+  --font-sans: var(--font-family-geist-mono);
+  --font-mono: var(--font-family-geist-mono);
+  --ui-tracking: -0.03em;
+  --ui-word-spacing: -1.5px;
+}
+[data-font='jetbrains-mono'] {
+  --font-sans: var(--font-family-jetbrains-mono);
+  --font-mono: var(--font-family-jetbrains-mono);
+  --ui-tracking: -0.04em;
+  --ui-word-spacing: -2.5px;
+}
+
+/* The default, and it has to be declared *above* the blocks above.
+ *
+ * `:root` and `[data-font='…']` have the same specificity, so the later one wins
+ * outright. With the default written after them — which is where it naturally
+ * belongs, next to the stacks it references — every `[data-font]` block was
+ * dead: all five typefaces resolved to Space Grotesk while the toolbar reported a
+ * different selection.
+ *
+ * The references resolve fine from here even though `--font-family-*` is declared
+ * further down, because a custom property is resolved where it is used rather than
+ * where it is declared. The ordering that matters is between two declarations of
+ * the *same* property, and there is only one of those below.
+ *
+ * `tests/appearance-axes.test.ts` asserts this order, because "the block is above
+ * the default" is invisible to review and to every behavioural test.
+ */
+
+/* ---------------------------------------------------------------------------
+ * 4. Non-colour scales
+ *
+ * Outside the theme blocks because they do not change with polarity — only with a
+ * deliberate density or shape decision.
+ * ------------------------------------------------------------------------- */
+:root {
+  /* Radius. `--radius-lg` is the knob; `--radius` is an alias kept because shadcn
+     components and @shadcn/lint both expect it. */
+  --radius-lg: 0.625rem; /* 10px */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-xl: 0.875rem; /* 14px */
+  --radius-2xl: 1.125rem; /* 18px */
+  --radius: var(--radius-lg);
+
+  /* --- Type ---------------------------------------------------------------
+   * The families are declared once, and `--font-sans`/`--font-mono` resolve from
+   * a *selection* rather than naming one face directly. That is what makes the
+   * family a user preference — the same shape as the accent axis — instead of a
+   * hard-coded choice an application cannot override without restating the
+   * stacks.
+   *
+   * Every stack ends in the generic family, so a consumer that skips the font
+   * import still renders correctly, just in another face.
+   */
+  --font-family-space-grotesk: 'Space Grotesk Variable', 'Space Grotesk', sans-serif;
+  --font-family-jetbrains-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
+  --font-family-geist: 'Geist Variable', 'Geist', sans-serif;
+  --font-family-geist-mono: 'Geist Mono Variable', 'Geist Mono', monospace;
+  --font-family-system: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-family-system-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Width compensation for the mono UI fonts. `normal` on the proportional face,
+     tightened by the `[data-font]` blocks above when the UI font is monospace. */
+  --ui-tracking: normal;
+  --ui-word-spacing: normal;
+
+  /* Space Grotesk is the default because it is the face the visual language was
+     drawn against: the donor this system's structure comes from sets it, and its
+     slightly narrow, geometric forms are part of the look. The declaration of that
+     default is not here but in the small `:root` block above the `[data-font]`
+     blocks, because it has to precede them; `tests/appearance-axes.test.ts` holds
+     that ordering, and it is why this comment points elsewhere rather than
+     restating a value. */
+
+  /* Type scale. Each rung carries its own line-height because the ratio is not
+     constant: small text needs more leading to stay readable, display text needs
+     less to stay coherent. */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem; /* 14px — the interface default */
+  --text-sm--line-height: 1.55;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.2;
+
+  /* Control density. KiroCrew's centre of gravity — a 28px control in toolbars and
+     a 32px control in forms — is kept, because the density is the structural half
+     of the design language even though the palette is adea's. */
+  --control-height-2xs: 1.25rem; /* 20px */
+  --control-height-xs: 1.5rem; /* 24px */
+  --control-height-sm: 1.75rem; /* 28px — toolbar default */
+  --control-height-md: 2rem; /* 32px — form default */
+  --control-height-lg: 2.25rem; /* 36px */
+  --control-height-xl: 2.5rem; /* 40px */
+
+  --control-padding-2xs: 0.375rem;
+  --control-padding-xs: 0.5rem;
+  --control-padding-sm: 0.625rem;
+  --control-padding-md: 0.75rem;
+  --control-padding-lg: 0.875rem;
+  --control-padding-xl: 1rem;
+
+  --row-height-sm: 1.75rem;
+  --row-height-md: 2rem;
+  --row-height-lg: 2.25rem;
+
+  /* Space Grotesk is the default because it is the face the visual language was
+     drawn against: the donor this system's structure comes from sets it, and its
+     slightly narrow, geometric forms are part of the look. The *selection* that
+     picks between it and the other four is the `:root` block above, which has to
+     precede every `[data-font]` block for the reason given there. */
+
+  /* Shell geometry. One place to change how wide a rail or sidebar is, so the two
+     consumer apps cannot disagree. 74px is the figure KiroCrew's own layout hook
+     publishes as `RAIL_W_COLLAPSED`; an older comment in that codebase names 58px,
+     which its shipped behaviour does not use. */
+  --rail-width: 4.625rem; /* 74px */
+  --rail-width-expanded: 14.75rem; /* 236px */
+  --rail-item-height: 2.25rem;
+  --sidebar-width: 16rem; /* 256px */
+  --sidebar-width-compact: 3rem;
+  --topbar-height: 3rem;
+  --statusbar-height: 1.75rem;
+
+  /* Shadows. Two parts on purpose: a tinted spread that reads as elevation, plus a
+     hairline that keeps an edge visible when the surface behind a panel is the
+     same colour as the panel — which is the light theme, where `--card` and
+     `--background` are both white. */
+  --shadow-2xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.06);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.06), 0 0 0 1px oklch(0 0 0 / 0.04);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.08), 0 0 0 1px oklch(0 0 0 / 0.04);
+  --shadow-lg: 0 12px 28px oklch(0 0 0 / 0.12);
+  --shadow-xl: 0 20px 44px oklch(0 0 0 / 0.16);
+
+  /* Motion. Two durations cover the system: `fast` for a state change the user is
+     already watching, `normal` for an entrance. The easing is KiroCrew's entrance
+     curve — a fast start and a long settle, which reads as decisive rather than
+     floaty. */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Overlay stacking scale. Every overlay names a rung; a one-off z-index is how
+     two overlays end up fighting, so none exist. */
+  --z-base: 0;
+  --z-docked: 10;
+  --z-sticky: 20;
+  --z-drawer: 110;
+  --z-dialog: 120;
+  --z-menu: 140;
+  --z-tooltip: 160;
+  --z-toast: 180;
+}
+
+/* Compact density: the whole control ladder one rung tighter.
+ *
+ * It is a *shift* rather than a second set of numbers chosen by eye, so the
+ * relationship between the rungs is identical at either density and a control keeps
+ * its place in the ladder. Height moves by 4px per rung and padding by 2px, which is
+ * the step each already uses, and the row heights move by the same 4px. A `sm`
+ * control goes from 28px to 24px — the `xs` control's comfortable height. That is the
+ * intended meaning, not an oversight.
+ *
+ * 16px at `2xs` is the floor. One rung below it would be 12px, under the minimum
+ * comfortable touch target, so the ladder compresses from the bottom rather than
+ * overflowing.
+ *
+ * `comfortable` is the *absence* of this attribute, so a document that ships no
+ * `data-density` at all renders exactly as it did before density was selectable.
+ * That is what makes this additive: the ladder in `:root` is never overridden, only
+ * shadowed, and nothing outside this block declares these properties.
+ */
+[data-density='compact'] {
+  --control-height-2xs: 1rem; /* 16px — the floor */
+  --control-height-xs: 1.25rem; /* 20px */
+  --control-height-sm: 1.5rem; /* 24px */
+  --control-height-md: 1.75rem; /* 28px */
+  --control-height-lg: 2rem; /* 32px */
+  --control-height-xl: 2.25rem; /* 36px */
+
+  --control-padding-2xs: 0.25rem;
+  --control-padding-xs: 0.375rem;
+  --control-padding-sm: 0.5rem;
+  --control-padding-md: 0.625rem;
+  --control-padding-lg: 0.75rem;
+  --control-padding-xl: 0.875rem;
+
+  --row-height-sm: 1.5rem;
+  --row-height-md: 1.75rem;
+  --row-height-lg: 2rem;
+}
+
+.dark {
+  --shadow-2xs: 0 1px 2px 0 oklch(0 0 0 / 0.2);
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.2);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.25), 0 0 0 1px oklch(1 0 0 / 0.03);
+  --shadow-lg: 0 12px 28px oklch(0 0 0 / 0.35);
+  --shadow-xl: 0 20px 44px oklch(0 0 0 / 0.45);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4b. Named CSS hooks
+ *
+ * The sanctioned escape hatch for values that are *data* rather than design
+ * decisions: a theme preview paints another variant's colours, and those are not
+ * tokens of the active theme. A hook takes the value through a custom property so
+ * the component never writes a literal colour and the linter can still see that
+ * nothing raw is being styled.
+ * ------------------------------------------------------------------------- */
+
+.theme-preview-edge {
+  border-color: var(--preview-edge, var(--border));
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. Tailwind namespace mapping
+ *
+ * `@theme inline` publishes the tokens above as Tailwind utilities. Every
+ * declaration is an `inline` reference to the runtime variable, never a copy: that
+ * is what lets a `.dark` class or a `[data-accent]` selection take effect without
+ * a rebuild.
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
+  --color-scrim-foreground: var(--scrim-foreground);
+  --color-scrim-edge: var(--scrim-edge);
+
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-chrome: var(--chrome);
+
+  --color-diff-add: var(--diff-add);
+  --color-diff-add-foreground: var(--diff-add-foreground);
+  --color-diff-delete: var(--diff-delete);
+  --color-diff-delete-foreground: var(--diff-delete-foreground);
+  --color-diff-hunk: var(--diff-hunk);
+  --color-diff-hunk-foreground: var(--diff-hunk-foreground);
+  --color-diff-meta-foreground: var(--diff-meta-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-family-space-grotesk: var(--font-family-space-grotesk);
+  --font-family-jetbrains-mono: var(--font-family-jetbrains-mono);
+  --font-family-geist: var(--font-family-geist);
+  --font-family-geist-mono: var(--font-family-geist-mono);
+  --font-family-system: var(--font-family-system);
+  --font-family-system-mono: var(--font-family-system-mono);
+
+  --text-2xs: var(--text-2xs);
+  --text-2xs--line-height: var(--text-2xs--line-height);
+  --text-xs: var(--text-xs);
+  --text-xs--line-height: var(--text-xs--line-height);
+  --text-sm: var(--text-sm);
+  --text-sm--line-height: var(--text-sm--line-height);
+  --text-base: var(--text-base);
+  --text-base--line-height: var(--text-base--line-height);
+  --text-lg: var(--text-lg);
+  --text-lg--line-height: var(--text-lg--line-height);
+  --text-xl: var(--text-xl);
+  --text-xl--line-height: var(--text-xl--line-height);
+  --text-2xl: var(--text-2xl);
+  --text-2xl--line-height: var(--text-2xl--line-height);
+  --text-3xl: var(--text-3xl);
+  --text-3xl--line-height: var(--text-3xl--line-height);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /* Control and row heights become real utilities (`h-control-md`, `h-row-md`), so a
+     component never writes a pixel height. */
+  --height-control-2xs: var(--control-height-2xs);
+  --height-control-xs: var(--control-height-xs);
+  --height-control-sm: var(--control-height-sm);
+  --height-control-md: var(--control-height-md);
+  --height-control-lg: var(--control-height-lg);
+  --height-control-xl: var(--control-height-xl);
+  --height-row-sm: var(--row-height-sm);
+  --height-row-md: var(--row-height-md);
+  --height-row-lg: var(--row-height-lg);
+  --height-rail-item: var(--rail-item-height);
+  --height-topbar: var(--topbar-height);
+  --height-statusbar: var(--statusbar-height);
+
+  --spacing-control-2xs: var(--control-padding-2xs);
+  --spacing-control-xs: var(--control-padding-xs);
+  --spacing-control-sm: var(--control-padding-sm);
+  --spacing-control-md: var(--control-padding-md);
+  --spacing-control-lg: var(--control-padding-lg);
+  --spacing-control-xl: var(--control-padding-xl);
+
+  --width-rail: var(--rail-width);
+  --width-rail-expanded: var(--rail-width-expanded);
+  --width-sidebar: var(--sidebar-width);
+  --width-sidebar-compact: var(--sidebar-width-compact);
+
+  --z-docked: var(--z-docked);
+  --z-sticky: var(--z-sticky);
+  --z-drawer: var(--z-drawer);
+  --z-dialog: var(--z-dialog);
+  --z-menu: var(--z-menu);
+  --z-tooltip: var(--z-tooltip);
+  --z-toast: var(--z-toast);
+
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+
+  /* Make the system's motion the default for every `transition-*` utility, so a
+     component that forgets an explicit duration still moves at the design-system
+     speed rather than Tailwind's stock 150ms/ease-in-out. */
+  --default-transition-duration: var(--duration-fast);
+  --default-transition-timing-function: var(--ease-out);
+}

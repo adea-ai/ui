@@ -4,7 +4,9 @@
   "title": "Skeleton",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/skeleton/index.ts",

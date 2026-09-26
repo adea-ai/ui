@@ -1,0 +1,50 @@
+{
+  "name": "lib",
+  "type": "registry:lib",
+  "title": "Class-name and token helpers",
+  "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
+  "dependencies": [
+    "@adea-ai/themes@^0.4.1",
+    "class-variance-authority@^0.7.1",
+    "clsx@^2.1.1",
+    "tailwind-merge@^3.7.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/lib/keyed-rows.ts",
+      "type": "registry:lib",
+      "target": "lib/keyed-rows.ts"
+    },
+    {
+      "path": "src/lib/overlay.ts",
+      "type": "registry:lib",
+      "target": "lib/overlay.ts"
+    },
+    {
+      "path": "src/lib/themes.ts",
+      "type": "registry:lib",
+      "target": "lib/themes.ts"
+    },
+    {
+      "path": "src/lib/tokens.ts",
+      "type": "registry:lib",
+      "target": "lib/tokens.ts"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "lib/utils.ts"
+    },
+    {
+      "path": "src/lib/variants.ts",
+      "type": "registry:lib",
+      "target": "lib/variants.ts"
+    },
+    {
+      "path": "src/lib/version-notes.ts",
+      "type": "registry:lib",
+      "target": "lib/version-notes.ts"
+    }
+  ]
+}

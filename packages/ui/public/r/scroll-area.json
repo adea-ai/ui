@@ -4,7 +4,9 @@
   "title": "Scroll Area",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/ui/scroll-area/index.ts",

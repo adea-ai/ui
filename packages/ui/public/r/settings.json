@@ -4,7 +4,9 @@
   "title": "Settings",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/composites/settings/index.ts",

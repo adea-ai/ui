@@ -4,7 +4,9 @@
   "title": "Status Bar",
   "description": "",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
   "files": [
     {
       "path": "src/components/layout/status-bar/index.ts",
