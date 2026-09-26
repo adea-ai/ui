@@ -73,6 +73,14 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
+test('transcript controls keep a measurable themed control height', async ({ page }) => {
+  const control = page.getByRole('button', { name: 'Toggle transcript', exact: true })
+  await expect(control).toBeVisible()
+  await expect
+    .poll(() => control.evaluate((element) => parseFloat(getComputedStyle(element).height)))
+    .toBeGreaterThan(0)
+})
+
 const scroller = (page: import('@playwright/test').Page) =>
   page.getByRole('region', { name: 'Transcript' })
 const distance = (page: import('@playwright/test').Page) =>
