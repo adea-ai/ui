@@ -1,0 +1,146 @@
+name: Publish the design system
+
+# Publishes `packages/ui` to the public npm registry as `@adea-ai/ui`.
+#
+# This is a repository-local publisher rather than the shared Code Foundry
+# `npm_publish` path, and the reason is structural rather than a preference.
+# Code Foundry publishes *the repository root*: its release job runs
+# `npm publish` with no `working-directory`, and it infers the release type from
+# a `package.json` in the root. This repository's root manifest is
+# `adea-ui` with `"private": true`, so `npm_publish: true` there fails with
+# `EPRIVATE` — it would try to publish the monorepo root under the wrong name.
+# The publishable artifact is `packages/ui`, which is a workspace member, so it
+# is published from its own directory here.
+#
+# It runs on a release tag rather than on every push, because the version is
+# stamped into `packages/ui/package.json` by the Release Please PR. A tag means
+# exactly one thing happened: a release was merged, and this is that release.
+#
+# `packages/ui/dist` is gitignored and there is no `prepublishOnly` hook, so the
+# build is this workflow's responsibility. Skipping it publishes a tarball whose
+# `exports` map points at `./dist/index.js` and does not contain it — a package
+# that installs and then fails to resolve its own entry point.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Build and pack without publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# One publisher at a time. A re-run of an old tag must not interleave with the
+# next release's publish and leave `latest` pointing at the wrong line.
+concurrency:
+  group: publish-adea-ai-ui
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish @adea-ai/ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Provenance attestation signs the tarball with this run's OIDC identity.
+      id-token: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+          no-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The tarball must contain `dist/`: `exports` serves `./dist/index.js` and
+      # `./dist/index.d.ts` to registry consumers, and `dist/` is gitignored, so
+      # a fresh checkout has none of it.
+      - name: Build the library
+        run: bun run --cwd packages/ui build
+
+      - name: Read the version to publish
+        id: version
+        working-directory: packages/ui
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse to publish a version that already exists
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if npm view "@adea-ai/ui@${VERSION}" version >/dev/null 2>&1; then
+            echo "::error title=Version already published::@adea-ai/ui@${VERSION} is already on the registry. Versions are immutable; bump the manifest and merge a new release instead of retagging."
+            exit 1
+          fi
+          echo "@adea-ai/ui@${VERSION} is available"
+
+      - name: Verify the tarball before it leaves
+        working-directory: packages/ui
+        run: |
+          set -euo pipefail
+          # The gate that decides whether this tarball is worth publishing:
+          # `dist` present, the entry points the exports map names actually in
+          # the archive, and no story or test source shipped to consumers.
+          npm pack --dry-run --json > pack.json
+          node -e '
+            const files = require("./pack.json")[0].files.map(f => f.path)
+            const required = ["dist/index.js", "dist/index.d.ts", "src/index.ts", "package.json"]
+            const missing = required.filter(f => !files.includes(f))
+            if (missing.length) {
+              console.error("::error title=Tarball is incomplete::missing " + missing.join(", "))
+              process.exit(1)
+            }
+            const leaked = files.filter(f => /\.(stories\.tsx?|mdx|test\.ts)$/.test(f) && !f.includes("__snapshots__"))
+            if (leaked.length) {
+              console.error("::error title=Tarball ships test or story source::" + leaked.slice(0, 10).join(", "))
+              process.exit(1)
+            }
+            console.log("tarball ok: " + files.length + " files, " + required.length + " entry points present")
+          '
+
+      - name: Pack
+        if: ${{ inputs.dry-run != false }}
+        working-directory: packages/ui
+        run: npm pack
+
+      - name: Publish
+        if: ${{ inputs.dry-run != false }}
+        working-directory: packages/ui
+        run: npm publish --access public --provenance
+
+      - name: Confirm the release is what consumers get
+        if: ${{ inputs.dry-run != false }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # `latest` is the tag every unpinned install resolves, so it is the
+          # thing that actually has to be right — not merely the version's
+          # existence on the registry.
+          latest="$(npm view @adea-ai/ui dist-tags.latest)"
+          echo "latest is ${latest}"
+          if [ "${latest}" != "${VERSION}" ]; then
+            echo "::error title=latest did not advance::@adea-ai/ui@${VERSION} published but latest is ${latest}. Another publisher may own this package name — check whether adea-ai/adea is still publishing packages/ui."
+            exit 1
+          fi
