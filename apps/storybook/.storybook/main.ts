@@ -2,6 +2,7 @@ import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
 import type { StorybookConfig } from 'storybook-solidjs-vite'
 import tailwindcss from '@tailwindcss/vite'
+import { scopeComponentMetadataPlugins } from './component-metadata'
 
 const require = createRequire(import.meta.url)
 
@@ -76,7 +77,10 @@ const config: StorybookConfig = {
     disableTelemetry: true,
   },
   viteFinal: async (viteConfig) => {
-    viteConfig.plugins = [...(viteConfig.plugins ?? []), tailwindcss()]
+    viteConfig.plugins = [
+      ...(await scopeComponentMetadataPlugins(viteConfig.plugins ?? [])),
+      tailwindcss(),
+    ]
 
     // The dev server only. A build resolves and emits the font files itself, so
     // allowing these roots there would widen the config for no reason.
