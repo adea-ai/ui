@@ -40,10 +40,17 @@ try {
   )
     throw new Error('Packed paste-token donor attribution is missing')
 
-  const probe = `import { formatToken, findTokenRanges, expandAll, recollapsePastes, pruneBlocks, shouldCollapse, isPasteBlock } from '${entry}';
+  const probe = `import { PASTE_THRESHOLD_LINES, PASTE_THRESHOLD_CHARS, PASTE_TOKEN_REGEX, countLines, nextSeq, remapCarriedBlocks, tokenRangeAt, stripTrailingBlankLines, formatToken, findTokenRanges, expandAll, recollapsePastes, pruneBlocks, shouldCollapse, isPasteBlock } from '${entry}';
 const block = { id: 'host:paste-1', seq: 1, lines: 3, content: 'one\\ntwo\\nthree' };
 const token = formatToken(block);
 const text = 'before ' + token + ' after';
+if (PASTE_THRESHOLD_LINES !== 3 || PASTE_THRESHOLD_CHARS !== 200 || countLines(block.content) !== 3 || nextSeq([block]) !== 2) throw Error('threshold or sequence contract failed');
+if (!(PASTE_TOKEN_REGEX instanceof RegExp) || !new RegExp(PASTE_TOKEN_REGEX).test(token)) throw Error('public token pattern failed');
+if (tokenRangeAt(text, [block], 8)?.block !== block || tokenRangeAt(text, [block], 0) !== null) throw Error('caret range contract failed');
+if (stripTrailingBlankLines('value\\n \\t') !== 'value' || stripTrailingBlankLines('value  ') !== 'value  ') throw Error('blank line stripping failed');
+const used = new Set([1]);
+const remapped = remapCarriedBlocks(token, [block], used);
+if (remapped.blocks[0].seq !== 2 || remapped.text !== formatToken({ ...block, seq: 2 }) || !used.has(2)) throw Error('carried block remapping failed');
 if (!isPasteBlock(block) || !shouldCollapse(block.content)) throw Error('public model shape failed');
 const ranges = findTokenRanges(text, [block]);
 if (ranges.length !== 1 || ranges[0].start !== 7 || ranges[0].block !== block) throw Error('token range identity failed');
@@ -62,11 +69,21 @@ console.log(JSON.stringify({ entry: import.meta.resolve('${entry}'), result: 'pa
 
   writeFileSync(
     join(consumer, 'probe.ts'),
-    `import { type PasteBlock, formatToken, findTokenRanges, expandAll } from '${entry}';
+    `import { type PasteBlock, PASTE_THRESHOLD_LINES, PASTE_THRESHOLD_CHARS, PASTE_TOKEN_REGEX, countLines, nextSeq, remapCarriedBlocks, tokenRangeAt, stripTrailingBlankLines, formatToken, findTokenRanges, expandAll, recollapsePastes, pruneBlocks, shouldCollapse, isPasteBlock } from '${entry}';
 const block: PasteBlock = { id: 'typed:1', seq: 1, lines: 3, content: 'one\\ntwo\\nthree' };
 const text: string = expandAll(formatToken(block), [block]);
 const ranges: Array<{ start: number; end: number; block: PasteBlock }> = findTokenRanges(text, [block]);
-void ranges;`
+const thresholds: readonly number[] = [PASTE_THRESHOLD_LINES, PASTE_THRESHOLD_CHARS, countLines(text), nextSeq([block])];
+const pattern: RegExp = PASTE_TOKEN_REGEX;
+const remapped: { text: string; blocks: PasteBlock[] } = remapCarriedBlocks(text, [block], new Set<number>());
+const range: { start: number; end: number; block: PasteBlock } | null = tokenRangeAt(text, [block], 0);
+const pruned: PasteBlock[] = pruneBlocks(text, [block]);
+const collapsed: string = recollapsePastes(text, [block]);
+const stripped: string = stripTrailingBlankLines(text);
+const collapse: boolean = shouldCollapse(text);
+const unknownBlock: unknown = block;
+const validated: PasteBlock | null = isPasteBlock(unknownBlock) ? unknownBlock : null;
+void [ranges, thresholds, pattern, remapped, range, pruned, collapsed, stripped, collapse, validated];`
   )
   writeFileSync(
     join(consumer, 'tsconfig.json'),
