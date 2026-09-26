@@ -27,9 +27,10 @@ decision lives in one place.
 - **One token file.** Semantic OKLCH colours, an eight-rung type scale, a six-rung
   control ladder, radius, elevation, motion and a z-index stack. Contrast is
   _measured_ in tests, not reviewed by eye.
-- **Four user-facing axes** — appearance, accent, font and density — each a
-  `data-*` attribute and a set of tokens. Seventeen themes ship in the catalogue,
-  every one validated against WCAG AA floors.
+- **Four user-facing axes** — appearance, theme, accent and typeface — plus density,
+  each a value on `ThemeProvider` and a set of tokens. Twenty-seven themes ship in
+  the catalogue, every one validated against WCAG AA floors; the two defaults are
+  held to AAA.
 - **Dark-first**, with light as an equal — not a lesser inversion.
 - **The shell is a component.** Side rail, sidebar, top bar, status bar, panels and
   their geometry are tokens, so the two applications cannot drift apart by pixels.
@@ -67,14 +68,29 @@ Or, if your app does not already import Tailwind:
 @import '@adea-ai/ui/fonts.css';
 ```
 
-Toggle the theme by putting `dark` on `<html>`:
+Then wrap the app in the provider:
 
-```ts
-document.documentElement.classList.toggle('dark', isDark)
+```tsx
+import { ThemeProvider } from '@adea-ai/ui'
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <YourApp />
+    </ThemeProvider>
+  )
+}
 ```
 
-That is the whole setup. See [docs/consumption.md](docs/consumption.md) for the
-registry, the versioning contract, and how to re-hue the palette.
+`ThemeProvider` is what applies a theme, an accent and a typeface, and what persists
+the user's choice. Toggling `dark` on `<html>` by hand still works, and gets you the
+two default variants — but no palette beyond them, no accent, no typeface.
+
+If the app is server-rendered, inline [`themeScript`](docs/consumption.md#1-the-package)
+in `<head>` so the first paint is already in the right appearance.
+
+See [docs/consumption.md](docs/consumption.md) for the registry, the four axes, the
+versioning contract, and how to re-hue the palette.
 
 ## Layout
 
@@ -107,8 +123,10 @@ component's own variants and `size` props. This is enforced by `@shadcn/lint` at
 the class level, not by review — see [docs/conventions.md](docs/conventions.md).
 
 **2. Every decision is a token.** No literal colour, size, radius or shadow appears
-in a component. `packages/ui/src/styles/theme.css` is the only file with a value in
-it, and `src/lib/tokens.ts` is complete against it as a test.
+in a component. `packages/ui/src/styles/theme.css` is the only stylesheet with a
+palette value in it — and even that file is _generated_ from `@adea-ai/themes`, so
+the authoritative copy of the colours lives in that package, not here.
+`src/lib/tokens.ts` is complete against the generated file as a test.
 
 **3. The accessible behaviour is the primitive's job.** Focus trapping, arrow keys,
 typeahead, `aria-activedescendant`, roving tabindex — Kobalte and corvu already do

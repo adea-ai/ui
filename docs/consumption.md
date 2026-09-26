@@ -13,6 +13,11 @@ and the registry is how you take a piece without the rest.
 bun add @adea-ai/ui
 ```
 
+The palette itself lives in **`@adea-ai/themes`**, which arrives as a dependency of
+`@adea-ai/ui`. You do not install it separately, and you do not normally import it —
+but it is a published package with its own versions, which is what lets the 27 themes
+and the accent presets be corrected without republishing this one.
+
 In the app's stylesheet, after Tailwind:
 
 ```css
@@ -29,10 +34,74 @@ If the app does not already import Tailwind, one line does everything:
 @import '@adea-ai/ui/fonts.css';
 ```
 
-Then toggle the theme:
+Then wrap the app in `ThemeProvider`. **This is not optional**, and the reason is
+worth stating plainly, because the older version of this document told you to
+toggle a class instead and that was wrong:
 
-```ts
-document.documentElement.classList.toggle('dark', isDark)
+```tsx
+import { ThemeProvider } from '@adea-ai/ui'
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <YourApp />
+    </ThemeProvider>
+  )
+}
+```
+
+`ThemeProvider` is the only thing that applies a theme, an accent or a typeface. It
+writes the variant's tokens onto `<html>` as custom properties and persists what the
+user picks. A class toggle on its own gets you the two default variants and nothing
+else — no palette beyond `adea-light`/`adea-dark`, no accent, no typeface, no
+persistence.
+
+### The four axes
+
+Every axis is a value on the same provider, and each is stored in one preference.
+
+| Axis       | Values                                                             | Applied as        |
+| ---------- | ------------------------------------------------------------------ | ----------------- |
+| Appearance | `light`, `dark`, `system`                                          | a `dark` class    |
+| Theme      | any of the 27 catalogue ids                                        | custom properties |
+| Accent     | `theme`, or one of six presets                                     | `data-accent`     |
+| Typeface   | `space-grotesk`, `system`, `geist`, `geist-mono`, `jetbrains-mono` | `data-font`       |
+| Density    | `comfortable`, `compact`                                           | `data-density`    |
+
+```tsx
+<ThemeProvider
+  storageKey="my-app-appearance"
+  initial={{
+    appearance: 'system',
+    lightThemeId: 'adea-light',
+    darkThemeId: 'adea-dark',
+    accent: 'theme',
+    font: 'space-grotesk',
+    density: 'comfortable',
+  }}
+>
+```
+
+Read and change the current selection with `useTheme()`:
+
+```tsx
+const { selection, resolvedAppearance, setSelection, themes } = useTheme()
+setSelection({ accent: 'amber' })
+```
+
+`AppearancePanel` is the whole appearance view if you want one, and `ThemeToggle` is
+the light/dark switch on its own.
+
+### Avoiding the flash
+
+A themed app has to know the appearance before its first paint, or it paints once in
+the wrong mode. `themeScript` emits the inline script that does it, and the storage
+key must match the provider's:
+
+```tsx
+<head>
+  <script innerHTML={themeScript('my-app-appearance')} />
+</head>
 ```
 
 ### The stylesheet exports
@@ -178,16 +247,31 @@ Four values per theme, because the accent is used for one thing. The
 `-subtle` tints, the focus glow and the chart series all derive from `--primary`
 with `color-mix()`, so they follow automatically.
 
-**Check the contrast afterwards.** Run the token suite with your overrides in place,
-or measure by hand — the floors the system guarantees are 7:1 for body text and
-4.5:1 for everything else, and a hue change moves them.
+**Check the contrast afterwards.** Run the token suite with your overrides in place, or
+measure by hand. The floors are not one number, and the difference is deliberate:
+
+| Pairing                          | Floor | Held to                        |
+| -------------------------------- | ----- | ------------------------------ |
+| Body text on the two defaults    | 7:1   | AAA, in `tests/tokens.test.ts` |
+| Everything else in the catalogue | 4.5:1 | WCAG AA                        |
+| Large or non-essential text      | 3:1   | WCAG 1.4.3                     |
+
+The two default variants are measured at AAA because they are the pairings a user
+sees without choosing anything. The other 25 are held to AA, which is the floor
+`@adea-ai/themes` admits any palette at — a stricter bar would have excluded most of
+the professional palettes the catalogue is built from, several of which sit near
+2:1 on their own canvas and only clear AA once normalised. A hue change moves every
+one of these numbers, which is why the suite measures them rather than asserting a
+palette is fine.
 
 ---
 
-## 4. Changing density
+## 4. Shape and density
 
-`--radius-lg` is the radius knob: move that one value and the other four rungs
-follow.
+These are two different decisions and they used to share a section, which is how
+`--radius-lg` ended up filed under "density".
+
+**Shape** is one knob. Move it and the other four rungs follow:
 
 ```css
 :root {
@@ -195,8 +279,8 @@ follow.
 }
 ```
 
-Density is a set of tokens rather than a single one, because a control's height and
-its padding are separate decisions:
+**Density** is a set of tokens rather than a single one, because a control's height
+and its padding are separate decisions:
 
 ```css
 :root {
@@ -208,6 +292,18 @@ its padding are separate decisions:
 
 Everything that reads those tokens — Button, Input, Select, Toggle, list rows, table
 rows — moves together. That is the point of the ladder.
+
+You do not have to hand-write either. Density is a provider axis, and `compact`
+moves the whole ladder one rung tighter:
+
+```tsx
+<ThemeProvider initial={{ /* … */ density: 'compact' }} />
+```
+
+That sets `data-density`, which shadows the ladder for as long as it is present.
+`comfortable` is the _absence_ of the attribute, so an app that never sets it renders
+exactly as it did before density was selectable — which is what keeps opting in
+additive rather than a migration.
 
 ---
 
