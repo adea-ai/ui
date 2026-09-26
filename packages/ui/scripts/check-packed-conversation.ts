@@ -8,6 +8,11 @@ import { chromium, webkit, expect } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
+import {
+  assertAtomicIncrementBudget,
+  assertComposedGzipBudget,
+  MAX_ATOMIC_INCREMENT_GZIP_BYTES,
+} from './conversation-packed-budget'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -18,8 +23,6 @@ const MAX_GZIP_BYTES = 26 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
 const MAX_BUSY_GZIP_BYTES = 50 * 1024
-// Composed input baseline: 53,234/53,320 gzip JS bytes, with a 54 KiB cap.
-const MAX_COMPOSED_GZIP_BYTES = 54 * 1024
 const results: unknown[] = []
 const sizeMeasurements = new Map<
   string,
@@ -555,7 +558,11 @@ try {
           gzip: gzipBytes,
           css: Buffer.byteLength(css),
           ...(pilot === 'atomic'
-            ? { editorBytes, kobalteTooltipIncrementalBytes: tooltipBytes }
+            ? {
+                editorBytes,
+                kobalteTooltipIncrementalBytes: tooltipBytes,
+                incrementalGzipBudget: MAX_ATOMIC_INCREMENT_GZIP_BYTES,
+              }
             : {}),
         })
       )
@@ -564,11 +571,15 @@ try {
           ? MAX_GZIP_BYTES
           : pilot === 'busy'
             ? MAX_BUSY_GZIP_BYTES
-            : pilot === 'composed'
-              ? MAX_COMPOSED_GZIP_BYTES
-              : undefined
+            : undefined
       if (acceptedGzipBudget !== undefined && gzipBytes > acceptedGzipBudget)
         throw new Error(`Packed ${pilot} exceeds its gzip JS budget`)
+      if (pilot === 'composed') assertComposedGzipBudget(gzipBytes)
+      if (pilot === 'atomic') {
+        const plain = sizeMeasurements.get(`${condition}:composed`)
+        if (!plain) throw new Error(`Missing ${condition} composed baseline for atomic size check`)
+        assertAtomicIncrementBudget(plain.gzip, gzipBytes)
+      }
       if (Buffer.byteLength(css) > MAX_CSS_BYTES)
         throw new Error(`Packed ${pilot} exceeds its raw CSS budget`)
       for (const [engine, browserType] of [
@@ -947,19 +958,21 @@ try {
     const plain = sizeMeasurements.get(`${condition}:composed`)
     const atomic = sizeMeasurements.get(`${condition}:atomic`)
     if (!plain || !atomic) throw new Error(`Missing ${condition} atomic/ plain measurements`)
+    const wholeGzipDelta = assertAtomicIncrementBudget(plain.gzip, atomic.gzip)
     results.push({
       pilot: 'atomic-increment',
       condition,
       plainWholeGzip: plain.gzip,
       atomicWholeGzip: atomic.gzip,
-      wholeGzipDelta: atomic.gzip - plain.gzip,
+      wholeGzipDelta,
+      incrementalGzipBudget: MAX_ATOMIC_INCREMENT_GZIP_BYTES,
       editorAndModelRenderedBytes: atomic.editorBytes,
       kobalteTooltipIncrementalBytes: atomic.tooltipBytes,
       kobalteTooltipIncrementalModuleCount: atomic.kobalteModules.filter(
         ({ id }) => !plain.kobalteModules.some((module) => module.id === id)
       ).length,
       cssDelta: atomic.css - plain.css,
-      note: 'Measured only; atomic gzip has no approved feature-specific cap yet.',
+      note: '6 KiB feature-specific increment cap; common plain modules are excluded by paired-fixture delta.',
     })
   }
   console.log(JSON.stringify({ archive: archive.filename, results }, null, 2))

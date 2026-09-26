@@ -287,13 +287,16 @@ both engines, including reference-only queue eligibility/steer refusal and the
 pending-delivery state with its explicitly scanned spinner CSS. On the current
 actual-tarball run, its gzip JS is 53,554 bytes compiled and 53,650 bytes Solid,
 below the unchanged 55,296-byte cap; CSS is 41,624 bytes under the shared 43,008-byte
-cap. The separate atomic fixture measures 58,867/58,980 gzip JS and 42,209 CSS.
-Its measured incremental cost over the composed fixture is 5,313/5,330 gzip JS
-and 585 CSS bytes. No atomic-specific size ceiling has been accepted; production
-budget review remains open. The packed gate checks both export conditions and
-engines, reports native Node SSR separately, and keeps plain/atomic module
-ownership separate. Selected Kiro NOTICE attributions and the license must
-survive the tarball.
+cap. The separate atomic fixture measures 58,922/59,043 gzip JS and 42,289 CSS.
+Its measured incremental cost over the same-condition composed fixture is
+5,368/5,393 gzip JS, with 751 bytes of headroom under the accepted 6 KiB feature
+increment ceiling, and 665 additional CSS bytes. The gate applies the 6 KiB
+limit to that paired-fixture delta; modules retained in both bundles are excluded
+from the increment. The unchanged 54 KiB composed ceiling and shared 43,008-byte
+CSS ceiling still apply, and no production bundle cap has changed. The gate checks
+both export conditions and engines, reports native Node SSR separately, and keeps
+plain/atomic module ownership separate. Selected Kiro NOTICE attributions and the
+license must survive the tarball.
 Native CSS content sizing replaces live-field measurement on the two verified
 engines, both of which support it; legacy-engine fallback is not claimed.
 
@@ -371,8 +374,9 @@ images/files, uploads, rich editors, persistence, sent-prompt history and
 application adoption remain with the host. The added `AtomicPasteTokens` story
 shows the controlled contract; component browser and packed conversation gates
 exercise Chromium and WebKit. The plain fixture retains its existing caps.
-Atomic whole-bundle and incremental costs are reported above without assigning
-an unreviewed atomic cap. Donor source/test provenance is in the issue #532
+Atomic whole-bundle and incremental costs are reported above; the packed gate
+enforces the accepted 6 KiB incremental ceiling while retaining the existing
+composed and CSS ceilings. Donor source/test provenance is in the issue #532
 editor entry in `NOTICE`.
 
 ## Binary layout model checkpoint
