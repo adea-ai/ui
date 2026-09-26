@@ -422,3 +422,14 @@ not just the editor primitive.
 Local packed interaction gates require `bunx playwright install chromium webkit`
 after dependency installation. On Linux, use `--with-deps` when the required
 system libraries are absent. All automation runs headless with disposable profiles.
+## Paste-token model (issue #532 selected unit)
+
+`@adea-ai/ui/components/conversation` also exports the pure paste-token model:
+`PasteBlock`, `isPasteBlock`, `countLines`, `shouldCollapse`, `nextSeq`,
+`formatToken`, `findTokenRanges`, `tokenRangeAt`, `pruneBlocks`, `expandAll`,
+`recollapsePastes`, `remapCarriedBlocks`, `stripTrailingBlankLines`, and the
+threshold and marker constants. Hosts provide stable, bounded ASCII block IDs and own
+draft state, persistence, message reconciliation and editor behavior. The model
+does not read storage or the clipboard, upload files, edit a textarea, or
+provide undo/history, previews or chips. Its selected source and Apache-2.0
+attribution are recorded in the issue #532 entry in `NOTICE`.
