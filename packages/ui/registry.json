@@ -1605,7 +1605,7 @@
       "title": "Appearance Editor",
       "description": "",
       "dependencies": [
-        "@adea-ai/themes@^0.4.1",
+        "@adea-ai/themes@^0.5.0",
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],

@@ -208,7 +208,9 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
   )
 }
 
-/** Modal anchoring/dismissal and nested-listbox behavior come from Kobalte. */
+/** Modal anchoring/dismissal and nested-listbox behavior come from Kobalte.
+ * Its measured available height also bounds scrolling, keeping footer actions
+ * reachable when a narrow popup begins below its trigger. */
 export function AppearancePopover(props: AppearancePopoverProps) {
   return (
     <Popover
@@ -225,7 +227,7 @@ export function AppearancePopover(props: AppearancePopoverProps) {
       >
         <Palette />
       </PopoverTrigger>
-      <PopoverContent class="w-lg max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <PopoverContent class="w-lg max-w-[calc(100vw-2rem)] max-h-(--kb-popper-content-available-height) overflow-y-auto">
         <PopoverTitle>Appearance</PopoverTitle>
         <PopoverDescription>
           Changes preview immediately. Save keeps them; Cancel restores the previous appearance.

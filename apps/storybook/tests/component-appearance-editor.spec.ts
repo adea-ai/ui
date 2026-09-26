@@ -1,87 +1,21 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { resolve } from 'node:path'
-import { build } from 'vite'
-import solid from 'vite-plugin-solid'
-import tailwindcss from '@tailwindcss/vite'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { execFileSync } from 'node:child_process'
+import { buildAppearanceBrowser, renderAppearanceServer } from './appearance-assets'
 
 let script: string
 let css: string
 
 test('the composed editor server-renders without a browser or application globals', async () => {
-  const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
-    configFile: false,
-    logLevel: 'error',
-    plugins: [solid({ ssr: true })],
-    ssr: { noExternal: true },
-    build: {
-      write: false,
-      minify: false,
-      ssr: resolve(
-        import.meta.dirname,
-        '../../../packages/ui/tests/fixtures/appearance-editor-ssr.tsx'
-      ),
-    },
-  })
-  const outputs = Array.isArray(result) ? result : [result]
-  const chunks = outputs
-    .flatMap((output) => ('output' in output ? output.output : []))
-    .filter((asset) => asset.type === 'chunk')
-  expect(chunks).toHaveLength(1)
-  const directory = await mkdtemp(resolve(tmpdir(), 'adea-appearance-ssr-'))
-  try {
-    await writeFile(resolve(directory, 'fixture.mjs'), chunks[0]!.code)
-    await writeFile(
-      resolve(directory, 'render.mjs'),
-      "import { renderAppearance } from './fixture.mjs'; process.stdout.write(renderAppearance());"
-    )
-    const html = execFileSync(process.execPath, [resolve(directory, 'render.mjs')], {
-      encoding: 'utf8',
-    })
-    expect(html).toContain('data-appearance-editor')
-    expect(html).toContain('Appearance mode')
-    expect(html).toContain('Light theme')
-    expect(html).toContain('Dark theme')
-    expect(html).toContain("Uses the palette's intended color.")
-  } finally {
-    await rm(directory, { recursive: true, force: true })
-  }
+  const html = await renderAppearanceServer()
+  expect(html).toContain('data-appearance-editor')
+  expect(html).toContain('Appearance mode')
+  expect(html).toContain('Light theme')
+  expect(html).toContain('Dark theme')
+  expect(html).toContain("Uses the palette's intended color.")
 })
 
 test.beforeAll(async () => {
-  const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
-    configFile: false,
-    logLevel: 'error',
-    plugins: [solid(), tailwindcss()],
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: resolve(
-          import.meta.dirname,
-          '../../../packages/ui/tests/fixtures/appearance-editor.tsx'
-        ),
-        formats: ['iife'],
-        name: 'AppearanceFixture',
-      },
-    },
-  })
-  const outputs = Array.isArray(result) ? result : [result]
-  const assets = outputs.flatMap((output) => ('output' in output ? output.output : []))
-  script = assets
-    .filter((asset) => asset.type === 'chunk')
-    .map((asset) => asset.code)
-    .join('\n')
-  css = assets
-    .flatMap((asset) =>
-      asset.type === 'asset' && asset.fileName.endsWith('.css') ? [String(asset.source)] : []
-    )
-    .join('\n')
+  ;({ script, css } = await buildAppearanceBrowser())
 })
 
 test.beforeEach(async ({ page }) => {
@@ -91,6 +25,47 @@ test.beforeEach(async ({ page }) => {
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
   await page.getByRole('button', { name: 'Appearance settings' }).click()
+})
+
+test('the popup and nested controls retain their shared CSS contract', async ({ page }) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const background = await dialog.evaluate((element) => getComputedStyle(element).backgroundColor)
+  expect(background).not.toBe('rgba(0, 0, 0, 0)')
+  expect(background).not.toBe('transparent')
+  const save = page.getByRole('button', { name: 'Save', exact: true })
+  const height = await save.evaluate((element) => {
+    const probe = document.createElement('div')
+    probe.style.height = 'var(--control-height-sm)'
+    element.append(probe)
+    const expected = probe.getBoundingClientRect().height
+    probe.remove()
+    return { actual: element.getBoundingClientRect().height, expected }
+  })
+  expect(height.expected).toBeGreaterThan(20)
+  expect(height.actual).toBeCloseTo(height.expected, 1)
+  const toggle = page.getByRole('switch', { name: 'Reduce transparency' })
+  // The visible control and thumb come from the shared Switch source, not host CSS.
+  expect(
+    await toggle.evaluate(
+      (element) => element.nextElementSibling?.getBoundingClientRect().height ?? 0
+    )
+  ).toBeGreaterThan(16)
+})
+
+test('the narrow popup keeps its final actions inside the viewport after scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 })
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  await dialog.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  const save = page.getByRole('button', { name: 'Save', exact: true })
+  const box = (await save.boundingBox())!
+  expect(box.y).toBeGreaterThanOrEqual(0)
+  expect(box.y + box.height).toBeLessThanOrEqual(800)
+  await save.click()
+  await expect(dialog).toHaveCount(0)
 })
 
 test('mode previews and both theme rows remain available through keyboard changes', async ({

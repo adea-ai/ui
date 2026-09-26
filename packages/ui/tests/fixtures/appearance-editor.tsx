@@ -1,10 +1,13 @@
+import adeaLight from '@adea-ai/themes/themes/adea-light'
+import adeaDark from '@adea-ai/themes/themes/adea-dark'
+import dracula from '@adea-ai/themes/themes/dracula'
+import catppuccinLatte from '@adea-ai/themes/themes/catppuccin-latte'
 import { createEffect, createMemo, createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import {
   ACCENTS,
   accentForeground,
   formatOklch,
-  getTheme,
   parseColor,
   shadcnVariables,
 } from '@adea-ai/themes'
@@ -16,7 +19,7 @@ import '../../src/styles/globals.css'
 
 // A disposable host adapter demonstrates the editor's ports. Product persistence
 // and native capability acceptance require the real application composition.
-const themes = ['adea-light', 'adea-dark', 'dracula', 'catppuccin-latte'].map((id) => getTheme(id)!)
+const themes = [adeaLight, adeaDark, dracula, catppuccinLatte]
 const defaults: AppearanceDraft = {
   mode: 'system',
   lightThemeId: 'adea-light',

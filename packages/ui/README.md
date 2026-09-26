@@ -184,3 +184,21 @@ Save pending state, mobile selection and 320/768/1024/1440px layouts. A separate
 browser or application globals. These checks
 are component integration evidence; they do not certify application persistence,
 native effects, packaged applications or manual assistive technology acceptance.
+
+### Packed appearance contract
+
+`bun run check:packed-appearance` installs the actual tarball without optional
+Chart/Carousel engines, then reuses all appearance interactions in Chromium and
+WebKit against compiled and Solid entries (60 cases). The same fixture verifies
+Solid source SSR in native Node. Keyboard choices, live preview, save/cancel/reset,
+nested dismissal, validation, pending save, narrow layouts with reachable footer actions, and automated accessibility
+are covered. Production persistence, native transparency, hydration and manual AT
+remain application acceptance gates.
+
+The disposable host explicitly imports four isolated canonical theme records plus
+color/CSS adapters from published `@adea-ai/themes`; the UI composition imports only
+theme types. Both conditions retain one Solid runtime and one JS chunk, external CSS,
+no fonts or unrelated engines, and full donor attribution. The combined host/editor
+budgets are 64 KiB gzip JS and 50 KiB raw CSS; measured baselines are 62,203/62,643
+gzip JS bytes and 50,060 raw CSS bytes with complete discovery of nested controls and shared helpers. This includes host theme-preview behavior,
+not just the editor primitive.

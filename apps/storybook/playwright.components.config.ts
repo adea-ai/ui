@@ -12,5 +12,9 @@ export default defineConfig({
   retries: process.env['CI'] ? 2 : 0,
   timeout: 90_000,
   expect: { timeout: 10_000 },
-  use: { ...devices['Desktop Chrome'], headless: true, trace: 'retain-on-failure' },
+  use: { headless: true, trace: 'retain-on-failure' },
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ],
 })

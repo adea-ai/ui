@@ -39,7 +39,8 @@ If the app does not already import Tailwind, one line does everything:
 
 Tailwind must discover the packaged class strings. Adjust these `@source` paths
 relative to your stylesheet. Include each composition's nested primitives too:
-`ModalDialog` needs `ui/modal-dialog`, `ui/dialog`, and `ui/button`.
+`ModalDialog` needs `ui/modal-dialog`, `ui/dialog`, and `ui/button`; the appearance
+editor needs `composites/appearance-editor` and `ui/{button,popover,select,switch,input}`.
 The shared `lib/variants.ts` defines control sizes; overlays also need `lib/overlay.ts`
 for their fills, placement, and motion.
 Registering all of `src/components` is simpler but emits utilities for unused
@@ -167,7 +168,8 @@ consumer's bundle.
 ### What one component costs
 
 Measured by `bun run --cwd packages/ui check:tree-shaking`, which builds real
-bundles against the built package. Each row uses the documented public entry, and
+bundles against the built package. This table records the core import contract at
+`3180964`; the gate reports current values as components grow. Each row uses the documented public entry, and
 importing one component does not pull in the rest of the library:
 
 | Public import                                     | Gzipped    | What it brings                        |

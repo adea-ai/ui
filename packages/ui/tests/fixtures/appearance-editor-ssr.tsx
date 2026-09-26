@@ -1,10 +1,12 @@
-import { ACCENTS, getTheme } from '@adea-ai/themes'
+import adeaLight from '@adea-ai/themes/themes/adea-light'
+import adeaDark from '@adea-ai/themes/themes/adea-dark'
+import { ACCENTS } from '@adea-ai/themes'
 import { renderToString } from 'solid-js/web'
 import { AppearanceEditor } from '../../src/components/composites/appearance-editor'
 
 export function renderAppearance() {
-  const light = getTheme('adea-light')!
-  const dark = getTheme('adea-dark')!
+  const light = adeaLight
+  const dark = adeaDark
   return renderToString(() => (
     <AppearanceEditor
       draft={{
