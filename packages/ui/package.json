@@ -78,15 +78,9 @@
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
     "theme:build": "bun scripts/build-default-theme.ts",
     "theme:check": "bun scripts/build-default-theme.ts --check",
-<<<<<<< HEAD
     "check:packed-layout": "node scripts/check-packed-layout.mjs",
-    "check:packed-consumer": "bun scripts/check-packed-consumer.ts"
-=======
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
-    "check:packed-conversation": "bun scripts/check-packed-conversation.ts",
-    "check:packed-layout": "node scripts/check-packed-layout.mjs",
     "check:packed-layout-renderer": "bun scripts/check-packed-layout-renderer.ts"
->>>>>>> 827e597 (test: prove packed binary renderer conditions and budgets)
   },
   "dependencies": {
     "@adea-ai/themes": "^0.5.0",
