@@ -434,6 +434,9 @@ export const typographyTokens: TokenDefinition[] = [
   },
 ]
 
+/** Height tokens also size both axes of icon controls through Tailwind's --size
+ * namespace. Padding has its own --spacing mapping. Nominal pixel descriptions
+ * use a 16px rem; rendered dimensions follow the consumer's root font size. */
 export const densityTokens: TokenDefinition[] = [
   { name: 'control-height-2xs', kind: 'dimension', description: '20px — an inline chip control.' },
   { name: 'control-height-xs', kind: 'dimension', description: '24px — a dense table row action.' },

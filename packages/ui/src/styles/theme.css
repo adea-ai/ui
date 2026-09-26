@@ -826,6 +826,15 @@
   --height-control-md: var(--control-height-md);
   --height-control-lg: var(--control-height-lg);
   --height-control-xl: var(--control-height-xl);
+  /* Tailwind `size-*` prefers --size-* and then --spacing-*. Without this
+     bridge, square icon controls use the padding ladder below for both axes.
+     Height, square size and inline padding remain distinct semantic contracts. */
+  --size-control-2xs: var(--control-height-2xs);
+  --size-control-xs: var(--control-height-xs);
+  --size-control-sm: var(--control-height-sm);
+  --size-control-md: var(--control-height-md);
+  --size-control-lg: var(--control-height-lg);
+  --size-control-xl: var(--control-height-xl);
   --height-row-sm: var(--row-height-sm);
   --height-row-md: var(--row-height-md);
   --height-row-lg: var(--row-height-lg);
