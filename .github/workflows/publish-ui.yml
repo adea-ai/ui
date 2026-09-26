@@ -164,13 +164,12 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-consumer
 
-      - name: Install headless engines for packed conversation and pane contracts
+      - name: Install headless engines for packed composition contracts
         run: bunx playwright install --with-deps chromium webkit
 
       - name: Verify packed conversation composition
         working-directory: packages/ui
         run: bun run check:packed-conversation
-
       - name: Verify packed pane model and renderer
         working-directory: packages/ui
         run: bun run check:packed-layout && bun run check:packed-layout-renderer

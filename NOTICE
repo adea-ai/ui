@@ -49,6 +49,221 @@ Origin UI / coss (AGPL-3.0-or-later) was consulted for visual ideas only. No
 code, class string, or asset from that project is reproduced here, because its
 licence is incompatible with this distribution.
 
+
+## Composer IME input ownership translated from KiroCrew
+
+`packages/ui/src/components/conversation/ime-guard.ts` and its MessageComposer
+binding substantially translate the native latch and textarea-scoped lifecycle
+from `website/src/hooks/useImeGuard.ts`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/).
+    Licensed under the Apache License, Version 2.0.
+
+Retained: native isComposing/keyCode229 signals, the 50ms post-composition window,
+back-to-back composition fencing, native candidate default actions, and recovery
+on focus/blur. Solid owner cleanup replaces React effects/ref ownership; native
+propagation replaces React's synthetic-event half. A repeated compositionend
+replaces the previous timer so an older expiry cannot release the latest window.
+The document-latch/focus-trap branch is not copied: this is one textarea's send
+binding, and maintained Kobalte primitives retain overlay focus authority.
+
+Browser integration tests translate relevant cases from
+`website/src/test/SideChat.imeEnter.test.tsx` and the lifecycle/window cases in
+`website/src/hooks/useImeGuard.documentLatch.test.tsx`; React/Redux/query/API test
+providers are replaced by a controlled Solid fixture. No React dependency,
+service transport, dictation engine, font, asset or document listener is copied.
+This is selected-unit hardening, not a claim that the full KiroCrew composer,
+goal flow or Adea runtime-session Chat has been ported or integrated.
+
+## Plain transcript follow translated from KiroCrew
+
+`packages/ui/src/components/conversation/scroll-follow-core.ts`,
+`scroll-follow.ts` and ConversationSurface substantially translate the plain
+scroller lifecycle in `website/src/app-sdk/useChatScrollFollow.ts` and its pure
+`website/src/hooks/virtualizer/FollowController.ts` decisions, pinned at
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: separate follow intent and jump visibility, synchronous scroll-up race
+fencing, direction-aware re-engagement, self-scroll attribution, DPR tolerance,
+content growth/collapse and viewport shrink/growth distinctions, instant pins,
+explicit disabled/reset behavior and content/viewport observer cleanup. Solid
+ownership replaces React refs/effects. Applications retain identity, durable
+scroll restoration and virtualized row measurement/anchor authority.
+
+The jump label follows `website/src/app-sdk/ChatScrollChrome.tsx`'s action-only
+contract; pixel distance cannot establish an unread message count. The existing
+shared button appearance and configurable 80px visibility default are retained.
+Keyboard jumping returns focus to the focusable transcript as its jump control
+disappears; this hardens a donor edge case without moving focus during automatic
+pins. No donor edge-fade styling, React runtime, virtualizer, asset, font or session
+store is copied. Tests translate applicable cases from
+`website/src/test/useChatScrollFollow.test.tsx` and `FollowController.test.ts`;
+Bun/browser integration and deterministic bounded grids replace React/jsdom,
+Vitest and fast-check without adding dependencies. The full Chat product
+composition and application adoption remain separate gates.
+
+Busy composer action translated from KiroCrew
+--------------------------------------------
+Original: website/src/components/BusySendButton.tsx
+Also translated: website/src/hooks/useMenuKeyboard.ts (enabled-row Tab cycle)
+Revision: 283e136c0f902e965a535a7c9548c57c7504fed0
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+This product includes software developed at Amazon.com, Inc.
+Apache License, Version 2.0 (see LICENSE).
+Destination: packages/ui/src/components/conversation/busy-send-button.tsx
+
+The split fire/mode-picker structure, descriptions, independent disabled-fire
+state, selected radio treatment and conditional alternate-action hint are
+substantially translated to Solid and the shared design system. Kobalte owns
+portal positioning, arrow navigation, dismissal and focus restoration. Its
+Tab prevention lacks row cycling, so the donor cycle is translated as a scoped
+menu handler over enabled rows; no document listener or manual focus trap.
+Donor per-slot storage/migration/broadcast, i18n/platform lookup, React runtime,
+manual portal and document listeners are not copied. Applications inject mode,
+action and unavailable reasons. No runtime queue or force-reset authority added.
+Nearest tests: BusySendButton.menuKeyboard.test.tsx and
+BusySendButton.slotScope.test.tsx; controlled mode replaces donor storage tests,
+while keyboard/focus expectations are exercised in Chromium and WebKit.
+
+## Composed input and reading collapse translated from KiroCrew
+
+`packages/ui/src/components/conversation/chat-composer.tsx` substantially
+translates the composer assembly and scoped reading-collapse interactions from
+`website/src/components/ChatInput.tsx`, pinned at
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: knowledge/follow-up/band order, approval and notice surfaces, staged
+content, distinct input action groups, context shelf, opt-in reading collapse,
+visible labeled restoration and first-line draft preview. The input and shelf
+unmount while collapsed; the host retains the draft. Menu actions and focus
+restore translate applicable cases from `ChatInput.collapse.test.tsx`.
+
+Solid ownership and maintained Kobalte menus replace React/motion/manual portals.
+A scoped control replaces the global composer lookup and expand broadcast,
+avoiding ambiguous focus when two conversations are present. Controlled host
+collapse replaces localStorage; no shared preference, session store, runtime,
+permission, upload, skill, voice or optimizer authority is copied. Input IME and
+busy-action behavior compose the separately attributed units above. Caret
+selection is retained for reading collapse and local delivery feedback is fenced
+to an injected host reset key. Full Chat composition and product adoption remain
+separate gates.
+
+## Paste-token model translated from KiroCrew (issue #532)
+
+`packages/ui/src/components/conversation/paste-tokens.ts` translates the pure
+block and text transformations from `website/src/utils/pasteTokens.ts`, plus
+the trailing-blank-line policy from `website/src/components/composerPastePolicy.ts`,
+at KiroCrew revision `283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: the three-line/200-character collapse thresholds; canonical marker
+formatting and ranges; monotonic sequence allocation and collision remapping;
+token pruning, expansion and content-based re-collapse, including the
+trailing-whitespace fallback; and the linear trailing-blank-line scan. Bun unit
+cases adapt the pure expectations from `website/src/test/pasteTokens.test.ts` and
+the trailing-text policy from `website/src/test/ChatInput.paste.test.tsx`.
+
+The host supplies stable block IDs. Invalid IDs/sequences, duplicate identities,
+ambiguous sequence mappings and noncanonical or line-mismatched markers are
+refused. React, Lexical, browser clipboard/File handling, localStorage side-table
+recovery, backend message reconciliation, uploads, textarea editing, previews,
+chips, undo/history and submit/persistence authority are not included. This
+selected model is not rich editing, complete Chat, or application adoption.
+
+## Controlled paste-token editor translated from KiroCrew (issue #532)
+
+`packages/ui/src/components/conversation/paste-token-editor.tsx` and the
+`AtomicChatComposer` entry substantially translate selected text-editing
+behavior from `website/src/components/ChatInput.tsx`,
+`website/src/components/PasteHighlightLayer.tsx`,
+`website/src/components/PasteHoverLayer.tsx`, and
+`website/src/components/PastePreviewTooltip.tsx`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: plain-text thresholded paste, trailing-blank cleanup, raw-paste
+bypass, standalone and quote-prefix placement, atomic token deletion and
+navigation, selection snapping, expansion, pruning and expanded copy/cut. The
+Solid mirror and Kobalte tooltip retain the aria-hidden highlight, dwell and
+caret previews, touch suppression, dismissal and `aria-describedby` association.
+`AtomicChatComposer` emits a single controlled `{ text, blocks }` transaction
+and submits a captured text/action/block snapshot; hosts supply IDs, state and
+delivery. Browser cases translate applicable text-input expectations from
+`website/src/test/ChatInputCoverage.test.tsx`,
+`website/src/test/ChatInput.paste.test.tsx`, and
+`website/src/test/PasteHoverLayer.test.tsx`. Upload, image/file clipboard,
+optimizer, React/Lexical/Framer runtime, persistence, undo/history, and
+application transport or restoration behavior are not copied. This is the
+selected editor unit, not a claim of full Chat or product adoption.
+
+## Appearance editor translated from Zeron
+
+The System/Light/Dark miniature composition, palette bands, theme selectors,
+compact divided settings rows, accent helper and surface helper treatment in
+`packages/ui/src/components/composites/appearance-editor/` are substantially
+translated from Zeron (https://github.com/zeronsh/zeron), pinned at:
+
+    30a9a9537c5ec96226c87f4bf349b6f77c5dfb59
+    crates/ui/src/settings/appearance.rs
+    crates/ui/src/settings/widgets.rs
+
+This preserves Adea's previously accepted Zeron port. Rust/GPUI rendering is
+re-expressed in Solid and Kobalte with semantic design-system tokens and palettes
+supplied by the host from @adea-ai/themes. The library imports theme types only;
+it does not acquire GPUI, global theme storage, normalization or native effects.
+Save/Cancel/Reset, custom accent validation, reduced transparency and capability
+reporting preserve accepted Adea issue #425 amendments. Typeface controls are
+outside that accepted surface. The accent row stacks to retain readable helper
+copy in a narrow popup; both theme selectors remain independently visible.
+
+Relevant donor tests for three mode cards, both appearance catalogues, and accent
+and surface helper copy are translated into browser assertions alongside
+keyboard, nested-menu, snapshot, pending-save and responsive accessibility checks.
+Font-specific donor tests are excluded with the corresponding controls. Catalogue
+counts are host data, so tests retain both appearance lanes without hard-coding
+Zeron's catalogue sizes.
+
+Zeron's MIT notice applies to the translated portions:
+
+MIT License
+
+Copyright (c) 2026 Wing
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Strict binary layout extracted from the accepted Adea donor port
 
 `packages/ui/src/components/layout/split-layout/model.ts` is extracted from
@@ -107,216 +322,3 @@ pane-title gesture, replacing plaintext leaf IDs and string casts with typed
 intent, an instance-local active drag payload, and cancellation/removal checks.
 Header action composition injects application keyboard controls without owning
 shortcuts or domain transitions. No new upstream source or license is introduced.
-
-Busy composer action translated from KiroCrew
---------------------------------------------
-Original: website/src/components/BusySendButton.tsx
-Also translated: website/src/hooks/useMenuKeyboard.ts (enabled-row Tab cycle)
-Revision: 283e136c0f902e965a535a7c9548c57c7504fed0
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-This product includes software developed at Amazon.com, Inc.
-Apache License, Version 2.0 (see LICENSE).
-Destination: packages/ui/src/components/conversation/busy-send-button.tsx
-
-The split fire/mode-picker structure, descriptions, independent disabled-fire
-state, selected radio treatment and conditional alternate-action hint are
-substantially translated to Solid and the shared design system. Kobalte owns
-portal positioning, arrow navigation, dismissal and focus restoration. Its
-Tab prevention lacks row cycling, so the donor cycle is translated as a scoped
-menu handler over enabled rows; no document listener or manual focus trap.
-Donor per-slot storage/migration/broadcast, i18n/platform lookup, React runtime,
-manual portal and document listeners are not copied. Applications inject mode,
-action and unavailable reasons. No runtime queue or force-reset authority added.
-Nearest tests: BusySendButton.menuKeyboard.test.tsx and
-BusySendButton.slotScope.test.tsx; controlled mode replaces donor storage tests,
-while keyboard/focus expectations are exercised in Chromium and WebKit.
-## Plain transcript follow translated from KiroCrew
-
-`packages/ui/src/components/conversation/scroll-follow-core.ts`,
-`scroll-follow.ts` and ConversationSurface substantially translate the plain
-scroller lifecycle in `website/src/app-sdk/useChatScrollFollow.ts` and its pure
-`website/src/hooks/virtualizer/FollowController.ts` decisions, pinned at
-`283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
-
-Retained: separate follow intent and jump visibility, synchronous scroll-up race
-fencing, direction-aware re-engagement, self-scroll attribution, DPR tolerance,
-content growth/collapse and viewport shrink/growth distinctions, instant pins,
-explicit disabled/reset behavior and content/viewport observer cleanup. Solid
-ownership replaces React refs/effects. Applications retain identity, durable
-scroll restoration and virtualized row measurement/anchor authority.
-
-The jump label follows `website/src/app-sdk/ChatScrollChrome.tsx`'s action-only
-contract; pixel distance cannot establish an unread message count. The existing
-shared button appearance and configurable 80px visibility default are retained.
-Keyboard jumping returns focus to the focusable transcript as its jump control
-disappears; this hardens a donor edge case without moving focus during automatic
-pins. No donor edge-fade styling, React runtime, virtualizer, asset, font or session
-store is copied. Tests translate applicable cases from
-`website/src/test/useChatScrollFollow.test.tsx` and `FollowController.test.ts`;
-Bun/browser integration and deterministic bounded grids replace React/jsdom,
-Vitest and fast-check without adding dependencies. The full Chat product
-composition and application adoption remain separate gates.
-
-## Composer IME input ownership translated from KiroCrew
-
-`packages/ui/src/components/conversation/ime-guard.ts` and its MessageComposer
-binding substantially translate the native latch and textarea-scoped lifecycle
-from `website/src/hooks/useImeGuard.ts`, pinned at KiroCrew revision
-`283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/).
-    Licensed under the Apache License, Version 2.0.
-
-Retained: native isComposing/keyCode229 signals, the 50ms post-composition window,
-back-to-back composition fencing, native candidate default actions, and recovery
-on focus/blur. Solid owner cleanup replaces React effects/ref ownership; native
-propagation replaces React's synthetic-event half. A repeated compositionend
-replaces the previous timer so an older expiry cannot release the latest window.
-The document-latch/focus-trap branch is not copied: this is one textarea's send
-binding, and maintained Kobalte primitives retain overlay focus authority.
-
-Browser integration tests translate relevant cases from
-`website/src/test/SideChat.imeEnter.test.tsx` and the lifecycle/window cases in
-`website/src/hooks/useImeGuard.documentLatch.test.tsx`; React/Redux/query/API test
-providers are replaced by a controlled Solid fixture. No React dependency,
-service transport, dictation engine, font, asset or document listener is copied.
-This is selected-unit hardening, not a claim that the full KiroCrew composer,
-goal flow or Adea runtime-session Chat has been ported or integrated.
-
-## Composed input and reading collapse translated from KiroCrew
-
-`packages/ui/src/components/conversation/chat-composer.tsx` and its private
-`internal/chat-composer-shell.tsx` substantially translate the composer assembly
-and scoped reading-collapse interactions from `website/src/components/ChatInput.tsx`,
-pinned at `283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
-
-Retained: knowledge/follow-up/band order, approval and notice surfaces, staged
-content, distinct input action groups, context shelf, opt-in reading collapse,
-visible labeled restoration and first-line draft preview. The input and shelf
-unmount while collapsed; the host retains the draft. Menu actions and focus
-restore translate applicable cases from `ChatInput.collapse.test.tsx`.
-
-Solid ownership and maintained Kobalte menus replace React/motion/manual portals.
-A scoped control replaces the global composer lookup and expand broadcast,
-avoiding ambiguous focus when two conversations are present. Controlled host
-collapse replaces localStorage; no shared preference, session store, runtime,
-permission, upload, skill, voice or optimizer authority is copied. Input IME and
-busy-action behavior compose the separately attributed units above. Caret
-selection is retained for reading collapse and local delivery feedback is fenced
-to an injected host reset key. Full Chat composition and product adoption remain
-separate gates.
-
-## Paste-token model translated from KiroCrew (issue #532)
-
-`packages/ui/src/components/conversation/paste-tokens.ts` translates the pure
-block and text transformations from `website/src/utils/pasteTokens.ts`, plus
-the trailing-blank-line policy from `website/src/components/composerPastePolicy.ts`,
-at KiroCrew revision `283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
-
-Retained: the three-line/200-character collapse thresholds; canonical marker
-formatting and ranges; monotonic sequence allocation and collision remapping;
-token pruning, expansion and content-based re-collapse, including the
-trailing-whitespace fallback; and the linear trailing-blank-line scan. Bun unit
-cases adapt the pure expectations from `website/src/test/pasteTokens.test.ts` and
-the trailing-text policy from `website/src/test/ChatInput.paste.test.tsx`.
-
-The host supplies stable block IDs. Invalid IDs/sequences, duplicate identities,
-ambiguous sequence mappings and noncanonical or line-mismatched markers are
-refused. React, Lexical, browser clipboard/File handling, localStorage side-table
-recovery, backend message reconciliation, uploads, textarea editing, previews,
-chips, undo/history and submit/persistence authority are not included. This
-selected model is not rich editing, complete Chat, or application adoption.
-
-## Controlled paste-token editor translated from KiroCrew (issue #532)
-
-`packages/ui/src/components/conversation/paste-token-editor.tsx` and the
-`ChatComposer` opt-in contract substantially translate selected text-editing
-behavior from `website/src/components/ChatInput.tsx`,
-`website/src/components/PasteHighlightLayer.tsx`,
-`website/src/components/PasteHoverLayer.tsx`, and
-`website/src/components/PastePreviewTooltip.tsx`, pinned at KiroCrew revision
-`283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
-
-Retained: plain-text thresholded paste, trailing-blank cleanup, raw-paste
-bypass, standalone and quote-prefix placement, atomic token deletion and
-navigation, selection snapping, expansion, pruning and expanded copy/cut. The
-Solid mirror and Kobalte tooltip retain the aria-hidden highlight, dwell and
-caret previews, touch suppression, dismissal and `aria-describedby` association.
-`ChatComposer` emits a single controlled `{ text, blocks }` transaction and
-submits a captured text/action/block snapshot; hosts supply IDs, state and
-delivery. Browser cases translate the applicable text-input expectations in
-`website/src/test/ChatInputCoverage.test.tsx`,
-`website/src/test/ChatInput.paste.test.tsx`, and
-`website/src/test/PasteHoverLayer.test.tsx`. Upload, image/file clipboard,
-optimizer, React/Lexical/Framer runtime, persistence, undo/history, and
-application transport or restoration behavior are not copied. This is the
-selected editor unit, not a claim of full Chat or product adoption.
-
-## Appearance editor translated from Zeron
-
-The System/Light/Dark miniature composition, palette bands, theme selectors,
-compact divided settings rows, accent helper and surface helper treatment in
-`packages/ui/src/components/composites/appearance-editor/` are substantially
-translated from Zeron (https://github.com/zeronsh/zeron), pinned at:
-
-    30a9a9537c5ec96226c87f4bf349b6f77c5dfb59
-    crates/ui/src/settings/appearance.rs
-    crates/ui/src/settings/widgets.rs
-
-This preserves Adea's previously accepted Zeron port. Rust/GPUI rendering is
-re-expressed in Solid and Kobalte with semantic design-system tokens and palettes
-supplied by the host from @adea-ai/themes. The library imports theme types only;
-it does not acquire GPUI, global theme storage, normalization or native effects.
-Save/Cancel/Reset, custom accent validation, reduced transparency and capability
-reporting preserve accepted Adea issue #425 amendments. Typeface controls are
-outside that accepted surface. The accent row stacks to retain readable helper
-copy in a narrow popup; both theme selectors remain independently visible.
-
-Relevant donor tests for three mode cards, both appearance catalogues, and accent
-and surface helper copy are translated into browser assertions alongside
-keyboard, nested-menu, snapshot, pending-save and responsive accessibility checks.
-Font-specific donor tests are excluded with the corresponding controls. Catalogue
-counts are host data, so tests retain both appearance lanes without hard-coding
-Zeron's catalogue sizes.
-
-Zeron's MIT notice applies to the translated portions:
-
-MIT License
-
-Copyright (c) 2026 Wing
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
