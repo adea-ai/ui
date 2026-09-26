@@ -48,3 +48,31 @@ shadcn-storybook-template (MIT), Kibo UI (MIT), and Dice UI (MIT) projects.
 Origin UI / coss (AGPL-3.0-or-later) was consulted for visual ideas only. No
 code, class string, or asset from that project is reproduced here, because its
 licence is incompatible with this distribution.
+
+## Composer IME input ownership translated from KiroCrew
+
+`packages/ui/src/components/conversation/ime-guard.ts` and its MessageComposer
+binding substantially translate the native latch and textarea-scoped lifecycle
+from `website/src/hooks/useImeGuard.ts`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/).
+    Licensed under the Apache License, Version 2.0.
+
+Retained: native isComposing/keyCode229 signals, the 50ms post-composition window,
+back-to-back composition fencing, native candidate default actions, and recovery
+on focus/blur. Solid owner cleanup replaces React effects/ref ownership; native
+propagation replaces React's synthetic-event half. A repeated compositionend
+replaces the previous timer so an older expiry cannot release the latest window.
+The document-latch/focus-trap branch is not copied: this is one textarea's send
+binding, and maintained Kobalte primitives retain overlay focus authority.
+
+Browser integration tests translate relevant cases from
+`website/src/test/SideChat.imeEnter.test.tsx` and the lifecycle/window cases in
+`website/src/hooks/useImeGuard.documentLatch.test.tsx`; React/Redux/query/API test
+providers are replaced by a controlled Solid fixture. No React dependency,
+service transport, dictation engine, font, asset or document listener is copied.
+This is selected-unit hardening, not a claim that the full KiroCrew composer,
+goal flow or Adea runtime-session Chat has been ported or integrated.

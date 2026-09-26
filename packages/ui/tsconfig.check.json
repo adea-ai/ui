@@ -5,8 +5,8 @@
     "emitDeclarationOnly": false,
     "outDir": null,
     "rootDir": ".",
-    "types": ["bun-types"]
+    "types": ["bun-types", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "scripts/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "scripts/**/*.ts"],
   "exclude": ["dist"]
 }
