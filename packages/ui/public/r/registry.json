@@ -1780,6 +1780,11 @@
           "target": "components/conversation/message-row.tsx"
         },
         {
+          "path": "src/components/conversation/paste-tokens.ts",
+          "type": "registry:ui",
+          "target": "components/conversation/paste-tokens.ts"
+        },
+        {
           "path": "src/components/conversation/scroll-follow-core.ts",
           "type": "registry:ui",
           "target": "components/conversation/scroll-follow-core.ts"
