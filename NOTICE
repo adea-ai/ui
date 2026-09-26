@@ -101,3 +101,9 @@ It excludes application commands, persistence, harness/thread authority and
 manual pointer listeners. This renderer is independently written against the
 accepted model; it is not a port of Muxy's native UI or an additional layout tree.
 The MIT attribution and permission above cover the translated frame algorithm.
+
+The pane-drag continuation retains Adea's nearest-edge placement ordering and
+pane-title gesture, replacing plaintext leaf IDs and string casts with typed
+intent, an instance-local active drag payload, and cancellation/removal checks.
+Header action composition injects application keyboard controls without owning
+shortcuts or domain transitions. No new upstream source or license is introduced.

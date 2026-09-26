@@ -229,7 +229,13 @@ instance scoped, cancels on disposal and respects newer external focus.
 Three stories cover two panes, nested directions and the eight-pane limit. Run
 `bun run test:layout` for isolated headless Chromium/WebKit interaction, light/dark
 automated accessibility, CSP geometry and native Node SSR evidence. This is a
-renderer foundation: user-facing move menus/drag intents, manual assistive
-technology acceptance, actual packed-renderer budgets and production Adea/Cortana
-adoption remain pending. The existing packed-model probe remains a pure subpath
+renderer foundation. Optional `onMove` enables pane-title dragging with typed
+closest-edge feedback. Only a live drag from this instance can invoke the host;
+foreign/plaintext/stale drops are rejected, and disposal/cancellation clears feedback.
+`renderPaneActions` supplies stable accessor-aware host controls. The stories show
+keyboard-accessible movement through those controls, plus toolbar split and undo.
+Application shortcuts and persisted transitions remain host owned. Manual assistive
+technology acceptance and production Adea/Cortana adoption remain pending. Actual
+packed-renderer measurements belong to the dependency integration checkpoint;
+source-only changes do not refresh that evidence. The existing packed-model probe remains a pure subpath
 check and does not certify the renderer or library root.

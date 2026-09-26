@@ -13,6 +13,11 @@
   ],
   "files": [
     {
+      "path": "src/components/layout/split-layout/drop.ts",
+      "type": "registry:ui",
+      "target": "components/layout/split-layout/drop.ts"
+    },
+    {
       "path": "src/components/layout/split-layout/geometry.ts",
       "type": "registry:ui",
       "target": "components/layout/split-layout/geometry.ts"

@@ -4,15 +4,19 @@ import {
   createMemo,
   createComputed,
   createUniqueId,
+  createSignal,
   onCleanup,
   on,
   type Accessor,
   type JSX,
 } from 'solid-js'
-import { X } from 'lucide-solid'
+import { X, GripVertical } from 'lucide-solid'
 import { Button } from '../../ui/button'
 import { cn } from '#lib/utils'
 import { computeLayoutFrames, type LayoutRect } from './geometry'
+import { paneDropIntent, type PaneDropIntent } from './drop'
+export type { PaneDropIntent } from './drop'
+const PANE_DRAG_TYPE = 'application/x-adea-pane-move'
 import {
   listLeaves,
   MIN_SPLIT_RATIO,
@@ -32,6 +36,10 @@ export type SplitLayoutProps<L extends SplitLayoutLeaf> = {
   onFocus?: (leafId: string) => void
   /** Host performs the model transition and returns the surviving focus destination. */
   onClose?: (leafId: string) => string | undefined
+  /** Pointer placement only; the host supplies keyboard commands and performs the model transition. */
+  onMove?: (leafId: string, targetId: string, intent: PaneDropIntent) => void
+  /** Stable header composition for host-owned keyboard actions/capability feedback. */
+  renderPaneActions?: (leaf: Accessor<L>) => JSX.Element
   class?: string
 }
 function rectStyle(rect: LayoutRect): JSX.CSSProperties {
@@ -50,6 +58,13 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
   const domIds = new Map<string, string>()
   const prefix = createUniqueId()
   let nextDomId = 0
+  let nextDragId = 0
+  const [drag, setDrag] = createSignal<{ id: string; token: string }>()
+  const [drop, setDrop] = createSignal<{ id: string; intent: PaneDropIntent }>()
+  const clearDrag = () => {
+    setDrag(undefined)
+    setDrop(undefined)
+  }
   const domId = (id: string) => {
     const existing = domIds.get(id)
     if (existing) return existing
@@ -65,6 +80,30 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
       frame.node.kind === 'split' ? [frame.node] : []
     )
   )
+  createComputed(() => {
+    const current = drag()
+    if (current && (!props.onMove || !leafMap().has(current.id))) clearDrag()
+    const target = drop()
+    if (target && !leafMap().has(target.id)) setDrop(undefined)
+  })
+  const allowedTarget = (id: string, transfer: DataTransfer | null) => {
+    const current = drag()
+    return props.onMove &&
+      current &&
+      current.id !== id &&
+      leafMap().has(current.id) &&
+      leafMap().has(id) &&
+      transfer?.types.includes(PANE_DRAG_TYPE)
+      ? current
+      : undefined
+  }
+  const dropLabel = createMemo(() => {
+    const target = drop()
+    const leaf = target ? leafMap().get(target.id) : undefined
+    return target && leaf
+      ? `Drop to place pane ${target.intent.placement} ${props.labelForLeaf(leaf)}`
+      : ''
+  })
   const branchMap = createMemo(() => new Map(branches().map((branch) => [branch.id, branch])))
   const schedule = (action: () => void) => {
     if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame)
@@ -109,6 +148,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
   )
   onCleanup(() => {
     if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame)
+    clearDrag()
     refs.clear()
     domIds.clear()
   })
@@ -131,6 +171,8 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
           const initial = leafMap().get(id)!
           const leaf = () => leafMap().get(id) ?? initial
           const content = props.renderLeaf(leaf)
+          const actions = props.renderPaneActions?.(leaf)
+          const intent = () => (drop()?.id === id ? drop()?.intent : undefined)
           onCleanup(() => {
             refs.delete(id)
             domIds.delete(id)
@@ -144,12 +186,73 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
               tabIndex={-1}
               data-pane-id={id}
               data-focused={props.state.focusedLeafId === id ? '' : undefined}
+              data-drop-direction={intent()?.direction}
+              data-drop-placement={intent()?.placement}
+              onDragOver={(event) => {
+                if (!allowedTarget(id, event.dataTransfer)) return
+                const next = paneDropIntent(
+                  event.clientX,
+                  event.clientY,
+                  event.currentTarget.getBoundingClientRect()
+                )
+                if (!next) {
+                  setDrop(undefined)
+                  return
+                }
+                event.preventDefault()
+                if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+                setDrop({ id, intent: next })
+              }}
+              onDragLeave={(event) => {
+                if (
+                  event.relatedTarget instanceof Node &&
+                  event.currentTarget.contains(event.relatedTarget)
+                )
+                  return
+                if (drop()?.id === id) setDrop(undefined)
+              }}
+              onDrop={(event) => {
+                const current = allowedTarget(id, event.dataTransfer)
+                const next = paneDropIntent(
+                  event.clientX,
+                  event.clientY,
+                  event.currentTarget.getBoundingClientRect()
+                )
+                const accepted =
+                  current && next && event.dataTransfer?.getData(PANE_DRAG_TYPE) === current.token
+                clearDrag()
+                if (!accepted) return
+                event.preventDefault()
+                props.onMove?.(current.id, id, next)
+              }}
               style={rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 })}
               class="absolute flex min-h-0 min-w-0 flex-col overflow-hidden border border-border data-[focused]:border-primary bg-background text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               onFocusIn={() => props.onFocus?.(id)}
             >
               <header class="flex min-w-0 shrink-0 items-center gap-2 bg-surface px-2">
-                <span class="min-w-0 flex-1 truncate text-sm">{props.labelForLeaf(leaf())}</span>
+                <span
+                  data-pane-drag-handle=""
+                  draggable={Boolean(props.onMove)}
+                  class="flex min-w-0 flex-1 items-center gap-2 truncate text-sm"
+                  title={props.onMove ? `Drag ${props.labelForLeaf(leaf())} to move` : undefined}
+                  onDragStart={(event) => {
+                    if (!props.onMove || !event.dataTransfer) {
+                      event.preventDefault()
+                      return
+                    }
+                    const token = `${prefix}-${++nextDragId}`
+                    setDrag({ id, token })
+                    event.dataTransfer.setData(PANE_DRAG_TYPE, token)
+                    event.dataTransfer.effectAllowed = 'move'
+                  }}
+                  onDragEnd={clearDrag}
+                >
+                  {props.onMove ? (
+                    <GripVertical class="size-3 shrink-0" aria-hidden="true" />
+                  ) : null}
+                  <span class="truncate">{props.labelForLeaf(leaf())}</span>
+                </span>
+                {actions}
                 {props.onClose ? (
                   <Button
                     variant="ghost"
@@ -162,10 +265,28 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                 ) : null}
               </header>
               <div class="min-h-0 min-w-0 flex-1 overflow-auto">{content}</div>
+              {intent() ? (
+                <div
+                  aria-hidden="true"
+                  class={cn('pointer-events-none absolute border-2 border-primary bg-primary/10', {
+                    'inset-y-0 left-0 w-1/2':
+                      intent()?.direction === 'row' && intent()?.placement === 'before',
+                    'inset-y-0 right-0 w-1/2':
+                      intent()?.direction === 'row' && intent()?.placement === 'after',
+                    'inset-x-0 top-0 h-1/2':
+                      intent()?.direction === 'column' && intent()?.placement === 'before',
+                    'inset-x-0 bottom-0 h-1/2':
+                      intent()?.direction === 'column' && intent()?.placement === 'after',
+                  })}
+                />
+              ) : null}
             </section>
           )
         }}
       </For>
+      <span class="sr-only" role="status">
+        {dropLabel()}
+      </span>
       <For each={branches().map((branch) => branch.id)}>
         {(id) => {
           const initial = branchMap().get(id)!
