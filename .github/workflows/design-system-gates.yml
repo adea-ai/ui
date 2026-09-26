@@ -78,9 +78,11 @@ jobs:
       - name: Verify packed consumers
         run: bun run check:packed-consumer
 
-      - name: Install browsers for packed appearance interactions
+      - name: Install headless engines for packed pane contracts
         run: bunx playwright install --with-deps chromium webkit
 
+      - name: Verify packed pane model and renderer
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer
       - name: Verify packed appearance interactions and SSR
         run: bun run check:packed-appearance
 

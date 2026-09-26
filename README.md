@@ -227,6 +227,31 @@ semantic token vocabulary. No KiroCrew source file is reproduced verbatim. See
 [NOTICE](NOTICE) for the full attribution and for the upstream licences of the
 libraries this system is built on.
 
+### Binary renderer continuation (UI #22)
+
+`SplitLayout` renders the accepted binary model with stable opaque leaf owners.
+Pass an accessor-aware `renderLeaf`, labelled panes, a controlled resize callback
+and optional close callback returning the surviving focus ID. Content remains
+mounted across split/resize/move; the host retains runtime/session/editor identity,
+authorization and persisted layout scope. Close destroys only the removed owner.
+Separators use Corvu pointer/keyboard behavior with physical ARIA orientation,
+10–90 percent limits and references to the visible regions. Focus restoration is
+instance scoped, cancels on disposal and respects newer external focus.
+
+Three stories cover two panes, nested directions and the eight-pane limit. Run
+`bun run test:layout` for isolated headless Chromium/WebKit interaction, light/dark
+automated accessibility, CSP geometry and native Node SSR evidence. This is a
+renderer foundation. Optional `onMove` enables pane-title dragging with typed
+closest-edge feedback. Only a live drag from this instance can invoke the host;
+foreign/plaintext/stale drops are rejected, and disposal/cancellation clears feedback.
+`renderPaneActions` supplies stable accessor-aware host controls. The stories show
+keyboard-accessible movement through those controls, plus toolbar split and undo.
+Application shortcuts and persisted transitions remain host owned. Manual assistive
+technology acceptance and production Adea/Cortana adoption remain pending. Actual
+packed-renderer measurements belong to the dependency integration checkpoint;
+source-only changes do not refresh that evidence. The existing packed-model probe remains a pure subpath
+check and does not certify the renderer or library root.
+
 ### Optional engines and breaking root-export migration
 
 Core controls may be imported from `@adea-ai/ui` without chart/carousel peers.
@@ -235,3 +260,36 @@ through `@adea-ai/ui/components/ui/chart` and
 `@adea-ai/ui/components/ui/carousel`. Install their corresponding optional peers
 when using those entries. Migrate existing root imports to those subpaths; this
 intentional breaking change is declared in the commit and release notes.
+
+### Packed pane release gate
+
+Run `bun run check:packed-layout-renderer` after the library build. It installs
+the actual tarball with lifecycle scripts disabled and optional chart/carousel
+engines absent, then runs the same 36 interaction/SSR cases per compiled/Solid
+browser condition in headless Chromium/WebKit. Required server rendering compiles
+installed Solid source and executes the result in native Node; browser-compiled
+output is not treated as server code. `bun run check:packed-layout` independently
+checks the explicit pure-model subpath and full packed attribution.
+
+CSS discovery is explicit (`source(none)`): the host fixture and renderer sources,
+plus the close button's complete classes returned by the installed public
+`buttonVariants({ variant: 'ghost', size: 'icon-xs' })`. This includes the base,
+tactile, focus, disabled, ghost and square-icon styles. The fixture uses exactly
+that shared Button; host header actions are native buttons. Unused Button variants
+and unrelated automatically discovered CSS are excluded. Positive browser checks
+require the close button's actual token-sized square and keyboard focus ring.
+
+The current compiled measurement is 31,797 gzip JS bytes and 33,632 raw CSS bytes,
+within the unchanged 32 KiB/34 KiB caps. Gates require one Solid runtime/chunk,
+unmixed browser exports, external Solid/Corvu imports, full Apache LICENSE and
+donor MIT NOTICE, and no chart/carousel, terminal/editor/highlighter, conversation,
+theme-engine or font assets. Earlier partial CSS measurements are historical,
+not complete-control acceptance evidence. The full current run remains blocked
+by the separately queued UI #20 square-control token prerequisite; it has not
+passed all 72 cases or been released.
+
+These checks are enforced by local verification, PR and publish workflows.
+Install headless Chromium/WebKit with `bunx playwright install chromium webkit`
+before local packed/browser verification. Actual Adea/Cortana production mounts,
+full shell/persistence, hydration, native editor/terminal and manual AT remain
+separate acceptance gates.
