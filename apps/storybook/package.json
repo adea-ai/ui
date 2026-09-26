@@ -15,6 +15,7 @@
     "serve": "bun scripts/serve-workshop.ts",
     "test": "bun test tests/unit",
     "test:e2e": "playwright test",
+    "test:components": "playwright test --config=playwright.components.config.ts",
     "test:a11y": "playwright test tests/a11y.spec.ts",
     "test:interactions": "playwright test tests/interactions.spec.ts",
     "test:components": "playwright test --config=playwright.components.config.ts"

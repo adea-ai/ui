@@ -17,7 +17,9 @@ name: Review Policy
 
 on:
   pull_request_target:
-    types: [ready_for_review]
+    # Required check contexts are tied to a head SHA; refresh after each push
+    # so the new SHA gets this policy result without a draft/ready toggle.
+    types: [ready_for_review, reopened, synchronize]
   pull_request_review:
     types: [submitted, dismissed]
 
@@ -31,6 +33,7 @@ concurrency:
 jobs:
   gate:
     name: Review Policy / Gate
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
