@@ -23,6 +23,11 @@
       "target": "components/conversation/busy-send-button.tsx"
     },
     {
+      "path": "src/components/conversation/chat-composer.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/chat-composer.tsx"
+    },
+    {
       "path": "src/components/conversation/conversation-avatar.tsx",
       "type": "registry:ui",
       "target": "components/conversation/conversation-avatar.tsx"

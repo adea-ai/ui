@@ -236,3 +236,42 @@ Stories cover before-typing, working,
 unavailable and read-only states. `bun run test:components` checks the isolated
 Solid composition headlessly in Chromium and WebKit. Full Chat composition,
 packed distribution and real consumer/native acceptance remain separate gates.
+
+## Composed Chat input pilot
+
+`ChatComposer` translates the pinned Kiro composer hierarchy: knowledge context,
+follow-ups and adjacent band, approval/notices, staged content, input/action
+rows and the context shelf. It composes the existing IME and busy-action units.
+Its optional controlled `collapse` contract unmounts input and shelf and replaces
+them with a labeled bar showing the waiting draft's first line. Collapse keeps
+the host draft and caret selection; `controlRef` exposes instance-scoped
+`focus()`/`expandAndFocus()` instead of a global shortcut or broadcast.
+
+The host supplies `value`, `onValueChange` and `onSubmit({text, action})`; it owns
+attachments and runtime authority and clears its draft only after confirmation.
+The shared input guards pending delivery, reports failure, visibly blocks
+unsupported delivery and fences local feedback on `resetKey`. Enter follows the
+controlled busy mode, while Ctrl/Cmd+Enter requests the other supported busy
+action. `sendableActions` declares non-text payload eligibility per action: a
+reference-only draft can send or queue without becoming steerable. Mode selection
+itself never fires. `approvalFocus` is host-derived
+presentation, not a permission decision. Agent and model controls remain distinct
+host contributions in `context`.
+
+This is an unshipped composition pilot for UI issue #21, dependent on the original
+packing/IME/follow/busy PRs in this integration branch. It is not full donor Chat,
+canonical runtime restoration or application adoption. The donor's paste-token
+editor, sent-prompt undo/history, manual resize, upload/skill/voice/optimizer and
+stop/resume operations are not claimed by these ports. They require their own
+mapped reusable behavior or application composition as the owning issues specify.
+
+The composed-input packed fixture checks collapse/draft retention, shelf unmount,
+focus restoration, failed-delivery recovery, controlled busy mode, its alternate
+gesture, native IME defaults and external Tailwind styles under both exports and
+both engines, including reference-only queue eligibility/steer refusal and the
+pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,345/53,437 bytes with a 54 KiB cap
+and 33,201 raw CSS bytes under the shared 42 KiB cap. The three fixtures total 96
+check groups, retain one Solid runtime/JS chunk each, and exclude unrelated units.
+All four selected Kiro NOTICE sections and the license must survive the tarball.
+Native CSS content sizing replaces live-field measurement on the two verified
+engines, both of which support it; legacy-engine fallback is not claimed.

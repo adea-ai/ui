@@ -18,6 +18,8 @@ const MAX_GZIP_BYTES = 26 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
 const MAX_BUSY_GZIP_BYTES = 50 * 1024
+// Composed input baseline: 53,234/53,320 gzip JS bytes, with a 54 KiB cap.
+const MAX_COMPOSED_GZIP_BYTES = 54 * 1024
 const results: unknown[] = []
 const fixture = `
 import { render } from 'solid-js/web';
@@ -71,6 +73,43 @@ function Pilot() {
 }
 render(Pilot, document.getElementById('app')!);
 `
+const composedFixture = `
+import { render } from 'solid-js/web';
+import { createSignal } from 'solid-js';
+import { ChatComposer } from '@adea-ai/ui/components/conversation';
+import './style.css';
+function Pilot() {
+ const [draft,setDraft]=createSignal('');
+ const [collapsed,setCollapsed]=createSignal(false);
+ const [fail,setFail]=createSignal(true);
+ const [sent,setSent]=createSignal(0);
+ const [busy,setBusy]=createSignal(false);
+ const [mode,setMode]=createSignal('steer');
+ const [last,setLast]=createSignal('none');
+ const [references,setReferences]=createSignal(false);
+ const [delayed,setDelayed]=createSignal(false);
+ let finish;
+ return <main class="p-4">
+  <h1>Composed input pilot</h1>
+  <ChatComposer value={draft()} onValueChange={setDraft}
+   sendableActions={references()?{send:true,queue:true,steer:false}:undefined}
+   collapse={{value:collapsed(),onChange:setCollapsed}}
+   busy={busy()?{mode:mode(),onModeChange:setMode}:undefined}
+   context={<button type="button">Model context</button>}
+   onSubmit={input=>{setLast(input.action);if(delayed()) return new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('')}}/>
+  <div class="mt-64 flex gap-2">
+   <button type="button" onClick={()=>setFail(false)}>Recover delivery</button>
+   <button type="button" onClick={()=>setBusy(true)}>Run busy</button>
+   <button type="button" onClick={()=>setReferences(true)}>Stage references</button>
+   <button type="button" onClick={()=>{setBusy(false);setDelayed(true)}}>Delay delivery</button>
+   <button type="button" onClick={()=>finish?.()}>Finish delivery</button>
+  </div>
+  <output aria-label="Submitted action">{last()}</output>
+  <output aria-label="Sent">{sent()}</output>
+ </main>;
+}
+render(Pilot, document.getElementById('app')!);
+`
 try {
   const [archive] = JSON.parse(
     execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
@@ -103,6 +142,7 @@ try {
     'Composer IME input ownership translated from KiroCrew',
     'Plain transcript follow translated from KiroCrew',
     'Busy composer action translated from KiroCrew',
+    'Composed input and reading collapse translated from KiroCrew',
   ]) {
     if (!notice.includes(heading)) throw new Error(`Packed NOTICE lost ${heading}`)
   }
@@ -112,7 +152,7 @@ try {
     )
   )
     throw new Error('Packed LICENSE missing')
-  for (const pilot of ['conversation', 'busy'] as const) {
+  for (const pilot of ['conversation', 'busy', 'composed'] as const) {
     for (const condition of ['compiled', 'solid'] as const) {
       const dir = join(consumer, pilot + '-' + condition)
       mkdirSync(dir)
@@ -120,13 +160,17 @@ try {
         join(dir, 'index.html'),
         '<div id="app"></div><script type="module" src="/main.tsx"></script>'
       )
-      writeFileSync(join(dir, 'main.tsx'), pilot === 'conversation' ? fixture : busyFixture)
+      writeFileSync(
+        join(dir, 'main.tsx'),
+        pilot === 'conversation' ? fixture : pilot === 'busy' ? busyFixture : composedFixture
+      )
       writeFileSync(
         join(dir, 'style.css'),
         "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
           (pilot === 'conversation'
             ? ['conversation', 'ui/button', 'ui/textarea', 'ui/spinner', 'ui/kbd']
             : [
+                ...(pilot === 'composed' ? ['conversation/chat-composer.tsx', 'ui/spinner'] : []),
                 'conversation/busy-send-button.tsx',
                 'ui/button',
                 'ui/button-group',
@@ -187,10 +231,12 @@ try {
       if (forbidden.length) throw new Error(`Unrelated retained modules: ${forbidden.join(', ')}`)
       const unrelatedConversation = uiModules.filter((id) =>
         pilot === 'busy'
-          ? /\/conversation\/(?:message-composer|conversation-surface|ime-guard|scroll-follow)/.test(
+          ? /\/conversation\/(?:message-composer|chat-composer|conversation-surface|ime-guard|scroll-follow)/.test(
               id
             )
-          : /\/conversation\/busy-send-button/.test(id)
+          : pilot === 'conversation'
+            ? /\/conversation\/(?:busy-send-button|chat-composer)/.test(id)
+            : /\/conversation\/(?:message-composer|conversation-surface|scroll-follow)/.test(id)
       )
       if (unrelatedConversation.length)
         throw new Error(`Unrelated conversation units: ${unrelatedConversation.join(', ')}`)
@@ -210,7 +256,14 @@ try {
         .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
         .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
         .join('\n')
-      if (gzipSync(code).length > (pilot === 'conversation' ? MAX_GZIP_BYTES : MAX_BUSY_GZIP_BYTES))
+      if (
+        gzipSync(code).length >
+        (pilot === 'conversation'
+          ? MAX_GZIP_BYTES
+          : pilot === 'busy'
+            ? MAX_BUSY_GZIP_BYTES
+            : MAX_COMPOSED_GZIP_BYTES)
+      )
         throw new Error(`Packed ${pilot} exceeds its gzip JS budget`)
       if (Buffer.byteLength(css) > MAX_CSS_BYTES)
         throw new Error(`Packed ${pilot} exceeds its raw CSS budget`)
@@ -226,6 +279,98 @@ try {
           await page.setContent('<div id="app"></div>')
           await page.addStyleTag({ content: css })
           await page.addScriptTag({ type: 'module', content: code })
+          if (pilot === 'composed') {
+            const field = page.getByRole('textbox', { name: 'Message', exact: true })
+            await field.fill('A packed unsent draft')
+            await page.getByRole('button', { name: 'Message input options' }).press('ArrowDown')
+            await page.getByRole('menuitem', { name: /Collapse the message input/ }).click()
+            const bar = page.getByRole('button', { name: 'Show the message input', exact: true })
+            await expect(bar).toBeFocused()
+            await expect(field).toHaveCount(0)
+            await expect(page.getByRole('button', { name: 'Model context' })).toHaveCount(0)
+            await bar.click()
+            await expect(field).toBeFocused()
+            await expect(field).toHaveValue('A packed unsent draft')
+            await field.press('Enter')
+            await expect(page.getByRole('alert')).toContainText('Message not sent')
+            await expect(field).toHaveValue('A packed unsent draft')
+            await page.getByRole('button', { name: 'Recover delivery' }).click()
+            await field.press('Enter')
+            await expect(page.getByLabel('Sent')).toHaveText('1')
+            await page.getByRole('button', { name: 'Run busy' }).click()
+            await page.getByRole('button', { name: 'Send options' }).click()
+            await page.getByRole('menuitemradio', { name: /Queue/ }).click()
+            await expect(page.getByLabel('Sent')).toHaveText('1')
+            await field.fill('Queue this')
+            await field.press('Enter')
+            await expect(page.getByLabel('Submitted action')).toHaveText('queue')
+            await field.fill('Act now')
+            await field.press('Control+Enter')
+            await expect(page.getByLabel('Submitted action')).toHaveText('steer')
+            const candidatePrevented = await field.evaluate((element) => {
+              const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                isComposing: true,
+                bubbles: true,
+                cancelable: true,
+              })
+              element.dispatchEvent(event)
+              return event.defaultPrevented
+            })
+            if (candidatePrevented)
+              throw new Error('Composed input consumed native candidate default')
+            if ((await field.evaluate((element) => getComputedStyle(element).resize)) !== 'none')
+              throw new Error('Composed input CSS missing')
+            await page.getByRole('button', { name: 'Stage references' }).click()
+            await expect(
+              page.getByRole('button', { name: 'Queue message', exact: true })
+            ).toBeEnabled()
+            await field.press('Control+Enter')
+            await expect(page.getByLabel('Sent')).toHaveText('3')
+            await expect(page.getByLabel('Submitted action')).toHaveText('steer')
+            await field.press('Enter')
+            await expect(page.getByLabel('Sent')).toHaveText('4')
+            await expect(page.getByLabel('Submitted action')).toHaveText('queue')
+            await page.getByRole('button', { name: 'Delay delivery' }).click()
+            await field.fill('Pending delivery')
+            await field.press('Enter')
+            await expect(page.getByRole('button', { name: 'Sending message' })).toBeDisabled()
+            await expect(field).toHaveAttribute('readonly', '')
+            const spinner = page.locator('[data-slot="spinner"]')
+            await expect(spinner).toBeVisible()
+            if (
+              (await spinner.evaluate((element) => getComputedStyle(element).animationName)) !==
+              'spin'
+            )
+              throw new Error('Packed pending spinner animation CSS missing')
+            await page.getByRole('button', { name: 'Finish delivery' }).click()
+            await expect(field).not.toHaveAttribute('readonly', '')
+            if (errors.length) throw new Error(`Browser errors: ${errors.join(', ')}`)
+            results.push({
+              pilot,
+              condition,
+              engine,
+              checks: [
+                'collapse-draft',
+                'collapse-unmount-shelf',
+                'focus-restoration',
+                'delivery-recovery',
+                'busy-mode-selection',
+                'alternate-busy-action',
+                'reference-only-queue',
+                'reference-only-steer-refusal',
+                'pending-delivery-style',
+                'native-ime-default',
+                'tailwind-style',
+              ],
+              js: Buffer.byteLength(code),
+              gzip: gzipSync(code).length,
+              css: Buffer.byteLength(css),
+              chunks: js.length,
+              retainedModules: modules,
+            })
+            continue
+          }
           if (pilot === 'busy') {
             const trigger = page.getByRole('button', { name: 'Send options' })
             await expect(trigger).toBeVisible()

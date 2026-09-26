@@ -130,3 +130,30 @@ action and unavailable reasons. No runtime queue or force-reset authority added.
 Nearest tests: BusySendButton.menuKeyboard.test.tsx and
 BusySendButton.slotScope.test.tsx; controlled mode replaces donor storage tests,
 while keyboard/focus expectations are exercised in Chromium and WebKit.
+
+## Composed input and reading collapse translated from KiroCrew
+
+`packages/ui/src/components/conversation/chat-composer.tsx` substantially
+translates the composer assembly and scoped reading-collapse interactions from
+`website/src/components/ChatInput.tsx`, pinned at
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: knowledge/follow-up/band order, approval and notice surfaces, staged
+content, distinct input action groups, context shelf, opt-in reading collapse,
+visible labeled restoration and first-line draft preview. The input and shelf
+unmount while collapsed; the host retains the draft. Menu actions and focus
+restore translate applicable cases from `ChatInput.collapse.test.tsx`.
+
+Solid ownership and maintained Kobalte menus replace React/motion/manual portals.
+A scoped control replaces the global composer lookup and expand broadcast,
+avoiding ambiguous focus when two conversations are present. Controlled host
+collapse replaces localStorage; no shared preference, session store, runtime,
+permission, upload, skill, voice or optimizer authority is copied. Input IME and
+busy-action behavior compose the separately attributed units above. Caret
+selection is retained for reading collapse and local delivery feedback is fenced
+to an injected host reset key. Full Chat composition and product adoption remain
+separate gates.
