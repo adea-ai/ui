@@ -82,7 +82,7 @@
     "check:packed-conversation": "bun scripts/check-packed-conversation.ts"
   },
   "dependencies": {
-    "@adea-ai/themes": "^0.4.1",
+    "@adea-ai/themes": "^0.5.0",
     "@corvu/calendar": "^0.1.2",
     "@corvu/drawer": "^0.2.4",
     "@corvu/otp-field": "^0.1.4",
