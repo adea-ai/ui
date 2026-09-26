@@ -92,10 +92,22 @@ test('the narrow popup keeps its final actions inside the viewport after scrolli
 }) => {
   await page.setViewportSize({ width: 320, height: 800 })
   const dialog = page.getByRole('dialog', { name: 'Appearance' })
-  await dialog.evaluate((element) => {
-    element.scrollTop = element.scrollHeight
-  })
   const save = page.getByRole('button', { name: 'Save', exact: true })
+  // Resizing an open animated popup updates Kobalte geometry on the next frame.
+  // Assert the real final viewport boundary, without measuring the old layout.
+  let previousBottom: number | undefined
+  await expect
+    .poll(async () => {
+      await dialog.evaluate((element) => {
+        element.scrollTop = element.scrollHeight
+      })
+      const box = await save.boundingBox()
+      const bottom = box ? box.y + box.height : Number.POSITIVE_INFINITY
+      const stable = previousBottom !== undefined && Math.abs(bottom - previousBottom) < 0.1
+      previousBottom = bottom
+      return stable ? bottom : Number.POSITIVE_INFINITY
+    })
+    .toBeLessThanOrEqual(800)
   const box = (await save.boundingBox())!
   expect(box.y).toBeGreaterThanOrEqual(0)
   expect(box.y + box.height).toBeLessThanOrEqual(800)
@@ -221,12 +233,17 @@ test('a pending save disables changes and duplicate commits', async ({ page }) =
   await expect(page.getByRole('switch', { name: 'Reduce transparency' })).toBeDisabled()
 })
 
-test('theme options remain visible and selectable in the narrow popup', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 800 })
-  await page.getByRole('button', { name: /^Dark theme/ }).click()
-  await expect(page.getByRole('option', { name: 'Dracula', exact: true })).toBeVisible()
-  await page.getByRole('option', { name: 'Dracula', exact: true }).click()
-  await expect(page.getByRole('button', { name: /^Dark theme/ })).toContainText('Dracula')
+test.describe('narrow theme picker', () => {
+  // Fix the viewport before beforeEach opens the popup: selection tests must not
+  // race the asynchronous position update of an already-open, resized overlay.
+  test.use({ viewport: { width: 320, height: 800 } })
+
+  test('theme options remain visible and selectable in the narrow popup', async ({ page }) => {
+    await page.getByRole('button', { name: /^Dark theme/ }).click()
+    await expect(page.getByRole('option', { name: 'Dracula', exact: true })).toBeVisible()
+    await page.getByRole('option', { name: 'Dracula', exact: true }).click()
+    await expect(page.getByRole('button', { name: /^Dark theme/ })).toContainText('Dracula')
+  })
 })
 
 for (const width of [320, 768, 1024, 1440]) {
