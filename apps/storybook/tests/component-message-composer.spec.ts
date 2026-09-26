@@ -162,15 +162,16 @@ test('a menu or host that already claimed Enter retains its input ownership', as
 test('repeated composition ends cannot release the latest commit window early', async ({
   page,
 }) => {
+  await page.clock.install()
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
-  await box.evaluate((element) => {
-    element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
-    element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }))
-    element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }))
-  })
+  await box.dispatchEvent('compositionstart')
+  await box.dispatchEvent('compositionend')
+  await page.clock.runFor(40)
+  await box.dispatchEvent('compositionend')
+  await page.clock.runFor(20)
   await box.dispatchEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
   await expect(page.getByLabel('Send count')).toHaveText('0')
-  await page.waitForTimeout(60)
+  await page.clock.runFor(40)
   await box.dispatchEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
   await expect(page.getByLabel('Send count')).toHaveText('1')
 })

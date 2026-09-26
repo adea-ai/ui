@@ -25,3 +25,22 @@ export {
   type AttachmentCardProps,
   type ThreadPanelProps,
 } from './thread-panel'
+// Issue #532 selected pure paste-token model.
+export {
+  countLines,
+  expandAll,
+  findTokenRanges,
+  formatToken,
+  isPasteBlock,
+  nextSeq,
+  pruneBlocks,
+  recollapsePastes,
+  remapCarriedBlocks,
+  shouldCollapse,
+  stripTrailingBlankLines,
+  tokenRangeAt,
+  PASTE_THRESHOLD_CHARS,
+  PASTE_THRESHOLD_LINES,
+  PASTE_TOKEN_REGEX,
+  type PasteBlock,
+} from './paste-tokens'
