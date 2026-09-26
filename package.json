@@ -29,7 +29,8 @@
     "test:a11y": "bun run --cwd apps/storybook test:a11y",
     "check:tree-shaking": "bun run --cwd packages/ui check:tree-shaking",
     "check:packed-consumer": "bun run --cwd packages/ui check:packed-consumer",
-    "test:components": "bun run --cwd apps/storybook test:components"
+    "test:components": "bun run --cwd apps/storybook test:components",
+    "check:packed-conversation": "bun run --cwd packages/ui check:packed-conversation"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

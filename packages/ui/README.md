@@ -178,6 +178,27 @@ application-owned. `ref` and `onScroll` still reach the inner scroller.
 The `SurfaceFollowing` story exercises streaming, collapse and pane resizing;
 source/license/test provenance is recorded in `NOTICE`.
 
+## Packed conversation pilot
+
+After building, run `bun run check:packed-conversation` to pack the actual npm
+artifact and install it into a disposable consumer without optional heavy peers.
+The composition imports the documented conversation subpath and builds under
+both default compiled and Solid source conditions. Headless Chromium and WebKit
+check failed-draft retention, recovery, native IME candidate defaults and commit
+latch, reader intent, keyboard jump focus and external Tailwind utility delivery.
+The output records retained module paths, JS/gzip/CSS totals, font exclusion and
+one Solid runtime. Its first measured baseline was 23,880/23,936 gzip JS bytes
+(compiled/Solid) and 40,203 raw CSS bytes. The fixture gates 26 KiB gzip JS and
+42 KiB raw CSS, alongside independent module exclusions. The packed Apache license
+and both KiroCrew attribution sections must be present. This pilot adds no server
+and removes its temporary consumer.
+
+This lane complements `check:packed-consumer`; it does not replace its required
+root imports, lightweight controls, overlay and shell checks. The known optional
+chart/carousel root-export compatibility decision remains unresolved. A passing
+subpath pilot does not certify root resolution, native SSR, the full Chat donor
+composition, rendered Dev/Chat state restoration or production adoption.
+
 ## Licence
 
 Apache-2.0.
