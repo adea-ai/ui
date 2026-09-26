@@ -1,3 +1,5 @@
+import { defaultDarkThemeId, themeById } from '@adea-ai/ui/lib/themes'
+
 /**
  * The story catalogue, read from the build the lane is serving.
  *
@@ -18,6 +20,31 @@ export type StoryEntry = {
 }
 
 const BASE_URL = (process.env['STORYBOOK_URL'] ?? 'http://127.0.0.1:6106').replace(/\/$/, '')
+const storyFinishedListenerPages = new WeakSet<import('@playwright/test').Page>()
+
+export type OpenStoryOptions = {
+  baseUrl?: string
+}
+
+type StoryViolation = {
+  id?: string
+  help?: string
+  targets?: string[]
+}
+
+type StoryReporter = {
+  type?: string
+  status?: string
+  error?: string
+  violationCount?: number
+  violations?: StoryViolation[]
+}
+
+type StoryFinishedResult = {
+  storyId: string
+  status: string
+  reporters: StoryReporter[]
+}
 
 export async function fetchStories(): Promise<StoryEntry[]> {
   const response = await fetch(`${BASE_URL}/index.json`)
@@ -43,27 +70,268 @@ export async function fetchStories(): Promise<StoryEntry[]> {
  * are the two the accessibility lane runs, because they are the defaults — a
  * catalogue variant only needs this treatment if it becomes one.
  */
-export function storyUrl(id: string, theme: string): string {
-  return `${BASE_URL}/iframe.html?id=${encodeURIComponent(id)}&globals=theme:${theme};density:comfortable&viewMode=story`
+export function storyUrl(id: string, theme: string, baseUrl = BASE_URL): string {
+  return `${baseUrl}/iframe.html?id=${encodeURIComponent(id)}&globals=theme:${theme};density:comfortable&viewMode=story`
+}
+
+function resolvedStoryTheme(theme: string): { id: string; appearance: 'light' | 'dark' } {
+  // Keep this fallback in lockstep with `.storybook/preview.tsx`: the addon accepts
+  // the conventional `light`/`dark` aliases, while the provider resolves unknown
+  // ids to the default dark variant before it writes the document authority.
+  const variant = themeById(theme) ?? themeById(defaultDarkThemeId)!
+  return { id: variant.id, appearance: variant.appearance }
+}
+
+/**
+ * Wait for the browser-visible state that makes a story safe to inspect.
+ *
+ * DOMContentLoaded only means the preview shell exists. Storybook mounts the
+ * component afterward, ThemeProvider applies its document authority in a Solid
+ * effect, and the self-hosted typefaces settle independently. These waits keep
+ * those signals explicit without treating unrelated network activity as a story
+ * readiness contract.
+ */
+export async function waitForStoryReady(
+  page: import('@playwright/test').Page,
+  theme: string
+): Promise<void> {
+  const expected = resolvedStoryTheme(theme)
+
+  await page.locator('#storybook-root > *').first().waitFor({ state: 'visible', timeout: 10_000 })
+
+  await Promise.all([
+    page.evaluate(() => document.fonts.ready),
+    page.waitForFunction(
+      ({ id, appearance }) => {
+        const root = document.documentElement
+        return (
+          root.dataset['theme'] === id &&
+          root.dataset['appearance'] === appearance &&
+          root.classList.contains('dark') === (appearance === 'dark') &&
+          root.style.colorScheme === appearance &&
+          root.style.getPropertyValue('--background').trim().length > 0
+        )
+      },
+      expected,
+      { timeout: 10_000 }
+    ),
+  ])
+}
+
+async function installStoryFinishedListener(page: import('@playwright/test').Page): Promise<void> {
+  if (storyFinishedListenerPages.has(page)) return
+
+  // Storybook creates its preview addon store during page bootstrap. Install the
+  // channel hook before navigation so a fast story cannot emit STORY_FINISHED
+  // before the test starts waiting for it. The one hook is reused across
+  // navigations; each fresh document derives its active story from its URL.
+  await page.addInitScript(() => {
+    const id = new URL(globalThis.location.href).searchParams.get('id')
+    const stateKey = '__ADEA_STORYBOOK_READINESS__'
+    const addonStoreKey = '__STORYBOOK_ADDONS_PREVIEW'
+    const state = { storyId: id, finished: null as unknown, channel: null as unknown }
+    const wrappedStores = new WeakSet<object>()
+
+    const attachChannel = (channel: unknown) => {
+      if (
+        !channel ||
+        typeof channel !== 'object' ||
+        typeof Reflect.get(channel, 'on') !== 'function' ||
+        state.channel === channel
+      ) {
+        return
+      }
+      state.channel = channel
+      Reflect.get(channel, 'on').call(channel, 'storyFinished', (result: unknown) => {
+        if (result && typeof result === 'object' && Reflect.get(result, 'storyId') === id) {
+          state.finished = result
+        }
+      })
+    }
+
+    const wrapStore = (store: unknown) => {
+      if (!store || typeof store !== 'object' || wrappedStores.has(store)) return
+      const setChannel = Reflect.get(store, 'setChannel')
+      if (typeof setChannel !== 'function') return
+      wrappedStores.add(store)
+      Reflect.set(store, 'setChannel', function (channel: unknown) {
+        const result = setChannel.call(this, channel)
+        attachChannel(channel)
+        return result
+      })
+      attachChannel(Reflect.get(store, 'channel'))
+    }
+
+    Object.defineProperty(globalThis, stateKey, {
+      configurable: true,
+      value: state,
+      writable: true,
+    })
+
+    let addonStore: unknown
+    Object.defineProperty(globalThis, addonStoreKey, {
+      configurable: true,
+      get: () => addonStore,
+      set: (store: unknown) => {
+        addonStore = store
+        wrapStore(store)
+      },
+    })
+  })
+  storyFinishedListenerPages.add(page)
+}
+
+async function waitForStoryFinished(
+  page: import('@playwright/test').Page,
+  storyId: string
+): Promise<StoryFinishedResult> {
+  // Storybook's a11y addon reports from its `afterEach` render phase. The
+  // STORY_FINISHED event is emitted after that phase and carries its terminal
+  // status, so this both prevents concurrent axe runs and rejects failed
+  // render/play/report paths instead of treating their error UI as a story.
+  await page.waitForFunction(
+    (id) => {
+      const state = Reflect.get(globalThis, '__ADEA_STORYBOOK_READINESS__') as
+        | { storyId?: string; finished?: { storyId?: string } }
+        | undefined
+      return state?.storyId === id && state.finished?.storyId === id
+    },
+    storyId,
+    { timeout: 10_000 }
+  )
+
+  return page.evaluate((id) => {
+    const state = Reflect.get(globalThis, '__ADEA_STORYBOOK_READINESS__') as
+      | { storyId?: string; finished?: Record<string, unknown> }
+      | undefined
+    const finished = state?.storyId === id ? state.finished : undefined
+    const reporters = Array.isArray(finished?.['reporters'])
+      ? finished['reporters'].map((reporter) => {
+          if (!reporter || typeof reporter !== 'object') return {}
+          const result = Reflect.get(reporter, 'result')
+          const rawViolations =
+            result && typeof result === 'object' && Array.isArray(Reflect.get(result, 'violations'))
+              ? Reflect.get(result, 'violations')
+              : []
+          const violations = rawViolations.slice(0, 3).map((violation) => {
+            if (!violation || typeof violation !== 'object') return {}
+            const nodes = Reflect.get(violation, 'nodes')
+            const targets = Array.isArray(nodes)
+              ? nodes
+                  .flatMap((node) => {
+                    if (!node || typeof node !== 'object') return []
+                    const target = Reflect.get(node, 'target')
+                    return Array.isArray(target)
+                      ? target.filter((value): value is string => typeof value === 'string')
+                      : []
+                  })
+                  .slice(0, 3)
+              : []
+            return {
+              id:
+                typeof Reflect.get(violation, 'id') === 'string'
+                  ? Reflect.get(violation, 'id')
+                  : undefined,
+              help:
+                typeof Reflect.get(violation, 'help') === 'string'
+                  ? Reflect.get(violation, 'help')
+                  : undefined,
+              targets,
+            }
+          })
+          return {
+            type:
+              typeof Reflect.get(reporter, 'type') === 'string'
+                ? Reflect.get(reporter, 'type')
+                : undefined,
+            status:
+              typeof Reflect.get(reporter, 'status') === 'string'
+                ? Reflect.get(reporter, 'status')
+                : undefined,
+            error:
+              result && typeof result === 'object' && Reflect.get(result, 'error')
+                ? String(Reflect.get(result, 'error'))
+                : undefined,
+            violationCount: rawViolations.length,
+            violations,
+          }
+        })
+      : []
+    return {
+      storyId: typeof finished?.['storyId'] === 'string' ? finished['storyId'] : id,
+      status: typeof finished?.['status'] === 'string' ? finished['status'] : 'unknown',
+      reporters,
+    }
+  }, storyId) as Promise<StoryFinishedResult>
+}
+
+async function storyFinishedError(
+  page: import('@playwright/test').Page,
+  result: StoryFinishedResult
+): Promise<Error> {
+  const visibleError = compact(
+    ((await page.locator('.sb-errordisplay').allTextContents())[0] ?? '').trim()
+  )
+
+  const reporterErrors = result.reporters
+    .map((reporter) => {
+      const label = [reporter.type, reporter.status].filter(Boolean).join('/') || 'reporter'
+      const diagnostics = reporter.error ? [compact(reporter.error)] : []
+      for (const violation of reporter.violations ?? []) {
+        const rule = [
+          violation.id && compact(violation.id),
+          violation.help && compact(violation.help),
+        ]
+          .filter(Boolean)
+          .join(': ')
+        const targets = violation.targets?.map((target) => compact(target, 160)).join(', ')
+        diagnostics.push(`${rule || 'a11y violation'}${targets ? ` [target: ${targets}]` : ''}`)
+      }
+      const omittedViolations = Math.max(
+        0,
+        (reporter.violationCount ?? 0) - (reporter.violations?.length ?? 0)
+      )
+      if (omittedViolations > 0) {
+        diagnostics.push(
+          `+${omittedViolations} more a11y violation${omittedViolations === 1 ? '' : 's'}`
+        )
+      }
+      return diagnostics.length ? `${label}: ${diagnostics.join('; ')}` : label
+    })
+    .join('; ')
+  const details = [visibleError && `visible error: ${visibleError}`, reporterErrors].filter(Boolean)
+  return new Error(
+    `Storybook story "${result.storyId}" finished with status "${result.status}"${details.length ? ` (${details.join('; ')})` : ''}`
+  )
+}
+
+function compact(value: string, limit = 240): string {
+  return value.length > limit ? `${value.slice(0, limit - 1)}…` : value
 }
 
 /**
  * Open a story and wait for it to have actually mounted.
  *
- * `networkidle` is not enough: Storybook renders the story client-side after the
- * bundle loads, so a test that clicks immediately after navigating can race the
- * mount and fail intermittently against a story that is perfectly fine. That
+ * DOMContentLoaded is not enough: Storybook renders the story client-side after the
+ * preview shell loads, so a test that clicks immediately after navigating can race
+ * the mount and fail intermittently against a story that is perfectly fine. That
  * flake is expensive to diagnose because it looks like a component defect.
  *
- * Waiting for the root to have content is the signal that matters, and Storybook
- * puts its own error block in the same place, so a story that throws fails here
- * with the error visible rather than timing out anonymously.
+ * Waiting for the root to have content is the first signal that matters, and
+ * Storybook puts its own error block in the same place, so a story that throws
+ * fails here with the error visible rather than timing out anonymously. The
+ * terminal event is observed before this readiness check so failed render/play/
+ * reporter paths reject even when they never produce a visible story root.
  */
 export async function openStory(
   page: import('@playwright/test').Page,
   id: string,
-  theme: string
+  theme: string,
+  options: OpenStoryOptions = {}
 ): Promise<void> {
-  await page.goto(storyUrl(id, theme), { waitUntil: 'networkidle' })
-  await page.locator('#storybook-root > *').first().waitFor({ state: 'visible', timeout: 10_000 })
+  await installStoryFinishedListener(page)
+  await page.goto(storyUrl(id, theme, options.baseUrl), { waitUntil: 'domcontentloaded' })
+  const result = await waitForStoryFinished(page, id)
+  if (result.status !== 'success') throw await storyFinishedError(page, result)
+  await waitForStoryReady(page, theme)
 }
