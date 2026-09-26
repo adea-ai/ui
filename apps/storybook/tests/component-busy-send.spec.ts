@@ -161,6 +161,11 @@ for (const theme of ['light', 'dark']) {
       await expect
         .poll(() => page.getByRole('menu').evaluate((element) => getComputedStyle(element).opacity))
         .toBe('1')
+      await expect
+        .poll(() =>
+          page.getByRole('menu').evaluate((element) => getComputedStyle(element).backgroundColor)
+        )
+        .not.toMatch(/transparent|rgba\(0, 0, 0, 0\)/)
       await page.screenshot({ path: test.info().outputPath('busy-send.png') })
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true
