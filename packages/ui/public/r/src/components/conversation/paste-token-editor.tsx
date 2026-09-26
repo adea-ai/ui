@@ -53,6 +53,7 @@ export type PasteTokenEditorProps = {
 
 const PREVIEW_OPEN_DELAY_MS = 300
 const PREVIEW_MAX_LINES = 12
+const PREVIEW_MAX_CHARACTERS = 1200
 
 function isTouchDevice(): boolean {
   return (
@@ -450,7 +451,9 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   return (
     <KobalteTooltip
       open={!!preview()}
-      onOpenChange={() => undefined}
+      onOpenChange={(open) => {
+        if (!open) closePreview()
+      }}
       openDelay={PREVIEW_OPEN_DELAY_MS}
     >
       <KobalteTooltip.Trigger as="div" class="relative">
@@ -530,8 +533,11 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
       <Show when={preview()}>
         {(block) => {
           const lines = () => block().content.split('\n')
-          const shown = () => lines().slice(0, PREVIEW_MAX_LINES).join('\n')
+          const previewLines = () => lines().slice(0, PREVIEW_MAX_LINES).join('\n')
+          const shown = () => previewLines().slice(0, PREVIEW_MAX_CHARACTERS)
           const remainder = () => Math.max(0, lines().length - PREVIEW_MAX_LINES)
+          const remainderCharacters = () =>
+            Math.max(0, previewLines().length - PREVIEW_MAX_CHARACTERS)
           return (
             <KobalteTooltip.Portal>
               <KobalteTooltip.Content
@@ -539,11 +545,14 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
                 data-slot="paste-token-preview"
                 class="bg-scrim text-scrim-foreground z-(--z-tooltip) w-fit max-w-64 rounded-md px-2 py-1 text-xs origin-(--kb-tooltip-content-transform-origin) text-balance data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-expanded:duration-150 data-closed:duration-100"
               >
-                <pre class="m-0 max-w-64 overflow-hidden whitespace-pre-wrap break-words font-mono">
+                <pre class="m-0 max-h-48 max-w-64 overflow-y-auto whitespace-pre-wrap break-words font-mono">
                   {shown()}
                 </pre>
                 <Show when={remainder() > 0}>
-                  <span class="text-muted-foreground">+{remainder()} more lines</span>
+                  <span>+{remainder()} more lines</span>
+                </Show>
+                <Show when={remainderCharacters() > 0}>
+                  <span>+{remainderCharacters()} more characters</span>
                 </Show>
                 <KobalteTooltip.Arrow aria-hidden="true" />
               </KobalteTooltip.Content>

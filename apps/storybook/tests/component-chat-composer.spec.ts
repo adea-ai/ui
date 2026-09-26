@@ -527,6 +527,22 @@ test('hover and caret previews associate the current token without intercepting 
   await expect(field).not.toHaveAttribute('aria-describedby', /.+/)
 })
 
+test('Escape dismisses a hover preview when the editor has no focus', async ({ page }) => {
+  const field = await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  await field.evaluate((element) => element.blur())
+  await expect(field).not.toBeFocused()
+
+  const token = page.locator('[data-paste-seq="1"]')
+  const box = (await token.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toContainText('first\nsecond\nthird')
+
+  await page.keyboard.press('Escape')
+  await expect(tooltip).toHaveCount(0)
+})
+
 test('long previews stop after twelve lines and drag or blur dismisses them', async ({ page }) => {
   const field = await enablePasteTokens(page)
   await field.focus()
@@ -540,6 +556,11 @@ test('long previews stop after twelve lines and drag or blur dismisses them', as
   const tooltip = page.getByRole('tooltip')
   await expect(tooltip).toContainText('line 12')
   await expect(tooltip).toContainText('+3 more lines')
+  await expect(tooltip).toHaveClass(/text-scrim-foreground/)
+  const remainder = tooltip.getByText('+3 more lines')
+  expect(await remainder.evaluate((element) => getComputedStyle(element).color)).toBe(
+    await tooltip.evaluate((element) => getComputedStyle(element).color)
+  )
   expect(await tooltip.textContent()).not.toContain('line 13')
 
   await field.evaluate((element) => element.blur())
@@ -551,6 +572,23 @@ test('long previews stop after twelve lines and drag or blur dismisses them', as
   await page.waitForTimeout(350)
   await expect(tooltip).toHaveCount(0)
   await page.mouse.up()
+})
+
+test('single-line previews bound the excerpt and identify hidden characters', async ({ page }) => {
+  await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'x'.repeat(20_000))
+
+  const token = page.locator('[data-paste-seq="1"]')
+  const box = (await token.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toContainText('more characters')
+
+  const excerpt = tooltip.locator('pre')
+  expect((await excerpt.textContent())?.length).toBeLessThanOrEqual(1200)
+  expect(
+    await excerpt.evaluate((element) => element.getBoundingClientRect().height)
+  ).toBeLessThanOrEqual(192)
 })
 
 test('stale previews close when the hovered token or draft changes', async ({ page }) => {
