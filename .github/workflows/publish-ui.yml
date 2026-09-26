@@ -164,6 +164,13 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-consumer
 
+      - name: Install browsers for packed appearance interactions
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed appearance interactions and SSR
+        working-directory: packages/ui
+        run: bun run check:packed-appearance
+
       - name: Pack
         if: ${{ inputs.dry-run != true }}
         working-directory: packages/ui

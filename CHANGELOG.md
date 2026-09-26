@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.62.0](https://github.com/adea-ai/ui/compare/v0.61.1...v0.62.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* make core imports independent of optional engines ([#16](https://github.com/adea-ai/ui/issues/16))
+
+### Bug Fixes
+
+* make core imports independent of optional engines ([#16](https://github.com/adea-ai/ui/issues/16)) ([cae276d](https://github.com/adea-ai/ui/commit/cae276d3736a326a1645f061e335e1a84c60f604))
+
 ## [0.61.1](https://github.com/adea-ai/ui/compare/v0.61.0...v0.61.1) (2026-09-26)
 
 
