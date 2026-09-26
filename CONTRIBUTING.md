@@ -136,7 +136,8 @@ when the build, every shard, and component contracts succeed.
 
 The explicit accessibility sweep sets Storybook's supported `a11y.manual` global
 for its own navigation so each story is analyzed once by Playwright. It still
-checks every existing story/theme pair with the same WCAG rules. Ordinary review
+checks every story across the two default and five sampled themes with the same
+WCAG rules. Ordinary review
 and interaction URLs retain the addon's automatic analysis and manual panel.
 
 PR changes select Registry, Workshop, and Component interactions independently.
