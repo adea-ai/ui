@@ -12,11 +12,16 @@ import { openStory } from './stories'
  *
  * Each test names the behaviour and the reason it is worth asserting. A test
  * that only checks a element exists adds nothing a snapshot would not.
+ *
+ * Every story opens in `adea-dark`, the default dark variant — the same theme the
+ * accessibility lane runs, and a real catalogue id rather than the bare `dark` this
+ * lane used to pass. The bare alias is what a person writes by hand, so the workshop
+ * accepts it (see `theme-classes.ts`), but a lane should exercise what a user sees.
  */
 
 test.describe('overlays', () => {
   test('a dialog opens, traps focus, and returns it to the trigger on Escape', async ({ page }) => {
-    await openStory(page, 'primitives-overlays-dialog--default', 'dark')
+    await openStory(page, 'primitives-overlays-dialog--default', 'adea-dark')
 
     const trigger = page.getByRole('button', { name: 'Rename workspace' })
     await trigger.click()
@@ -37,7 +42,7 @@ test.describe('overlays', () => {
   })
 
   test('an alert dialog refuses Escape, so a destructive choice is explicit', async ({ page }) => {
-    await openStory(page, 'primitives-overlays-alert-dialog--destructive', 'dark')
+    await openStory(page, 'primitives-overlays-alert-dialog--destructive', 'adea-dark')
 
     await page.getByRole('button', { name: 'Delete workspace' }).click()
     const dialog = page.getByRole('alertdialog')
@@ -52,7 +57,7 @@ test.describe('overlays', () => {
   })
 
   test('a dropdown menu is operable with the keyboard alone', async ({ page }) => {
-    await openStory(page, 'primitives-overlays-dropdown-menu--default', 'dark')
+    await openStory(page, 'primitives-overlays-dropdown-menu--default', 'adea-dark')
 
     await page.getByRole('button', { name: 'Actions' }).focus()
     await page.keyboard.press('Enter')
@@ -72,7 +77,7 @@ test.describe('overlays', () => {
   })
 
   test('a popover dismisses on an outside click', async ({ page }) => {
-    await openStory(page, 'primitives-overlays-popover--dismissal', 'dark')
+    await openStory(page, 'primitives-overlays-popover--dismissal', 'adea-dark')
 
     await page.getByRole('button', { name: 'Open me' }).click()
     await expect(page.getByText('Click outside, or press Escape')).toBeVisible()
@@ -84,7 +89,7 @@ test.describe('overlays', () => {
 
 test.describe('the shell', () => {
   test('a collapsed rail keeps its destinations named', async ({ page }) => {
-    await openStory(page, 'layout-side-rail--collapsed', 'dark')
+    await openStory(page, 'layout-side-rail--collapsed', 'adea-dark')
 
     // The name has to survive the collapse. A rail that drops the label entirely
     // leaves an icon-only navigation that a screen reader cannot describe.
@@ -93,16 +98,22 @@ test.describe('the shell', () => {
   })
 
   test('a rail row opens its tooltip on hover', async ({ page }) => {
-    await openStory(page, 'layout-side-rail--collapsed', 'dark')
+    await openStory(page, 'layout-side-rail--collapsed', 'adea-dark')
 
     await page.getByRole('button', { name: 'Home' }).hover()
-    // The tooltip is the second place the label appears, which is how a collapsed
-    // rail stays usable with a pointer.
-    await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 5_000 })
+
+    // The flyout is aria-hidden decoration rather than an ARIA tooltip: the row
+    // already carries the name. What matters is that the label becomes visible to
+    // a pointer user, and that it carries the chord — the one thing a collapsed
+    // rail cannot otherwise show.
+    const flyout = page.locator('[data-slot="side-rail-tip"]')
+    await expect(flyout).toBeVisible({ timeout: 5_000 })
+    await expect(flyout).toContainText('Home')
+    await expect(flyout).toContainText('⌘1')
   })
 
   test('the app shell fills the viewport without scrolling the document', async ({ page }) => {
-    await openStory(page, 'layout-app-shell--full-shell', 'dark')
+    await openStory(page, 'layout-app-shell--full-shell', 'adea-dark')
 
     const metrics = await page.evaluate(() => ({
       documentScrolls: document.documentElement.scrollHeight > window.innerHeight + 1,
@@ -117,7 +128,7 @@ test.describe('the shell', () => {
   })
 
   test('every shell region is present and landmarked', async ({ page }) => {
-    await openStory(page, 'layout-app-shell--full-shell', 'dark')
+    await openStory(page, 'layout-app-shell--full-shell', 'adea-dark')
 
     await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Projects' })).toBeVisible()
@@ -133,7 +144,7 @@ test.describe('the shell', () => {
 
 test.describe('forms', () => {
   test('arrow keys move within a radio group, and one Tab leaves it', async ({ page }) => {
-    await openStory(page, 'primitives-forms-radio-group--keyboard', 'dark')
+    await openStory(page, 'primitives-forms-radio-group--keyboard', 'adea-dark')
 
     await page.getByRole('radio', { name: /Tab reaches this group once/ }).focus()
     await page.keyboard.press('ArrowDown')
@@ -142,7 +153,7 @@ test.describe('forms', () => {
   })
 
   test('a select reports its selection as the trigger label', async ({ page }) => {
-    await openStory(page, 'primitives-forms-select--default', 'dark')
+    await openStory(page, 'primitives-forms-select--default', 'adea-dark')
 
     const trigger = page.getByRole('button', { name: 'Model' })
     await trigger.click()
@@ -155,7 +166,7 @@ test.describe('forms', () => {
   })
 
   test('an invalid field is announced as invalid, not only painted red', async ({ page }) => {
-    await openStory(page, 'primitives-forms-input--invalid', 'dark')
+    await openStory(page, 'primitives-forms-input--invalid', 'adea-dark')
 
     const input = page.getByRole('textbox', { name: 'Workspace name' })
     await expect(input).toHaveAttribute('aria-invalid', 'true')
@@ -164,7 +175,7 @@ test.describe('forms', () => {
 
 test.describe('navigation', () => {
   test('tabs move between panels with the arrow keys', async ({ page }) => {
-    await openStory(page, 'primitives-navigation-tabs--default', 'dark')
+    await openStory(page, 'primitives-navigation-tabs--default', 'adea-dark')
 
     await page.getByRole('tab', { name: 'Code' }).focus()
     await page.keyboard.press('ArrowRight')
@@ -174,7 +185,7 @@ test.describe('navigation', () => {
   })
 
   test('a sidebar section is a real disclosure', async ({ page }) => {
-    await openStory(page, 'layout-sidebar-navigation--collapsible-sections', 'dark')
+    await openStory(page, 'layout-sidebar-navigation--collapsible-sections', 'adea-dark')
 
     const heading = page.getByRole('button', { name: /Pinned/ })
     await expect(heading).toHaveAttribute('aria-expanded', 'true')
@@ -187,7 +198,7 @@ test.describe('navigation', () => {
 
 test.describe('feedback', () => {
   test('a toast appears from the API and can be dismissed', async ({ page }) => {
-    await openStory(page, 'primitives-feedback-toast--tones', 'dark')
+    await openStory(page, 'primitives-feedback-toast--tones', 'adea-dark')
 
     await page.getByRole('button', { name: 'Success', exact: true }).click()
     await expect(page.getByText('Worktree created')).toBeVisible()
@@ -197,7 +208,7 @@ test.describe('feedback', () => {
   })
 
   test('a progress bar reports its value to assistive technology', async ({ page }) => {
-    await openStory(page, 'primitives-feedback-progress--default', 'dark')
+    await openStory(page, 'primitives-feedback-progress--default', 'adea-dark')
 
     // Kobalte publishes the value; a bar that is only a coloured div reports
     // nothing, which is the same as reporting zero.

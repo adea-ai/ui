@@ -25,17 +25,35 @@ incompatible with this distribution.
 What makes an interface recognisably _this_ system, rather than a themed shadcn
 default, is three decisions. Everything else follows from them.
 
-### 1. A blue-tinted neutral ladder, with one emerald accent
+### 1. A tinted canvas, with the accent as a separate axis
 
-The neutrals are not pure grey. They sit at hue **270–286** with a small chroma
-(0.005–0.021), which reads as a cool, slightly blue surface rather than a flat one.
-Pure grey on a large dark surface looks dead; a tint makes a window feel like it has
-depth. The tint is small enough that it never reads as "blue".
+The two defaults are **composed**, not authored, and their canvases are **tinted**:
+`#0f141f` at hue 265 for dark, `#e3e9f4` at hue 262 for light, each borrowed from a
+palette chosen for its canvas and neither of them a pure grey. This document previously
+described a pure-grey neutral ladder — hue 0, zero chroma — and that was the opposite
+decision, made for a system whose themes were all imported and could not agree on a
+tint. It stopped being the right one when the defaults became a pair: two themes that
+share a hue family read as one interface at two exposures, and a neutral has no hue to
+share.
 
-Against that ladder there is exactly **one accent**, an emerald at hue **162–168**.
-It is used for one thing: the primary action, the selected destination, the focus
-ring. Nothing else in the interface is coloured. A second accent would make the
-first stop meaning "this is the thing to press".
+Both are reproduced from upstream and credited in `@adea-ai/themes`'s NOTICE. The
+separation on a large dark surface still comes from the surface ladder and the elevation
+tokens rather than from the tint, which is where it belongs.
+
+Colour beyond the canvas is carried by **two roles and nothing else**:
+
+- The **accent axis** — seven presets, applied as `data-accent` on the same element
+  that carries the theme. It re-colours the primary, its label, the hover rung, the
+  tint and the focus ring. The default (`theme`) uses the variant's own primary,
+  which in adea's palette is neutral, so the interface stays monochrome unless the
+  user asks otherwise.
+- The **status roles** — `success`, `warning`, `destructive`, `info` — which mean
+  something and are never decorative.
+
+That split is what lets a theme be anyone's palette without giving up the accent the
+user chose, and an accent be any of seven without the theme having to know about it.
+A fifth colour on a surface would make the primary stop meaning "this is the thing to
+press", which is still the rule.
 
 ### 2. Dark-first
 
@@ -45,9 +63,9 @@ for long sessions, and a bright surface is tiring for that. The light theme is a
 full peer — it has its own solved values rather than an inversion — but it is the
 variant.
 
-One visible consequence: **the accent flips polarity between themes.** In dark it is
-bright (`oklch(0.77 0.17 162)`) and carries a _black_ label; in light it is deep
-(`oklch(0.50 0.10 168)`) and carries a _white_ one. That is why
+One visible consequence: **the accent flips polarity between themes.** Violet in dark
+is `oklch(0.709 0.1592 293.5)` and carries a _black_ label; in light it is
+`oklch(0.4907 0.2412 292.6)` and carries a _white_ one. That is why
 `--primary-foreground` is a token and why a component must never hard-code a label
 colour on a primary surface.
 
@@ -92,10 +110,27 @@ floating panels and another's as nothing at all.
 
 ## Typography
 
-Two families. **Space Grotesk** for the interface, **JetBrains Mono** for anything a
-user compares character by character — code, terminals, ids, file paths. Both ship
-as variable fonts from `@fontsource-variable`, so a desktop app never fetches a
-font at runtime and never reflows after first paint.
+**Space Grotesk** is the interface face and the one the visual language was drawn
+against, with **JetBrains Mono** for anything a user compares character by character —
+code, terminals, ids, file paths. Both ship as variable fonts from
+`@fontsource-variable`, so a desktop app never fetches a font at runtime and never
+reflows after first paint.
+
+The face is a **user preference**, though, and the axis has five options: Space
+Grotesk, System, Geist, Geist Mono and JetBrains Mono. `--font-sans` and `--font-mono`
+resolve from a selection rather than naming a face directly, which is what makes this
+a preference instead of a hard-coded choice an application cannot override without
+restating the stacks.
+
+Two of those options put a monospace face in the _interface_ role, and that needs
+compensating: mono is roughly 20% wider than Space Grotesk at the same size, and every
+measurement in this system — control heights, the rail's label budget, a button's
+padding — was taken against a proportional face. So `--ui-tracking` and
+`--ui-word-spacing` tighten in those two variants and stay `normal` everywhere else.
+The two families want opposite treatment: mono's space character is a full
+advance-width cell, three times Space Grotesk's, so a two-word label reads as two
+floating words without negative word spacing, while its glyphs carry more sidebearing
+and tolerate a tighter track.
 
 Eight rungs, each with its own line-height because the ratio is not constant:
 
@@ -119,10 +154,21 @@ text harder to read.
 ## Colour is measured, not reviewed
 
 Every text pairing the system renders is asserted in
-`packages/ui/tests/tokens.test.ts`, in both themes, against the surface the text
-actually sits on. Body text must clear **7:1**; secondary text, labels on filled
+`packages/ui/tests/tokens.test.ts`, in both the default themes, against the surface the
+text actually sits on. Body text must clear **7:1**; secondary text, labels on filled
 buttons and the focus ring must clear **4.5:1** (or **3:1** for the ring, which is a
 non-text indicator).
+
+The other 25 variants in the catalogue are held to a **different and lower floor**, and
+the difference is deliberate rather than an oversight: a third-party palette is somebody
+else's solved set, and re-solving it to 7:1 would stop it being that palette.
+
+Those floors live in [`@adea-ai/themes`](https://github.com/adea-ai/themes), which
+normalizes the upstream palettes and runs **WCAG AA** over every one of them — 4.5:1 for
+text, 3:1 for the ring — so an imported theme is _measured_ rather than assumed. At least
+one of them would have failed on its own published values: Solarized Light's body text
+measures 4.28:1 against its own background, and the catalogue raises its lightness rather
+than shipping a theme that fails the standard.
 
 The token values were _solved_ for those floors rather than chosen and checked. The
 comments in `theme.css` record which surface fixed each number — for
@@ -136,7 +182,7 @@ adjusting one by eye will fail a test rather than pass review.
 
 ## Motion
 
-Two durations and two curves, on purpose. Motion in an application is feedback, not
+Three durations and two curves, on purpose. Motion in an application is feedback, not
 decoration: a user should never be waiting for an animation.
 
 - **`duration-fast` (120ms)** — a state change the user is already watching. Hover,
@@ -144,8 +190,10 @@ decoration: a user should never be waiting for an animation.
 - **`duration-normal` (200ms)** — an arrival. An entrance, a disclosure.
 - **`duration-slow` (320ms)** — a layout settle.
 
-The entrance curve is `cubic-bezier(0.16, 1, 0.3, 1)`: a fast start and a long
-settle, which reads as decisive. Floaty motion in a tool feels like latency.
+`ease-out` is `cubic-bezier(0.16, 1, 0.3, 1)`: a fast start and a long settle, which
+reads as decisive. Floaty motion in a tool feels like latency. `ease-in-out` is
+`cubic-bezier(0.65, 0, 0.35, 1)`, and it exists for a loop with no start or end — a
+shimmer, a skeleton — where a curve with a direction would read as a stutter.
 
 What may move, and what may not:
 

@@ -1,0 +1,20 @@
+{
+  "name": "item",
+  "type": "registry:ui",
+  "title": "Item",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/item/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/item/index.ts"
+    },
+    {
+      "path": "src/components/ui/item/item.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/item/item.tsx"
+    }
+  ]
+}

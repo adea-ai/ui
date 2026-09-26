@@ -71,6 +71,26 @@
       ]
     },
     {
+      "name": "aspect-ratio",
+      "type": "registry:ui",
+      "title": "Aspect Ratio",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/aspect-ratio/aspect-ratio.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/aspect-ratio/aspect-ratio.tsx"
+        },
+        {
+          "path": "src/components/ui/aspect-ratio/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/aspect-ratio/index.ts"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:ui",
       "title": "Avatar",
@@ -109,6 +129,26 @@
           "path": "src/components/ui/badge/index.ts",
           "type": "registry:ui",
           "target": "components/ui/badge/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "board",
+      "type": "registry:ui",
+      "title": "Board",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/board/board.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/board/board.tsx"
+        },
+        {
+          "path": "src/components/ui/board/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/board/index.ts"
         }
       ]
     },
@@ -157,6 +197,53 @@
       ]
     },
     {
+      "name": "button-group",
+      "type": "registry:ui",
+      "title": "Button Group",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/separator"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/button-group/button-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button-group/button-group.tsx"
+        },
+        {
+          "path": "src/components/ui/button-group/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/button-group/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "calendar",
+      "type": "registry:ui",
+      "title": "Calendar",
+      "description": "",
+      "dependencies": [
+        "@corvu/calendar@^0.1.2",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/calendar/calendar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/calendar/calendar.tsx"
+        },
+        {
+          "path": "src/components/ui/calendar/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/calendar/index.ts"
+        }
+      ]
+    },
+    {
       "name": "card",
       "type": "registry:ui",
       "title": "Card",
@@ -173,6 +260,55 @@
           "path": "src/components/ui/card/index.ts",
           "type": "registry:ui",
           "target": "components/ui/card/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "carousel",
+      "type": "registry:ui",
+      "title": "Carousel",
+      "description": "",
+      "dependencies": [
+        "embla-carousel",
+        "embla-carousel-solid",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/carousel/carousel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/carousel/carousel.tsx"
+        },
+        {
+          "path": "src/components/ui/carousel/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/carousel/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "chart",
+      "type": "registry:ui",
+      "title": "Chart",
+      "description": "",
+      "dependencies": [
+        "chart.js",
+        "solid-chartjs"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/chart/chart.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chart/chart.tsx"
+        },
+        {
+          "path": "src/components/ui/chart/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/chart/index.ts"
         }
       ]
     },
@@ -196,6 +332,30 @@
           "path": "src/components/ui/checkbox/index.ts",
           "type": "registry:ui",
           "target": "components/ui/checkbox/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "code-block",
+      "type": "registry:ui",
+      "title": "Code Block",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/code-block/code-block.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/code-block/code-block.tsx"
+        },
+        {
+          "path": "src/components/ui/code-block/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/code-block/index.ts"
         }
       ]
     },
@@ -291,6 +451,30 @@
       ]
     },
     {
+      "name": "detail-panel",
+      "type": "registry:ui",
+      "title": "Detail Panel",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/detail-panel/detail-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/detail-panel/detail-panel.tsx"
+        },
+        {
+          "path": "src/components/ui/detail-panel/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/detail-panel/index.ts"
+        }
+      ]
+    },
+    {
       "name": "dialog",
       "type": "registry:ui",
       "title": "Dialog",
@@ -310,6 +494,26 @@
           "path": "src/components/ui/dialog/index.ts",
           "type": "registry:ui",
           "target": "components/ui/dialog/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "diff-block",
+      "type": "registry:ui",
+      "title": "Diff Block",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/diff-block/diff-block.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diff-block/diff-block.tsx"
+        },
+        {
+          "path": "src/components/ui/diff-block/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/diff-block/index.ts"
         }
       ]
     },
@@ -375,6 +579,26 @@
           "path": "src/components/ui/empty/index.ts",
           "type": "registry:ui",
           "target": "components/ui/empty/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "entity-icon",
+      "type": "registry:ui",
+      "title": "Entity Icon",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/entity-icon/entity-icon.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/entity-icon/entity-icon.tsx"
+        },
+        {
+          "path": "src/components/ui/entity-icon/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/entity-icon/index.ts"
         }
       ]
     },
@@ -463,6 +687,48 @@
       ]
     },
     {
+      "name": "input-otp",
+      "type": "registry:ui",
+      "title": "Input Otp",
+      "description": "",
+      "dependencies": [
+        "@corvu/otp-field@^0.1.4"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/input-otp/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/input-otp/index.ts"
+        },
+        {
+          "path": "src/components/ui/input-otp/input-otp.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-otp/input-otp.tsx"
+        }
+      ]
+    },
+    {
+      "name": "item",
+      "type": "registry:ui",
+      "title": "Item",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/item/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/item/index.ts"
+        },
+        {
+          "path": "src/components/ui/item/item.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/item/item.tsx"
+        }
+      ]
+    },
+    {
       "name": "kbd",
       "type": "registry:ui",
       "title": "Kbd",
@@ -499,6 +765,74 @@
           "path": "src/components/ui/label/label.tsx",
           "type": "registry:ui",
           "target": "components/ui/label/label.tsx"
+        }
+      ]
+    },
+    {
+      "name": "menubar",
+      "type": "registry:ui",
+      "title": "Menubar",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/menubar/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/menubar/index.ts"
+        },
+        {
+          "path": "src/components/ui/menubar/menubar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/menubar/menubar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "modal-dialog",
+      "type": "registry:ui",
+      "title": "Modal Dialog",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/dialog"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/modal-dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/modal-dialog/index.ts"
+        },
+        {
+          "path": "src/components/ui/modal-dialog/modal-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/modal-dialog/modal-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "navigation-menu",
+      "type": "registry:ui",
+      "title": "Navigation Menu",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "src/components/ui/navigation-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/index.ts"
+        },
+        {
+          "path": "src/components/ui/navigation-menu/navigation-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-menu/navigation-menu.tsx"
         }
       ]
     },
@@ -770,6 +1104,28 @@
       ]
     },
     {
+      "name": "status-chip",
+      "type": "registry:ui",
+      "title": "Status Chip",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/tooltip"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/status-chip/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/status-chip/index.ts"
+        },
+        {
+          "path": "src/components/ui/status-chip/status-chip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/status-chip/status-chip.tsx"
+        }
+      ]
+    },
+    {
       "name": "switch",
       "type": "registry:ui",
       "title": "Switch",
@@ -1012,9 +1368,7 @@
       "dependencies": [
         "@kobalte/core@^0.13.14"
       ],
-      "registryDependencies": [
-        "@adea-ai/ui/tooltip"
-      ],
+      "registryDependencies": [],
       "files": [
         {
           "path": "src/components/layout/side-rail/index.ts",
@@ -1097,6 +1451,31 @@
       ]
     },
     {
+      "name": "account-menu",
+      "type": "registry:ui",
+      "title": "Account Menu",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/dropdown-menu"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/account-menu/account-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/account-menu/account-menu.tsx"
+        },
+        {
+          "path": "src/components/composites/account-menu/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/account-menu/index.ts"
+        }
+      ]
+    },
+    {
       "name": "list-row",
       "type": "registry:ui",
       "title": "List Row",
@@ -1161,11 +1540,110 @@
       ]
     },
     {
+      "name": "update-dialog",
+      "type": "registry:ui",
+      "title": "Update Dialog",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/dialog",
+        "@adea-ai/ui/progress"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/update-dialog/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/update-dialog/index.ts"
+        },
+        {
+          "path": "src/components/composites/update-dialog/update-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/update-dialog/update-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "workspace-mark",
+      "type": "registry:ui",
+      "title": "Workspace Mark",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/tooltip"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/workspace-mark/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-mark/index.ts"
+        },
+        {
+          "path": "src/components/composites/workspace-mark/workspace-mark.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-mark/workspace-mark.tsx"
+        }
+      ]
+    },
+    {
+      "name": "conversation",
+      "type": "registry:ui",
+      "title": "Conversation",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/kbd",
+        "@adea-ai/ui/spinner",
+        "@adea-ai/ui/textarea"
+      ],
+      "files": [
+        {
+          "path": "src/components/conversation/conversation-avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/conversation-avatar.tsx"
+        },
+        {
+          "path": "src/components/conversation/conversation-surface.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/conversation-surface.tsx"
+        },
+        {
+          "path": "src/components/conversation/index.ts",
+          "type": "registry:ui",
+          "target": "components/conversation/index.ts"
+        },
+        {
+          "path": "src/components/conversation/message-composer.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/message-composer.tsx"
+        },
+        {
+          "path": "src/components/conversation/message-row.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/message-row.tsx"
+        },
+        {
+          "path": "src/components/conversation/thread-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/thread-panel.tsx"
+        }
+      ]
+    },
+    {
       "name": "theme",
       "type": "registry:style",
       "title": "Adea theme",
       "description": "The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.",
       "dependencies": [
+        "@fontsource-variable/geist@^5.3.0",
+        "@fontsource-variable/geist-mono@^5.3.0",
         "@fontsource-variable/jetbrains-mono@^5.3.0",
         "@fontsource-variable/space-grotesk@^5.3.0",
         "tw-animate-css@^1.4.0"

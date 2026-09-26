@@ -60,9 +60,50 @@ gets the compiled build and loses nothing but source-level HMR.
 
 ### Peer dependencies
 
-`solid-js` is a peer. Every other dependency is bundled by _reference_, not inlined
-— the library externalises every bare import, so a second copy of Kobalte cannot
-appear in a consumer's bundle.
+`solid-js` is a peer, and so are four others — **all optional**:
+
+| Peer                                      | Needed by  | If you do not install it |
+| ----------------------------------------- | ---------- | ------------------------ |
+| `solid-js`                                | everything | nothing works            |
+| `chart.js` + `solid-chartjs`              | `chart`    | do not import `chart`    |
+| `embla-carousel` + `embla-carousel-solid` | `carousel` | do not import `carousel` |
+
+They are peers rather than dependencies on purpose: an application that uses
+neither a chart nor a carousel should not install either. Nothing else in the
+package reaches them, so leaving them out costs nothing but those two components.
+
+Every other dependency is bundled by _reference_, not inlined — the library
+externalises every bare import, so a second copy of Kobalte cannot appear in a
+consumer's bundle.
+
+### What one component costs
+
+Measured by `bun run --cwd packages/ui check:tree-shaking`, which builds real
+bundles against the built package. Importing one component from the package root
+does not pull in the library:
+
+| Import              | Gzipped    | What it brings                        |
+| ------------------- | ---------- | ------------------------------------- |
+| `Button`            | 19.8 kB    | the floor — Solid, `clsx`, `tw-merge` |
+| `Board`             | 18.4 kB    | nothing                               |
+| `DiffBlock`         | 20.9 kB    | lucide icons                          |
+| `CodeBlock`         | 23.5 kB    | lucide icons                          |
+| `MessageRow`        | 24.7 kB    | nothing                               |
+| `CalendarSurface`   | 27.4 kB    | corvu calendar                        |
+| `ModalDialog`       | 31.9 kB    | Kobalte dialog                        |
+| `Carousel`          | 32.1 kB    | embla                                 |
+| `NavigationMenu`    | 54.2 kB    | Kobalte navigation menu               |
+| `LineChart`         | 86.2 kB    | chart.js, the line controller only    |
+| _the whole library_ | _275.2 kB_ | — and `Button` is 7.2% of it          |
+
+The chart splits from itself, which is why chart.js was chosen: `LineChart` is
+10.3 kB smaller than importing all seven chart types together, because the
+controllers are imported per component while the shared scales and plugins are
+registered once. The gate fails if that stops being true.
+
+Two budgets are enforced in CI: a single component must stay under 40 kB, and no
+component may exceed 180 kB. A regression here is silent — nothing fails, the
+application just gets bigger — which is why it is a gate rather than a report.
 
 ---
 
@@ -208,18 +249,60 @@ and its value can move if a contrast floor demands it — but the name is API.
 
 ## Migrating from a local component library
 
-Adea currently carries `packages/ui` with an overlapping set of components. The
-adoption path is:
+Adea carries `packages/ui` (its design system) and `packages/workspace-ui` (its app
+layer). Both are superseded by this package, and the mapping below is the work
+already done for the app layer — every row is a port, not a plan.
 
-1. Add `@adea-ai/ui` to the application.
-2. Replace imports component by component, starting with the shell: `AppShell`,
-   `SideRail`, `SidebarNav`, `TopBar`, `StatusBar`, `Panel`. The layout is where the
-   visual difference between the applications is largest and where the shared
-   geometry does the most work.
-3. Move any component-specific styling into a variant here rather than keeping it in
-   the application. If a local component needs a look the system does not have, that
-   look belongs in the system.
+The rule the ports followed: **the library owns the shape, the application owns the
+model.** A component that decided its own list, its own icons or its own column
+names could only ever serve one product, so those stay in the app and the library
+takes the presentation plus the behaviour that is easy to get wrong.
+
+| In adea                                   | Here                                         | What changed                                             |
+| ----------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
+| `conversation-avatar`                     | `ConversationAvatar`                         | kinds `user`/`agent`/`system`, no domain type            |
+| `message-row`                             | `MessageRow`                                 | slots for attachments, links, actions; `streaming` added |
+| `message-composer`                        | `MessageComposer`                            | controlled value, slots, draft survives a failed send    |
+| `conversation-surface`                    | `ConversationSurface`                        | sticks to bottom only when already there                 |
+| `thread-panel`                            | `ThreadPanel`                                | `aside` landmark, root message pinned                    |
+| `modal-dialog`                            | `ModalDialog`                                | unmounts closed, `inert` background, explicit label      |
+| `account-menu`                            | `AccountMenu`                                | **items come from the caller**                           |
+| `global-workspace-rail`                   | `SideRail` + `SideRailItem` + `AccountMenu`  | composition; the rail's content is domain                |
+| `task-board`                              | `Board`                                      | column ids and `canDrop` are the caller's                |
+| `task-detail`, `artifact-detail`          | `DetailPanel` + `DetailPanelSection`/`Field` | `aside` with a label, sticky header                      |
+| `capability-card`, `agent-status`         | `StatusChip` + `StatusList`                  | six tones, `unknown` distinct from `neutral`             |
+| `agent-roster`, channel and room lists    | `Item` / `ListRow`                           | the row ladder                                           |
+| `room-icon`, `plugin-logo`                | `EntityIcon`                                 | monogram fallback, tone owns its own contrast            |
+| `version-dialog`                          | `UpdateDialog`                               | an adapter supplies the transport                        |
+| `workspace-brand`                         | `EntityIcon` + the type scale                | an eyebrow and a title are not a component               |
+| `account-drawer`                          | `Drawer` + `AccountMenu`                     | a composition                                            |
+| `settings-section`                        | `SettingsSection`                            | unchanged in intent                                      |
+| `workspace-states` (empty/error/skeleton) | `Empty`, `Skeleton`                          | the empty state takes an action slot                     |
+| `keyed-rows`                              | `keyedRows` (a util)                         | unchanged — this one is the highest-value port           |
+| `notifications`                           | **stays in adea**                            | URL construction and preview redaction are app policy    |
+| `on-screen-controls`, `scene-settings`    | **stays in adea**                            | Agent Sim's 3D scene is domain, not design               |
+| `virtual-*`                               | **stays in adea**                            | the virtual-room transport is domain                     |
+
+And the new surfaces neither application had: `CodeBlock`, `DiffBlock`,
+`NavigationMenu`, `Calendar`/`DatePicker`, `Carousel`, `Chart`, plus `Board`,
+`DetailPanel`, `EntityIcon`, `StatusChip` and `UpdateDialog` above.
+
+### The adoption path
+
+1. Add `@adea-ai/ui` to the application, and the four stylesheet imports
+   (`theme.css`, `base.css`, and optionally `fonts.css`) after Tailwind.
+2. Replace the shell first: `AppShell`, `SideRail`, `SidebarNav`, `TopBar`,
+   `StatusBar`, `Panel`. The layout is where the visual difference between the two
+   applications is largest and where the shared geometry does the most work.
+3. Work down the table above. Where a local component needs a look the system does
+   not have, that look belongs in a variant here rather than in the application.
 4. Delete the local package once nothing imports it.
+
+**The name collision.** `@adea-ai/ui` is already the name of adea's local
+`packages/ui`. Adoption means removing the local workspace entry, so the import
+specifier resolves to this package instead — which is also why the migration is
+component-by-component rather than a rename: the specifier stays the same and each
+import is either satisfied by this package or is not.
 
 The two applications must not both exist as component libraries in the long run —
 the point of this repository is that they are one.

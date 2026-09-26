@@ -18,26 +18,41 @@
 export * from './components/ui/accordion'
 export * from './components/ui/alert'
 export * from './components/ui/alert-dialog'
+export * from './components/ui/aspect-ratio'
 export * from './components/ui/avatar'
+export * from './components/ui/board'
 export * from './components/ui/badge'
 export * from './components/ui/breadcrumb'
 export * from './components/ui/button'
+export * from './components/ui/button-group'
+export * from './components/ui/calendar'
+export * from './components/ui/carousel'
+export * from './components/ui/chart'
 export * from './components/ui/card'
 export * from './components/ui/checkbox'
 export * from './components/ui/collapsible'
 export * from './components/ui/combobox'
+export * from './components/ui/code-block'
 export * from './components/ui/command'
 export * from './components/ui/context-menu'
 export * from './components/ui/dialog'
+export * from './components/ui/diff-block'
+export * from './components/ui/detail-panel'
 export * from './components/ui/drawer'
 export * from './components/ui/dropdown-menu'
+export * from './components/ui/entity-icon'
 export * from './components/ui/empty'
 export * from './components/ui/field'
 export * from './components/ui/hover-card'
 export * from './components/ui/input'
+export * from './components/ui/item'
 export * from './components/ui/input-group'
+export * from './components/ui/input-otp'
 export * from './components/ui/kbd'
 export * from './components/ui/label'
+export * from './components/ui/menubar'
+export * from './components/ui/modal-dialog'
+export * from './components/ui/navigation-menu'
 export * from './components/ui/pagination'
 export * from './components/ui/popover'
 export * from './components/ui/progress'
@@ -49,6 +64,7 @@ export * from './components/ui/separator'
 export * from './components/ui/sheet'
 export * from './components/ui/skeleton'
 export * from './components/ui/slider'
+export * from './components/ui/status-chip'
 export * from './components/ui/spinner'
 export * from './components/ui/switch'
 export * from './components/ui/table'
@@ -59,6 +75,9 @@ export * from './components/ui/toggle'
 export * from './components/ui/toggle-group'
 export * from './components/ui/tooltip'
 
+/* --- Motion -------------------------------------------------------------- */
+export * from './components/motion'
+
 /* --- Layout -------------------------------------------------------------- */
 export * from './components/layout/app-shell'
 export * from './components/layout/page'
@@ -68,10 +87,19 @@ export * from './components/layout/sidebar-nav'
 export * from './components/layout/status-bar'
 export * from './components/layout/top-bar'
 
+/* --- Conversation -------------------------------------------------------- */
+export * from './components/conversation'
+
+/* --- Theming ------------------------------------------------------------- */
+export * from './components/theme'
+
 /* --- Composites ---------------------------------------------------------- */
+export * from './components/composites/account-menu'
 export * from './components/composites/list-row'
 export * from './components/composites/settings'
 export * from './components/composites/stat'
+export * from './components/composites/update-dialog'
+export * from './components/composites/workspace-mark'
 
 /* --- Library ------------------------------------------------------------- */
 export { cn } from './lib/utils'
@@ -86,16 +114,41 @@ export {
   type VariantProps,
 } from './lib/variants'
 export {
+  builtinThemes,
+  contrastRatio,
+  defaultDarkThemeId,
+  defaultLightThemeId,
+  themeById,
+  themeCssVariables,
+  themeFamilies,
+  themesForAppearance,
+  validateTheme,
+  validateThemeRegistry,
+  type ThemeAppearance,
+  type ThemeColors,
+  type ThemeEditorPalette,
+  type ThemeFinding,
+  type ThemeProvenance,
+  type ThemeTerminalPalette,
+  type ThemeVariant,
+} from './lib/themes'
+export { keyedRows, type KeyedRow } from './lib/keyed-rows'
+export { formatBytes, formatReleaseDate, plainTextFromMarkdown } from './lib/version-notes'
+export {
+  accentPresets,
   allTokens,
   colorTokens,
   densityTokens,
   designTokens,
   elevationTokens,
+  fontOptions,
   motionTokens,
   radiusTokens,
   typographyTokens,
   undocumentedTokenAliases,
   zIndexTokens,
+  type AccentPreset,
+  type FontOption,
   type TokenDefinition,
   type TokenKind,
 } from './lib/tokens'

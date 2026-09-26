@@ -17,6 +17,8 @@
  * token exists" a property the build enforces rather than a promise.
  */
 
+import { ACCENTS } from '@adea-ai/themes'
+
 export type TokenKind =
   | 'color'
   | 'dimension'
@@ -345,7 +347,7 @@ export const radiusTokens: TokenDefinition[] = [
     name: 'radius-lg',
     kind: 'dimension',
     description:
-      '12px — cards and panels. Also the knob: move this one value to re-round the whole system.',
+      '10px — cards and panels. Also the knob: move this one value to re-round the whole system.',
   },
   { name: 'radius-sm', kind: 'dimension', description: '6px — badges, keyboard keys, menu items.' },
   {
@@ -353,20 +355,62 @@ export const radiusTokens: TokenDefinition[] = [
     kind: 'dimension',
     description: '8px — every control: buttons, inputs, selects.',
   },
-  { name: 'radius-xl', kind: 'dimension', description: '16px — dialogs, menus, sheets.' },
-  { name: 'radius-2xl', kind: 'dimension', description: '20px — full-window surfaces and media.' },
+  { name: 'radius-xl', kind: 'dimension', description: '14px — dialogs, menus, sheets.' },
+  { name: 'radius-2xl', kind: 'dimension', description: '18px — full-window surfaces and media.' },
 ]
 
 export const typographyTokens: TokenDefinition[] = [
   {
     name: 'font-sans',
     kind: 'font-family',
-    description: 'Space Grotesk Variable, then the platform stack.',
+    description: 'The selected interface face. Space Grotesk unless the font axis says otherwise.',
   },
   {
     name: 'font-mono',
     kind: 'font-family',
-    description: 'JetBrains Mono Variable, then the platform stack.',
+    description: 'The selected monospace face. Code, terminals, ids, paths.',
+  },
+  {
+    name: 'font-family-space-grotesk',
+    kind: 'font-family',
+    description: 'The interface default, and the face the visual language was drawn against.',
+  },
+  {
+    name: 'font-family-jetbrains-mono',
+    kind: 'font-family',
+    description: 'The monospace default. Code, terminals, diffs.',
+  },
+  {
+    name: 'font-family-geist',
+    kind: 'font-family',
+    description: 'An alternative interface face. cortana already ships it.',
+  },
+  {
+    name: 'font-family-geist-mono',
+    kind: 'font-family',
+    description: 'The monospace counterpart to Geist.',
+  },
+  {
+    name: 'font-family-system',
+    kind: 'font-family',
+    description: "The platform's own interface face. First-class, not a fallback.",
+  },
+  {
+    name: 'font-family-system-mono',
+    kind: 'font-family',
+    description: "The platform's own monospace face.",
+  },
+  {
+    name: 'ui-tracking',
+    kind: 'text',
+    description:
+      'Letter spacing for measured chrome. `normal` on a proportional face, tightened when the UI font is monospace — which is roughly 20% wider at the same size.',
+  },
+  {
+    name: 'ui-word-spacing',
+    kind: 'text',
+    description:
+      "Word spacing for measured chrome. Mono's space is a full advance-width cell, so a two-word label reads as two floating words without this.",
   },
   {
     name: 'text-2xs',
@@ -534,6 +578,93 @@ export const zIndexTokens: TokenDefinition[] = [
     description: 'Notifications. Above everything, so they are never hidden by a dialog.',
   },
 ]
+
+/**
+ * The accent axis.
+ *
+ * adea's accent presets, as a selection rather than a constant. `theme` is the
+ * default and means "the variant's own primary" — monochrome in adea's palette —
+ * and each named preset overrides the interactive roles through the
+ * `[data-accent]` blocks in `theme.css`.
+ *
+ * These are the same six presets `accentPresets` exports in adea's own
+ * `appearance.ts`, and the values match. A consumer's appearance picker and the
+ * workshop's theme toolbar read this one list, so the two cannot disagree about
+ * what a preset is called or what colour it is.
+ */
+export type AccentPreset = {
+  /** The `data-accent` value. `theme` is the variant's own primary. */
+  id: string
+  label: string
+  /** What the preset is for, in the gallery and in a picker. */
+  description: string
+  /** The accent as it appears in the light theme. Absent for `theme`. */
+  light?: string
+  /** The accent as it appears in the dark theme. Absent for `theme`. */
+  dark?: string
+}
+
+export const accentPresets: readonly AccentPreset[] = Object.freeze([
+  {
+    id: 'theme',
+    label: 'Theme',
+    description:
+      "The variant's own primary. Neutral in adea's palette, so the interface stays monochrome.",
+  },
+  ...ACCENTS,
+])
+
+/**
+ * The font axis.
+ *
+ * The family is a selection, like the accent: `data-font` sits on the same element
+ * and each option swaps the interface face. `space-grotesk` is the default because
+ * it is the face the visual language was drawn against, and `system` is a
+ * first-class option rather than a fallback — an application that wants the
+ * platform's own face should be able to say so without losing the rest of the
+ * system.
+ */
+export type FontOption = {
+  /** The `data-font` value. `space-grotesk` is the default and needs no attribute. */
+  id: string
+  label: string
+  description: string
+  /** Which of the two stacks this option sets. */
+  stack: 'sans' | 'mono' | 'both'
+}
+
+export const fontOptions: readonly FontOption[] = Object.freeze([
+  {
+    id: 'space-grotesk',
+    label: 'Space Grotesk',
+    description: 'The default, and the face the visual language was drawn against.',
+    stack: 'both',
+  },
+  {
+    id: 'system',
+    label: 'System',
+    description: "The platform's own face. What a terminal or editor usually wants.",
+    stack: 'both',
+  },
+  {
+    id: 'geist',
+    label: 'Geist',
+    description: 'The face cortana already ships. Neutral and wide.',
+    stack: 'both',
+  },
+  {
+    id: 'geist-mono',
+    label: 'Geist Mono',
+    description: 'Monospace throughout, for someone who wants a uniform texture.',
+    stack: 'both',
+  },
+  {
+    id: 'jetbrains-mono',
+    label: 'JetBrains Mono',
+    description: 'Monospace throughout, with coding ligatures off.',
+    stack: 'both',
+  },
+])
 
 /** Every token, in gallery order. */
 export const designTokens = {

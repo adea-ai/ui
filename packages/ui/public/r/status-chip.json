@@ -1,0 +1,22 @@
+{
+  "name": "status-chip",
+  "type": "registry:ui",
+  "title": "Status Chip",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/status-chip/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/status-chip/index.ts"
+    },
+    {
+      "path": "src/components/ui/status-chip/status-chip.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/status-chip/status-chip.tsx"
+    }
+  ]
+}

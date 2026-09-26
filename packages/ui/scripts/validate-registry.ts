@@ -99,11 +99,15 @@ export function validateRegistry(): string[] {
       // The root export list is what a consumer sees; an item that is not in it
       // is a component the registry can install but the package does not admit
       // to having.
+      //
+      // A `self` root (the conversation module) is exported one level up, at
+      // `./components/<name>`, because the folder *is* the component.
       const exported = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8')
       const reachable =
         exported.includes(`./components/ui/${item.name}`) ||
         exported.includes(`./components/layout/${item.name}`) ||
-        exported.includes(`./components/composites/${item.name}`)
+        exported.includes(`./components/composites/${item.name}`) ||
+        exported.includes(`./components/${item.name}'`)
 
       if (!reachable) {
         findings.push(

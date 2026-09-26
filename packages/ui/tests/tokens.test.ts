@@ -1,62 +1,36 @@
 import { describe, expect, test } from 'bun:test'
+import { contrastRatio, parseColor as parseCatalogueColor } from '@adea-ai/themes'
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
 import { declarations, declaredNames, valueOf, type Scope } from './helpers/theme-css'
 
 /* ---------------------------------------------------------------------------
- * OKLCH → sRGB → relative luminance, so contrast is *measured* rather than
- * asserted. Values are rounded to 8 bits per channel, exactly as a browser
- * renders them, so the number this test computes is the number a user sees.
+ * Contrast is *measured*, and the measurement is the catalogue's.
+ *
+ * This file used to carry its own OKLCH → sRGB → luminance conversion, matrices
+ * and all. That was a second implementation of arithmetic `@adea-ai/themes` already
+ * ships, and the failure mode of two implementations is the bad one: they agree
+ * until a rounding difference makes one of them report a pass and the other a fail,
+ * and then the number in CI is not the number in the catalogue.
+ *
+ * So `contrastRatio` and `parseColor` are imported. What stays here is what is
+ * genuinely *this system's*: the pairings it renders, and the floors it holds its own
+ * default themes to.
  * ------------------------------------------------------------------------- */
 
-function srgbToLinear(channel: number): number {
-  const c = channel / 255
-  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-}
-
-function linearToSrgb(value: number): number {
-  return value <= 0.0031308 ? 12.92 * value : 1.055 * value ** (1 / 2.4) - 0.055
-}
-
-function oklchToRgb(l: number, c: number, hDeg: number): [number, number, number] {
-  const h = (hDeg * Math.PI) / 180
-  const a = c * Math.cos(h)
-  const b = c * Math.sin(h)
-
-  const lms = [
-    l + 0.3963377774 * a + 0.2158037573 * b,
-    l - 0.1055613458 * a - 0.0638541728 * b,
-    l - 0.0894841775 * a - 1.291485548 * b,
-  ].map((v) => v ** 3)
-
-  const linear = [
-    4.0767416621 * lms[0]! - 3.3077115913 * lms[1]! + 0.2309699292 * lms[2]!,
-    -1.2684380046 * lms[0]! + 2.6097574011 * lms[1]! - 0.3413193965 * lms[2]!,
-    -0.0041960863 * lms[0]! - 0.7034186147 * lms[1]! + 1.707614701 * lms[2]!,
-  ]
-
-  return linear.map((v) =>
-    Math.round(Math.max(0, Math.min(1, linearToSrgb(Math.max(0, Math.min(1, v))))) * 255)
-  ) as [number, number, number]
-}
-
-function parseColor(raw: string | undefined): [number, number, number] | undefined {
-  if (!raw) return undefined
-  const oklch = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/.exec(raw.trim())
-  if (!oklch) return undefined
-  return oklchToRgb(Number(oklch[1]), Number(oklch[2]), Number(oklch[3]))
-}
-
-function relativeLuminance(rgb: [number, number, number]): number {
-  const [r, g, b] = rgb.map(srgbToLinear) as [number, number, number]
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-function contrast(a: [number, number, number], b: [number, number, number]): number {
-  const [light, dark] = [relativeLuminance(a), relativeLuminance(b)].toSorted((x, y) => y - x) as [
-    number,
-    number,
-  ]
-  return (light + 0.05) / (dark + 0.05)
+/**
+ * The measured ratio between two declared values.
+ *
+ * A value the catalogue cannot read — missing, or not a colour it parses —
+ * measures `NaN`, and `NaN` fails every floor it is compared against. That is the
+ * behaviour worth having: an unreadable token fails loudly at the assertion that
+ * names it, rather than being skipped or compared as zero. The pairings loop also
+ * asserts readability directly, so the failure message says which token and why.
+ */
+function ratio(fg: string | undefined, bg: string | undefined): number {
+  const foreground = fg ? parseCatalogueColor(fg) : undefined
+  const background = bg ? parseCatalogueColor(bg) : undefined
+  if (!foreground || !background) return Number.NaN
+  return contrastRatio(foreground, background)
 }
 
 const themes: Scope[] = ['root', 'dark']
@@ -111,10 +85,19 @@ describe('token manifest', () => {
 
 describe('contrast', () => {
   /**
-   * The pairings the system actually renders, each measured on the surface the
-   * text really sits on. These are not aspirations: they are the numbers the
-   * token values were solved for, and a change that breaks one is a visible
-   * regression for anyone reading the interface at 4.5:1 or below.
+   * The pairings *this system* renders, each measured on the surface the text
+   * really sits on.
+   *
+   * **These floors are deliberately not the catalogue's.** `@adea-ai/themes` holds
+   * every palette it accepts to WCAG AA — `CONTRAST_FLOORS` is 4.5:1 for text and
+   * 3:1 for a raised indicator — because a floor that rejected a well-made
+   * third-party palette would make the catalogue useless. The two themes that ship
+   * as this system's defaults are held higher: **7:1** for body text, which is AAA
+   * and is what "solved rather than chosen" means here.
+   *
+   * So a number below is not the catalogue's number restated, and it is not drift
+   * either. It is the stricter promise the defaults make, and the catalogue's own
+   * suite is the one that checks everything else.
    *
    * `color-mix()` fills (the `-subtle` family, the diff backgrounds) are not
    * covered here because their resolved value depends on what they are mixed
@@ -160,24 +143,27 @@ describe('contrast', () => {
     describe(`${label} theme`, () => {
       for (const pairing of pairings) {
         test(`${pairing.fg} on ${pairing.bg} (${pairing.why})`, () => {
-          const fg = parseColor(valueOf(pairing.fg, theme))
-          const bg = parseColor(valueOf(pairing.bg, theme))
+          const fg = valueOf(pairing.fg, theme)
+          const bg = valueOf(pairing.bg, theme)
 
-          // A pairing whose tokens are not plain oklch() is a test bug, not a
-          // pass — better to fail loudly than to skip silently.
+          // A pairing whose tokens are missing, or whose values the catalogue
+          // cannot read, is a test bug rather than a pass — better to fail loudly
+          // than to compare NaN and skip silently.
+          expect(fg, `${pairing.fg} is not declared in the ${label} theme`).toBeDefined()
+          expect(bg, `${pairing.bg} is not declared in the ${label} theme`).toBeDefined()
           expect(
-            fg,
-            `${pairing.fg} is not a plain oklch() value in the ${label} theme`
+            parseCatalogueColor(fg!),
+            `${pairing.fg} is not a value @adea-ai/themes can read in the ${label} theme`
           ).toBeDefined()
           expect(
-            bg,
-            `${pairing.bg} is not a plain oklch() value in the ${label} theme`
+            parseCatalogueColor(bg!),
+            `${pairing.bg} is not a value @adea-ai/themes can read in the ${label} theme`
           ).toBeDefined()
 
-          const ratio = contrast(fg!, bg!)
+          const measured = ratio(fg, bg)
           expect(
-            Number(ratio.toFixed(2)),
-            `${pairing.fg} on ${pairing.bg} measures ${ratio.toFixed(2)}:1 in the ${label} theme, ` +
+            Number(measured.toFixed(2)),
+            `${pairing.fg} on ${pairing.bg} measures ${measured.toFixed(2)}:1 in the ${label} theme, ` +
               `below the ${pairing.minimum}:1 floor. Adjust the token in theme.css.`
           ).toBeGreaterThanOrEqual(pairing.minimum)
         })
@@ -188,15 +174,13 @@ describe('contrast', () => {
   test('a focus ring is distinguishable from its surface', () => {
     for (const theme of themes) {
       const label = theme === 'root' ? 'light' : 'dark'
-      const ring = parseColor(valueOf('ring', theme))!
-      const background = parseColor(valueOf('background', theme))!
-      const ratio = contrast(ring, background)
+      const measured = ratio(valueOf('ring', theme), valueOf('background', theme))
 
       // WCAG 1.4.11 sets a 3:1 floor for a non-text indicator that is the only
       // cue to state. The ring is that cue for keyboard focus.
       expect(
-        Number(ratio.toFixed(2)),
-        `the focus ring is ${ratio.toFixed(2)}:1 on the ${label} canvas`
+        Number(measured.toFixed(2)),
+        `the focus ring is ${measured.toFixed(2)}:1 on the ${label} canvas`
       ).toBeGreaterThanOrEqual(3)
     }
   })
@@ -204,16 +188,14 @@ describe('contrast', () => {
   test('the border is subtle but present on both surfaces', () => {
     for (const theme of themes) {
       const label = theme === 'root' ? 'light' : 'dark'
-      const border = parseColor(valueOf('border', theme))!
-
       for (const surface of ['background', 'card']) {
-        const ratio = contrast(border, parseColor(valueOf(surface, theme))!)
+        const measured = ratio(valueOf('border', theme), valueOf(surface, theme))
         // A hairline is decoration, not an indicator, so the WCAG floor does not
         // apply — but a border that resolves to its own surface is an invisible
         // card, which is a real defect. 1.1:1 is "you can see there is an edge".
         expect(
-          Number(ratio.toFixed(3)),
-          `border is ${ratio.toFixed(3)}:1 against ${surface} in the ${label} theme — too faint to read as an edge`
+          Number(measured.toFixed(3)),
+          `border is ${measured.toFixed(3)}:1 against ${surface} in the ${label} theme — too faint to read as an edge`
         ).toBeGreaterThanOrEqual(1.1)
       }
     }

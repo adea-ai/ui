@@ -1,0 +1,20 @@
+{
+  "name": "aspect-ratio",
+  "type": "registry:ui",
+  "title": "Aspect Ratio",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/aspect-ratio/aspect-ratio.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/aspect-ratio/aspect-ratio.tsx"
+    },
+    {
+      "path": "src/components/ui/aspect-ratio/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/aspect-ratio/index.ts"
+    }
+  ]
+}

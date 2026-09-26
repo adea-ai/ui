@@ -1,0 +1,20 @@
+{
+  "name": "entity-icon",
+  "type": "registry:ui",
+  "title": "Entity Icon",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/entity-icon/entity-icon.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/entity-icon/entity-icon.tsx"
+    },
+    {
+      "path": "src/components/ui/entity-icon/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/entity-icon/index.ts"
+    }
+  ]
+}

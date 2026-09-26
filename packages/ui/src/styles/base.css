@@ -347,6 +347,42 @@
   animation: ds-shimmer 1.6s ease-in-out infinite;
 }
 
+/**
+ * A streaming caret: the block that trails the last character of a turn that is
+ * still arriving. It is a caret rather than a spinner because the text is already
+ * readable and growing — the reader wants to know *where* the stream is, not that
+ * something is happening somewhere.
+ *
+ * `inline-block` with a `1ch` width so it sits in the text flow, and the blink is
+ * a step rather than a fade so it reads as a terminal cursor. It is removed under
+ * `prefers-reduced-motion` — the accessibility block below zeroes the duration,
+ * which would leave a static block; the component hides it there instead.
+ */
+@utility streaming-caret {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1em;
+  margin-left: 0.1em;
+  translate: 0 0.1em;
+  background: var(--foreground);
+  animation: ds-caret 1s steps(2, start) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes ds-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* The glass treatment used by the top bar, the rail, and floating overlays.
    `--glass-*` are private: a consumer chooses *whether* to be glassy through
    the component prop, not by reaching for these. */
@@ -374,6 +410,84 @@
     outline: none;
     border-color: var(--ring);
     box-shadow: 0 0 0 3px var(--primary-subtle);
+  }
+}
+
+/* --- Scrollbars ----------------------------------------------------------
+ * Themed, thin, and out of the way. A default scrollbar is the single most
+ * obvious "this is a web page" tell in a desktop application: on macOS it is
+ * an overlay that vanishes, but on Windows and Linux it is a 15px chrome bar
+ * with the platform's own palette, which no theme can reach.
+ *
+ * The thumb is `--muted` at rest and `--foreground` on hover, so it is visible
+ * against every surface without a per-theme value, and it never competes with
+ * content for attention.
+ * ------------------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: var(--muted);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox, which has no ::-webkit-scrollbar. */
+@supports (scrollbar-width: thin) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) transparent;
+  }
+}
+
+/**
+ * An auto-hiding scrollbar, for a horizontal scroller inside a bordered
+ * surface — a code block, a diff, a wide table. The bar appears on hover and
+ * while the region has focus, so the surface reads as continuous code at rest
+ * and the affordance is there the moment a reader needs it.
+ */
+@utility scroll-fade {
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    transition: background var(--duration-normal) var(--ease-out);
+  }
+
+  &:hover::-webkit-scrollbar-thumb,
+  &:focus-within::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground);
+  }
+
+  @supports (scrollbar-width: thin) {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    &:hover,
+    &:focus-within {
+      scrollbar-color: var(--muted-foreground) transparent;
+    }
   }
 }
 

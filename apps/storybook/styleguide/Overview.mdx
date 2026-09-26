@@ -4,77 +4,63 @@ import { Meta } from '@storybook/addon-docs/blocks'
 
 # Adea UI
 
-The design system shared by **Adea** and **Cortana** — one themed component
-library, one token set, one window layout, so two separate applications read as one
-product.
+The design system shared by **Adea** and **Cortana** — one themed component library,
+one token set, one window layout, so two separate applications read as one product.
 
-This workshop is the review surface. Every component in the library has a page
-here, and the reasoning behind each one is in its story comments. **If a component
-is not in this workshop, it is not finished.**
+This workshop is the review surface. Every component in the library has a page here,
+and the reasoning behind each one is in its story comments. **If a component is not in
+this workshop, it is not finished.**
 
 ## Where to start
 
-| Section         | What it answers                                                              |
-| --------------- | ---------------------------------------------------------------------------- |
-| **Conventions** | How to write a component here, and why the rules exist.                      |
-| **Foundations** | The tokens: colour, type, spacing and density, radius and elevation, motion. |
-| **Layout**      | The window: app shell, side rail, sidebar, top bar, status bar, panels.      |
-| **Primitives**  | The component library, grouped by what a component is for.                   |
-| **Composites**  | Opinionated assemblies: settings, list rows, stats.                          |
+| Section          | What it answers                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------ |
+| **Conventions**  | How to write a component here, and why each rule exists. Read this second.                             |
+| **Foundations**  | The tokens and the axes: colour, type, spacing and density, radius, motion, icons.                     |
+| **Layout**       | The window: app shell, side rail, sidebar, top bar, status bar, panels, resizable, scroll area.        |
+| **Primitives**   | The component library, grouped by what a component is for.                                             |
+| **Composites**   | Opinionated assemblies: settings, list rows, stats, account menu, update dialog.                       |
+| **Conversation** | The transcript layer: message rows, the composer, the surface, threads.                                |
+| **UI**           | The app-layer shapes: board, detail panel, status, entity icon, code, diff, calendar, carousel, chart. |
 
-## The toolbar
+Read **Conventions** before writing a component and **Foundations** before choosing a
+value. Everything else is reference.
 
-Two controls, and both are the real mechanism rather than an approximation of it.
-
-**Theme** toggles the `dark` class on `<html>` — exactly what both applications
-do. The system is dark-first: the dark theme is the one the design language was
-drawn against, and the light theme is a full peer rather than an inversion. Look at
-both; the accent changes polarity between them.
-
-**Density** switches between the comfortable and compact row heights.
-
-## What makes this recognisably one system
-
-Three decisions, and everything else follows from them.
-
-**A blue-tinted neutral ladder with exactly one accent.** The neutrals sit at hue
-270–286 with a small chroma, which reads as a cool surface rather than a flat grey.
-The single emerald accent is used for one thing — the primary action, the selected
-destination, the focus ring — and nothing else is coloured.
-
-**Compact density.** 14px is the interface default and the two control heights that
-carry the product are 28px and 32px. This is a desktop tool used for hours at a
-time, and the extra rows are worth more than the extra legibility of 16px.
-
-**Every value is a token, and every token is measured.** No component contains a
-literal colour, size, radius or shadow, and the contrast floors the system promises
-are asserted in `packages/ui/tests/tokens.test.ts` on every build. The numbers in
-`theme.css` are solved rather than chosen — the comments there record which surface
-fixed each one.
-
-## Reading a component page
-
-Each page has **docs** generated from the story file and a **canvas** with the live
-stories. The doc comment at the top of a component says what it is _for_ and when
-to reach for a different one — `Select` versus `Combobox`, `Switch` versus
-`Checkbox`, `Dialog` versus `Sheet` versus `Drawer`. Those choices are where a
-reader gets stuck, and they are what the comment is for.
-
-The stories are the specification. They favour the awkward states — an
-indeterminate checkbox, an invalid field, a collapsed rail, a table wider than its
-pane — because those are the states a regression shows up in first.
-
-## Consuming it
+## Installing it
 
 ```sh
 bun add @adea-ai/ui
 ```
 
+Then, once, in the application's stylesheet — after Tailwind:
+
 ```css
 @import 'tailwindcss';
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/fonts.css'; /* optional: the self-hosted typefaces */
+```
+
+If the application does not already import Tailwind, one line does everything:
+
+```css
+@import '@adea-ai/ui/globals.css';
 @import '@adea-ai/ui/fonts.css';
+```
+
+`theme.css` is the preferred entry for an app with its own Tailwind setup; importing
+`globals.css` as well would import Tailwind twice. `fonts.css` is optional — it pulls
+the variable faces from `@fontsource-variable`, so an app that would rather use the
+platform's own faces can skip it.
+
+Then render the provider:
+
+```tsx
+import { ThemeProvider, TooltipProvider } from '@adea-ai/ui'
+
+;<ThemeProvider storageKey="my-app-appearance">
+  <TooltipProvider>{/* the application */}</TooltipProvider>
+</ThemeProvider>
 ```
 
 Or take a single component through the registry, without the package:
@@ -83,6 +69,131 @@ Or take a single component through the registry, without the package:
 bunx shadcn@latest add https://adea-ai.github.io/ui/r/button.json
 ```
 
-The full contract — the stylesheet exports, the build conditions, re-hueing the
-palette, changing density, the versioning policy — is in
-[docs/consumption.md](https://github.com/adea-ai/ui/blob/main/docs/consumption.md).
+## The toolbar
+
+Four controls, and all four are the real mechanism rather than an approximation of it.
+Each sets the same preference an application sets, and the library's own
+`ThemeProvider` applies it the same way — so a theme or an accent added to the
+catalogue appears here with no change to this workshop.
+
+**Theme** selects from the **27 variants** in the catalogue, across fourteen families:
+Adea, Ayu, Catppuccin, Dracula, Everforest, Gruvbox, Kanagawa, Monokai, Nord, One Dark,
+Rosé Pine, Solarized, Tokyo Night, Vesper. A variant declares its own appearance, so
+picking one pins it in the light or dark slot rather than being a fifth axis.
+
+Those variants live in [`@adea-ai/themes`](https://github.com/adea-ai/themes), which
+sources them from mature upstream projects and owns the schema and the normalization
+rather than the palettes themselves. `packages/ui/src/lib/themes.ts` is the bridge from
+the catalogue's canonical roles into this system's variable vocabulary, and
+`packages/ui/tests/themes.test.ts` checks that every catalogue entry survives it. The
+contrast floors live with the catalogue: the third-party palettes are _measured_, not
+hand-checked, and at least one would have failed on its own published values.
+
+**Typeface** is the font axis: Space Grotesk (the default the language was drawn
+against), System, Geist, Geist Mono, JetBrains Mono. The two monospace faces set
+`--ui-tracking` and `--ui-word-spacing` when they become the interface font, because
+mono is roughly 20% wider at the same size and every measurement here was taken against
+a proportional face.
+
+**Accent** is a _selection_, not a second theme. It sets `data-accent` on the same
+element that carries the theme, and re-colours the primary, its label, the hover rung,
+the tint and the focus ring. Seven presets, and the default (`theme`) keeps the
+interface monochrome. Look at the polarity flip while you are here: a bright accent in
+dark mode carries a black label and its deep light-mode form carries a white one.
+
+**Density** switches between the comfortable and compact row heights.
+
+## What makes this recognisably one system
+
+Four decisions, and everything else follows from them.
+
+**A tinted canvas, and one accent axis on top of it.** The two defaults are a _pair_:
+Aardvark Ink's canvas for dark, Nord Light's for light, three degrees apart in hue and
+both tinted rather than pure grey, with the same sixteen hues on each. Colour beyond
+that is carried by the accent axis and the status roles. The split is the point: a theme
+can be anyone's palette without giving up the accent the user chose, and an accent can
+be any of seven without the theme having to know.
+
+**Dark-first, with light as a peer.** The dark theme is the one the design language was
+drawn against, and light is a full variant rather than an inversion — the same hues,
+moved in lightness. Neither canvas is near-black or pure white: `#0f141f` and `#e3e9f4`,
+and `@adea-ai/themes` asserts the relationships that make them a pair. The catalogue
+does still carry GitHub Dark as an importable theme; it is simply not the default.
+
+**Compact density.** 14px is the interface default and the two control heights that
+carry the product are 28px (toolbar) and 32px (form). This is a desktop tool used for
+hours at a time, and the extra rows are worth more than the extra legibility of 16px.
+
+**Every value is a token, and every token is measured.** No component contains a literal
+colour, size, radius or shadow, and the contrast floors the system promises are asserted
+on every build — `tests/tokens.test.ts` measures every pairing the system actually uses,
+and the catalogue runs its own floors over all 27 variants through `@adea-ai/themes`. The numbers in
+`theme.css` are solved rather than chosen, and the comments there record which surface
+fixed each one.
+
+## Reading a component page
+
+Each page has **docs** generated from the story file and a **canvas** with the live
+stories. The doc comment at the top of a component says what it is _for_ and when to
+reach for a different one — `Select` versus `Combobox`, `Switch` versus `Checkbox`,
+`Dialog` versus `Sheet` versus `Drawer`, `Badge` versus `StatusChip`. Those choices are
+where a reader gets stuck, and they are what the comment is for.
+
+The stories are the specification. They favour the awkward states — an indeterminate
+checkbox, an invalid field, a collapsed rail, a table wider than its pane, a board with
+an empty column, a turn that is still streaming — because those are the states a
+regression shows up in first.
+
+## Accessibility is not a separate pass
+
+Every story here runs axe, and a violation **fails** the story rather than being
+reported as advice. The same bar runs headlessly in CI over all of it, in both the
+default light and default dark variants.
+
+Colour contrast is deliberately not axe's job in this workshop: axe cannot resolve a
+value inside a `color-mix()` and reports false positives on the status tints, so contrast
+is measured numerically by the token suite against every pairing the system uses. That is
+a stronger check than axe's, not a weaker one — it covers the pairings a story does not
+happen to render.
+
+The findings that have come out of this lane are worth knowing, because each one was a
+real defect rather than a technicality: a `Progress` that swallowed its `label`, a
+`Checkbox` whose `aria-label` sat on the wrong element, a `ScrollArea` that could not be
+focused, a `ResizableHandle` with no name, `AlertDialog` announcing both its buttons as
+"Dismiss", and a calendar whose day cells were unnamed _and blank_.
+
+## Performance is measured too
+
+`bun run check:tree-shaking` builds real bundles against the built package and fails if
+the numbers regress. Importing one component from the package root does not pull in the
+library:
+
+| Import              | Gzipped    |
+| ------------------- | ---------- |
+| `Button`            | 19.8 kB    |
+| `Board`             | 18.4 kB    |
+| `CodeBlock`         | 23.5 kB    |
+| `MessageRow`        | 24.7 kB    |
+| `CalendarSurface`   | 27.4 kB    |
+| `Carousel`          | 32.1 kB    |
+| `NavigationMenu`    | 54.2 kB    |
+| `LineChart`         | 86.2 kB    |
+| _the whole library_ | _275.2 kB_ |
+
+`Button` is 7.2% of the library, and the chart splits from itself — one chart type is
+10.3 kB cheaper than seven, because the controllers are imported per component while the
+shared scales register once. Two budgets are enforced: a single component under 40 kB,
+and no component over 180 kB.
+
+`chart.js`, `solid-chartjs` and the two `embla-carousel` packages are **optional peer
+dependencies**. An application that uses neither the chart nor the carousel does not
+install them.
+
+## Where to read more
+
+| Document                                                                                   | What it covers                                                                                                                             |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [docs/consumption.md](https://github.com/adea-ai/ui/blob/main/docs/consumption.md)         | The full contract: stylesheet exports, build conditions, re-hueing, density, versioning, and the migration map from adea's local packages. |
+| [docs/conventions.md](https://github.com/adea-ai/ui/blob/main/docs/conventions.md)         | The same rules as **Conventions**, in the repository.                                                                                      |
+| [docs/design-language.md](https://github.com/adea-ai/ui/blob/main/docs/design-language.md) | The visual reasoning: the surface ladder, the type scale, motion.                                                                          |
+| `NOTICE`                                                                                   | Where each borrowed palette came from, and its licence.                                                                                    |

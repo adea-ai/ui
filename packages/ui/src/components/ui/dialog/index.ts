@@ -1,5 +1,6 @@
 export {
   Dialog,
+  DialogClose,
   DialogCloseButton,
   DialogContent,
   DialogDescription,

@@ -35,8 +35,15 @@ export async function fetchStories(): Promise<StoryEntry[]> {
     .toSorted((a, b) => a.id.localeCompare(b.id))
 }
 
-/** The URL that renders one story on its own, without the manager chrome. */
-export function storyUrl(id: string, theme: 'light' | 'dark'): string {
+/**
+ * The URL that renders one story on its own, without the manager chrome.
+ *
+ * `theme` is a catalogue variant id, not a light/dark flag: the lane checks real
+ * themes, which is what a user would be looking at. `adea-dark` and `adea-light`
+ * are the two the accessibility lane runs, because they are the defaults — a
+ * catalogue variant only needs this treatment if it becomes one.
+ */
+export function storyUrl(id: string, theme: string): string {
   return `${BASE_URL}/iframe.html?id=${encodeURIComponent(id)}&globals=theme:${theme};density:comfortable&viewMode=story`
 }
 
@@ -55,7 +62,7 @@ export function storyUrl(id: string, theme: 'light' | 'dark'): string {
 export async function openStory(
   page: import('@playwright/test').Page,
   id: string,
-  theme: 'light' | 'dark'
+  theme: string
 ): Promise<void> {
   await page.goto(storyUrl(id, theme), { waitUntil: 'networkidle' })
   await page.locator('#storybook-root > *').first().waitFor({ state: 'visible', timeout: 10_000 })

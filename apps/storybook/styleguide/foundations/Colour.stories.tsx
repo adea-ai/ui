@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { colorTokens, designTokens } from '@adea-ai/ui'
+import { accentPresets, Badge, Button, colorTokens, designTokens, Input } from '@adea-ai/ui'
 import { For } from 'solid-js'
 import { ColorSwatch, TokenTable, TokenRow } from './token-preview'
 
@@ -220,6 +220,106 @@ export const DataRoles: Story = {
           change.
         </p>
       </div>
+    </div>
+  ),
+}
+
+/**
+ * The accent axis.
+ *
+ * Each default theme has **one** interactive colour of its own — the same blue in both,
+ * at different lightnesses, because the two themes are a pair — and a user can replace
+ * it with an independently chosen accent, which overrides the interactive primary, its
+ * label, its hover rung, the tint and the focus ring. Switch the **Accent** control in
+ * the toolbar to see the whole workshop follow.
+ *
+ * The six presets below are the ones adea ships, read from the library rather than
+ * restated here, so this page cannot offer an accent the package does not define.
+ * Each is shown on the components that actually carry the accent, because that is
+ * where the difference lives — a swatch would hide the two things that matter:
+ * whether a filled button reads as primary, and whether the focus ring is visible
+ * against the canvas.
+ */
+export const AccentPresets: Story = {
+  render: () => (
+    <div class="flex max-w-3xl flex-col gap-6">
+      <p class="max-w-prose text-sm text-muted-foreground">
+        Every accent is passed through two rules, the same ones adea's
+        <code>deriveAccentRoles</code> applies: a <strong>3:1 minimum</strong> against the surface
+        it is drawn on, so an accent can never ship unreadable; and a{' '}
+        <strong>label chosen by measurement</strong> rather than by convention. That second rule is
+        why the accent flips polarity between the themes — a bright violet in dark mode carries a
+        black label, and the same accent's deep light-mode form carries a white one.
+      </p>
+
+      <div class="flex flex-col gap-4">
+        <For each={accentPresets}>
+          {(preset) => (
+            <div
+              class="flex flex-wrap items-center gap-4 rounded-lg border border-border p-4"
+              data-accent={preset.id === 'theme' ? undefined : preset.id}
+            >
+              <div class="w-56 shrink-0">
+                <div class="text-sm font-medium">{preset.label}</div>
+                <p class="text-xs text-muted-foreground text-pretty">{preset.description}</p>
+                {preset.light ? (
+                  <code class="mt-1 block text-2xs text-muted-foreground">
+                    {preset.light} · {preset.dark}
+                  </code>
+                ) : (
+                  <code class="mt-1 block text-2xs text-muted-foreground">variant primary</code>
+                )}
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <Button size="sm">Primary</Button>
+                <Button size="sm" variant="subtle">
+                  Subtle
+                </Button>
+                <Badge variant="subtle">Badge</Badge>
+                <Input
+                  class="w-40"
+                  placeholder="Focus me"
+                  aria-label={`${preset.label} accent input`}
+                />
+              </div>
+            </div>
+          )}
+        </For>
+      </div>
+
+      <p class="max-w-prose text-sm text-muted-foreground">
+        Tab into a field to see the focus ring. It is derived from the accent rather than being a
+        fixed grey, because a ring that does not move with the accent is a ring that goes invisible
+        the moment someone picks a pale one.
+      </p>
+    </div>
+  ),
+}
+
+/**
+ * The monochrome default, on its own.
+ *
+ * Worth looking at by itself, because it is what the product looks like before
+ * anyone chooses an accent: a neutral interface where the only colour is the
+ * status family and a diff. It is a deliberate look, not a missing accent.
+ */
+export const MonochromeDefault: Story = {
+  render: () => (
+    <div class="flex max-w-prose flex-col gap-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <Button>Save</Button>
+        <Button variant="secondary">Cancel</Button>
+        <Button variant="outline">Options</Button>
+        <Button variant="ghost">Dismiss</Button>
+        <Button variant="destructive">Delete</Button>
+      </div>
+      <p class="text-sm text-muted-foreground">
+        With <code>data-accent</code> absent, every interactive role resolves to the variant's own
+        primary — the same blue in both themes, deepened for the light canvas and lifted for the
+        dark one. The destructive button keeps its own colour, because an accent never overrides a
+        status.
+      </p>
     </div>
   ),
 }

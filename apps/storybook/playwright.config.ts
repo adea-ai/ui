@@ -22,6 +22,12 @@ const externalUrl = process.env['STORYBOOK_URL']
 
 export default defineConfig({
   testDir: './tests',
+  /*
+   * The bun unit tests live under `tests/unit` and Playwright's default matcher
+   * collects `*.test.ts` as well as `*.spec.ts`. Without this, `playwright test`
+   * tries to run a `bun:test` file and fails on the import.
+   */
+  testIgnore: ['**/unit/**'],
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,

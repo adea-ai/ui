@@ -1,0 +1,20 @@
+{
+  "name": "diff-block",
+  "type": "registry:ui",
+  "title": "Diff Block",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "src/components/ui/diff-block/diff-block.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/diff-block/diff-block.tsx"
+    },
+    {
+      "path": "src/components/ui/diff-block/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/diff-block/index.ts"
+    }
+  ]
+}

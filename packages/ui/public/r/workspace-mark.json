@@ -1,0 +1,22 @@
+{
+  "name": "workspace-mark",
+  "type": "registry:ui",
+  "title": "Workspace Mark",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/workspace-mark/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-mark/index.ts"
+    },
+    {
+      "path": "src/components/composites/workspace-mark/workspace-mark.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-mark/workspace-mark.tsx"
+    }
+  ]
+}
