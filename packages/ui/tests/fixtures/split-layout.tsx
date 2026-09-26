@@ -18,6 +18,7 @@ function Fixture() {
   const [mounts, setMounts] = createSignal(0)
   const [unmounts, setUnmounts] = createSignal(0)
   const [visible, setVisible] = createSignal(true)
+  const [hidden, setHidden] = createSignal(false)
   const [moves, setMoves] = createSignal(0)
   const [hostPresentation, setHostPresentation] = createSignal(false)
   const [hostState, setHostState] = createSignal(
@@ -69,6 +70,13 @@ function Fixture() {
         )
     }
     if (detail === 'unmount') setVisible(false)
+    if (detail === 'hide') setHidden(true)
+    if (detail === 'show') setHidden(false)
+    if (detail === 'hide-unmount') {
+      setHidden(true)
+      setVisible(false)
+    }
+    if (detail === 'hidden-mount') setVisible(true)
     if (detail === 'host-presentation') setHostPresentation(true)
     if (detail === 'resize') setState((s) => resizeSplit(s, 'ab', 0.7))
   }
@@ -98,7 +106,7 @@ function Fixture() {
       >
         Move pane left
       </button>
-      <div class="h-96">
+      <div class="h-96" hidden={hidden()}>
         <Show when={visible()}>
           <SplitLayout
             state={state()}

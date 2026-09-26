@@ -48,6 +48,39 @@ test('host header content, pane Tab stops and separator names remain independent
     '-1'
   )
 })
+test('mounting a persisted split under a hidden host preserves its ratios', async ({ page }) => {
+  await act(page, 'split')
+  await act(page, 'nested')
+  await act(page, 'resize')
+  await act(page, 'hide-unmount')
+  await act(page, 'hidden-mount')
+  await act(page, 'show')
+  await expect(page.getByRole('separator', { name: 'Resize pane columns' })).toHaveAttribute(
+    'aria-valuenow',
+    '70'
+  )
+  await expect(page.getByRole('separator', { name: 'Resize pane rows' })).toHaveAttribute(
+    'aria-valuenow',
+    '50'
+  )
+})
+test('hiding and showing nested panes preserves controlled split ratios', async ({ page }) => {
+  await act(page, 'split')
+  await act(page, 'nested')
+  await act(page, 'resize')
+  const columns = page.getByRole('separator', { name: 'Resize pane columns' })
+  const rows = page.getByRole('separator', { name: 'Resize pane rows' })
+  await expect(columns).toHaveAttribute('aria-valuenow', '70')
+  await expect(rows).toHaveAttribute('aria-valuenow', '50')
+  await act(page, 'hide')
+  await expect(columns).toBeHidden()
+  await act(page, 'show')
+  await expect(columns).toBeVisible()
+  await expect(columns).toHaveAttribute('aria-valuenow', '70')
+  await expect(rows).toHaveAttribute('aria-valuenow', '50')
+  await expect(page.getByLabel('Mounts', { exact: true })).toHaveText('3')
+  await expect(page.getByLabel('Unmounts')).toHaveText('0')
+})
 test('split, resize and cross-parent move preserve the editor owner, DOM, value and caret', async ({
   page,
 }) => {

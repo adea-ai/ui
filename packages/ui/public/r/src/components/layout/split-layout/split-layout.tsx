@@ -307,6 +307,16 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
               sizes={[branch().ratio, 1 - branch().ratio]}
               keyboardDelta={0.05}
               onSizesChange={(sizes) => {
+                // Corvu also reports panel registration/unregistration while
+                // mounting or disposing a controller. Those incomplete or
+                // hidden-host sizes are not user resize intent.
+                if (!root?.isConnected || root.getClientRects().length === 0) return
+                if (
+                  sizes.length !== 2 ||
+                  sizes.some((size) => !Number.isFinite(size)) ||
+                  Math.abs(sizes[0]! + sizes[1]! - 1) > 0.000001
+                )
+                  return
                 if (sizes[0] !== undefined && Math.abs(sizes[0] - branch().ratio) > 0.000001)
                   props.onResize(id, sizes[0])
               }}
