@@ -21,6 +21,20 @@ export type StoryEntry = {
 
 const BASE_URL = (process.env['STORYBOOK_URL'] ?? 'http://127.0.0.1:6106').replace(/\/$/, '')
 
+export type OpenStoryOptions = {
+  baseUrl?: string
+}
+
+type StoryFinishedResult = {
+  storyId: string
+  status: string
+  reporters: Array<{
+    type?: string
+    status?: string
+    error?: string
+  }>
+}
+
 export async function fetchStories(): Promise<StoryEntry[]> {
   const response = await fetch(`${BASE_URL}/index.json`)
   if (!response.ok) {
@@ -45,8 +59,8 @@ export async function fetchStories(): Promise<StoryEntry[]> {
  * are the two the accessibility lane runs, because they are the defaults — a
  * catalogue variant only needs this treatment if it becomes one.
  */
-export function storyUrl(id: string, theme: string): string {
-  return `${BASE_URL}/iframe.html?id=${encodeURIComponent(id)}&globals=theme:${theme};density:comfortable&viewMode=story`
+export function storyUrl(id: string, theme: string, baseUrl = BASE_URL): string {
+  return `${baseUrl}/iframe.html?id=${encodeURIComponent(id)}&globals=theme:${theme};density:comfortable&viewMode=story`
 }
 
 function resolvedStoryTheme(theme: string): { id: string; appearance: 'light' | 'dark' } {
@@ -93,24 +107,137 @@ export async function waitForStoryReady(
   ])
 }
 
-async function waitForStoryRenderFinished(
+async function installStoryFinishedListener(
   page: import('@playwright/test').Page,
   storyId: string
 ): Promise<void> {
-  // Storybook's a11y addon reports from its `afterEach` render phase. Waiting
-  // for the preview's own finished phase keeps the external AxeBuilder lane
-  // from starting a second axe run while that report is still in flight.
+  // Storybook creates its preview addon store during page bootstrap. Install the
+  // channel hook before navigation so a fast story cannot emit STORY_FINISHED
+  // before the test starts waiting for it.
+  await page.addInitScript(
+    ({ id }) => {
+      const stateKey = '__ADEA_STORYBOOK_READINESS__'
+      const addonStoreKey = '__STORYBOOK_ADDONS_PREVIEW'
+      const state = { storyId: id, finished: null as unknown, channel: null as unknown }
+      const wrappedStores = new WeakSet<object>()
+
+      const attachChannel = (channel: unknown) => {
+        if (
+          !channel ||
+          typeof channel !== 'object' ||
+          typeof Reflect.get(channel, 'on') !== 'function' ||
+          state.channel === channel
+        ) {
+          return
+        }
+        state.channel = channel
+        Reflect.get(channel, 'on').call(channel, 'storyFinished', (result: unknown) => {
+          if (result && typeof result === 'object' && Reflect.get(result, 'storyId') === id) {
+            state.finished = result
+          }
+        })
+      }
+
+      const wrapStore = (store: unknown) => {
+        if (!store || typeof store !== 'object' || wrappedStores.has(store)) return
+        const setChannel = Reflect.get(store, 'setChannel')
+        if (typeof setChannel !== 'function') return
+        wrappedStores.add(store)
+        Reflect.set(store, 'setChannel', function (channel: unknown) {
+          const result = setChannel.call(this, channel)
+          attachChannel(channel)
+          return result
+        })
+        attachChannel(Reflect.get(store, 'channel'))
+      }
+
+      Object.defineProperty(globalThis, stateKey, {
+        configurable: true,
+        value: state,
+        writable: true,
+      })
+
+      let addonStore: unknown
+      Object.defineProperty(globalThis, addonStoreKey, {
+        configurable: true,
+        get: () => addonStore,
+        set: (store: unknown) => {
+          addonStore = store
+          wrapStore(store)
+        },
+      })
+    },
+    { id: storyId }
+  )
+}
+
+async function waitForStoryFinished(
+  page: import('@playwright/test').Page,
+  storyId: string
+): Promise<StoryFinishedResult> {
+  // Storybook's a11y addon reports from its `afterEach` render phase. The
+  // STORY_FINISHED event is emitted after that phase and carries its terminal
+  // status, so this both prevents concurrent axe runs and rejects failed
+  // render/play/report paths instead of treating their error UI as a story.
   await page.waitForFunction(
     (id) => {
-      const preview = Reflect.get(globalThis, '__STORYBOOK_PREVIEW__') as
-        | { storyRenders?: Array<{ id: string; phase: string }> }
+      const state = Reflect.get(globalThis, '__ADEA_STORYBOOK_READINESS__') as
+        | { storyId?: string; finished?: { storyId?: string } }
         | undefined
-      return preview?.storyRenders?.some(
-        (render) => render.id === id && render.phase === 'finished'
-      )
+      return state?.storyId === id && state.finished?.storyId === id
     },
     storyId,
     { timeout: 10_000 }
+  )
+
+  return page.evaluate((id) => {
+    const state = Reflect.get(globalThis, '__ADEA_STORYBOOK_READINESS__') as
+      | { storyId?: string; finished?: Record<string, unknown> }
+      | undefined
+    const finished = state?.storyId === id ? state.finished : undefined
+    const reporters = Array.isArray(finished?.['reporters'])
+      ? finished['reporters'].map((reporter) => {
+          if (!reporter || typeof reporter !== 'object') return {}
+          const result = Reflect.get(reporter, 'result')
+          return {
+            type:
+              typeof Reflect.get(reporter, 'type') === 'string'
+                ? Reflect.get(reporter, 'type')
+                : undefined,
+            status:
+              typeof Reflect.get(reporter, 'status') === 'string'
+                ? Reflect.get(reporter, 'status')
+                : undefined,
+            error:
+              result && typeof result === 'object' && Reflect.get(result, 'error')
+                ? String(Reflect.get(result, 'error'))
+                : undefined,
+          }
+        })
+      : []
+    return {
+      storyId: typeof finished?.['storyId'] === 'string' ? finished['storyId'] : id,
+      status: typeof finished?.['status'] === 'string' ? finished['status'] : 'unknown',
+      reporters,
+    }
+  }, storyId) as Promise<StoryFinishedResult>
+}
+
+async function storyFinishedError(
+  page: import('@playwright/test').Page,
+  result: StoryFinishedResult
+): Promise<Error> {
+  const visibleError = ((await page.locator('.sb-errordisplay').allTextContents())[0] ?? '').trim()
+
+  const reporterErrors = result.reporters
+    .map((reporter) => {
+      const label = [reporter.type, reporter.status].filter(Boolean).join('/') || 'reporter'
+      return reporter.error ? `${label}: ${reporter.error}` : label
+    })
+    .join('; ')
+  const details = [visibleError && `visible error: ${visibleError}`, reporterErrors].filter(Boolean)
+  return new Error(
+    `Storybook story "${result.storyId}" finished with status "${result.status}"${details.length ? ` (${details.join('; ')})` : ''}`
   )
 }
 
@@ -125,15 +252,18 @@ async function waitForStoryRenderFinished(
  * Waiting for the root to have content is the first signal that matters, and
  * Storybook puts its own error block in the same place, so a story that throws
  * fails here with the error visible rather than timing out anonymously. The
- * render-phase wait also lets Storybook finish its async reporters before an
- * external assertion starts.
+ * terminal event is observed before this readiness check so failed render/play/
+ * reporter paths reject even when they never produce a visible story root.
  */
 export async function openStory(
   page: import('@playwright/test').Page,
   id: string,
-  theme: string
+  theme: string,
+  options: OpenStoryOptions = {}
 ): Promise<void> {
-  await page.goto(storyUrl(id, theme), { waitUntil: 'domcontentloaded' })
+  await installStoryFinishedListener(page, id)
+  await page.goto(storyUrl(id, theme, options.baseUrl), { waitUntil: 'domcontentloaded' })
+  const result = await waitForStoryFinished(page, id)
+  if (result.status !== 'success') throw await storyFinishedError(page, result)
   await waitForStoryReady(page, theme)
-  await waitForStoryRenderFinished(page, id)
 }
