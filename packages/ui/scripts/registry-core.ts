@@ -262,11 +262,21 @@ function buildItems() {
     // a dependency it silently needed — the exact failure `registry.test.ts` claims
     // to rule out. Matching against the known folders means an unrecognised path is
     // a hard error instead of a quiet omission.
+    //
+    // The match is on a path *segment*, and that detail is load-bearing. A plain
+    // string prefix lets `ui/toggle` claim `ui/toggle-group/toggle-group`, so
+    // `theming` — which reaches the toggle group — declared `toggle` as its peer and
+    // left the consumer importing a component they had never installed. Nothing in
+    // the item list shows that: `toggle` is a real item, the peer resolves, and the
+    // payload looks complete. It only shows up by walking the installed tree, which
+    // is why the test that catches it does that rather than reading the catalogue.
+    const componentsDir = join(SRC, 'components')
     const registryDependencies = [...crossFolder]
       .map((path) => {
-        const owner = folders.find((candidate) =>
-          path.startsWith(relative(join(SRC, 'components'), candidate.dir))
-        )
+        const owner = folders.find((candidate) => {
+          const dir = relative(componentsDir, candidate.dir)
+          return path === dir || path.startsWith(`${dir}/`)
+        })
         if (!owner) {
           throw new Error(
             `${folder.slug} imports ${path}, which is inside components/ but is not a component folder. ` +
