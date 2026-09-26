@@ -1,42 +1,10 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { resolve } from 'node:path'
-import { execFileSync } from 'node:child_process'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { build } from 'vite'
-import solid from 'vite-plugin-solid'
-import tailwindcss from '@tailwindcss/vite'
-
+import { buildLayoutBrowser, renderLayoutServer } from './layout-assets'
 let script: string
 let css: string
 test.beforeAll(async () => {
-  const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
-    configFile: false,
-    logLevel: 'error',
-    plugins: [solid(), tailwindcss()],
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/split-layout.tsx'),
-        formats: ['iife'],
-        name: 'SplitLayoutFixture',
-      },
-    },
-  })
-  const outputs = Array.isArray(result) ? result : [result]
-  const assets = outputs.flatMap((output) => ('output' in output ? output.output : []))
-  script = assets
-    .filter((asset) => asset.type === 'chunk')
-    .map((asset) => asset.code)
-    .join('\n')
-  css = assets
-    .flatMap((asset) =>
-      asset.type === 'asset' && asset.fileName.endsWith('.css') ? [String(asset.source)] : []
-    )
-    .join('\n')
+  ;({ script, css } = await buildLayoutBrowser())
 })
 test.beforeEach(async ({ page }) => {
   await page.setContent(
@@ -186,42 +154,12 @@ test('fractional pane geometry survives CSP that blocks inline style attributes'
   expect(violations).toEqual([])
 })
 
-test('clean native Node renders nested pane regions without browser globals', async () => {
-  const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
-    configFile: false,
-    logLevel: 'error',
-    plugins: [solid({ ssr: true })],
-    ssr: { noExternal: true },
-    build: {
-      write: false,
-      minify: false,
-      ssr: resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/split-layout-ssr.tsx'),
-    },
-  })
-  const chunks = (Array.isArray(result) ? result : [result])
-    .flatMap((output) => ('output' in output ? output.output : []))
-    .filter((asset) => asset.type === 'chunk')
-  expect(chunks).toHaveLength(1)
-  const directory = await mkdtemp(resolve(tmpdir(), 'adea-split-layout-ssr-'))
-  try {
-    const chunk = chunks[0]
-    if (!chunk) throw new Error('Missing SSR chunk')
-    await writeFile(resolve(directory, 'fixture.mjs'), chunk.code)
-    await writeFile(
-      resolve(directory, 'render.mjs'),
-      "import { renderLayout } from './fixture.mjs'; process.stdout.write(renderLayout());"
-    )
-    const markup = execFileSync(process.execPath, [resolve(directory, 'render.mjs')], {
-      encoding: 'utf8',
-    })
-    expect(markup).toContain('aria-label="Server panes"')
-    expect(markup.match(/role="region"/g)).toHaveLength(2)
-    expect(markup).toContain('aria-orientation="vertical"')
-    expect(markup).toContain('aria-valuenow="50"')
-  } finally {
-    await rm(directory, { recursive: true, force: true })
-  }
+test('required Solid source pipeline renders nested panes in native Node without browser globals', async () => {
+  const markup = await renderLayoutServer()
+  expect(markup).toContain('aria-label="Server panes"')
+  expect(markup.match(/role="region"/g)).toHaveLength(2)
+  expect(markup).toContain('aria-orientation="vertical"')
+  expect(markup).toContain('aria-valuenow="50"')
 })
 
 for (const width of [320, 1440])

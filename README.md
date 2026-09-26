@@ -214,3 +214,23 @@ are re-expressed here as Solid components on Kobalte and corvu, using shadcn's
 semantic token vocabulary. No KiroCrew source file is reproduced verbatim. See
 [NOTICE](NOTICE) for the full attribution and for the upstream licences of the
 libraries this system is built on.
+
+### Actual packed binary renderer checkpoint
+
+Run `bun run check:packed-layout-renderer` after the library build. It installs
+the actual tarball in a disposable consumer with lifecycle scripts disabled,
+required Solid peers retained and optional chart/carousel peers omitted. The
+same renderer interaction suite runs against compiled and Solid browser exports
+in headless Chromium/WebKit (52 cases). Required SSR independently uses the
+installed Solid source pipeline, compiles server output and executes it in native
+Node; compiled browser code is not presented as server-renderable.
+
+The fixture measures 30,370/30,383 gzip JS bytes (compiled/source) and 32,705 raw
+CSS bytes. Budgets are 32 KiB gzip JS and 34 KiB raw CSS. Gates also require one
+Solid runtime, one JS chunk, external Solid/Corvu imports, unmixed UI browser
+conditions, packed Apache LICENSE/full donor MIT NOTICE, and absence of charts,
+carousel, terminal/editor/highlighter, conversation, theme-engine and font assets.
+CSS is generated externally from explicit component sources, theme and base
+styles. This is installed-artifact evidence for the selected renderer, not an
+Adea/Cortana production mount, full shell, hydration/native editor/manual AT or
+required root-import compatibility certificate.

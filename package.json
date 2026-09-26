@@ -31,7 +31,8 @@
     "check:packed-consumer": "bun run --cwd packages/ui check:packed-consumer",
     "test:components": "bun run --cwd apps/storybook test:components",
     "check:packed-conversation": "bun run --cwd packages/ui check:packed-conversation",
-    "check:packed-layout": "bun run --cwd packages/ui check:packed-layout"
+    "check:packed-layout": "bun run --cwd packages/ui check:packed-layout",
+    "check:packed-layout-renderer": "bun run --cwd packages/ui check:packed-layout-renderer"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

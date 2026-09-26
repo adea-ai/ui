@@ -86,7 +86,8 @@
     "theme:check": "bun scripts/build-default-theme.ts --check",
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
     "check:packed-conversation": "bun scripts/check-packed-conversation.ts",
-    "check:packed-layout": "node scripts/check-packed-layout.mjs"
+    "check:packed-layout": "node scripts/check-packed-layout.mjs",
+    "check:packed-layout-renderer": "bun scripts/check-packed-layout-renderer.ts"
   },
   "dependencies": {
     "@adea-ai/themes": "^0.4.1",
