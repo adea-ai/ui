@@ -141,6 +141,21 @@ The toolbar switches theme, accent, typeface and density live, which is the
 fastest way to see how a component behaves across the catalogue rather than in
 one theme.
 
+## Composer keyboard behavior
+
+`MessageComposer` preserves native IME candidate commits and suppresses sending
+during composition, including the 50 ms commit window when browser flags have
+already cleared. A separate Enter sends after that window; Shift+Enter remains
+a soft break. A host or menu that already prevented the event keeps ownership.
+The selected KiroCrew textarea guard is translated to Solid ownership; it adds
+no document listener or application session state. Source and license details
+are retained in `NOTICE`.
+
+Run `bun run test:components` for the built Solid component contracts in
+Chromium and WebKit. The event-sequence tests exercise browser handling of
+composition flags, timers and focus recovery; manual operating-system IME
+acceptance and each application's mounted chat journey remain separate gates.
+
 ## Licence
 
 Apache-2.0.
