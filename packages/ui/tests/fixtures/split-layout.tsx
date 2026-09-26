@@ -174,8 +174,8 @@ function Fixture() {
             )}
             labelForSeparator={() => 'Resize workspace panes'}
             renderLeaf={(leaf) => <textarea aria-label={`Host editor ${leaf().id}`} />}
-            onFocus={(id) => setHostState((state) => focusPane(state, id))}
-            onResize={(id, ratio) => setHostState((state) => resizeSplit(state, id, ratio))}
+            onFocus={(id) => setHostState((current) => focusPane(current, id))}
+            onResize={(id, ratio) => setHostState((current) => resizeSplit(current, id, ratio))}
           />
         </div>
       </Show>

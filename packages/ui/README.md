@@ -234,8 +234,10 @@ future versions for recovery.
 
 The model and maintained accessible renderer are implemented in this draft.
 Stable content ownership and movement are exercised in component fixtures.
-The current packed renderer release gate awaits the UI #20 size-token fix;
-complete shell composition, production adoption and release remain required.
+The packed renderer gate includes the UI #20 size-token correction and the host
+presentation fixture. It checks the real package in compiled and Solid
+conditions; complete shell composition, production adoption and release remain
+required.
 No persistent state, session services, native drag region or host framework is
 imported into this model.
 

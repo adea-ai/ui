@@ -153,7 +153,7 @@ try {
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 72,
+      checks: 76,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',
