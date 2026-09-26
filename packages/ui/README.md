@@ -202,3 +202,7 @@ no fonts or unrelated engines, and full donor attribution. The combined host/edi
 budgets are 64 KiB gzip JS and 50 KiB raw CSS; measured baselines are 62,203/62,643
 gzip JS bytes and 50,060 raw CSS bytes with complete discovery of nested controls and shared helpers. This includes host theme-preview behavior,
 not just the editor primitive.
+
+Local packed interaction gates require `bunx playwright install chromium webkit`
+after dependency installation. On Linux, use `--with-deps` when the required
+system libraries are absent. All automation runs headless with disposable profiles.
