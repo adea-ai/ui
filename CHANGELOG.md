@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.0](https://github.com/adea-ai/ui/compare/v0.65.1...v0.66.0) (2026-09-26)
+
+
+### Features
+
+* compose donor chat input and gate its packed contract ([#25](https://github.com/adea-ai/ui/issues/25)) ([ecf1470](https://github.com/adea-ai/ui/commit/ecf14703631cb57666a2786da050801715eab790))
+
 ## [0.65.1](https://github.com/adea-ai/ui/compare/v0.65.0...v0.65.1) (2026-09-26)
 
 
