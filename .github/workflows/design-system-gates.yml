@@ -69,6 +69,12 @@ jobs:
           bun run --cwd packages/ui build
           bun run check:tree-shaking
 
+      - name: Verify the publishable archive
+        run: bun run pack:check
+
+      - name: Verify packed consumers
+        run: bun run check:packed-consumer
+
   # The build is its own job so the slices below do not each repeat it. It is also
   # what makes the sharding honest: every slice runs against the *same* artifact, so
   # a failure in one cannot come from a different build.

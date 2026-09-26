@@ -156,29 +156,13 @@ jobs:
           fi
           echo "@adea-ai/ui@${VERSION} is available"
 
-      - name: Verify the tarball before it leaves
+      - name: Verify the publishable archive
         working-directory: packages/ui
-        run: |
-          set -euo pipefail
-          # The gate that decides whether this tarball is worth publishing:
-          # `dist` present, the entry points the exports map names actually in
-          # the archive, and no story or test source shipped to consumers.
-          npm pack --dry-run --json > pack.json
-          node -e '
-            const files = require("./pack.json")[0].files.map(f => f.path)
-            const required = ["dist/index.js", "dist/index.d.ts", "src/index.ts", "package.json"]
-            const missing = required.filter(f => !files.includes(f))
-            if (missing.length) {
-              console.error("::error title=Tarball is incomplete::missing " + missing.join(", "))
-              process.exit(1)
-            }
-            const leaked = files.filter(f => /\.(stories\.tsx?|mdx|test\.ts)$/.test(f) && !f.includes("__snapshots__"))
-            if (leaked.length) {
-              console.error("::error title=Tarball ships test or story source::" + leaked.slice(0, 10).join(", "))
-              process.exit(1)
-            }
-            console.log("tarball ok: " + files.length + " files, " + required.length + " entry points present")
-          '
+        run: bun run pack:check
+
+      - name: Verify packed consumers
+        working-directory: packages/ui
+        run: bun run check:packed-consumer
 
       - name: Pack
         if: ${{ inputs.dry-run != true }}

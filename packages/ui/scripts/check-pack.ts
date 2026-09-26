@@ -77,7 +77,7 @@ for (const source of componentEntries) {
   if (!conditions || typeof conditions === 'string')
     throw new Error('Missing component export conditions')
   for (const target of Object.values(conditions) as string[]) {
-    entryPoints.push(target.replace('./', '').replace('*', component))
+    entryPoints.push(target.replace('./', '').replaceAll('*', component))
   }
 }
 for (const source of sourceFiles.filter(
@@ -88,7 +88,7 @@ for (const source of sourceFiles.filter(
   if (!conditions || typeof conditions === 'string')
     throw new Error('Missing library export conditions')
   for (const target of Object.values(conditions)) {
-    entryPoints.push(target.replace('./', '').replace('*', lib))
+    entryPoints.push(target.replace('./', '').replaceAll('*', lib))
   }
 }
 for (const [specifier, entry] of Object.entries(manifest.exports)) {

@@ -118,18 +118,18 @@ setup: importing `globals.css` as well would import Tailwind twice.
 
 ### The two build conditions
 
-The package ships both a compiled build and its source, selected by the bundler:
+The package ships both a compiled browser build and its source, selected by the bundler:
 
-- `import` (default) → `dist/*.js`, a compiled ESM copy. Any bundler, any runner.
+- `import` (default) → `dist/*.js`, a compiled browser ESM copy.
 - `solid` / `development` → `src/*`. Vite with `vite-plugin-solid` resolves these,
   so an app gets real source with working HMR and no double-compile.
 
-Both are the same code. An app whose bundler does not understand custom conditions
-gets the compiled build and loses nothing but source-level HMR.
+The required SSR pipeline selects Solid source and compiles it for the server;
+compiled browser output is not a native Node SSR entry.
 
 ### Peer dependencies
 
-`solid-js` is a peer, and so are four others — **all optional**:
+`solid-js` is a required peer. Four engine peers are optional:
 
 | Peer                                      | Needed by  | If you do not install it |
 | ----------------------------------------- | ---------- | ------------------------ |
@@ -139,7 +139,14 @@ gets the compiled build and loses nothing but source-level HMR.
 
 They are peers rather than dependencies on purpose: an application that uses
 neither a chart nor a carousel should not install either. Nothing else in the
-package reaches them, so leaving them out costs nothing but those two components.
+package root reaches them. Charts and carousels are available exclusively through
+`@adea-ai/ui/components/ui/chart` and `@adea-ai/ui/components/ui/carousel`.
+
+This removes their former root exports, including their helper/type exports.
+Move those imports to the subpaths and install the corresponding peers. Core root
+imports continue to work when optional engines are absent. npm documents that
+[optional peers are not automatically installed](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#peerdependenciesmeta);
+the actual packed consumer gate verifies this package can honor that contract.
 
 Every other dependency is bundled by _reference_, not inlined — the library
 externalises every bare import, so a second copy of Kobalte cannot appear in a
@@ -148,22 +155,22 @@ consumer's bundle.
 ### What one component costs
 
 Measured by `bun run --cwd packages/ui check:tree-shaking`, which builds real
-bundles against the built package. Importing one component from the package root
-does not pull in the library:
+bundles against the built package. Each row uses the documented public entry, and
+importing one component does not pull in the rest of the library:
 
-| Import              | Gzipped    | What it brings                        |
-| ------------------- | ---------- | ------------------------------------- |
-| `Button`            | 19.8 kB    | the floor — Solid, `clsx`, `tw-merge` |
-| `Board`             | 18.4 kB    | nothing                               |
-| `DiffBlock`         | 20.9 kB    | lucide icons                          |
-| `CodeBlock`         | 23.5 kB    | lucide icons                          |
-| `MessageRow`        | 24.7 kB    | nothing                               |
-| `CalendarSurface`   | 27.4 kB    | corvu calendar                        |
-| `ModalDialog`       | 31.9 kB    | Kobalte dialog                        |
-| `Carousel`          | 32.1 kB    | embla                                 |
-| `NavigationMenu`    | 54.2 kB    | Kobalte navigation menu               |
-| `LineChart`         | 86.2 kB    | chart.js, the line controller only    |
-| _the whole library_ | _275.2 kB_ | — and `Button` is 7.2% of it          |
+| Public import                                     | Gzipped    | What it brings                        |
+| ------------------------------------------------- | ---------- | ------------------------------------- |
+| `@adea-ai/ui` → `Button`                          | 19.8 kB    | the floor — Solid, `clsx`, `tw-merge` |
+| `@adea-ai/ui` → `Board`                           | 18.5 kB    | nothing                               |
+| `@adea-ai/ui` → `DiffBlock`                       | 20.9 kB    | lucide icons                          |
+| `@adea-ai/ui` → `CodeBlock`                       | 23.5 kB    | lucide icons                          |
+| `@adea-ai/ui` → `MessageRow`                      | 24.7 kB    | nothing                               |
+| `@adea-ai/ui` → `CalendarSurface`                 | 27.5 kB    | corvu calendar                        |
+| `@adea-ai/ui` → `ModalDialog`                     | 31.9 kB    | Kobalte dialog                        |
+| `@adea-ai/ui/components/ui/carousel` → `Carousel` | 32.2 kB    | embla                                 |
+| `@adea-ai/ui` → `NavigationMenu`                  | 54.2 kB    | Kobalte navigation menu               |
+| `@adea-ai/ui/components/ui/chart` → `LineChart`   | 86.2 kB    | chart.js, the line controller only    |
+| _root plus chart and carousel entries_            | _287.6 kB_ | — and `Button` is 6.9% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.3 kB smaller than importing all seven chart types together, because the
