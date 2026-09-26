@@ -343,6 +343,11 @@ imported into this model.
 
 ### Host pane presentation hooks
 
+Controlled split ratios survive host visibility changes and disposal. Corvu panel
+registration and unregistration callbacks with incomplete sizes, and callbacks
+from detached or hidden roots, do not become host resize requests. Real pointer
+and keyboard resizing still flows through the same constrained callback.
+
 `SplitLayout` can keep its default pane header while allowing a host to supply
 inline visible content with `renderPaneLabel`, opt pane regions into keyboard
 Tab navigation with `paneTabIndex={0}`, and provide a domain-specific splitter
