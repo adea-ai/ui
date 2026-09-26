@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.4](https://github.com/adea-ai/ui/compare/v0.63.3...v0.63.4) (2026-09-26)
+
+
+### Bug Fixes
+
+* preserve reader intent during transcript growth ([#19](https://github.com/adea-ai/ui/issues/19)) ([45db8e3](https://github.com/adea-ai/ui/commit/45db8e363373b70ef9e83ccdfe24ff0231086a5b))
+
 ## [0.63.3](https://github.com/adea-ai/ui/compare/v0.63.2...v0.63.3) (2026-09-26)
 
 
