@@ -190,8 +190,18 @@ The output records retained module paths, JS/gzip/CSS totals, font exclusion and
 one Solid runtime. Its first measured baseline was 23,880/23,936 gzip JS bytes
 (compiled/Solid) and 40,203 raw CSS bytes. The fixture gates 26 KiB gzip JS and
 42 KiB raw CSS, alongside independent module exclusions. The packed Apache license
-and both KiroCrew attribution sections must be present. This pilot adds no server
+and all three selected KiroCrew attribution sections must be present. This pilot adds no server
 and removes its temporary consumer.
+
+A separate packed busy-action fixture imports only `BusySendButton`. Both
+conditions and engines check disabled firing with live mode selection, the scoped
+Tab cycle, focus restoration, action-only execution, unavailable-mode recovery
+and square-control token delivery (24 check groups, plus the conversation's 28).
+Its measured gzip JS baseline is 50,308/50,470 bytes with a separate 50 KiB cap;
+both fixtures share the 42 KiB raw CSS cap. Their module graphs must exclude each
+other's unrelated components as well as charts, editors, terminal/highlighter,
+theme JS, fonts and workshop assets. Tailwind scans the required external source
+folders explicitly; this check does not assume consumer node_modules scanning.
 
 This lane complements `check:packed-consumer`; it does not replace its required
 root imports, lightweight controls, overlay and shell checks. The known optional
