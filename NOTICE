@@ -48,3 +48,27 @@ shadcn-storybook-template (MIT), Kibo UI (MIT), and Dice UI (MIT) projects.
 Origin UI / coss (AGPL-3.0-or-later) was consulted for visual ideas only. No
 code, class string, or asset from that project is reproduced here, because its
 licence is incompatible with this distribution.
+
+
+Busy composer action translated from KiroCrew
+--------------------------------------------
+Original: website/src/components/BusySendButton.tsx
+Also translated: website/src/hooks/useMenuKeyboard.ts (enabled-row Tab cycle)
+Revision: 283e136c0f902e965a535a7c9548c57c7504fed0
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+This product includes software developed at Amazon.com, Inc.
+Apache License, Version 2.0 (see LICENSE).
+Destination: packages/ui/src/components/conversation/busy-send-button.tsx
+
+The split fire/mode-picker structure, descriptions, independent disabled-fire
+state, selected radio treatment and conditional alternate-action hint are
+substantially translated to Solid and the shared design system. Kobalte owns
+portal positioning, arrow navigation, dismissal and focus restoration. Its
+Tab prevention lacks row cycling, so the donor cycle is translated as a scoped
+menu handler over enabled rows; no document listener or manual focus trap.
+Donor per-slot storage/migration/broadcast, i18n/platform lookup, React runtime,
+manual portal and document listeners are not copied. Applications inject mode,
+action and unavailable reasons. No runtime queue or force-reset authority added.
+Nearest tests: BusySendButton.menuKeyboard.test.tsx and
+BusySendButton.slotScope.test.tsx; controlled mode replaces donor storage tests,
+while keyboard/focus expectations are exercised in Chromium and WebKit.
