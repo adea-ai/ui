@@ -212,7 +212,10 @@ try {
           const forbidden = modules.filter((id) => {
             if (/xterm|codemirror|shiki|storybook|\/lib\/themes/.test(id)) return true
             if (/\/components\/theme\//.test(id)) return true
-            if (/\/components\/conversation\//.test(id) && !['conversation-composer', 'busy-send'].includes(sample.name))
+            if (
+              /\/components\/conversation\//.test(id) &&
+              !['conversation-composer', 'busy-send'].includes(sample.name)
+            )
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
             if (/embla/.test(id)) return sample.name !== 'carousel-subpath'
