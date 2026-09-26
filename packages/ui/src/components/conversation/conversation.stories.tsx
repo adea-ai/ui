@@ -242,7 +242,7 @@ export const ComposerReplying: Story = {
  */
 export const Surface: Story = {
   render: () => (
-    <div class="h-96 w-[44rem] overflow-hidden rounded-xl border border-border">
+    <div class="flex h-96 w-[44rem] flex-col overflow-hidden rounded-xl border border-border">
       <ConversationSurface
         empty={<p class="text-muted-foreground text-center text-sm">No messages yet.</p>}
       >
@@ -261,10 +261,56 @@ export const Surface: Story = {
   ),
 }
 
+/** Stream/resize/collapse the transcript, then scroll up: layout is not consent to follow. */
+export const SurfaceFollowing: Story = {
+  render: () => {
+    const [text, setText] = createSignal('A reply is arriving.')
+    const [compact, setCompact] = createSignal(false)
+    return (
+      <div class="flex w-full max-w-2xl flex-col gap-2">
+        <div class="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => setText((value) => `${value}\nAnother streamed line.`)}>
+            Stream text
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setText('Turn collapsed.')}>
+            Collapse turn
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-pressed={compact()}
+            onClick={() => setCompact((value) => !value)}
+          >
+            Resize pane
+          </Button>
+        </div>
+        <div
+          class={
+            compact()
+              ? 'flex h-64 flex-col overflow-hidden rounded-xl border border-border'
+              : 'flex h-96 flex-col overflow-hidden rounded-xl border border-border'
+          }
+        >
+          <ConversationSurface role="region" aria-label="Streaming transcript" tabindex="0">
+            {Array.from({ length: 12 }, (_, index) => (
+              <MessageRow senderKind="agent" senderName="Agent">
+                <MessageBody text={`Earlier message ${index + 1}. Scroll up to read.`} />
+              </MessageRow>
+            ))}
+            <MessageRow senderKind="agent" senderName="Agent" streaming>
+              <MessageBody text={text()} streaming />
+            </MessageRow>
+          </ConversationSurface>
+        </div>
+      </div>
+    )
+  },
+}
+
 /** The thread panel, with its root message repeated above the replies. */
 export const Thread: Story = {
   render: () => (
-    <div class="h-96 w-[44rem] overflow-hidden rounded-xl border border-border">
+    <div class="flex h-96 w-[44rem] flex-col overflow-hidden rounded-xl border border-border">
       <ThreadPanel
         label="Ada Lovelace"
         count={2}
