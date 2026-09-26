@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.65.0](https://github.com/adea-ai/ui/compare/v0.64.0...v0.65.0) (2026-09-26)
+
+
+### Features
+
+* add approved binary layout and pane interactions ([#23](https://github.com/adea-ai/ui/issues/23)) ([6781a5e](https://github.com/adea-ai/ui/commit/6781a5e435297bd29be0fa16eb24430598c67f0a))
+
 ## [0.64.0](https://github.com/adea-ai/ui/compare/v0.63.4...v0.64.0) (2026-09-26)
 
 
