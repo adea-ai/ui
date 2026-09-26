@@ -175,6 +175,71 @@ application-owned. `ref` and `onScroll` still reach the inner scroller.
 The `SurfaceFollowing` story exercises streaming, collapse and pane resizing;
 source/license/test provenance is recorded in `NOTICE`.
 
+## Composer keyboard behavior
+
+`MessageComposer` preserves native IME candidate commits and suppresses sending
+during composition, including the 50 ms commit window when browser flags have
+already cleared. A separate Enter sends after that window; Shift+Enter remains
+a soft break. A host or menu that already prevented the event keeps ownership.
+The selected KiroCrew textarea guard is translated to Solid ownership; it adds
+no document listener or application session state. Source and license details
+are retained in `NOTICE`.
+
+Run `bun run test:components` for the built Solid component contracts in
+Chromium and WebKit. The event-sequence tests exercise browser handling of
+composition flags, timers and focus recovery; manual operating-system IME
+acceptance and each application's mounted chat journey remain separate gates.
+
 ## Licence
 
 Apache-2.0.
+
+### Controlled appearance editor
+
+`AppearanceEditor` and `AppearancePopover` retain the accepted Zeron-derived
+System/Light/Dark miniature cards, independent light/dark theme rows, palette
+swatches, default/preset/custom accent choices and Theme default/Frosted/Opaque
+surface choices. The popup supports live host preview and Save/Cancel/Reset;
+Kobalte owns radio, menu, focus and dismissal behavior. `SelectContent.portalMount`
+lets a nested menu remain within its enclosing modal's accessible subtree.
+
+Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices from
+`@adea-ai/themes`, including any validated accent overlay. The editor imports
+only their types. Hosts own saved-ID recovery, validation, draft snapshots,
+System appearance resolution, native transparency, live application tokens,
+Save persistence and restoration on Cancel/dismissal. `saving`,
+`saveDisabledReason`, `recoveryNotice`, `customAccentError`, and
+`surfaceCapability` expose those outcomes; an unavailable import or Frosted
+capability stays visibly unavailable. App-specific persisted versions and the
+legacy `translucent` value need an app-owned adapter to the editor's `theme`
+surface selection. The library does not silently migrate stored preferences.
+
+The component browser lane uses a real Vite/Solid/Tailwind build in headless
+Chromium without an app server. It checks keyboard mode selection, nested menu
+accessibility and Escape, live-preview rollback, valid/invalid custom accents,
+Save pending state, mobile selection and 320/768/1024/1440px layouts. A separate native Node server-render fixture verifies the composed editor without
+browser or application globals. These checks
+are component integration evidence; they do not certify application persistence,
+native effects, packaged applications or manual assistive technology acceptance.
+
+### Packed appearance contract
+
+`bun run check:packed-appearance` installs the actual tarball without optional
+Chart/Carousel engines, then reuses all appearance interactions in Chromium and
+WebKit against compiled and Solid entries (60 cases). The same fixture verifies
+Solid source SSR in native Node. Keyboard choices, live preview, save/cancel/reset,
+nested dismissal, validation, pending save, narrow layouts with reachable footer actions, and automated accessibility
+are covered. Production persistence, native transparency, hydration and manual AT
+remain application acceptance gates.
+
+The disposable host explicitly imports four isolated canonical theme records plus
+color/CSS adapters from published `@adea-ai/themes`; the UI composition imports only
+theme types. Both conditions retain one Solid runtime and one JS chunk, external CSS,
+no fonts or unrelated engines, and full donor attribution. The combined host/editor
+budgets are 64 KiB gzip JS and 50 KiB raw CSS; measured baselines are 62,203/62,643
+gzip JS bytes and 50,060 raw CSS bytes with complete discovery of nested controls and shared helpers. This includes host theme-preview behavior,
+not just the editor primitive.
+
+Local packed interaction gates require `bunx playwright install chromium webkit`
+after dependency installation. On Linux, use `--with-deps` when the required
+system libraries are absent. All automation runs headless with disposable profiles.

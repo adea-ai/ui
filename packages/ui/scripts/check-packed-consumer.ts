@@ -50,6 +50,19 @@ const coreSamples: PackedSample[] = [
     ],
   },
   {
+    name: 'conversation-composer',
+    imports: "import { MessageComposer } from '@adea-ai/ui/components/conversation'",
+    jsx: '<MessageComposer value="Draft" onValueChange={() => {}} onSubmit={() => {}} />',
+    sources: [
+      'components/conversation/message-composer.tsx',
+      'components/ui/textarea/textarea.tsx',
+      'components/ui/spinner/spinner.tsx',
+      'components/ui/kbd/kbd.tsx',
+      'components/ui/button/button.tsx',
+      'lib/variants.ts',
+    ],
+  },
+  {
     name: 'shell',
     imports: "import { AppShell, AppShellBody, AppShellMain } from '@adea-ai/ui'",
     jsx: '<AppShell><AppShellBody><AppShellMain>Session</AppShellMain></AppShellBody></AppShell>',
@@ -198,7 +211,7 @@ try {
             if (/\/components\/theme\//.test(id)) return true
             if (
               /\/components\/conversation\//.test(id) &&
-              sample.name !== 'conversation-transcript'
+              !['conversation-transcript', 'conversation-composer'].includes(sample.name)
             )
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
@@ -232,6 +245,8 @@ try {
             throw new Error('Packed Button is missing shared control sizing')
           if (sample.name === 'conversation-transcript' && !css.includes('.h-control-md'))
             throw new Error('Packed ConversationSurface is missing shared control sizing')
+          if (sample.name === 'conversation-composer' && !css.includes('.h-control-md'))
+            throw new Error('Packed MessageComposer is missing shared control sizing')
           if (sample.name === 'overlay' && !css.includes('.bg-popover'))
             throw new Error('Packed dialog is missing shared overlay styling')
           if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
@@ -254,7 +269,7 @@ try {
           const cssCapKiB =
             sample.name === 'overlay'
               ? 40
-              : sample.name === 'conversation-transcript'
+              : ['conversation-transcript', 'conversation-composer'].includes(sample.name)
                 ? 42
                 : sample.name === 'chart-subpath'
                   ? 28

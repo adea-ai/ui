@@ -6,6 +6,7 @@ import { Button } from '../ui/button/button'
 import { Kbd } from '../ui/kbd/kbd'
 import { Spinner } from '../ui/spinner/spinner'
 import { Textarea } from '../ui/textarea/textarea'
+import { createComposerImeGuard } from './ime-guard'
 
 /**
  * MessageComposer.
@@ -33,6 +34,11 @@ import { Textarea } from '../ui/textarea/textarea'
  *
  * **The status region is `aria-live`.** "Sending…" and a failure both land there, so
  * a screen reader hears the outcome without the composer stealing focus.
+ *
+ * Enter ownership follows KiroCrew's pinned IME latch: candidate commits keep
+ * their native default action, and the post-composition Enter cannot send or
+ * insert an accidental newline. Composition abandoned by focus/blur recovers;
+ * the Solid owner's cleanup settles its timer. See ime-guard.ts for provenance.
  */
 export type MessageComposerProps = Omit<ComponentProps<'form'>, 'onSubmit'> & {
   /** The draft. Controlled: the caller owns the text, because it usually persists. */
@@ -75,6 +81,7 @@ export function MessageComposer(props: MessageComposerProps) {
 
   const [sending, setSending] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
+  const ime = createComposerImeGuard()
 
   const canSend = () => local.value.trim().length > 0 && !local.disabled && !sending()
 
@@ -94,6 +101,7 @@ export function MessageComposer(props: MessageComposerProps) {
   }
 
   const onKeyDown: JSX.EventHandlerUnion<HTMLTextAreaElement, KeyboardEvent> = (event) => {
+    if (event.defaultPrevented) return
     if (event.key === 'Escape' && error()) {
       setError(null)
       return
@@ -101,7 +109,7 @@ export function MessageComposer(props: MessageComposerProps) {
     if (event.key !== 'Enter') return
     // Shift breaks the line; a bare Enter, or a modified one, sends.
     if (event.shiftKey && !event.metaKey && !event.ctrlKey) return
-    event.preventDefault()
+    if (!ime.claimEnter(event)) return
     void send()
   }
 
@@ -145,6 +153,10 @@ export function MessageComposer(props: MessageComposerProps) {
         )}
       >
         <Textarea
+          onCompositionStart={ime.onCompositionStart}
+          onCompositionEnd={ime.onCompositionEnd}
+          onFocus={ime.onFocus}
+          onBlur={ime.onBlur}
           value={local.value}
           onInput={(event) => local.onValueChange(event.currentTarget.value)}
           onKeyDown={onKeyDown}
