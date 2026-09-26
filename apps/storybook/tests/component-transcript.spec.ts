@@ -260,6 +260,21 @@ test('disabled follow is inert and the host still receives scroll events', async
   expect(Number(await page.getByLabel('Host scroll events').textContent())).toBeGreaterThan(0)
 })
 
+test('disabled native reading survives remount and re-enable without a bottom yank', async ({
+  page,
+}) => {
+  const restored = page.getByRole('region', { name: 'Restored transcript' })
+  await page.getByRole('button', { name: 'Toggle follow' }).click()
+  await restored.evaluate((element) => {
+    element.scrollTop = 100
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle follow' }).click()
+  await expect.poll(() => restored.evaluate((element) => element.scrollTop)).toBe(100)
+})
+
 test('unmount and repeated remount release the content and viewport observer', async ({ page }) => {
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await expect(page.locator('html')).toHaveAttribute('data-live-observers', '2')

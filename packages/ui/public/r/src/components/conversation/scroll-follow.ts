@@ -47,7 +47,12 @@ export function createScrollFollow(options: {
   let lastScrollClientHeight = 0
   const reportPosition = () => {
     if (scroller)
-      untrack(() => options.onPositionChange?.({ top: scroller!.scrollTop, following: stick }))
+      untrack(() =>
+        options.onPositionChange?.({
+          top: scroller!.scrollTop,
+          following: options.enabled() && stick,
+        })
+      )
   }
   onCleanup(reportPosition)
 
@@ -78,7 +83,11 @@ export function createScrollFollow(options: {
     reportPosition()
   }
   const onScroll = () => {
-    if (!scroller || !options.enabled()) return
+    if (!scroller) return
+    if (!options.enabled()) {
+      reportPosition()
+      return
+    }
     const geom = geometry(scroller)
     setAtBottom(computeAtBottom(geom, options.threshold()))
     if (!isSelfScroll(geom.scrollTop, lastWriteTop)) {
