@@ -118,3 +118,27 @@ one theme.
 ## Licence
 
 Apache-2.0.
+
+## Busy composer action
+
+Square icon controls use the control-height tokens through the Tailwind `--size`
+mapping; `--spacing-control-*` remains the separate inline-padding ladder.
+Text controls, icon buttons and toggles share the same height in both densities.
+Dimensions remain rem-based and follow the consumer's root font size. The browser
+geometry lane checks all six rungs, heights and padding under both themes/densities.
+
+`BusySendButton` translates KiroCrew's split fire/mode-picker composition. Pass
+controlled `mode`, `onModeChange` and `onFire`. `disabled` prevents firing while
+leaving mode choice available before typing; `selectionDisabled` gates choosing.
+Inject `unavailable` reasons for unsupported or unauthorized modes: rows remain
+visible, and the selected action cannot fire. Supply `alternateActionHint` only
+when the host implements the described keyboard chord. The component adds no
+keyboard chord, preference storage, runtime command or queue. Persistence and
+same-session preference synchronization remain application-owned.
+
+Kobalte owns the menu and focus lifecycle. Its Tab prevention lacks row cycling,
+so a menu-scoped donor translation cycles enabled rows without a document listener.
+Stories cover before-typing, working,
+unavailable and read-only states. `bun run test:components` checks the isolated
+Solid composition headlessly in Chromium and WebKit. Full Chat composition,
+packed distribution and real consumer/native acceptance remain separate gates.
