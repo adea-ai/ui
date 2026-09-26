@@ -72,7 +72,7 @@ test('physical separator orientation, controls and constrained keyboard resizing
   await column.press('ArrowDown')
   await expect(column).toHaveAttribute('aria-valuenow', '55')
 })
-test('closing focuses the host-selected survivor and removes only the closed owner', async ({
+test('keyboard closing focuses the host-selected survivor and removes only the closed owner', async ({
   page,
 }) => {
   await act(page, 'split')
@@ -90,13 +90,14 @@ test('closing focuses the host-selected survivor and removes only the closed own
   expect(geometry.width).toBeCloseTo(geometry.expected, 1)
   expect(geometry.height).toBeCloseTo(geometry.expected, 1)
   await close.focus()
-  // Exercise keyboard focus styling; programmatic focus alone can follow the
-  // browser's previous pointer modality without matching :focus-visible.
+  // Establish keyboard modality before refocusing. macOS WebKit can skip
+  // native buttons during Tab navigation when system Keyboard Navigation is off;
+  // this probe checks the ring and keyboard activation, not that OS preference.
   await page.keyboard.press('Tab')
-  await page.keyboard.press('Shift+Tab')
+  await close.focus()
   await expect(close).toBeFocused()
   expect(await close.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none')
-  await close.click()
+  await close.press('Enter')
   await expect(page.getByLabel('Unmounts')).toHaveText('1')
   await expect(page.getByRole('region', { name: 'Pane a' })).toBeFocused()
   await expect(page.getByRole('textbox', { name: 'Editor b' })).toHaveCount(0)
