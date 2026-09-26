@@ -63,6 +63,20 @@ const coreSamples: PackedSample[] = [
     ],
   },
   {
+    name: 'busy-send',
+    imports: "import { BusySendButton } from '@adea-ai/ui/components/conversation'",
+    jsx: '<BusySendButton mode="steer" onModeChange={() => {}} onFire={() => {}} />',
+    sources: [
+      'components/conversation/busy-send-button.tsx',
+      'components/ui/button-group/button-group.tsx',
+      'components/ui/separator/separator.tsx',
+      'components/ui/dropdown-menu/dropdown-menu.tsx',
+      'components/ui/button/button.tsx',
+      'lib/overlay.ts',
+      'lib/variants.ts',
+    ],
+  },
+  {
     name: 'shell',
     imports: "import { AppShell, AppShellBody, AppShellMain } from '@adea-ai/ui'",
     jsx: '<AppShell><AppShellBody><AppShellMain>Session</AppShellMain></AppShellBody></AppShell>',
@@ -211,7 +225,9 @@ try {
             if (/\/components\/theme\//.test(id)) return true
             if (
               /\/components\/conversation\//.test(id) &&
-              !['conversation-transcript', 'conversation-composer'].includes(sample.name)
+              !['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                sample.name
+              )
             )
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
@@ -247,6 +263,10 @@ try {
             throw new Error('Packed ConversationSurface is missing shared control sizing')
           if (sample.name === 'conversation-composer' && !css.includes('.h-control-md'))
             throw new Error('Packed MessageComposer is missing shared control sizing')
+          if (sample.name === 'busy-send' && !css.includes('.h-control-md'))
+            throw new Error('Packed BusySendButton is missing shared control sizing')
+          if (sample.name === 'busy-send' && !css.includes('.bg-popover'))
+            throw new Error('Packed BusySendButton is missing shared menu styling')
           if (sample.name === 'overlay' && !css.includes('.bg-popover'))
             throw new Error('Packed dialog is missing shared overlay styling')
           if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
@@ -269,7 +289,9 @@ try {
           const cssCapKiB =
             sample.name === 'overlay'
               ? 40
-              : ['conversation-transcript', 'conversation-composer'].includes(sample.name)
+              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                    sample.name
+                  )
                 ? 42
                 : sample.name === 'chart-subpath'
                   ? 28
