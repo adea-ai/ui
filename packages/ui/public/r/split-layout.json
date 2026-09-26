@@ -2,10 +2,21 @@
   "name": "split-layout",
   "type": "registry:ui",
   "title": "Split Layout",
-  "description": "Issue-backed binary layout model; rendering and scoped persistence remain separate.",
-  "dependencies": [],
-  "registryDependencies": [],
+  "description": "Issue-backed binary layout with stable opaque leaf owners; scoped persistence belongs to the host.",
+  "dependencies": [
+    "@corvu/resizable@^0.2.5",
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "lib"
+  ],
   "files": [
+    {
+      "path": "src/components/layout/split-layout/geometry.ts",
+      "type": "registry:ui",
+      "target": "components/layout/split-layout/geometry.ts"
+    },
     {
       "path": "src/components/layout/split-layout/index.ts",
       "type": "registry:ui",
@@ -15,6 +26,11 @@
       "path": "src/components/layout/split-layout/model.ts",
       "type": "registry:ui",
       "target": "components/layout/split-layout/model.ts"
+    },
+    {
+      "path": "src/components/layout/split-layout/split-layout.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/split-layout/split-layout.tsx"
     }
   ]
 }
