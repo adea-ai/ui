@@ -1,6 +1,21 @@
 import tailwindcss from '@tailwindcss/vite'
+import { readFileSync, readdirSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
+
+const componentEntries = readdirSync(resolve(import.meta.dirname, 'src/components'), {
+  recursive: true,
+})
+  .map(String)
+  .filter((file) => file.endsWith('/index.ts'))
+const entries = Object.fromEntries([
+  ['index', resolve(import.meta.dirname, 'src/index.ts')],
+  ...componentEntries.map((file) => [
+    `components/${file.slice(0, -'.ts'.length)}`,
+    resolve(import.meta.dirname, 'src/components', file),
+  ]),
+])
 
 /**
  * Library build.
@@ -20,10 +35,25 @@ import solid from 'vite-plugin-solid'
  * CSS is emitted through Tailwind so the utilities components use are real.
  */
 export default defineConfig({
-  plugins: [solid(), tailwindcss()],
+  plugins: [
+    solid(),
+    tailwindcss(),
+    {
+      name: 'package-notices',
+      generateBundle() {
+        for (const fileName of ['LICENSE', 'NOTICE']) {
+          this.emitFile({
+            type: 'asset',
+            fileName,
+            source: readFileSync(resolve(import.meta.dirname, '../..', fileName), 'utf8'),
+          })
+        }
+      },
+    },
+  ],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: entries,
       formats: ['es'],
       fileName: () => 'index.js',
     },

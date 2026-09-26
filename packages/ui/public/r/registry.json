@@ -1880,7 +1880,7 @@
       "title": "Class-name and token helpers",
       "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
       "dependencies": [
-        "@adea-ai/themes@^0.4.1",
+        "@adea-ai/themes@^0.5.0",
         "class-variance-authority@^0.7.1",
         "clsx@^2.1.1",
         "tailwind-merge@^3.7.0"
