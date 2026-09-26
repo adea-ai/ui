@@ -39,6 +39,17 @@ const coreSamples: PackedSample[] = [
     source: 'ui/modal-dialog',
   },
   {
+    name: 'conversation-transcript',
+    imports:
+      "import { ConversationSurface } from '@adea-ai/ui/components/conversation'; import { Button } from '@adea-ai/ui/components/ui/button'",
+    jsx: '<><Button>Toggle</Button><ConversationSurface role="region" aria-label="Transcript">Transcript</ConversationSurface></>',
+    sources: [
+      'components/conversation/conversation-surface.tsx',
+      'components/ui/button/button.tsx',
+      'lib/variants.ts',
+    ],
+  },
+  {
     name: 'conversation-composer',
     imports: "import { MessageComposer } from '@adea-ai/ui/components/conversation'",
     jsx: '<MessageComposer value="Draft" onValueChange={() => {}} onSubmit={() => {}} />',
@@ -212,7 +223,12 @@ try {
           const forbidden = modules.filter((id) => {
             if (/xterm|codemirror|shiki|storybook|\/lib\/themes/.test(id)) return true
             if (/\/components\/theme\//.test(id)) return true
-            if (/\/components\/conversation\//.test(id) && !['conversation-composer', 'busy-send'].includes(sample.name))
+            if (
+              /\/components\/conversation\//.test(id) &&
+              !['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                sample.name
+              )
+            )
               return true
             if (/chart\.js|solid-chartjs/.test(id)) return sample.name !== 'chart-subpath'
             if (/embla/.test(id)) return sample.name !== 'carousel-subpath'
@@ -243,6 +259,8 @@ try {
             throw new Error('Packed Button is missing its Tailwind utility')
           if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
             throw new Error('Packed Button is missing shared control sizing')
+          if (sample.name === 'conversation-transcript' && !css.includes('.h-control-md'))
+            throw new Error('Packed ConversationSurface is missing shared control sizing')
           if (sample.name === 'conversation-composer' && !css.includes('.h-control-md'))
             throw new Error('Packed MessageComposer is missing shared control sizing')
           if (sample.name === 'busy-send' && !css.includes('.h-control-md'))
@@ -271,7 +289,9 @@ try {
           const cssCapKiB =
             sample.name === 'overlay'
               ? 40
-              : ['conversation-composer', 'busy-send'].includes(sample.name)
+              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                    sample.name
+                  )
                 ? 42
                 : sample.name === 'chart-subpath'
                   ? 28
