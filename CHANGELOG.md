@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.1](https://github.com/adea-ai/ui/compare/v0.66.0...v0.66.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **layout:** preserve ratios across controller lifecycle ([#39](https://github.com/adea-ai/ui/issues/39)) ([eea1853](https://github.com/adea-ai/ui/commit/eea1853e5cc2e8574669eae3c16024bd4d6c3757))
+
 ## [0.66.0](https://github.com/adea-ai/ui/compare/v0.65.1...v0.66.0) (2026-09-26)
 
 
