@@ -21,6 +21,7 @@ first with `bunx playwright install chromium webkit`; Linux CI uses `--with-deps
 git clone https://github.com/adea-ai/ui.git
 cd ui
 bun install
+bunx playwright install chromium webkit
 bun run storybook        # http://127.0.0.1:6006
 ```
 

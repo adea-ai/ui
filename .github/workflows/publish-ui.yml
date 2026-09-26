@@ -170,6 +170,9 @@ jobs:
       - name: Verify packed pane model and renderer
         working-directory: packages/ui
         run: bun run check:packed-layout && bun run check:packed-layout-renderer
+      - name: Verify packed appearance interactions and SSR
+        working-directory: packages/ui
+        run: bun run check:packed-appearance
 
       - name: Pack
         if: ${{ inputs.dry-run != true }}
