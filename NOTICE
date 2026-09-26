@@ -76,3 +76,34 @@ providers are replaced by a controlled Solid fixture. No React dependency,
 service transport, dictation engine, font, asset or document listener is copied.
 This is selected-unit hardening, not a claim that the full KiroCrew composer,
 goal flow or Adea runtime-session Chat has been ported or integrated.
+
+## Plain transcript follow translated from KiroCrew
+
+`packages/ui/src/components/conversation/scroll-follow-core.ts`,
+`scroll-follow.ts` and ConversationSurface substantially translate the plain
+scroller lifecycle in `website/src/app-sdk/useChatScrollFollow.ts` and its pure
+`website/src/hooks/virtualizer/FollowController.ts` decisions, pinned at
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: separate follow intent and jump visibility, synchronous scroll-up race
+fencing, direction-aware re-engagement, self-scroll attribution, DPR tolerance,
+content growth/collapse and viewport shrink/growth distinctions, instant pins,
+explicit disabled/reset behavior and content/viewport observer cleanup. Solid
+ownership replaces React refs/effects. Applications retain identity, durable
+scroll restoration and virtualized row measurement/anchor authority.
+
+The jump label follows `website/src/app-sdk/ChatScrollChrome.tsx`'s action-only
+contract; pixel distance cannot establish an unread message count. The existing
+shared button appearance and configurable 80px visibility default are retained.
+Keyboard jumping returns focus to the focusable transcript as its jump control
+disappears; this hardens a donor edge case without moving focus during automatic
+pins. No donor edge-fade styling, React runtime, virtualizer, asset, font or session
+store is copied. Tests translate applicable cases from
+`website/src/test/useChatScrollFollow.test.tsx` and `FollowController.test.ts`;
+Bun/browser integration and deterministic bounded grids replace React/jsdom,
+Vitest and fast-check without adding dependencies. The full Chat product
+composition and application adoption remain separate gates.

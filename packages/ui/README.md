@@ -156,6 +156,28 @@ Chromium and WebKit. The event-sequence tests exercise browser handling of
 composition flags, timers and focus recovery; manual operating-system IME
 acceptance and each application's mounted chat journey remain separate gates.
 
+## Transcript follow
+
+`ConversationSurface` follows streamed text, earlier-row growth, turn collapse
+and pane resizing using the KiroCrew plain-scroller decision contract. A
+deliberate upward scroll releases follow, including small moves near the bottom.
+Returning to the bottom or choosing **Jump to latest** re-arms it; the action
+does not estimate unread messages from pixel distance. Instant pins keep
+self-scroll attribution synchronized. Keyboard jumping returns focus to the
+transcript when its jump control disappears; automatic pins never move focus.
+
+`threshold` controls jump-button visibility (80px by default), independently of
+follow intent. `follow={false}` is fully inert: positioning belongs to the host,
+with no observer or mount pin. Re-enabling it explicitly re-arms at the bottom;
+it is not an automatic restore-and-resume flag. An optional `resetKey` also
+re-arms follow when that identity changes. Canonical
+session identity, durable restoration and virtualized transcript windows remain
+application-owned. `ref` and `onScroll` still reach the inner scroller.
+
+`bun run test:components` checks the built component in Chromium and WebKit.
+The `SurfaceFollowing` story exercises streaming, collapse and pane resizing;
+source/license/test provenance is recorded in `NOTICE`.
+
 ## Licence
 
 Apache-2.0.
