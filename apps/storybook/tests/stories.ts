@@ -20,19 +20,30 @@ export type StoryEntry = {
 }
 
 const BASE_URL = (process.env['STORYBOOK_URL'] ?? 'http://127.0.0.1:6106').replace(/\/$/, '')
+const storyFinishedListenerPages = new WeakSet<import('@playwright/test').Page>()
 
 export type OpenStoryOptions = {
   baseUrl?: string
 }
 
+type StoryViolation = {
+  id?: string
+  help?: string
+  targets?: string[]
+}
+
+type StoryReporter = {
+  type?: string
+  status?: string
+  error?: string
+  violationCount?: number
+  violations?: StoryViolation[]
+}
+
 type StoryFinishedResult = {
   storyId: string
   status: string
-  reporters: Array<{
-    type?: string
-    status?: string
-    error?: string
-  }>
+  reporters: StoryReporter[]
 }
 
 export async function fetchStories(): Promise<StoryEntry[]> {
@@ -107,68 +118,67 @@ export async function waitForStoryReady(
   ])
 }
 
-async function installStoryFinishedListener(
-  page: import('@playwright/test').Page,
-  storyId: string
-): Promise<void> {
+async function installStoryFinishedListener(page: import('@playwright/test').Page): Promise<void> {
+  if (storyFinishedListenerPages.has(page)) return
+
   // Storybook creates its preview addon store during page bootstrap. Install the
   // channel hook before navigation so a fast story cannot emit STORY_FINISHED
-  // before the test starts waiting for it.
-  await page.addInitScript(
-    ({ id }) => {
-      const stateKey = '__ADEA_STORYBOOK_READINESS__'
-      const addonStoreKey = '__STORYBOOK_ADDONS_PREVIEW'
-      const state = { storyId: id, finished: null as unknown, channel: null as unknown }
-      const wrappedStores = new WeakSet<object>()
+  // before the test starts waiting for it. The one hook is reused across
+  // navigations; each fresh document derives its active story from its URL.
+  await page.addInitScript(() => {
+    const id = new URL(globalThis.location.href).searchParams.get('id')
+    const stateKey = '__ADEA_STORYBOOK_READINESS__'
+    const addonStoreKey = '__STORYBOOK_ADDONS_PREVIEW'
+    const state = { storyId: id, finished: null as unknown, channel: null as unknown }
+    const wrappedStores = new WeakSet<object>()
 
-      const attachChannel = (channel: unknown) => {
-        if (
-          !channel ||
-          typeof channel !== 'object' ||
-          typeof Reflect.get(channel, 'on') !== 'function' ||
-          state.channel === channel
-        ) {
-          return
+    const attachChannel = (channel: unknown) => {
+      if (
+        !channel ||
+        typeof channel !== 'object' ||
+        typeof Reflect.get(channel, 'on') !== 'function' ||
+        state.channel === channel
+      ) {
+        return
+      }
+      state.channel = channel
+      Reflect.get(channel, 'on').call(channel, 'storyFinished', (result: unknown) => {
+        if (result && typeof result === 'object' && Reflect.get(result, 'storyId') === id) {
+          state.finished = result
         }
-        state.channel = channel
-        Reflect.get(channel, 'on').call(channel, 'storyFinished', (result: unknown) => {
-          if (result && typeof result === 'object' && Reflect.get(result, 'storyId') === id) {
-            state.finished = result
-          }
-        })
-      }
-
-      const wrapStore = (store: unknown) => {
-        if (!store || typeof store !== 'object' || wrappedStores.has(store)) return
-        const setChannel = Reflect.get(store, 'setChannel')
-        if (typeof setChannel !== 'function') return
-        wrappedStores.add(store)
-        Reflect.set(store, 'setChannel', function (channel: unknown) {
-          const result = setChannel.call(this, channel)
-          attachChannel(channel)
-          return result
-        })
-        attachChannel(Reflect.get(store, 'channel'))
-      }
-
-      Object.defineProperty(globalThis, stateKey, {
-        configurable: true,
-        value: state,
-        writable: true,
       })
+    }
 
-      let addonStore: unknown
-      Object.defineProperty(globalThis, addonStoreKey, {
-        configurable: true,
-        get: () => addonStore,
-        set: (store: unknown) => {
-          addonStore = store
-          wrapStore(store)
-        },
+    const wrapStore = (store: unknown) => {
+      if (!store || typeof store !== 'object' || wrappedStores.has(store)) return
+      const setChannel = Reflect.get(store, 'setChannel')
+      if (typeof setChannel !== 'function') return
+      wrappedStores.add(store)
+      Reflect.set(store, 'setChannel', function (channel: unknown) {
+        const result = setChannel.call(this, channel)
+        attachChannel(channel)
+        return result
       })
-    },
-    { id: storyId }
-  )
+      attachChannel(Reflect.get(store, 'channel'))
+    }
+
+    Object.defineProperty(globalThis, stateKey, {
+      configurable: true,
+      value: state,
+      writable: true,
+    })
+
+    let addonStore: unknown
+    Object.defineProperty(globalThis, addonStoreKey, {
+      configurable: true,
+      get: () => addonStore,
+      set: (store: unknown) => {
+        addonStore = store
+        wrapStore(store)
+      },
+    })
+  })
+  storyFinishedListenerPages.add(page)
 }
 
 async function waitForStoryFinished(
@@ -199,6 +209,36 @@ async function waitForStoryFinished(
       ? finished['reporters'].map((reporter) => {
           if (!reporter || typeof reporter !== 'object') return {}
           const result = Reflect.get(reporter, 'result')
+          const rawViolations =
+            result && typeof result === 'object' && Array.isArray(Reflect.get(result, 'violations'))
+              ? Reflect.get(result, 'violations')
+              : []
+          const violations = rawViolations.slice(0, 3).map((violation) => {
+            if (!violation || typeof violation !== 'object') return {}
+            const nodes = Reflect.get(violation, 'nodes')
+            const targets = Array.isArray(nodes)
+              ? nodes
+                  .flatMap((node) => {
+                    if (!node || typeof node !== 'object') return []
+                    const target = Reflect.get(node, 'target')
+                    return Array.isArray(target)
+                      ? target.filter((value): value is string => typeof value === 'string')
+                      : []
+                  })
+                  .slice(0, 3)
+              : []
+            return {
+              id:
+                typeof Reflect.get(violation, 'id') === 'string'
+                  ? Reflect.get(violation, 'id')
+                  : undefined,
+              help:
+                typeof Reflect.get(violation, 'help') === 'string'
+                  ? Reflect.get(violation, 'help')
+                  : undefined,
+              targets,
+            }
+          })
           return {
             type:
               typeof Reflect.get(reporter, 'type') === 'string'
@@ -212,6 +252,8 @@ async function waitForStoryFinished(
               result && typeof result === 'object' && Reflect.get(result, 'error')
                 ? String(Reflect.get(result, 'error'))
                 : undefined,
+            violationCount: rawViolations.length,
+            violations,
           }
         })
       : []
@@ -227,18 +269,44 @@ async function storyFinishedError(
   page: import('@playwright/test').Page,
   result: StoryFinishedResult
 ): Promise<Error> {
-  const visibleError = ((await page.locator('.sb-errordisplay').allTextContents())[0] ?? '').trim()
+  const visibleError = compact(
+    ((await page.locator('.sb-errordisplay').allTextContents())[0] ?? '').trim()
+  )
 
   const reporterErrors = result.reporters
     .map((reporter) => {
       const label = [reporter.type, reporter.status].filter(Boolean).join('/') || 'reporter'
-      return reporter.error ? `${label}: ${reporter.error}` : label
+      const diagnostics = reporter.error ? [compact(reporter.error)] : []
+      for (const violation of reporter.violations ?? []) {
+        const rule = [
+          violation.id && compact(violation.id),
+          violation.help && compact(violation.help),
+        ]
+          .filter(Boolean)
+          .join(': ')
+        const targets = violation.targets?.map((target) => compact(target, 160)).join(', ')
+        diagnostics.push(`${rule || 'a11y violation'}${targets ? ` [target: ${targets}]` : ''}`)
+      }
+      const omittedViolations = Math.max(
+        0,
+        (reporter.violationCount ?? 0) - (reporter.violations?.length ?? 0)
+      )
+      if (omittedViolations > 0) {
+        diagnostics.push(
+          `+${omittedViolations} more a11y violation${omittedViolations === 1 ? '' : 's'}`
+        )
+      }
+      return diagnostics.length ? `${label}: ${diagnostics.join('; ')}` : label
     })
     .join('; ')
   const details = [visibleError && `visible error: ${visibleError}`, reporterErrors].filter(Boolean)
   return new Error(
     `Storybook story "${result.storyId}" finished with status "${result.status}"${details.length ? ` (${details.join('; ')})` : ''}`
   )
+}
+
+function compact(value: string, limit = 240): string {
+  return value.length > limit ? `${value.slice(0, limit - 1)}…` : value
 }
 
 /**
@@ -261,7 +329,7 @@ export async function openStory(
   theme: string,
   options: OpenStoryOptions = {}
 ): Promise<void> {
-  await installStoryFinishedListener(page, id)
+  await installStoryFinishedListener(page)
   await page.goto(storyUrl(id, theme, options.baseUrl), { waitUntil: 'domcontentloaded' })
   const result = await waitForStoryFinished(page, id)
   if (result.status !== 'success') throw await storyFinishedError(page, result)

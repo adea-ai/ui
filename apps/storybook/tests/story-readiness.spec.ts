@@ -7,7 +7,12 @@ let fixtureServer: Server | undefined
 let fixtureBaseUrl = ''
 let fixtureFont: Uint8Array
 
-type StorybookFixtureMode = 'success' | 'render-error' | 'play-error' | 'report-error'
+type StorybookFixtureMode =
+  | 'success'
+  | 'render-error'
+  | 'play-error'
+  | 'report-error'
+  | 'violations-error'
 
 const fixtureHtml = (error: boolean) => `<!doctype html>
 <html>
@@ -113,6 +118,22 @@ const storybookFixtureHtml = (mode: StorybookFixtureMode) => `<!doctype html>
             finish('error', [
               { type: 'a11y', status: 'failed', result: { error: 'fixture report failed' } },
             ]);
+          } else if (mode === 'violations-error') {
+            finish('error', [
+              {
+                type: 'a11y',
+                status: 'failed',
+                result: {
+                  violations: [
+                    {
+                      id: 'button-name',
+                      help: 'Buttons must have discernible text',
+                      nodes: [{ target: ['#fixture-mounted'] }],
+                    },
+                  ],
+                },
+              },
+            ]);
           } else {
             setError('fixture play failed');
             setTimeout(() => { throw new Error('fixture play failed'); }, 0);
@@ -152,6 +173,7 @@ test.beforeAll(async () => {
         'fixture--render-error': 'render-error',
         'fixture--play-error': 'play-error',
         'fixture--report-error': 'report-error',
+        'fixture--violations-error': 'violations-error',
       }
       const mode = modeByStoryId[url.searchParams.get('id') ?? ''] ?? 'success'
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
@@ -249,4 +271,19 @@ test.describe('story readiness', () => {
       }
     })
   }
+
+  test('openStory reports failed a11y rule details from terminal reporters', async ({ page }) => {
+    await expect(
+      openStory(page, 'fixture--violations-error', 'adea-dark', { baseUrl: fixtureBaseUrl })
+    ).rejects.toThrow(/button-name.*Buttons must have discernible text.*#fixture-mounted/)
+  })
+
+  test('openStory reuses its terminal listener across same-page navigations', async ({ page }) => {
+    await openStory(page, 'fixture--delayed-success', 'adea-dark', { baseUrl: fixtureBaseUrl })
+    await expect(page.locator('#storybook-root')).toHaveAttribute('data-play-complete', 'true')
+
+    await expect(
+      openStory(page, 'fixture--violations-error', 'adea-dark', { baseUrl: fixtureBaseUrl })
+    ).rejects.toThrow(/button-name.*#fixture-mounted/)
+  })
 })
