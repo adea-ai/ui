@@ -49,7 +49,11 @@ export function Checkbox(props: CheckboxProps) {
   ])
 
   return (
-    <KobalteCheckbox class={cn('group/checkbox flex items-start gap-2.5', local.class)} {...rest}>
+    <KobalteCheckbox
+      title={local.title}
+      class={cn('group/checkbox flex items-start gap-2.5', local.class)}
+      {...rest}
+    >
       {/*
        * The name goes on the input, which is what carries the value and takes
        * focus. On the Root it would land on a plain div and name nothing — the

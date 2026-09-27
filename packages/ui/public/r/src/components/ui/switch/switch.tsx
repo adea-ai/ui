@@ -49,7 +49,11 @@ export function Switch(props: SwitchProps) {
   ])
 
   return (
-    <KobalteSwitch class={cn('group/switch flex items-center gap-2.5', local.class)} {...rest}>
+    <KobalteSwitch
+      title={local.title}
+      class={cn('group/switch flex items-center gap-2.5', local.class)}
+      {...rest}
+    >
       {/* The name belongs on the input; see Checkbox for why. */}
       <KobalteSwitch.Input
         aria-label={local['aria-label']}

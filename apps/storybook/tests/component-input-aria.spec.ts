@@ -51,6 +51,15 @@ test('native inputs retain names, help, validation and keyboard behavior', async
   await expect(checkbox).toHaveAttribute('title', 'Workspace sync')
   await expect(toggle).toHaveAttribute('title', 'Source availability')
   await expect(radio).toHaveAttribute('title', 'File provider')
+  for (const [input, title] of [
+    [checkbox, 'Workspace sync'],
+    [toggle, 'Source availability'],
+    [radio, 'File provider'],
+  ] as const) {
+    const visibleRow = input.locator('..')
+    await expect(visibleRow).toBeVisible()
+    await expect(visibleRow).toHaveAttribute('title', title)
+  }
   await expect(page.getByRole('checkbox', { name: 'Work', exact: true })).toHaveCount(1)
   await expect(
     page.getByRole('radio', { name: 'Calendar', exact: true })

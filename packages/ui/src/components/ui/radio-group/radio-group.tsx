@@ -25,7 +25,8 @@ export type RadioGroupItemProps = ComponentProps<typeof KobalteRadioGroup.Item> 
   controlClass?: string
   /**
    * The option's visible label. A radio with no accessible name is unreachable
-   * by a screen reader and by voice control, so supply this or a child.
+   * by a screen reader and by voice control, so supply this, a labelled child,
+   * `aria-label`, or `aria-labelledby`.
    */
   label?: string
   description?: string
@@ -48,6 +49,7 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
 
   return (
     <KobalteRadioGroup.Item
+      title={local.title}
       class={cn('group/radio flex items-start gap-2.5', local.class)}
       {...rest}
     >
