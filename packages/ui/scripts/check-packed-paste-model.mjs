@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-paste-model-'))
@@ -14,15 +15,19 @@ const run = (command, args, cwd = consumer) => {
 }
 
 try {
-  const [pack] = JSON.parse(
-    run('npm', ['pack', '--json', '--pack-destination', consumer], join(root, 'packages/ui'))
-  )
+  const sharedArchive = sharedPackedUiArchive()
+  const pack = sharedArchive
+    ? { filename: sharedArchive }
+    : JSON.parse(
+        run('npm', ['pack', '--json', '--pack-destination', consumer], join(root, 'packages/ui'))
+      )[0]
+  const archivePath = sharedArchive ?? join(consumer, pack.filename)
   writeFileSync(
     join(consumer, 'package.json'),
     JSON.stringify({
       private: true,
       type: 'module',
-      dependencies: { '@adea-ai/ui': `file:${join(consumer, pack.filename)}` },
+      dependencies: { '@adea-ai/ui': `file:${archivePath}` },
     })
   )
   run('bun', ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'])

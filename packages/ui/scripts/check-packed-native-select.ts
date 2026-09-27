@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dir, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -53,9 +54,14 @@ const replaceImports = (source: string) =>
     .replaceAll('../../src/styles/globals.css', './style.css')
 
 try {
-  const [archive] = JSON.parse(
-    await run('npm', ['pack', '--json', '--pack-destination', consumer], uiRoot, {}, true)
-  )
+  const sharedArchive = sharedPackedUiArchive()
+  let archivePath = sharedArchive
+  if (!archivePath) {
+    const [archive] = JSON.parse(
+      await run('npm', ['pack', '--json', '--pack-destination', consumer], uiRoot, {}, true)
+    )
+    archivePath = join(consumer, archive.filename)
+  }
   const solidVersion = JSON.parse(
     readFileSync(join(uiRoot, 'node_modules/solid-js/package.json'), 'utf8')
   ).version
@@ -69,7 +75,7 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@adea-ai/ui': `file:${join(consumer, archive.filename)}`,
+        '@adea-ai/ui': `file:${archivePath}`,
         'solid-js': solidVersion,
         tailwindcss: tailwindVersion,
       },

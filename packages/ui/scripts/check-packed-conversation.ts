@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { chromium, webkit, expect } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
@@ -13,6 +13,7 @@ import {
   assertComposedGzipBudget,
   MAX_ATOMIC_INCREMENT_GZIP_BYTES,
 } from './conversation-packed-budget'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -174,14 +175,19 @@ function Pilot() {
 render(Pilot, document.getElementById('app')!);
 `
 try {
-  const [archive] = JSON.parse(
-    execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: 60_000,
-    })
-  )
+  const sharedArchive = sharedPackedUiArchive()
+  let archivePath = sharedArchive
+  if (!archivePath) {
+    const [archive] = JSON.parse(
+      execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
+        cwd: root,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 60_000,
+      })
+    )
+    archivePath = join(consumer, archive.filename)
+  }
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   writeFileSync(
     join(consumer, 'package.json'),
@@ -189,7 +195,7 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@adea-ai/ui': `file:${join(consumer, archive.filename)}`,
+        '@adea-ai/ui': `file:${archivePath}`,
         'solid-js': manifest.peerDependencies['solid-js'],
         tailwindcss: '^4.3.3',
       },
@@ -1127,7 +1133,7 @@ try {
       note: '6 KiB feature-specific increment cap; common plain modules are excluded by paired-fixture delta.',
     })
   }
-  console.log(JSON.stringify({ archive: archive.filename, results }, null, 2))
+  console.log(JSON.stringify({ archive: basename(archivePath), results }, null, 2))
 } finally {
   rmSync(consumer, { recursive: true, force: true })
 }

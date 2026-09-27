@@ -7,6 +7,7 @@ import { gzipSync } from 'node:zlib'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-consumer-'))
@@ -115,13 +116,18 @@ const coreSamples: PackedSample[] = [
 ]
 
 try {
-  const [archive] = JSON.parse(
-    execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-  )
+  const sharedArchive = sharedPackedUiArchive()
+  let archivePath = sharedArchive
+  if (!archivePath) {
+    const [archive] = JSON.parse(
+      execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
+        cwd: root,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+    )
+    archivePath = join(consumer, archive.filename)
+  }
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   writeFileSync(
     join(consumer, 'package.json'),
@@ -129,7 +135,7 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@adea-ai/ui': `file:${join(consumer, archive.filename)}`,
+        '@adea-ai/ui': `file:${archivePath}`,
         'solid-js': manifest.peerDependencies['solid-js'],
         tailwindcss: '^4.3.3',
       },
