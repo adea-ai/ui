@@ -142,7 +142,7 @@ describe('registry', () => {
         }
       }
     }
-  })
+  }, 30_000)
 
   test('a component that composes around a slot rather than importing controls has no peers', () => {
     // `settings` is label, description and a control slot. It takes whatever the

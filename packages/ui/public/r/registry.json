@@ -1652,9 +1652,9 @@
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
+        "@adea-ai/ui/dropdown-menu",
         "@adea-ai/ui/input",
         "@adea-ai/ui/popover",
-        "@adea-ai/ui/select",
         "@adea-ai/ui/switch",
         "lib"
       ],
