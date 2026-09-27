@@ -130,9 +130,10 @@ same standard for anything added.
 ## Workshop CI
 
 The workshop builds once, then runs its complete story/theme accessibility and
-interaction sweep in ten Playwright shards. Component interaction contracts run
-in parallel in their own lane. The required `Workshop` context succeeds only
-when the build, every shard, and component contracts succeed.
+interaction sweep in ten Playwright shards. The isolated component interaction
+suite runs in four Playwright shards across Chromium and WebKit. The required
+`Workshop` context succeeds only when the build, every story shard and every
+component shard succeed.
 
 The explicit accessibility sweep sets Storybook's supported `a11y.manual` global
 for its own navigation so each story is analyzed once by Playwright. It still
