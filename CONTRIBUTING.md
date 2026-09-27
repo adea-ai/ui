@@ -142,9 +142,9 @@ and interaction URLs retain the addon's automatic analysis and manual panel.
 
 PR changes select Registry, Storybook build/shards, Component interactions, and
 Pages artifact production independently. Changes limited to the Storybook
-manager or the Pages publisher/guard run the Storybook build without the UI
-browser suites. That build runs for PRs and main so a successful main gate can
-publish its exact-run artifact. Registry-payload changes on main also build the
+manager, the static Overview/Conventions guides, or the Pages publisher/guard
+run the Storybook build without the UI browser suites. That build runs for PRs
+and main so a successful main gate can publish its exact-run artifact. Registry-payload changes on main also build the
 site artifact; registry-payload PRs retain Registry checks without adding that
 build. Markdown documentation outside the published UI package skips these
 expensive gates; published docs/notices and registry payload changes retain

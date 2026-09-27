@@ -48,13 +48,56 @@ CSS hooks are the sanctioned escape hatch for a genuine one-off; see
 
 No literal value appears in a component. The rule set:
 
-| Rule                     | Catches                                                        |
-| ------------------------ | -------------------------------------------------------------- |
-| `no-raw-colors`          | `bg-red-500`, `text-emerald-700`, and undeclared tokens        |
-| `no-arbitrary-values`    | `p-[13px]`, `w-[37%]`                                          |
-| `no-inline-styles`       | `style={{}}` and `<style>` elements                            |
-| `no-unknown-classes`     | `rounded-huge`, `hovr:flex` — a class Tailwind cannot generate |
-| `require-static-classes` | `` `bg-${color}` `` — a class the linter cannot read           |
+<table>
+  <thead>
+    <tr>
+      <th scope="col">Rule</th>
+      <th scope="col">Catches</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>no-raw-colors</code>
+      </td>
+      <td>
+        <code>bg-red-500</code>, <code>text-emerald-700</code>, and undeclared tokens
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>no-arbitrary-values</code>
+      </td>
+      <td>
+        <code>p-[13px]</code>, <code>w-[37%]</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>no-inline-styles</code>
+      </td>
+      <td>
+        <code>style=&#123;&#123;&#125;&#125;</code> and <code>&lt;style&gt;</code> elements
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>no-unknown-classes</code>
+      </td>
+      <td>
+        <code>rounded-huge</code>, <code>hovr:flex</code> — a class Tailwind cannot generate
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>require-static-classes</code>
+      </td>
+      <td>
+        <code>{'`bg-${color}`'}</code> — a class the linter cannot read
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 `require-static-classes` is the one that surprises people. The linter has to be able to
 read a class to check it against the theme, so a template literal is not a style
@@ -139,12 +182,53 @@ composing a trigger with a Kobalte `as` prop needs them. Anything not exported f
 
 The four layers:
 
-| Layer          | What it is                           | Examples                                          |
-| -------------- | ------------------------------------ | ------------------------------------------------- |
-| `ui`           | A primitive you theme with variants. | `button`, `select`, `dialog`, `board`             |
-| `layout`       | A region of the window.              | `app-shell`, `side-rail`, `top-bar`, `panel`      |
-| `composites`   | An opinionated assembly of both.     | `settings`, `stat`, `update-dialog`               |
-| `conversation` | The transcript layer, as one module. | `message-row`, `message-composer`, `thread-panel` |
+<table>
+  <thead>
+    <tr>
+      <th scope="col">Layer</th>
+      <th scope="col">What it is</th>
+      <th scope="col">Examples</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>ui</code>
+      </td>
+      <td>A primitive you theme with variants.</td>
+      <td>
+        <code>button</code>, <code>select</code>, <code>dialog</code>, <code>board</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>layout</code>
+      </td>
+      <td>A region of the window.</td>
+      <td>
+        <code>app-shell</code>, <code>side-rail</code>, <code>top-bar</code>, <code>panel</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>composites</code>
+      </td>
+      <td>An opinionated assembly of both.</td>
+      <td>
+        <code>settings</code>, <code>stat</code>, <code>update-dialog</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>conversation</code>
+      </td>
+      <td>The transcript layer, as one module.</td>
+      <td>
+        <code>message-row</code>, <code>message-composer</code>, <code>thread-panel</code>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 The layer is a reading aid: it tells you what kind of thing you are importing before
 you open it. `conversation` is a layer rather than a folder of folders because its
