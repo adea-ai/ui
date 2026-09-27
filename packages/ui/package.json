@@ -102,6 +102,7 @@
     "check:packed-transcript": "bun scripts/check-packed-transcript.ts",
     "check:packed-layout-renderer": "bun scripts/check-packed-layout-renderer.ts",
     "check:packed-appearance": "bun scripts/check-packed-appearance.ts",
+    "check:packed-native-select": "bun scripts/check-packed-native-select.ts",
     "check:packed-paste-model": "node scripts/check-packed-paste-model.mjs"
   },
   "dependencies": {
