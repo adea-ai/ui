@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.1](https://github.com/adea-ai/ui/compare/v0.71.0...v0.71.1) (2026-09-27)
+
+
+### Tests
+
+* settle packed paste selection before hover ([#75](https://github.com/adea-ai/ui/issues/75)) ([11e9b29](https://github.com/adea-ai/ui/commit/11e9b29379cd53f09c62617619ebf5eab32b5e95))
+
 ## [0.71.0](https://github.com/adea-ai/ui/compare/v0.70.2...v0.71.0) (2026-09-27)
 
 
