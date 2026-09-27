@@ -21,6 +21,8 @@ import { createScrollFollow } from './scroll-follow'
  *     than dragging the pane behind it — which in a desktop shell means the whole
  *     window moves.
  */
+export type ConversationReadingPosition = Readonly<{ top: number; following: boolean }>
+
 export type ConversationSurfaceProps = ComponentProps<'div'> & {
   /** How far from the bottom still counts as "at the bottom", in px. */
   threshold?: number
@@ -28,6 +30,10 @@ export type ConversationSurfaceProps = ComponentProps<'div'> & {
   follow?: boolean
   /** Optional conversation identity: changing it re-arms follow at the bottom. */
   resetKey?: string
+  /** Host snapshot consumed on mount/identity reset, never on ordinary prop updates. */
+  initialReadingPosition?: ConversationReadingPosition
+  /** Actual follow intent and native offset; storage/identity remain host-owned. */
+  onReadingPositionChange?: (position: ConversationReadingPosition) => void
   /** Rendered above the transcript when there is nothing in it. */
   empty?: JSX.Element
   /** A header that scrolls with the transcript, e.g. a day divider or a banner. */
@@ -40,6 +46,8 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
     'threshold',
     'follow',
     'resetKey',
+    'initialReadingPosition',
+    'onReadingPositionChange',
     'empty',
     'header',
     'children',
@@ -54,6 +62,8 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
     enabled: () => local.follow !== false,
     resetKey: () => local.resetKey,
     threshold: () => local.threshold ?? 80,
+    initialPosition: () => local.initialReadingPosition,
+    onPositionChange: (position) => local.onReadingPositionChange?.(position),
   })
   const onScroll: JSX.EventHandlerUnion<HTMLDivElement, Event> = (event) => {
     follow.onScroll()

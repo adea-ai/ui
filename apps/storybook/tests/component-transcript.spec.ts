@@ -82,7 +82,7 @@ test('transcript controls keep a measurable themed control height', async ({ pag
 })
 
 const scroller = (page: import('@playwright/test').Page) =>
-  page.getByRole('region', { name: 'Transcript' })
+  page.getByRole('region', { name: 'Transcript', exact: true })
 const distance = (page: import('@playwright/test').Page) =>
   scroller(page).evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)
 
@@ -99,6 +99,55 @@ test('native streamed text growth keeps a following reader at the bottom', async
   await expect.poll(() => distance(page)).toBeLessThan(2)
   await stream(page)
   await expect.poll(() => distance(page)).toBeLessThan(2)
+})
+
+test('restores a parked reader across remount without streamed output rearming follow', async ({
+  page,
+}) => {
+  const restored = page.getByRole('region', { name: 'Restored transcript' })
+  await restored.evaluate((element) => {
+    element.scrollTop = 100
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await expect.poll(() => restored.evaluate((element) => element.scrollTop)).toBe(100)
+  await restored.locator('[data-stream]').evaluate((element) => {
+    element.firstChild!.nodeValue += '\nLater output'.repeat(30)
+  })
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())))
+  )
+  expect(await restored.evaluate((element) => element.scrollTop)).toBe(100)
+})
+
+test('preserves released follow intent inside the jump threshold and explicit jump resumes it', async ({
+  page,
+}) => {
+  const restored = page.getByRole('region', { name: 'Restored transcript' })
+  await restored.evaluate((element) => {
+    element.scrollTop -= 30
+    element.dispatchEvent(new Event('scroll'))
+  })
+  const top = await restored.evaluate((element) => element.scrollTop)
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await expect.poll(() => restored.evaluate((element) => element.scrollTop)).toBe(top)
+  await restored.locator('[data-stream]').evaluate((element) => {
+    element.firstChild!.nodeValue += '\nLater output'.repeat(30)
+  })
+  await expect.poll(() => restored.evaluate((element) => element.scrollTop)).toBe(top)
+  const surface = restored.locator('..')
+  await surface.getByRole('button', { name: 'Jump to latest', exact: true }).click()
+  await expect(restored).toBeFocused()
+  await expect
+    .poll(() =>
+      restored.evaluate(
+        (element) => element.scrollHeight - element.clientHeight - element.scrollTop
+      )
+    )
+    .toBeLessThan(2)
 })
 
 test('a small deliberate scroll up releases follow even inside the pill threshold', async ({
@@ -128,7 +177,9 @@ test('the jump control describes an action without inventing message counts', as
     el.scrollTop = 0
     el.dispatchEvent(new Event('scroll'))
   })
-  await expect(page.getByRole('button', { name: 'Jump to latest', exact: true })).toBeVisible()
+  await expect(
+    scroller(page).locator('..').getByRole('button', { name: 'Jump to latest', exact: true })
+  ).toBeVisible()
 })
 
 test('growth on an earlier row and viewport resizing preserve follow', async ({ page }) => {
@@ -171,7 +222,10 @@ test('jump and an explicit conversation switch re-arm follow', async ({ page }) 
     el.scrollTop = 100
     el.dispatchEvent(new Event('scroll'))
   })
-  await page.getByRole('button', { name: 'Jump to latest', exact: true }).click()
+  await scroller(page)
+    .locator('..')
+    .getByRole('button', { name: 'Jump to latest', exact: true })
+    .click()
   await expect.poll(() => distance(page)).toBeLessThan(2)
   await stream(page)
   await expect.poll(() => distance(page)).toBeLessThan(2)
@@ -200,13 +254,30 @@ test('disabled follow is inert and the host still receives scroll events', async
       new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())))
   )
   expect(await scroller(page).evaluate((el) => el.scrollTop)).toBe(100)
-  await expect(page.getByRole('button', { name: 'Jump to latest', exact: true })).toHaveCount(0)
+  await expect(
+    scroller(page).locator('..').getByRole('button', { name: 'Jump to latest', exact: true })
+  ).toHaveCount(0)
   expect(Number(await page.getByLabel('Host scroll events').textContent())).toBeGreaterThan(0)
+})
+
+test('disabled native reading survives remount and re-enable without a bottom yank', async ({
+  page,
+}) => {
+  const restored = page.getByRole('region', { name: 'Restored transcript' })
+  await page.getByRole('button', { name: 'Toggle follow' }).click()
+  await restored.evaluate((element) => {
+    element.scrollTop = 100
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle transcript' }).click()
+  await page.getByRole('button', { name: 'Toggle follow' }).click()
+  await expect.poll(() => restored.evaluate((element) => element.scrollTop)).toBe(100)
 })
 
 test('unmount and repeated remount release the content and viewport observer', async ({ page }) => {
   for (let cycle = 0; cycle < 3; cycle += 1) {
-    await expect(page.locator('html')).toHaveAttribute('data-live-observers', '1')
+    await expect(page.locator('html')).toHaveAttribute('data-live-observers', '2')
     await page.getByRole('button', { name: 'Toggle transcript' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-live-observers', '0')
     await page.getByRole('button', { name: 'Toggle transcript' }).click()
@@ -228,7 +299,9 @@ for (const theme of ['light', 'dark']) {
         el.scrollTop = 0
         el.dispatchEvent(new Event('scroll'))
       })
-      const jump = page.getByRole('button', { name: 'Jump to latest', exact: true })
+      const jump = scroller(page)
+        .locator('..')
+        .getByRole('button', { name: 'Jump to latest', exact: true })
       await expect(jump).toBeVisible()
       expect(await page.locator('main').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
         true

@@ -162,7 +162,12 @@ test('a menu or host that already claimed Enter retains its input ownership', as
 test('repeated composition ends cannot release the latest commit window early', async ({
   page,
 }) => {
-  await page.clock.install()
+  // `install()` lets time flow between browser protocol calls. Freeze at a later
+  // tick so protocol latency cannot make pauseAt target the past, then only
+  // explicit `runFor` calls advance the commit window.
+  const clockStart = new Date()
+  await page.clock.install({ time: clockStart })
+  await page.clock.pauseAt(new Date(clockStart.getTime() + 1_000))
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
   await box.dispatchEvent('compositionstart')
   await box.dispatchEvent('compositionend')
