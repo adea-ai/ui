@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.3](https://github.com/adea-ai/ui/compare/v0.71.2...v0.71.3) (2026-09-27)
+
+
+### Bug Fixes
+
+* bound packed-layout subprocesses ([#82](https://github.com/adea-ai/ui/issues/82)) ([a2bfc1a](https://github.com/adea-ai/ui/commit/a2bfc1aa83f1a86778bbc71756bb00bdac405f35))
+
 ## [0.71.2](https://github.com/adea-ai/ui/compare/v0.71.1...v0.71.2) (2026-09-27)
 
 
