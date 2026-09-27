@@ -40,6 +40,7 @@ jobs:
       registry: ${{ steps.scope.outputs.registry }}
       workshop: ${{ steps.scope.outputs.workshop }}
       components: ${{ steps.scope.outputs.components }}
+      pages: ${{ steps.scope.outputs.pages }}
     steps:
       - name: Checkout complete history for the immutable change diff
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -50,8 +51,8 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
-      - name: Verify change classification
-        run: bun test ./.github/scripts/design-system-changes.test.ts
+      - name: Verify change classification and Pages sourcing
+        run: bun test ./.github/scripts/design-system-changes.test.ts ./.github/scripts/registry-pages.test.ts
       - name: Select needed gates
         id: scope
         run: bun .github/scripts/design-system-changes.mjs
@@ -122,7 +123,7 @@ jobs:
   workshop-build:
     name: Workshop build
     needs: changes
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false' || (github.event_name == 'push' && needs.changes.outputs.pages != 'false'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -270,9 +271,9 @@ jobs:
             echo '::error::Gate-scope validation failed; full fallback checks cannot hide that failure.'
             exit 1
           fi
-          if [ "$SCOPE_RESULT" = success ] && [ "$WORKSHOP_NEEDED" = false ] && [ "$BUILD_RESULT" = skipped ] && [ "$STORIES_RESULT" = skipped ]; then
-            BUILD_RESULT=success
-            STORIES_RESULT=success
+          if [ "$SCOPE_RESULT" = success ] && [ "$WORKSHOP_NEEDED" = false ]; then
+            if [ "$BUILD_RESULT" = skipped ]; then BUILD_RESULT=success; fi
+            if [ "$STORIES_RESULT" = skipped ]; then STORIES_RESULT=success; fi
           fi
           if [ "$SCOPE_RESULT" = success ] && [ "$COMPONENTS_NEEDED" = false ] && [ "$COMPONENTS_RESULT" = skipped ]; then
             COMPONENTS_RESULT=success

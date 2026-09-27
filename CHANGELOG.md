@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.1](https://github.com/adea-ai/ui/compare/v0.68.0...v0.68.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* publish Storybook at the Pages root ([#52](https://github.com/adea-ai/ui/issues/52)) ([f268a83](https://github.com/adea-ai/ui/commit/f268a839921ac2ae21ee75e5cf61beaa1fbe48ec))
+
 ## [0.68.0](https://github.com/adea-ai/ui/compare/v0.67.2...v0.68.0) (2026-09-27)
 
 
