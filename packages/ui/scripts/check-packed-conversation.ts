@@ -611,6 +611,59 @@ try {
             await expect(field).toBeFocused()
             await expect(field).toHaveValue('Atomic draft before collapse')
             await field.fill('')
+            const tracePointerAndSelection = async () =>
+              page.evaluate(() => {
+                const events: unknown[] = []
+                const record = (event: Event) => {
+                  const mouse = event instanceof MouseEvent ? event : null
+                  const target = event.target
+                  const fieldElement = document.querySelector<HTMLTextAreaElement>(
+                    '[data-slot="composer-input"]'
+                  )
+                  const hit =
+                    mouse && Number.isFinite(mouse.clientX) && Number.isFinite(mouse.clientY)
+                      ? document.elementFromPoint(mouse.clientX, mouse.clientY)
+                      : null
+                  events.push({
+                    type: event.type,
+                    target:
+                      target instanceof Element
+                        ? `${target.tagName}[${target.getAttribute('data-slot') ?? ''}]`
+                        : null,
+                    hit:
+                      hit instanceof Element
+                        ? `${hit.tagName}[${hit.getAttribute('data-slot') ?? ''}]`
+                        : null,
+                    x: mouse?.clientX ?? null,
+                    y: mouse?.clientY ?? null,
+                    buttons: mouse?.buttons ?? null,
+                    selectionStart: fieldElement?.selectionStart ?? null,
+                    selectionEnd: fieldElement?.selectionEnd ?? null,
+                    valueLength: fieldElement?.value.length ?? null,
+                    fieldScrollTop: fieldElement?.scrollTop ?? null,
+                    mirrorScrollTop:
+                      document.querySelector<HTMLElement>('[data-slot="paste-token-mirror"]')
+                        ?.scrollTop ?? null,
+                    activeSlot: document.activeElement?.getAttribute('data-slot') ?? null,
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    coarsePointer: matchMedia('(pointer: coarse)').matches,
+                    noHover: matchMedia('(hover: none)').matches,
+                    timeStamp: event.timeStamp,
+                    time: performance.now(),
+                  })
+                  document.documentElement.dataset.pasteHoverTrace = JSON.stringify(events)
+                }
+                for (const type of [
+                  'pointermove',
+                  'pointerout',
+                  'pointerleave',
+                  'mousemove',
+                  'mouseleave',
+                  'select',
+                  'scroll',
+                ])
+                  document.addEventListener(type, record, true)
+              })
             const paste = async () =>
               field.evaluate((element) => {
                 const clipboardData = new DataTransfer()
@@ -623,14 +676,93 @@ try {
                 element.dispatchEvent(event)
                 return event.defaultPrevented
               })
+            await tracePointerAndSelection()
             if (!(await paste())) throw new Error('Packed atomic paste was not collapsed')
             await expect(field).toHaveValue('[ Paste #1 · 3 lines ]')
             await expect(page.getByLabel('Token transactions')).toHaveText('3')
             await expect(page.getByLabel('Token blocks')).toHaveText('1')
             const token = page.locator('[data-paste-seq="1"]')
             const tokenBox = (await token.boundingBox())!
-            await page.mouse.move(tokenBox.x + tokenBox.width / 2, tokenBox.y + tokenBox.height / 2)
-            await expect(page.getByRole('tooltip')).toContainText('red\ngreen\nblue')
+            const pointer = {
+              x: tokenBox.x + tokenBox.width / 2,
+              y: tokenBox.y + tokenBox.height / 2,
+            }
+            const inspectPointer = () =>
+              page.evaluate(({ x, y }) => {
+                const tokenElement = document.querySelector<HTMLElement>('[data-paste-seq="1"]')
+                const fieldElement = document.querySelector<HTMLTextAreaElement>(
+                  '[data-slot="composer-input"]'
+                )
+                const hit = document.elementFromPoint(x, y)
+                const tokenBounds = tokenElement?.getBoundingClientRect()
+                const fieldBounds = fieldElement?.getBoundingClientRect()
+                return {
+                  point: { x, y },
+                  token: tokenBounds
+                    ? {
+                        x: tokenBounds.x,
+                        y: tokenBounds.y,
+                        width: tokenBounds.width,
+                        height: tokenBounds.height,
+                        right: tokenBounds.right,
+                        bottom: tokenBounds.bottom,
+                      }
+                    : null,
+                  textarea: fieldBounds
+                    ? {
+                        x: fieldBounds.x,
+                        y: fieldBounds.y,
+                        width: fieldBounds.width,
+                        height: fieldBounds.height,
+                        right: fieldBounds.right,
+                        bottom: fieldBounds.bottom,
+                      }
+                    : null,
+                  tokenPointerEvents: tokenElement
+                    ? getComputedStyle(tokenElement).pointerEvents
+                    : null,
+                  hit: hit
+                    ? {
+                        tagName: hit.tagName,
+                        slot: hit.getAttribute('data-slot'),
+                        className: typeof hit.className === 'string' ? hit.className : null,
+                      }
+                    : null,
+                  hitIsTextarea: hit === fieldElement,
+                  activeSlot: document.activeElement?.getAttribute('data-slot') ?? null,
+                  selectionStart: fieldElement?.selectionStart ?? null,
+                  selectionEnd: fieldElement?.selectionEnd ?? null,
+                  valueLength: fieldElement?.value.length ?? null,
+                  fieldScrollTop: fieldElement?.scrollTop ?? null,
+                  mirrorScrollTop:
+                    document.querySelector<HTMLElement>('[data-slot="paste-token-mirror"]')
+                      ?.scrollTop ?? null,
+                  maxTouchPoints: navigator.maxTouchPoints,
+                  coarsePointer: matchMedia('(pointer: coarse)').matches,
+                  noHover: matchMedia('(hover: none)').matches,
+                  preview: document.querySelector('[data-slot="paste-token-preview"]') !== null,
+                  describedBy: fieldElement?.getAttribute('aria-describedby') ?? null,
+                }
+              }, pointer)
+            const pointerBeforeMove = await inspectPointer()
+            await page.mouse.move(pointer.x, pointer.y)
+            try {
+              await expect(page.getByRole('tooltip')).toContainText('red\ngreen\nblue')
+            } catch (error) {
+              console.error(
+                'Packed paste-token hover geometry before mouse move:',
+                pointerBeforeMove
+              )
+              console.error(
+                'Packed paste-token hover geometry after tooltip failure:',
+                await inspectPointer()
+              )
+              console.error(
+                'Packed paste-token hover event trace after tooltip failure:',
+                await page.locator('html').getAttribute('data-paste-hover-trace')
+              )
+              throw error
+            }
             await expect(field).toHaveAttribute('aria-describedby', /.+/)
             await page.keyboard.press('Escape')
             await field.fill('Ordinary text prunes the token')
