@@ -152,7 +152,9 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
-})
+  // This integration fixture starts Git and the real CLI repeatedly. Keep its
+  // deadline bounded without changing the default for pure classifier tests.
+}, 60_000)
 
 test('the actual aggregate gate rejects failed, cancelled, missing and required skipped lanes', () => {
   const workflow = Bun.YAML.parse(
