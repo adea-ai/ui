@@ -23,21 +23,33 @@ import {
  *      tab order and the accessibility tree without depending on that bookkeeping, and
  *      it restores exactly the elements that did not already have it — so a nested
  *      dialog does not un-inert its parent.
- *   3. **It labels itself explicitly.** The title registers its id for
- *      `aria-labelledby` in a mount effect; if that registration is ever lost, the
- *      dialog renders with a heading and no name. Passing the label as well costs
- *      nothing and removes the race.
+ *   3. **It sets an explicit accessible name.** The content receives `aria-label`
+ *      from `title`, so its name does not depend on the title id registration effect.
+ *      Pass `aria-label` to use a different name while keeping the visible title;
+ *      pass `aria-labelledby` when another visible label should take precedence.
  *
  * Use `Dialog` directly when you need its composition; use this when you want a
  * dialog that is correct by default.
  */
-export type ModalDialogProps = Omit<ComponentProps<typeof DialogContent>, 'children'> & {
+export type ModalDialogProps = Omit<
+  ComponentProps<typeof DialogContent>,
+  'children' | 'aria-label' | 'aria-labelledby'
+> & {
   open: boolean
   onClose: () => void
   title: string
+  /**
+   * Controls Kobalte's focus, scroll and accessibility modality. Defaults to `true`;
+   * background body children remain inert in either mode.
+   */
+  modal?: boolean
   description?: string
   /** A mark or icon drawn before the title. */
   headerLeading?: JSX.Element
+  /** Replaces `title` as the accessible name while keeping the visible title. */
+  'aria-label'?: string
+  /** Names the dialog from a visible element; ARIA gives it precedence over `aria-label`. */
+  'aria-labelledby'?: string
   children?: JSX.Element
 }
 
@@ -46,10 +58,13 @@ export function ModalDialog(props: ModalDialogProps) {
     'open',
     'onClose',
     'title',
+    'modal',
     'description',
     'headerLeading',
     'class',
     'children',
+    'aria-label',
+    'aria-labelledby',
   ])
 
   const [content, setContent] = createSignal<HTMLElement>()
@@ -76,8 +91,16 @@ export function ModalDialog(props: ModalDialogProps) {
 
   return (
     <Show when={local.open}>
-      <Dialog open onOpenChange={(next) => !next && local.onClose()}>
-        <DialogContent ref={setContent} class={cn('gap-4', local.class)} {...rest}>
+      <Dialog open modal={local.modal ?? true} onOpenChange={(next) => !next && local.onClose()}>
+        <DialogContent
+          ref={setContent}
+          class={cn('gap-4', local.class)}
+          aria-label={local['aria-label'] ?? local.title}
+          aria-labelledby={
+            local['aria-labelledby'] ?? (local['aria-label'] !== undefined ? '' : undefined)
+          }
+          {...rest}
+        >
           <DialogHeader>
             <DialogTitle class="flex items-center gap-2">
               <Show when={local.headerLeading}>{local.headerLeading}</Show>
