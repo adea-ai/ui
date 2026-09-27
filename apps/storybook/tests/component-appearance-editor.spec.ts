@@ -495,6 +495,10 @@ test('inline AppearanceEditor Tab follows native summaries and skips negative ta
   await trigger.click()
   const nextMenu = page.getByRole('menu')
   await expect(nextMenu).toBeVisible()
+  // Kobalte first hands focus to the menu container; wait for that handoff
+  // before sending keyboard navigation.
+  await expect(nextMenu).toBeFocused()
+  await expect(nextMenu.getByRole('menuitemradio', { checked: true })).toBeVisible()
   await page.keyboard.press('Home')
   await expect(nextMenu.getByRole('menuitemradio').first()).toBeFocused()
   await page.keyboard.press('Tab')
@@ -504,6 +508,8 @@ test('inline AppearanceEditor Tab follows native summaries and skips negative ta
   await trigger.click()
   const previousMenu = page.getByRole('menu')
   await expect(previousMenu).toBeVisible()
+  await expect(previousMenu).toBeFocused()
+  await expect(previousMenu.getByRole('menuitemradio', { checked: true })).toBeVisible()
   await page.keyboard.press('Home')
   await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
   await page.keyboard.press('Shift+Tab')
