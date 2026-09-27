@@ -57,8 +57,8 @@ jobs:
       - name: Select needed gates
         id: scope
         run: bun .github/scripts/design-system-changes.mjs
-  registry:
-    name: Registry
+  registry-core:
+    name: Registry core
     needs: changes
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false')
     runs-on: ubuntu-latest
@@ -67,6 +67,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Bun
@@ -102,21 +103,168 @@ jobs:
       - name: Verify the publishable archive
         run: bun run pack:check
 
+      # The packed browser contracts run in independent jobs below, against this
+      # exact build. The artifact is scoped to this workflow run and expires after
+      # a day; it is not reused by later commits or workflow attempts.
+      - name: Upload the built UI package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ui-dist-registry
+          path: packages/ui/dist/
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Verify packed consumers
         run: bun run check:packed-consumer
 
       - name: Verify packed pure paste model
         run: bun run check:packed-paste-model
 
-      - name: Install headless engines for packed composition contracts
+  packed-conversation:
+    name: Packed conversation
+    needs: [changes, registry-core]
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the built UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: ui-dist-registry
+          path: packages/ui/dist/
+
+      - name: Install headless engines
         run: bunx playwright install --with-deps chromium webkit
 
       - name: Verify packed conversation composition
         run: bun run check:packed-conversation
+
+  packed-layout:
+    name: Packed layout
+    needs: [changes, registry-core]
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the built UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: ui-dist-registry
+          path: packages/ui/dist/
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
       - name: Verify packed pane model and renderer
         run: bun run check:packed-layout && bun run check:packed-layout-renderer
+
+  packed-appearance:
+    name: Packed appearance
+    needs: [changes, registry-core]
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the built UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: ui-dist-registry
+          path: packages/ui/dist/
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
       - name: Verify packed appearance interactions and SSR
         run: bun run check:packed-appearance
+
+  # Keep one stable required context while its packed browser checks run in
+  # parallel. A classifier error takes the full-check path, but cannot itself
+  # pass this gate; every required lane must report success.
+  registry:
+    name: Registry
+    needs:
+      - changes
+      - registry-core
+      - packed-conversation
+      - packed-layout
+      - packed-appearance
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the registry build and every packed contract
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          REGISTRY_NEEDED: ${{ needs.changes.outputs.registry }}
+          CORE_RESULT: ${{ needs.registry-core.result }}
+          CONVERSATION_RESULT: ${{ needs.packed-conversation.result }}
+          LAYOUT_RESULT: ${{ needs.packed-layout.result }}
+          APPEARANCE_RESULT: ${{ needs.packed-appearance.result }}
+        run: |
+          if [ "$SCOPE_RESULT" != success ]; then
+            echo '::error::Gate-scope validation failed; fallback checks cannot hide that failure.'
+            exit 1
+          fi
+          if [ "$REGISTRY_NEEDED" = true ]; then
+            for result in "$CORE_RESULT" "$CONVERSATION_RESULT" "$LAYOUT_RESULT" "$APPEARANCE_RESULT"; do
+              if [ "$result" != success ]; then
+                echo '::error::Registry build and every packed contract must succeed.'
+                exit 1
+              fi
+            done
+          elif [ "$REGISTRY_NEEDED" = false ]; then
+            for result in "$CORE_RESULT" "$CONVERSATION_RESULT" "$LAYOUT_RESULT" "$APPEARANCE_RESULT"; do
+              if [ "$result" != skipped ]; then
+                echo '::error::Registry lanes must be skipped when the classifier says they are unnecessary.'
+                exit 1
+              fi
+            done
+          else
+            echo '::error::Registry classification output is missing or invalid.'
+            exit 1
+          fi
 
   # The build is its own job so the slices below do not each repeat it. It is also
   # what makes the sharding honest: every slice runs against the *same* artifact, so
