@@ -590,6 +590,7 @@ try {
         ['chromium', chromium],
         ['webkit', webkit],
       ] as const) {
+        console.log(`Packed ${pilot}/${condition}/${engine}: interactions starting`)
         const browser = await browserType.launch({ headless: true })
         try {
           const page = await browser.newPage({ viewport: { width: 768, height: 700 } })
@@ -664,8 +665,8 @@ try {
                 ])
                   document.addEventListener(type, record, true)
               })
-            const paste = async () =>
-              field.evaluate((element) => {
+            const paste = async () => {
+              const prevented = await field.evaluate((element) => {
                 const clipboardData = new DataTransfer()
                 clipboardData.setData('text/plain', 'red\ngreen\nblue')
                 const event = new ClipboardEvent('paste', {
@@ -676,6 +677,17 @@ try {
                 element.dispatchEvent(event)
                 return event.defaultPrevented
               })
+              // Paste restores the caret on the next animation frame. Drain its
+              // queued select event before a new pointer interaction, so it cannot
+              // cancel the hover timer after the fixture has moved onto a token.
+              await page.evaluate(
+                () =>
+                  new Promise<void>((done) =>
+                    requestAnimationFrame(() => requestAnimationFrame(() => done()))
+                  )
+              )
+              return prevented
+            }
             await tracePointerAndSelection()
             if (!(await paste())) throw new Error('Packed atomic paste was not collapsed')
             await expect(field).toHaveValue('[ Paste #1 · 3 lines ]')
