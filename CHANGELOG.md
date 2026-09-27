@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.0](https://github.com/adea-ai/ui/compare/v0.70.2...v0.71.0) (2026-09-27)
+
+
+### Features
+
+* add native HTML select primitive ([#71](https://github.com/adea-ai/ui/issues/71)) ([f61e152](https://github.com/adea-ai/ui/commit/f61e1526f0ea526a7fdff7c59ca949d8e35b60a3))
+
 ## [0.70.2](https://github.com/adea-ai/ui/compare/v0.70.1...v0.70.2) (2026-09-27)
 
 
