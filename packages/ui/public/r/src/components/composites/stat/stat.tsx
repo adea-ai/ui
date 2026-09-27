@@ -59,18 +59,15 @@ export function Stat(props: StatProps) {
         </Show>
       </div>
       <Show when={local.delta}>
-        <div
-          class={cn('flex items-center gap-1 text-xs', {
-            'text-success': local.deltaTone === 'up',
-            'text-destructive': local.deltaTone === 'down',
-            'text-muted-foreground': local.deltaTone === undefined || local.deltaTone === 'neutral',
-          })}
-        >
+        <div class="text-foreground flex items-center gap-1 text-xs">
           <Show when={local.deltaTone === 'up' || local.deltaTone === 'down'}>
             <Dynamic
               component={local.deltaTone === 'down' ? ArrowDownRight : ArrowUpRight}
               aria-hidden="true"
-              class="size-3"
+              class={cn('size-3', {
+                'text-success': local.deltaTone === 'up',
+                'text-destructive': local.deltaTone === 'down',
+              })}
             />
           </Show>
           <span class="tabular-nums">{local.delta}</span>

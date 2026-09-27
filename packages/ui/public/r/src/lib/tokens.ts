@@ -196,11 +196,16 @@ export const colorTokens: TokenDefinition[] = [
     name: 'destructive-subtle',
     kind: 'color',
     themed: true,
-    description: 'Tinted destructive fill: alert banners, invalid fields.',
+    description: 'Opaque destructive tint against the canvas; subtle labels use foreground.',
   },
   { name: 'success', kind: 'color', themed: true, description: 'A completed or healthy state.' },
   { name: 'success-foreground', kind: 'color', themed: true, description: 'Label on `success`.' },
-  { name: 'success-subtle', kind: 'color', themed: true, description: 'Tinted success fill.' },
+  {
+    name: 'success-subtle',
+    kind: 'color',
+    themed: true,
+    description: 'Opaque success tint against the canvas; subtle labels use foreground.',
+  },
   {
     name: 'warning',
     kind: 'color',
@@ -208,10 +213,20 @@ export const colorTokens: TokenDefinition[] = [
     description: 'Something needs attention but is not broken.',
   },
   { name: 'warning-foreground', kind: 'color', themed: true, description: 'Label on `warning`.' },
-  { name: 'warning-subtle', kind: 'color', themed: true, description: 'Tinted warning fill.' },
+  {
+    name: 'warning-subtle',
+    kind: 'color',
+    themed: true,
+    description: 'Opaque warning tint against the canvas; subtle labels use foreground.',
+  },
   { name: 'info', kind: 'color', themed: true, description: 'Neutral information.' },
   { name: 'info-foreground', kind: 'color', themed: true, description: 'Label on `info`.' },
-  { name: 'info-subtle', kind: 'color', themed: true, description: 'Tinted info fill.' },
+  {
+    name: 'info-subtle',
+    kind: 'color',
+    themed: true,
+    description: 'Opaque info tint against the canvas; subtle labels use foreground.',
+  },
 
   // Lines
   {

@@ -47,10 +47,10 @@ export const statusDotVariants = cva('size-2 shrink-0 rounded-full', {
 
 const labelTone: Record<StatusTone, string> = {
   neutral: 'text-foreground',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-destructive',
-  info: 'text-info',
+  success: 'text-foreground',
+  warning: 'text-foreground',
+  danger: 'text-foreground',
+  info: 'text-foreground',
   unknown: 'text-muted-foreground',
 }
 

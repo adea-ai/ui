@@ -237,7 +237,7 @@ export function ChatComposerShell<Extra extends object>(props: ChatComposerShell
       </Show>
       <Show when={error()}>
         {(message) => (
-          <p role="alert" class="text-destructive mb-1 text-xs">
+          <p role="alert" class="text-foreground mb-1 border-s-2 border-destructive ps-2 text-xs">
             {message()}
           </p>
         )}
