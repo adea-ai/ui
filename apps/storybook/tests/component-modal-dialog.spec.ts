@@ -1,25 +1,55 @@
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
-import { build } from 'vite'
+import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
 
 let script: string
 let css: string
+const packedRoot = process.env['ADEA_MODAL_DIALOG_PACKED_ROOT']
+const packedCondition = process.env['ADEA_MODAL_DIALOG_PACKED_CONDITION']
+const uiRoot = packedRoot ?? resolve(import.meta.dirname, '../../../packages/ui')
+const entry = packedRoot
+  ? resolve(packedRoot, 'modal.tsx')
+  : resolve(uiRoot, 'tests/fixtures/modal-dialog.tsx')
+
+if (packedRoot && packedCondition !== 'compiled' && packedCondition !== 'solid')
+  throw new Error('Packed modal fixture requires an explicit browser condition')
 
 test.beforeAll(async () => {
   const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
+    root: uiRoot,
     configFile: false,
     logLevel: 'error',
-    plugins: [solid(), tailwindcss()],
+    plugins: [
+      solid(),
+      tailwindcss(),
+      ...(packedRoot && packedCondition === 'compiled'
+        ? [
+            {
+              name: 'compiled-modal-condition',
+              enforce: 'post' as const,
+              configEnvironment(_name: string, config: EnvironmentOptions) {
+                config.resolve ??= {}
+                config.resolve.conditions = (config.resolve.conditions ?? []).filter(
+                  (condition) => condition !== 'solid' && condition !== 'development'
+                )
+              },
+            },
+          ]
+        : []),
+    ],
+    resolve: packedRoot
+      ? { conditions: packedCondition === 'solid' ? ['solid', 'browser'] : ['browser', 'import'] }
+      : undefined,
     build: {
       write: false,
       minify: false,
       lib: {
-        entry: resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/modal-dialog.tsx'),
+        entry,
         formats: ['iife'],
         name: 'ModalDialogFixture',
+        cssFileName: 'modal-dialog-fixture',
       },
     },
   })
@@ -34,6 +64,15 @@ test.beforeAll(async () => {
       asset.type === 'asset' && asset.fileName.endsWith('.css') ? [String(asset.source)] : []
     )
     .join('\n')
+  if (packedRoot) {
+    const modules = assets
+      .filter((asset) => asset.type === 'chunk')
+      .flatMap((asset) => Object.keys(asset.modules))
+      .filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+    const expected = packedCondition === 'compiled' ? '/dist/' : '/src/'
+    if (!modules.length || modules.some((id) => !id.includes(expected)))
+      throw new Error(`Packed modal did not select the ${packedCondition} package condition`)
+  }
 })
 
 test.beforeEach(async ({ page }) => {
@@ -93,6 +132,35 @@ for (const mode of [
       .toBe(true)
   })
 }
+
+test('the default modal close button stays anchored to the panel after entrance motion', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Open workspace details' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Workspace details' })
+  const close = dialog.getByRole('button', { name: 'Close', exact: true })
+  await expect(dialog).toBeVisible()
+  await expect(close).toBeVisible()
+  await dialog.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {}))
+    )
+  })
+
+  const panel = await dialog.boundingBox()
+  const control = await close.boundingBox()
+  expect(panel).not.toBeNull()
+  expect(control).not.toBeNull()
+  const topInset = control!.y - panel!.y
+  const rightInset = panel!.x + panel!.width - (control!.x + control!.width)
+  expect(topInset).toBeGreaterThan(8)
+  expect(topInset).toBeLessThan(22)
+  expect(rightInset).toBeGreaterThan(8)
+  expect(rightInset).toBeLessThan(22)
+})
 
 test('a known external return-focus ref supports pointer-opened controlled dialogs', async ({
   page,
