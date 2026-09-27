@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.0](https://github.com/adea-ai/ui/compare/v0.67.2...v0.68.0) (2026-09-27)
+
+
+### Features
+
+* **ui:** add stable transcript composition renderer ([#50](https://github.com/adea-ai/ui/issues/50)) ([bb3a5d9](https://github.com/adea-ai/ui/commit/bb3a5d9a362cb30a920c33ce834772f63183c51d))
+
 ## [0.67.2](https://github.com/adea-ai/ui/compare/v0.67.1...v0.67.2) (2026-09-27)
 
 
