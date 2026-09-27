@@ -1,4 +1,12 @@
-import { createEffect, createMemo, createSignal, onMount, Show, splitProps } from 'solid-js'
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+  splitProps,
+} from 'solid-js'
 import { Check, Download, ExternalLink, LoaderCircle, RefreshCw, Sparkles } from 'lucide-solid'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
@@ -216,6 +224,9 @@ export function UpdateDialog(props: UpdateDialogProps) {
   createEffect(() => {
     if (!open() || !desktop()) return
     let active = true
+    onCleanup(() => {
+      active = false
+    })
     setError('')
     setBusy(true)
     void (async () => {
@@ -231,9 +242,6 @@ export function UpdateDialog(props: UpdateDialogProps) {
         if (active) setBusy(false)
       }
     })()
-    return () => {
-      active = false
-    }
   })
 
   const install = async () => {
