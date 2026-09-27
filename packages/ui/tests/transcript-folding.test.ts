@@ -54,9 +54,33 @@ test('collapse-all retains the answer while interim prose remains mounted', () =
     ['answer', 'always'],
   ])
   const interim = planTranscriptFold(rows, { mode: 'interim', settled: true })
-  expect(interim.entries.map(({ mounting }) => mounting)).toEqual([
-    'hide-when-collapsed',
-    'hide-when-collapsed',
+  expect(interim.entries.map(({ mounting }) => mounting)).toEqual(['hide-when-collapsed', 'always'])
+})
+
+test('interim scope keeps a synthesis conclusion visible beside foldable activity', () => {
+  const rows = [
+    row('interim-tool-request', {
+      working: true,
+      fold: 'tool',
+      call: { phase: 'request', id: 'call-1' },
+    }),
+    row('interim-tool-result', {
+      working: true,
+      fold: 'tool',
+      call: { phase: 'result', id: 'call-1' },
+    }),
+    row('interim-work', { working: true, fold: 'prose' }),
+    row('synthesis', { synthesis: true, fold: 'prose' }),
+    row('final-answer', { fold: 'prose', conclusion: true }),
+  ]
+
+  const interim = planTranscriptFold(rows, { mode: 'interim', settled: true })
+  expect(interim.entries.map(({ row: entry, mounting }) => [entry.id, mounting])).toEqual([
+    ['interim-tool-request', 'hide-when-collapsed'],
+    ['interim-tool-result', 'hide-when-collapsed'],
+    ['interim-work', 'hide-when-collapsed'],
+    ['synthesis', 'hide-when-collapsed'],
+    ['final-answer', 'always'],
   ])
 })
 

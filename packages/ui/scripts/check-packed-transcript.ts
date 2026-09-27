@@ -337,6 +337,16 @@ export const renderTranscript = () => renderToString(() =>
         await page.getByRole('button', { name: 'Expand all activity', exact: true }).click()
         await expect(page.locator('[data-render-label="Tool request"]')).toBeVisible()
 
+        await page.getByRole('button', { name: 'Load mixed interim and synthesis scope' }).click()
+        await expect(page.locator('[data-slot="transcript-composition"]')).toHaveAttribute(
+          'data-fold-state',
+          'collapsed'
+        )
+        await expect(page.locator('[data-render-label="Interim tool request"]')).toBeHidden()
+        await expect(page.locator('[data-render-label="Interim work row"]')).toBeHidden()
+        await expect(page.locator('[data-render-label="Synthesis result"]')).toBeHidden()
+        await expect(page.locator('[data-render-label="Mixed final answer"]')).toBeVisible()
+
         const violations = await new AxeBuilder({ page }).analyze()
         if (violations.violations.length)
           throw new Error(
@@ -356,6 +366,7 @@ export const renderTranscript = () => renderToString(() =>
               'running-pin',
               'always-visible-actions',
               'collapse-all-retains-prose',
+              'mixed-interim-conclusion-visible',
               'axe',
             ],
           })

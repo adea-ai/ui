@@ -54,6 +54,42 @@ const rows: readonly TranscriptRow<StoryMessage>[] = [
   },
 ]
 
+const mixedSynthesisRows: readonly TranscriptRow<StoryMessage>[] = [
+  { id: 'mixed-prompt', value: { text: 'Explain the proposed change.' }, opensTurn: 'reset' },
+  {
+    id: 'mixed-request',
+    value: { text: 'Inspect the changed module.' },
+    working: true,
+    fold: 'tool',
+    call: { phase: 'request', id: 'mixed-call' },
+  },
+  {
+    id: 'mixed-result',
+    value: { text: 'The module keeps its public contract.' },
+    working: true,
+    fold: 'tool',
+    call: { phase: 'result', id: 'mixed-call' },
+  },
+  {
+    id: 'mixed-work',
+    value: { text: 'The prior activity remains in this turn.' },
+    working: true,
+    fold: 'prose',
+  },
+  {
+    id: 'mixed-synthesis',
+    value: { text: 'The synthesis summarizes the preceding activity.' },
+    synthesis: true,
+    fold: 'prose',
+  },
+  {
+    id: 'mixed-answer',
+    value: { text: 'The public contract is preserved.' },
+    fold: 'prose',
+    conclusion: true,
+  },
+]
+
 function StoryMessage(props: TranscriptCompositionRendererProps<StoryMessage>) {
   return (
     <article class="flex flex-col gap-1 rounded-lg border border-border bg-card px-3 py-2 text-sm">
@@ -122,6 +158,25 @@ export const CollapseAllRetainsProse: Story = {
       </div>
     )
   },
+}
+
+/** A mixed interim/synthesis disclosure never hides the host-marked conclusion. */
+export const MixedInterimConclusion: Story = {
+  args: { rows: mixedSynthesisRows, renderRow: StoryMessage },
+  render: () => (
+    <div class="flex w-[44rem] flex-col gap-3 rounded-xl border border-border p-4">
+      <p class="text-muted-foreground text-sm">
+        The collapsed interim scope contains a synthesis and a final answer without an intervening
+        turn opener; the answer remains visible.
+      </p>
+      <TranscriptComposition
+        rows={mixedSynthesisRows}
+        resetKey="interim-synthesis"
+        foldState="collapsed"
+        renderRow={StoryMessage}
+      />
+    </div>
+  ),
 }
 
 /** Running rows remain open; actionable host content remains outside every fold. */

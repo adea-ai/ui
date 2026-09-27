@@ -17,9 +17,10 @@ export type TranscriptFoldPlan<T> = Readonly<{
 }>
 
 /**
- * Ordered mount policy, shared by tool and prose disclosure. Unknown rows and
- * actionable payloads remain visible. A missing answer boundary keeps prose
- * visible rather than implying that an answer appears elsewhere.
+ * Ordered mount policy, shared by tool and prose disclosure. Unknown rows,
+ * actionable payloads and host-marked conclusions remain visible in every mode.
+ * A missing answer boundary keeps prose visible rather than implying that an
+ * answer appears elsewhere.
  */
 export function planTranscriptFold<T>(
   rows: readonly TranscriptRow<T>[],
@@ -27,11 +28,12 @@ export function planTranscriptFold<T>(
 ): TranscriptFoldPlan<T> {
   let conclusion = -1
   for (let index = 0; index < rows.length; index++) if (rows[index]?.conclusion) conclusion = index
+  const foldEligible = (row: TranscriptRow<T>) =>
+    !row.alwaysVisible && !row.conclusion && row.fold !== undefined
   const requestIds = new Set<string>()
   let callCount = 0
   for (const row of rows) {
-    const eligible = !row.alwaysVisible && row.fold !== undefined
-    if (eligible && row.fold === 'tool' && row.call?.phase === 'request') {
+    if (foldEligible(row) && row.fold === 'tool' && row.call?.phase === 'request') {
       const id = row.call.id
       if (id === undefined || !requestIds.has(id)) {
         callCount++
@@ -41,7 +43,7 @@ export function planTranscriptFold<T>(
   }
   let foldableCount = 0
   const entries = rows.map((row, index) => {
-    const eligible = !row.alwaysVisible && row.fold !== undefined
+    const eligible = foldEligible(row)
     let mounting: TranscriptMounting = 'always'
     if (options.settled && eligible) {
       if (options.mode === 'tools' && callCount > 0 && row.fold === 'tool')

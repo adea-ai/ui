@@ -55,6 +55,41 @@ const answer: TranscriptRow<Message> = {
 
 const initialRows = [prompt, request, result] as const
 const promotedRows = [prompt, request, result, approval, diff, reasoning, answer] as const
+const mixedSynthesisRows = [
+  { id: 'mixed-prompt', value: { label: 'Mixed transcript prompt' }, opensTurn: 'reset' },
+  {
+    id: 'mixed-tool-request',
+    value: { label: 'Interim tool request' },
+    working: true,
+    fold: 'tool',
+    call: { phase: 'request', id: 'mixed-call' },
+  },
+  {
+    id: 'mixed-tool-result',
+    value: { label: 'Interim tool result' },
+    working: true,
+    fold: 'tool',
+    call: { phase: 'result', id: 'mixed-call' },
+  },
+  {
+    id: 'mixed-work',
+    value: { label: 'Interim work row' },
+    working: true,
+    fold: 'prose',
+  },
+  {
+    id: 'mixed-synthesis',
+    value: { label: 'Synthesis result' },
+    synthesis: true,
+    fold: 'prose',
+  },
+  {
+    id: 'mixed-answer',
+    value: { label: 'Mixed final answer' },
+    fold: 'prose',
+    conclusion: true,
+  },
+] as const
 
 function Fixture() {
   const [rows, setRows] = createSignal<readonly TranscriptRow<Message>[]>(initialRows)
@@ -66,6 +101,16 @@ function Fixture() {
       <div class="flex flex-wrap gap-2">
         <button type="button" onClick={() => setRows(promotedRows)}>
           Promote turn
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setRows(mixedSynthesisRows)
+            setRunning(false)
+            setFoldState('collapsed')
+          }}
+        >
+          Load mixed interim and synthesis scope
         </button>
         <button type="button" onClick={() => setRunning((value) => !value)}>
           Toggle running
