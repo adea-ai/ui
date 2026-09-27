@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.71.2](https://github.com/adea-ai/ui/compare/v0.71.1...v0.71.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* ignore stale UpdateDialog results after close ([#70](https://github.com/adea-ai/ui/issues/70)) ([734a4ef](https://github.com/adea-ai/ui/commit/734a4efeb2803977e783fcef5720ec08dcead844))
+* restore focus after external UpdateDialog close ([#81](https://github.com/adea-ai/ui/issues/81)) ([311fea1](https://github.com/adea-ai/ui/commit/311fea1a8acf763d6b0140009d34950386695db6))
+* restore focus for externally controlled ModalDialog ([#79](https://github.com/adea-ai/ui/issues/79)) ([1c77adf](https://github.com/adea-ai/ui/commit/1c77adf8fb62e5d5987044938e4adc0db03bc40d))
+* **ui:** use readable text on subtle status fills ([#72](https://github.com/adea-ai/ui/issues/72)) ([c04de7f](https://github.com/adea-ai/ui/commit/c04de7f212e750919147b53882fee490d4da51de))
+
+
+### Documentation
+
+* render Storybook guide tables and filter guide builds ([#74](https://github.com/adea-ai/ui/issues/74)) ([5d89d8f](https://github.com/adea-ai/ui/commit/5d89d8f41230620d6bc9491ee129434705c6ce01))
+
+
+### CI
+
+* shard component interaction contracts ([#80](https://github.com/adea-ai/ui/issues/80)) ([951c5c5](https://github.com/adea-ai/ui/commit/951c5c50a534a4d5c6514dca6cadcdbc18b772d9))
+
 ## [0.71.1](https://github.com/adea-ai/ui/compare/v0.71.0...v0.71.1) (2026-09-27)
 
 
