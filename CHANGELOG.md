@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.3](https://github.com/adea-ai/ui/compare/v0.72.2...v0.72.3) (2026-09-27)
+
+
+### Bug Fixes
+
+* keep Kobalte overlay roles stable ([#99](https://github.com/adea-ai/ui/issues/99)) ([3046004](https://github.com/adea-ai/ui/commit/30460046322f45a118f59c6b26f7ee78f951abe6))
+
 ## [0.72.2](https://github.com/adea-ai/ui/compare/v0.72.1...v0.72.2) (2026-09-27)
 
 
