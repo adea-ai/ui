@@ -248,16 +248,21 @@ test('Pages publishes the exact successful main build and keeps registry install
     workflows: ['Design System Gates'],
     types: ['completed'],
   })
+  expect(Object.hasOwn(pages.on, 'workflow_dispatch')).toBe(true)
   expect(pages.jobs['prepare'].if).toContain(
     'github.event.workflow_run.head_repository.full_name == github.repository'
   )
   const guard = pages.jobs['prepare'].steps.find((step) => step.name.includes('freshness'))?.run
-  expect(guard).toContain('head_sha')
-  expect(guard).toContain('actions/runs/$RUN_ID/artifacts?name=storybook-static')
-  expect(guard).toContain('main_sha')
+  expect(guard).toBe('node .github/scripts/registry-pages.mjs')
+  const currentMainBuild = pages.jobs['prepare'].steps.find((step) =>
+    step.name.includes('Build Storybook')
+  )
+  expect(currentMainBuild?.if).toContain("steps.guard.outputs.source == 'current-main'")
+  expect(currentMainBuild?.run).toBe('bun run storybook:build')
   const download = pages.jobs['prepare'].steps.find((step) => step.name.includes('this run'))
   expect(download?.with?.name).toBe('storybook-static')
   expect(download?.with?.['run-id']).toContain('github.event.workflow_run.id')
+  expect(download?.if).toContain("steps.guard.outputs.source == 'workflow_run'")
   const assembly = pages.jobs['prepare'].steps.find((step) => step.name.includes('Assemble'))?.run
   expect(assembly).toContain('storybook-static/. _site/')
   expect(assembly).toContain('packages/ui/public/r/. _site/r/')

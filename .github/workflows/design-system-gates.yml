@@ -51,8 +51,8 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
-      - name: Verify change classification
-        run: bun test ./.github/scripts/design-system-changes.test.ts
+      - name: Verify change classification and Pages sourcing
+        run: bun test ./.github/scripts/design-system-changes.test.ts ./.github/scripts/registry-pages.test.ts
       - name: Select needed gates
         id: scope
         run: bun .github/scripts/design-system-changes.mjs

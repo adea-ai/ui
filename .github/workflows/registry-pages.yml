@@ -17,9 +17,11 @@ concurrency:
 # remain available at /r/** for the documented shadcn install URLs.
 #
 # A successful Design System Gates run builds `storybook-static` when either
-# the Storybook or published registry changes. This workflow consumes only the
-# artifact from that exact run and refuses old runs after main has advanced. A
-# manual dispatch on main is a fallback that builds the current main revision.
+# Storybook or published registry content changes. This workflow consumes only
+# that exact run's artifact when present. If a later docs-only main push
+# supersedes a Pages build, it builds the exact still-current main revision
+# instead of reusing an older artifact. Manual dispatch on main is also a
+# current-main build fallback.
 jobs:
   prepare:
     name: Prepare Pages artifact
@@ -53,48 +55,7 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          emit_outputs() { printf '%s\n' "$@" >> "$GITHUB_OUTPUT"; }
-          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
-            if [[ "$REF" != refs/heads/main ]]; then
-              echo 'Manual Pages publishing is restricted to main.'
-              emit_outputs 'publish=false' 'source=none'
-              exit 0
-            fi
-            main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-            emit_outputs 'publish=true' 'source=manual' "head_sha=$main_sha"
-            exit 0
-          fi
-
-          if [[ "$RUN_EVENT" != push || "$RUN_BRANCH" != main || \
-                "$RUN_REPOSITORY" != "$GITHUB_REPOSITORY" || \
-                "$RUN_CONCLUSION" != success ]]; then
-            echo 'The completed run is not an eligible same-repository main push.'
-            emit_outputs 'publish=false' 'source=none'
-            exit 0
-          fi
-
-          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          if [[ "$main_sha" != "$RUN_HEAD_SHA" ]]; then
-            echo 'The successful run is stale because main has advanced; skipping deployment.'
-            emit_outputs 'publish=false' 'source=none'
-            exit 0
-          fi
-
-          artifact_count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=storybook-static" --jq '[.artifacts[] | select(.expired == false)] | length')"
-          if [[ "$artifact_count" == 0 ]]; then
-            echo 'This successful run did not build a Pages artifact; no deployment is needed.'
-            emit_outputs 'publish=false' 'source=none'
-            exit 0
-          fi
-          if [[ "$artifact_count" != 1 ]]; then
-            echo "Expected one unexpired storybook-static artifact in run $RUN_ID; found $artifact_count." >&2
-            exit 1
-          fi
-
-          emit_outputs 'publish=true' 'source=workflow_run' "head_sha=$RUN_HEAD_SHA"
+        run: node .github/scripts/registry-pages.mjs
 
       - name: Checkout the exact source revision
         if: steps.guard.outputs.publish == 'true'
@@ -103,18 +64,18 @@ jobs:
           ref: ${{ steps.guard.outputs.head_sha }}
           persist-credentials: false
 
-      - name: Setup Bun for the manual build
-        if: steps.guard.outputs.source == 'manual'
+      - name: Setup Bun for a current-main build
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
 
-      - name: Install dependencies for the manual build
-        if: steps.guard.outputs.source == 'manual'
+      - name: Install dependencies for a current-main build
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
         run: bun install --frozen-lockfile
 
-      - name: Build Storybook for the manual fallback
-        if: steps.guard.outputs.source == 'manual'
+      - name: Build Storybook from current main
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
         run: bun run storybook:build
 
       - name: Download this run's Storybook artifact
