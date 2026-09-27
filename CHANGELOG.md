@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.69.0](https://github.com/adea-ai/ui/compare/v0.68.2...v0.69.0) (2026-09-27)
+
+
+### Features
+
+* **ui:** add atomic paste-token editing ([#48](https://github.com/adea-ai/ui/issues/48)) ([18385b2](https://github.com/adea-ai/ui/commit/18385b2e797961fc0462879a0085194440055ed2))
+
 ## [0.68.2](https://github.com/adea-ai/ui/compare/v0.68.1...v0.68.2) (2026-09-27)
 
 
