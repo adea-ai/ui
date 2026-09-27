@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { parseColor, themes as catalogue } from '@adea-ai/themes'
+import { parseColor, shadcnDestructiveProjection, themes as catalogue } from '@adea-ai/themes'
 import {
   builtinThemes,
   contrastRatio,
@@ -38,6 +38,25 @@ describe('theme registry', () => {
       for (const [name, value] of Object.entries(variables)) {
         expect(value, `${theme.id} leaves ${name} empty`).toBeTruthy()
       }
+    }
+  })
+
+  test('solid destructive actions use the shared projection and preserve semantic error', () => {
+    const byId = new Map(catalogue.map((theme) => [theme.id, theme]))
+
+    for (const theme of builtinThemes) {
+      const source = byId.get(theme.id)
+      expect(source, `${theme.id} has no canonical source record`).toBeDefined()
+      const projection = shadcnDestructiveProjection(source!)
+      const variables = themeCssVariables(theme)
+
+      expect(theme.colors.destructive, `${theme.id} replaced its canonical error role`).toBe(
+        source!.colors.error
+      )
+      expect(variables['--destructive']).toBe(source!.colors.error)
+      expect(variables['--destructive-subtle']).toBe(theme.colors.destructiveSubtle)
+      expect(variables['--destructive-action']).toBe(projection.fill)
+      expect(variables['--destructive-action-foreground']).toBe(projection.foreground)
     }
   })
 

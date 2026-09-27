@@ -47,7 +47,7 @@ export function ThemeSwatch(props: ThemeSwatchProps) {
           colors().card,
           colors().primary,
           colors().accent,
-          colors().destructive,
+          colors().destructiveAction,
         ]}
       >
         {(color) => (
@@ -109,7 +109,10 @@ export function ThemePreview(props: ThemePreviewProps) {
           <div class="h-1 w-16 rounded-full" style={{ 'background-color': c().mutedForeground }} />
           <div class="mt-auto flex items-center gap-1">
             <span class="h-3 w-9 rounded-sm" style={{ 'background-color': c().primary }} />
-            <span class="h-3 w-6 rounded-sm" style={{ 'background-color': c().destructive }} />
+            <span
+              class="h-3 w-6 rounded-sm"
+              style={{ 'background-color': c().destructiveAction }}
+            />
             <span class="h-3 w-6 rounded-sm" style={{ 'background-color': c().secondary }} />
           </div>
         </div>

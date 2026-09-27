@@ -81,6 +81,8 @@
   /* Status fills; solid labels and subtle surfaces come from the catalogue. */
   --destructive: oklch(0.4705 0.1626 25.78);
   --destructive-foreground: oklch(0.933 0.016 261.79);
+  --destructive-action: oklch(0.4705 0.1626 25.78);
+  --destructive-action-foreground: oklch(0.933 0.016 261.79);
   --success: oklch(0.4311 0.1809 145.62);
   --success-foreground: oklch(0.933 0.016 261.79);
   --warning: oklch(0.4556 0.1401 79.91);
@@ -216,6 +218,8 @@
   /* Status fills; solid labels and subtle surfaces come from the catalogue. */
   --destructive: oklch(0.7345 0.1626 25.78);
   --destructive-foreground: oklch(0.1918 0.0238 265.37);
+  --destructive-action: oklch(0.7345 0.1626 25.78);
+  --destructive-action-foreground: oklch(0.1918 0.0238 265.37);
   --success: oklch(0.6951 0.1809 145.62);
   --success-foreground: oklch(0.1918 0.0238 265.37);
   --warning: oklch(0.7196 0.1401 79.91);
@@ -730,6 +734,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-action: var(--destructive-action);
+  --color-destructive-action-foreground: var(--destructive-action-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-subtle: var(--success-subtle);

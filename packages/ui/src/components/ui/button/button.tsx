@@ -29,7 +29,7 @@ export const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground hover:bg-surface-hover',
         /** For the action that destroys something. Never the default. */
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive-subtle',
+          'bg-destructive-action text-destructive-action-foreground hover:bg-destructive-action/90 focus-visible:ring-destructive-subtle',
         /** A bordered button for a surface that already has a fill. */
         outline:
           'border border-border bg-transparent text-foreground hover:bg-surface-hover hover:border-input',

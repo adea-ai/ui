@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { contrastRatio, parseColor as parseCatalogueColor } from '@adea-ai/themes'
 import { alertVariants } from '../src/components/ui/alert/alert'
 import { badgeVariants } from '../src/components/ui/badge/badge'
+import { buttonVariants } from '../src/components/ui/button/button'
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
 import { builtinThemes, themeCssVariables } from '../src/lib/themes'
 import { destructiveMenuItem } from '../src/lib/overlay'
@@ -134,7 +135,13 @@ describe('contrast', () => {
       fg: 'destructive-foreground',
       bg: 'destructive',
       minimum: 4.5,
-      why: 'the label on a destructive button',
+      why: 'text on the canonical destructive status role',
+    },
+    {
+      fg: 'destructive-action-foreground',
+      bg: 'destructive-action',
+      minimum: 4.5,
+      why: 'the label on a contrast-safe destructive action',
     },
     { fg: 'success-foreground', bg: 'success', minimum: 4.5, why: 'the label on a success button' },
     { fg: 'warning-foreground', bg: 'warning', minimum: 4.5, why: 'the label on a warning badge' },
@@ -263,6 +270,11 @@ describe('contrast', () => {
     expect(destructiveMenuItem).toContain('text-foreground')
     expect(destructiveMenuItem).toContain('border-destructive')
     expect(destructiveMenuItem).toContain('data-[highlighted]:bg-destructive-subtle')
+
+    const destructiveButton = buttonVariants({ variant: 'destructive' })
+    expect(destructiveButton).toContain('bg-destructive-action')
+    expect(destructiveButton).toContain('text-destructive-action-foreground')
+    expect(destructiveButton).toContain('hover:bg-destructive-action/90')
   })
 })
 
