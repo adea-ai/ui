@@ -365,9 +365,11 @@ token. Copy and cut expand fully selected tokens in order while partial
 selections remain native. An `aria-hidden` mirror highlights tokens behind the
 single labeled textarea. Hover and caret previews wait 300 ms, show up to 12
 lines with a remainder count, close when their text/block/scope becomes stale,
-and stay suppressed on touch devices. The preview uses the existing tooltip
-portal and provides a live `aria-describedby` relationship without intercepting
-textarea input.
+and stay suppressed on touch devices. Keyboard users can open the token next to
+the caret or current selection with Alt+Down Arrow and dismiss it with Escape.
+The input announces that shortcut and the open preview through `aria-describedby`
+while keeping focus in the textarea. The preview uses the existing tooltip
+portal without intercepting textarea input.
 
 Only `ClipboardEvent.clipboardData` text is read. Clipboard permissions,
 images/files, uploads, rich editors, persistence, sent-prompt history and

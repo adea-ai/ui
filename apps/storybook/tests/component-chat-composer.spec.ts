@@ -502,6 +502,8 @@ test('hover and caret previews associate the current token without intercepting 
 }) => {
   const field = await enablePasteTokens(page)
   await dispatchPlainPaste(page, 'first\nsecond\nthird\nfourth')
+  const shortcutHintId = (await field.getAttribute('aria-describedby'))!
+  await expect(page.locator(`#${shortcutHintId}`)).toContainText('Alt+Down Arrow')
   const token = page.locator('[data-paste-seq="1"]')
   const box = (await token.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
@@ -511,7 +513,9 @@ test('hover and caret previews associate the current token without intercepting 
   await page.waitForTimeout(160)
   await expect(page.getByRole('tooltip')).toContainText('first\nsecond\nthird', { timeout: 100 })
   const panelId = await page.getByRole('tooltip').getAttribute('id')
-  await expect(field).toHaveAttribute('aria-describedby', panelId!)
+  const describedBy = (await field.getAttribute('aria-describedby'))?.split(/\s+/) ?? []
+  expect(describedBy).toContain(shortcutHintId)
+  expect(describedBy).toContain(panelId)
   await page.mouse.move(box.x + box.width + 20, box.y + box.height / 2)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 
@@ -524,7 +528,34 @@ test('hover and caret previews associate the current token without intercepting 
   await expect(field).toHaveAttribute('aria-describedby', /.+/)
   await field.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await expect(field).not.toHaveAttribute('aria-describedby', /.+/)
+  await expect(field).toHaveAttribute('aria-describedby', shortcutHintId)
+})
+
+test('keyboard users can open and dismiss a paste token preview with an announced shortcut', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await field.focus()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  const originalText = await field.inputValue()
+
+  const hintId = await field.getAttribute('aria-describedby')
+  expect(hintId).toBeTruthy()
+  await expect(page.locator(`#${hintId}`)).toContainText('Alt+Down Arrow')
+  await expect(field).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowDown')
+
+  await field.press('Alt+ArrowDown')
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toContainText('first\nsecond\nthird')
+  const tooltipId = await tooltip.getAttribute('id')
+  const describedBy = (await field.getAttribute('aria-describedby'))?.split(/\s+/) ?? []
+  expect(describedBy).toContain(tooltipId)
+  await expect(field).toHaveValue(originalText)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('1')
+
+  await field.press('Escape')
+  await expect(tooltip).toHaveCount(0)
+  await expect(field).toHaveAttribute('aria-describedby', hintId!)
 })
 
 test('Escape dismisses a hover preview when the editor has no focus', async ({ page }) => {
@@ -594,6 +625,7 @@ test('single-line previews bound the excerpt and identify hidden characters', as
 test('stale previews close when the hovered token or draft changes', async ({ page }) => {
   const field = await enablePasteTokens(page)
   await field.focus()
+  const shortcutHintId = (await field.getAttribute('aria-describedby'))!
   await dispatchPlainPaste(page, 'first\nsecond\nthird')
   await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
   await dispatchPlainPaste(page, 'four\nfive\nsix')
@@ -606,7 +638,7 @@ test('stale previews close when the hovered token or draft changes', async ({ pa
   await expect(page.getByRole('tooltip')).toContainText('four\nfive\nsix')
   await field.fill('Replaced draft')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await expect(field).not.toHaveAttribute('aria-describedby', /.+/)
+  await expect(field).toHaveAttribute('aria-describedby', shortcutHintId)
 })
 
 test.describe('touch paste-token editing', () => {

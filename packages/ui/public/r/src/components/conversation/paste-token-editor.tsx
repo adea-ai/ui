@@ -77,6 +77,7 @@ function isBlockquotePrefix(linePrefix: string): boolean {
 export function PasteTokenEditor(props: PasteTokenEditorProps) {
   const [preview, setPreview] = createSignal<PasteBlock | null>(null)
   const descriptionId = `paste-preview-${createUniqueId()}`
+  const keyboardHintId = `paste-keyboard-hint-${createUniqueId()}`
   let field: HTMLTextAreaElement | undefined
   let mirror: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
@@ -183,6 +184,22 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
     else schedulePreview(range.block)
   }
 
+  const openKeyboardPreview = (): boolean => {
+    if (!field) return false
+    const start = field.selectionStart
+    const end = field.selectionEnd
+    const range = ranges().find((candidate) =>
+      start === end
+        ? start >= candidate.start && start <= candidate.end
+        : candidate.start < end && candidate.end > start
+    )
+    if (!range) return false
+    clearTimer()
+    scheduledBlockId = range.block.id
+    setPreview(range.block)
+    return true
+  }
+
   const schedulePointerPreview = (event: MouseEvent) => {
     if (isTouchDevice() || props.composing() || event.buttons !== 0 || !mirror) {
       closePreview()
@@ -228,6 +245,18 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
       !event.altKey &&
       event.key.toLowerCase() === 'v'
     if (props.composing() || event.isComposing || event.keyCode === 229 || !field) {
+      props.onKeyDown(event)
+      return
+    }
+    if (
+      event.key === 'ArrowDown' &&
+      event.altKey &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      openKeyboardPreview()
+    ) {
+      event.preventDefault()
       props.onKeyDown(event)
       return
     }
@@ -490,7 +519,8 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
           }}
           data-slot="composer-input"
           aria-label={props.inputLabel}
-          aria-describedby={preview() ? descriptionId : undefined}
+          aria-describedby={preview() ? `${keyboardHintId} ${descriptionId}` : keyboardHintId}
+          aria-keyshortcuts="Alt+ArrowDown"
           class="relative field-sizing-content text-foreground placeholder:text-muted-foreground min-h-11 max-h-36 w-full resize-none border-0 bg-transparent px-4 py-3 text-sm outline-none disabled:opacity-50"
           value={props.value}
           disabled={props.disabled}
@@ -529,6 +559,10 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
           }}
           onKeyDown={handleKeyDown}
         />
+        <span id={keyboardHintId} class="visually-hidden">
+          When the caret is next to a paste token or a token is selected, press Alt+Down Arrow to
+          preview its text. Press Escape to close the preview.
+        </span>
       </KobalteTooltip.Trigger>
       <Show when={preview()}>
         {(block) => {
