@@ -63,12 +63,25 @@ export function formatToken(block: PasteBlock): string {
 
 export function shouldCollapse(text: string): boolean {
   if (!text) return false
-  return countLines(text) >= PASTE_THRESHOLD_LINES || text.length >= PASTE_THRESHOLD_CHARS
+  if (text.length >= PASTE_THRESHOLD_CHARS) return true
+
+  let lines = 1
+  for (let index = 0; index < text.length; index += 1) {
+    if (text.charCodeAt(index) !== 10) continue
+    lines += 1
+    if (lines >= PASTE_THRESHOLD_LINES) return true
+  }
+  return false
 }
 
 export function countLines(text: string): number {
   if (!text) return 0
-  return text.split('\n').length
+
+  let lines = 1
+  for (let index = 0; index < text.length; index += 1) {
+    if (text.charCodeAt(index) === 10) lines += 1
+  }
+  return lines
 }
 
 /** Next sequence for a new paste = max existing + 1, starting at 1. */
