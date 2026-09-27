@@ -1,4 +1,8 @@
-import { AlertDialog as KobalteAlertDialog } from '@kobalte/core/alert-dialog'
+import {
+  AlertDialog as KobalteAlertDialog,
+  Content as KobalteAlertDialogContent,
+} from '@kobalte/core/alert-dialog'
+// Use the alert-specific export rather than DialogRoot.Content, which other imports can replace.
 import type { ComponentProps } from 'solid-js'
 import { createEffect, createSignal, splitProps } from 'solid-js'
 import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '#lib/overlay'
@@ -70,14 +74,14 @@ const blockDismissal = {
   onInteractOutside: (event: Event) => event.preventDefault(),
 } as const
 
-export function AlertDialogContent(props: ComponentProps<typeof KobalteAlertDialog.Content>) {
+export function AlertDialogContent(props: ComponentProps<typeof KobalteAlertDialogContent>) {
   const [local, rest] = splitProps(props, ['class'])
 
   return (
     <KobalteAlertDialog.Portal>
       <AlertDialogOverlay />
       <div class={overlayPositioner}>
-        <KobalteAlertDialog.Content
+        <KobalteAlertDialogContent
           {...blockDismissal}
           class={cn(overlaySurface, overlayMotion, 'grid w-full max-w-md gap-4 p-5', local.class)}
           {...rest}
