@@ -240,7 +240,12 @@ test('Pages publishes the exact successful main build and keeps registry install
       string,
       {
         if?: string
-        steps: { name: string; run?: string; uses?: string; with?: Record<string, string> }[]
+        steps: {
+          name: string
+          run?: string
+          uses?: string
+          with?: Record<string, string | boolean>
+        }[]
       }
     >
   }
@@ -252,7 +257,25 @@ test('Pages publishes the exact successful main build and keeps registry install
   expect(pages.jobs['prepare'].if).toContain(
     'github.event.workflow_run.head_repository.full_name == github.repository'
   )
-  const guard = pages.jobs['prepare'].steps.find((step) => step.name.includes('freshness'))?.run
+  const steps = pages.jobs['prepare'].steps
+  const helperCheckoutIndex = steps.findIndex(
+    (step) => step.name === 'Checkout trusted main for workflow scripts'
+  )
+  const guardIndex = steps.findIndex((step) => step.name.includes('freshness'))
+  const sourceCheckoutIndex = steps.findIndex(
+    (step) => step.name === 'Checkout the exact source revision'
+  )
+  const helperCheckout = steps[helperCheckoutIndex]
+  const sourceCheckout = steps[sourceCheckoutIndex]
+  expect(helperCheckout?.uses).toBe('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')
+  expect(helperCheckout?.with?.ref).toBe('refs/heads/main')
+  expect(helperCheckout?.with?.['persist-credentials']).toBe(false)
+  expect(helperCheckoutIndex).toBeGreaterThanOrEqual(0)
+  expect(helperCheckoutIndex).toBeLessThan(guardIndex)
+  expect(guardIndex).toBeLessThan(sourceCheckoutIndex)
+  expect(sourceCheckout?.if).toBe("steps.guard.outputs.publish == 'true'")
+  expect(sourceCheckout?.with?.ref).toBe('${{ steps.guard.outputs.head_sha }}')
+  const guard = steps[guardIndex]?.run
   expect(guard).toBe('node .github/scripts/registry-pages.mjs')
   const currentMainBuild = pages.jobs['prepare'].steps.find((step) =>
     step.name.includes('Build Storybook')
