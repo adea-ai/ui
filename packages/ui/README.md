@@ -40,6 +40,26 @@ The package includes source for Solid compilation and Tailwind discovery, and
 compiled JavaScript plus declarations for other supported consumers. License and
 donor notices travel in `dist/LICENSE` and `dist/NOTICE`.
 
+## Native select
+
+Use `NativeSelect` for a compact list of known choices that should keep native
+keyboard, form submission, option, and label behavior:
+
+```tsx
+import { NativeSelect } from '@adea-ai/ui/components/ui/native-select'
+
+<label for="relationship-kind">Relationship kind</label>
+<NativeSelect id="relationship-kind" name="relationshipKind" value={kind()} onChange={handleChange}>
+  <option value="all">All relationships</option>
+  <option value="derived">Derived</option>
+</NativeSelect>
+```
+
+`NativeSelect` renders a real `<select>` and passes native props and children
+through. Use `value` with `onChange` for a controlled selection, or `defaultValue`
+to initialize an uncontrolled one. Use `Select` for searchable, runtime, or
+longer lists that need a custom popover.
+
 Tailwind ignores dependency directories by default. Register the component
 directories your application uses in its stylesheet, relative to that stylesheet:
 
