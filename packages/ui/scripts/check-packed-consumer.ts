@@ -40,6 +40,19 @@ const coreSamples: PackedSample[] = [
     source: 'ui/native-select',
   },
   {
+    name: 'slider-form',
+    imports: "import { Slider } from '@adea-ai/ui/components/ui/slider'",
+    jsx: '<form><Slider name="bounds" defaultValue={[20, 70]} thumbLabels={["Minimum threshold", "Maximum threshold"]} /></form>',
+    source: 'ui/slider',
+  },
+  {
+    name: 'combobox-empty-content',
+    imports:
+      "import { Combobox, ComboboxControl, ComboboxInput, ComboboxContent } from '@adea-ai/ui/components/ui/combobox'",
+    jsx: '<Combobox options={[]} allowsEmptyCollection defaultOpen><ComboboxControl><ComboboxInput aria-label="Provider" /></ComboboxControl><ComboboxContent><p role="status">No matching providers.</p></ComboboxContent></Combobox>',
+    source: 'ui/combobox',
+  },
+  {
     name: 'overlay',
     imports: "import { ModalDialog } from '@adea-ai/ui'",
     jsx: '<><ModalDialog open onClose={() => {}} title="Details" restoreFocusRef={() => document.querySelector<HTMLButtonElement>("#dialog-trigger") ?? undefined}>Content</ModalDialog><ModalDialog open modal={false} onClose={() => {}} title="Details" aria-label="Custom details">Custom content</ModalDialog></>',
