@@ -33,6 +33,12 @@ const coreSamples: PackedSample[] = [
     source: 'ui/button',
   },
   {
+    name: 'native-select-root',
+    imports: "import { NativeSelect } from '@adea-ai/ui'",
+    jsx: '<NativeSelect aria-label="Relationship kind" defaultValue="all"><option value="all">All</option></NativeSelect>',
+    source: 'ui/native-select',
+  },
+  {
     name: 'overlay',
     imports: "import { ModalDialog } from '@adea-ai/ui'",
     jsx: '<><ModalDialog open onClose={() => {}} title="Details">Content</ModalDialog><ModalDialog open modal={false} onClose={() => {}} title="Details" aria-label="Custom details">Custom content</ModalDialog></>',
