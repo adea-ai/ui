@@ -583,6 +583,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     ['packed-conversation', 'bun run check:packed-conversation'],
     ['packed-layout', 'bun run check:packed-layout && bun run check:packed-layout-renderer'],
     ['packed-appearance', 'bun run check:packed-appearance'],
+    ['packed-native-select', 'bun run check:packed-native-select'],
   ] as const
   for (const [id, command] of lanes) {
     const lane = workflow.jobs[id]
@@ -619,6 +620,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     'packed-conversation',
     'packed-layout',
     'packed-appearance',
+    'packed-native-select',
   ])
   const gateStep = gate.steps[0]
   expect(gateStep.env).toEqual({
@@ -628,6 +630,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     CONVERSATION_RESULT: '${{ needs.packed-conversation.result }}',
     LAYOUT_RESULT: '${{ needs.packed-layout.result }}',
     APPEARANCE_RESULT: '${{ needs.packed-appearance.result }}',
+    NATIVE_SELECT_RESULT: '${{ needs.packed-native-select.result }}',
   })
 
   const defaults = {
@@ -637,6 +640,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     CONVERSATION_RESULT: 'success',
     LAYOUT_RESULT: 'success',
     APPEARANCE_RESULT: 'success',
+    NATIVE_SELECT_RESULT: 'success',
   }
   const passes = (overrides: Record<string, string>) =>
     Bun.spawnSync(['bash', '-c', gateStep.run!], {
@@ -649,6 +653,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     'CONVERSATION_RESULT',
     'LAYOUT_RESULT',
     'APPEARANCE_RESULT',
+    'NATIVE_SELECT_RESULT',
   ]) {
     for (const value of ['failure', 'cancelled', 'skipped', '']) {
       expect(passes({ [key]: value })).toBe(false)
@@ -661,6 +666,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
       CONVERSATION_RESULT: 'skipped',
       LAYOUT_RESULT: 'skipped',
       APPEARANCE_RESULT: 'skipped',
+      NATIVE_SELECT_RESULT: 'skipped',
     })
   ).toBe(true)
   expect(
@@ -670,6 +676,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
       CONVERSATION_RESULT: 'skipped',
       LAYOUT_RESULT: 'skipped',
       APPEARANCE_RESULT: 'skipped',
+      NATIVE_SELECT_RESULT: 'skipped',
     })
   ).toBe(false)
   expect(passes({ REGISTRY_NEEDED: '' })).toBe(false)

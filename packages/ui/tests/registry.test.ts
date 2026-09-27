@@ -64,6 +64,34 @@ describe('registry', () => {
     )
   })
 
+  test('publishes NativeSelect from the root, component subpath and derived registry', () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve(import.meta.dir, '../package.json'), 'utf8')
+    ) as { exports: Record<string, unknown> }
+    const nativeSelect = registryItems.find((item) => item.name === 'native-select')
+    const targets = nativeSelect?.files.map((file) => file.target) ?? []
+    const componentExport = packageJson.exports['./components/*'] as
+      | Record<string, string>
+      | undefined
+
+    expect(componentExport).toEqual({
+      types: './dist/components/*/index.d.ts',
+      solid: './src/components/*/index.ts',
+      development: './src/components/*/index.ts',
+      import: './dist/components/*/index.js',
+    })
+    expect(readFileSync(resolve(import.meta.dir, '../src/index.ts'), 'utf8')).toContain(
+      "export * from './components/ui/native-select'"
+    )
+    expect(targets).toContain('components/ui/native-select/native-select.tsx')
+    expect(targets).toContain('components/ui/native-select/index.ts')
+    expect(nativeSelect?.registryDependencies).toContain('lib')
+
+    const notice = readFileSync(resolve(import.meta.dir, '../../../NOTICE'), 'utf8')
+    expect(notice).toContain('Copyright (c) 2023 shadcn')
+    expect(notice).toContain('98a1fe67b439324ddc857f47fbdce056600a4329')
+  })
+
   test('ships no stories or documentation as consumer source', () => {
     const offenders = registryItems.flatMap((item) =>
       item.files

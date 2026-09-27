@@ -180,6 +180,9 @@ jobs:
       - name: Verify packed appearance interactions and SSR
         working-directory: packages/ui
         run: bun run check:packed-appearance
+      - name: Verify native select from the packed artifact
+        working-directory: packages/ui
+        run: bun run check:packed-native-select
 
       - name: Pack
         if: ${{ inputs.dry-run != true }}
