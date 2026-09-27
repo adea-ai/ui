@@ -393,6 +393,42 @@ test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous
   await expect(page.getByRole('button', { name: /^Light theme/ })).toBeFocused()
 })
 
+test('inline AppearanceEditor Tab follows native details summary stops', async ({ page }) => {
+  await page.evaluate(() => {
+    const trigger = document.querySelector<HTMLButtonElement>('button[aria-label="Dark theme"]')
+    const row = trigger?.closest('section')
+    if (!row) throw new Error('The dark theme row should be present')
+
+    const before = document.createElement('details')
+    const beforeSummary = document.createElement('summary')
+    beforeSummary.textContent = 'Details before dark theme'
+    before.append(beforeSummary)
+    row.before(before)
+
+    const after = document.createElement('details')
+    const afterSummary = document.createElement('summary')
+    afterSummary.textContent = 'Details after dark theme'
+    after.append(afterSummary)
+    row.after(after)
+  })
+
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  const summaries = page.locator('summary')
+  await trigger.click()
+  const nextMenu = page.getByRole('menu')
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Tab')
+  await expect(nextMenu).toHaveCount(0)
+  await expect(summaries.nth(1)).toBeFocused()
+
+  await trigger.click()
+  const previousMenu = page.getByRole('menu')
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Shift+Tab')
+  await expect(previousMenu).toHaveCount(0)
+  await expect(summaries.first()).toBeFocused()
+})
+
 test.describe('narrow theme picker', () => {
   // Fix the viewport before beforeEach opens the popup: selection tests must not
   // race the asynchronous position update of an already-open, resized overlay.

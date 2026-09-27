@@ -117,7 +117,7 @@ try {
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 96,
+      checks: 100,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Controlled editor host fixture; production persistence, native transparency, hydration and manual AT remain separate.',

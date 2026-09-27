@@ -37,12 +37,12 @@ import {
 } from '../../ui/dropdown-menu/dropdown-menu'
 import { PalettePreview } from './theme-preview'
 
-const FOCUS_STOP_SELECTOR =
-  'a[href], area[href], button, input, select, textarea, iframe, [tabindex], [contenteditable]'
+const POINTER_FOCUS_TARGET_SELECTOR =
+  'a[href], area[href], button, input, select, textarea, iframe, [tabindex], [contenteditable], details > summary:first-of-type'
 
-function isFocusStop(element: HTMLElement) {
+function isTabStop(element: HTMLElement) {
   return (
-    element.tabIndex >= 0 &&
+    (element.tabIndex >= 0 || element.matches('details > summary:first-of-type')) &&
     !element.matches(':disabled') &&
     element.getAttribute('aria-disabled') !== 'true' &&
     element.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
@@ -82,9 +82,9 @@ export function SettingsRow(props: {
 
 /**
  * A compact persistent theme choice. Kobalte handles menu navigation and
- * dismissal; this row returns Tab to the adjacent focus stop because menus
- * consume Tab by default. A dialog remains the traversal boundary, while an
- * inline editor follows document order.
+ * dismissal; this row moves Tab to the adjacent browser-reported stop because
+ * menus consume Tab by default. Enumerating elements and checking their native
+ * tabIndex keeps browser controls such as details summaries in the order.
  */
 export function ThemeRow(props: {
   appearance: 'light' | 'dark'
@@ -117,30 +117,23 @@ export function ThemeRow(props: {
     const focusScope = parentDialog ?? portalMount()?.ownerDocument.body
     if (!focusScope) return
 
-    const focusStops = Array.from(
-      focusScope.querySelectorAll<HTMLElement>(FOCUS_STOP_SELECTOR)
-    ).filter(
+    const focusStops = Array.from(focusScope.querySelectorAll<HTMLElement>('*')).filter(
       (element) =>
-        element !== trigger &&
-        isFocusStop(element) &&
+        isTabStop(element) &&
         element.closest('[role="menu"], [hidden], [inert], [aria-hidden="true"]') === null
     )
-    const isAfterTrigger = (element: HTMLElement) =>
-      !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
-    const isBeforeTrigger = (element: HTMLElement) =>
-      !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING)
+    const orderedFocusStops = [
+      ...focusStops
+        .filter((element) => element.tabIndex > 0)
+        .toSorted((a, b) => a.tabIndex - b.tabIndex),
+      ...focusStops.filter((element) => element.tabIndex <= 0),
+    ]
+    const triggerIndex = orderedFocusStops.indexOf(trigger)
     const direction = event.shiftKey ? -1 : 1
-    const adjacent = parentDialog
-      ? direction > 0
-        ? (focusStops.find(isAfterTrigger) ?? focusStops[0])
-        : (focusStops.filter(isBeforeTrigger).at(-1) ?? focusStops.at(-1))
-      : direction > 0
-        ? focusStops.find(isAfterTrigger)
-        : focusStops.filter(isBeforeTrigger).at(-1)
+    const adjacent =
+      orderedFocusStops[triggerIndex + direction] ??
+      (parentDialog ? (direction > 0 ? orderedFocusStops[0] : orderedFocusStops.at(-1)) : undefined)
 
-    // Kobalte consumes Tab in menus. Explicitly close and transfer focus when
-    // an adjacent stop exists; at an inline document boundary, leave the
-    // browser's native Tab default available instead of wrapping to the start.
     event.stopPropagation()
     setRestoreTriggerFocus(false)
     if (adjacent) {
@@ -192,10 +185,10 @@ export function ThemeRow(props: {
               const target = event.detail.originalEvent.target
               if (!(target instanceof Element) || !focusScope?.contains(target)) return
 
-              const focusStop = target.closest<HTMLElement>(FOCUS_STOP_SELECTOR)
-              if (focusStop && isFocusStop(focusStop)) {
+              const focusTarget = target.closest<HTMLElement>(POINTER_FOCUS_TARGET_SELECTOR)
+              if (focusTarget && isTabStop(focusTarget)) {
                 setRestoreTriggerFocus(false)
-                setFocusOutsideTarget(focusStop)
+                setFocusOutsideTarget(focusTarget)
               } else {
                 setRestoreTriggerFocus(true)
               }

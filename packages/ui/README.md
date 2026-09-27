@@ -421,8 +421,8 @@ native effects, packaged applications or manual assistive technology acceptance.
 ### Packed appearance contract
 
 `bun run check:packed-appearance` installs the actual tarball without optional
-Chart/Carousel engines, then reuses all 20 component cases per engine against
-compiled and Solid entries (80 execution runs total).
+Chart/Carousel engines, then runs all 25 component cases in Chromium and WebKit
+against compiled and Solid entries (100 execution runs total).
 The same fixture verifies
 Solid source SSR in native Node. Keyboard choices, live preview, save/cancel/reset,
 nested dismissal, validation, pending save, narrow layouts with reachable footer actions, and automated accessibility
