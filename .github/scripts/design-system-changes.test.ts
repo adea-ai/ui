@@ -447,7 +447,7 @@ test('Pages publishes the exact successful main build and keeps registry install
   expect(gates.jobs['workshop-build'].if).toContain("github.event_name == 'push'")
   expect(gates.jobs['workshop'].if).toContain("needs.changes.outputs.workshop != 'false'")
   expect(gates.jobs['components'].if).toContain("needs.changes.outputs.components != 'false'")
-  expect(gates.jobs['registry'].if).toContain("needs.changes.outputs.registry != 'false'")
+  expect(gates.jobs['registry-core'].if).toContain("needs.changes.outputs.registry != 'false'")
   expect(gates.jobs['workshop-gate'].steps?.[0].env?.PAGES_NEEDED).toContain(
     'needs.changes.outputs.pages'
   )
@@ -527,4 +527,150 @@ test('Pages publishes the exact successful main build and keeps registry install
     'utf8'
   )
   expect(managerConfig).toContain("brandTitle: 'Adea UI — Storybook'")
+})
+
+test('packed Registry browser jobs use this run’s library build and unchanged contract commands', () => {
+  const workflow = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/design-system-gates.yml', import.meta.url), 'utf8')
+  ) as {
+    jobs: Record<
+      string,
+      {
+        if?: string
+        name?: string
+        needs?: string | string[]
+        steps: {
+          name: string
+          if?: string
+          run?: string
+          uses?: string
+          env?: Record<string, string>
+          with?: Record<string, string | boolean>
+        }[]
+      }
+    >
+  }
+
+  const core = workflow.jobs['registry-core']
+  expect(core.name).toBe('Registry core')
+  expect(core.needs).toBe('changes')
+  const coreCommands = core.steps.flatMap((step) => (step.run ? [step.run.trim()] : []))
+  expect(coreCommands).toContain('bun run --cwd packages/ui build\nbun run check:tree-shaking')
+  expect(coreCommands).toContain('bun run pack:check')
+  expect(coreCommands).toContain('bun run check:packed-consumer')
+  expect(coreCommands).toContain('bun run check:packed-paste-model')
+  expect(coreCommands).not.toContain('bun run check:packed-conversation')
+  expect(coreCommands).not.toContain(
+    'bun run check:packed-layout && bun run check:packed-layout-renderer'
+  )
+  expect(coreCommands).not.toContain('bun run check:packed-appearance')
+
+  const coreCheckout = core.steps.find((step) => step.name === 'Checkout')
+  expect(coreCheckout?.with?.ref).toBe('${{ github.sha }}')
+  expect(coreCheckout?.with?.['persist-credentials']).toBe(false)
+
+  const upload = core.steps.find((step) => step.name === 'Upload the built UI package')
+  expect(upload?.uses).toBe('actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a')
+  expect(upload?.with?.name).toBe('ui-dist-registry')
+  expect(upload?.with?.path).toBe('packages/ui/dist/')
+  expect(upload?.with?.['retention-days']).toBe(1)
+  expect(upload?.with?.['if-no-files-found']).toBe('error')
+  expect(core.steps.findIndex((step) => step.run?.trim() === 'bun run pack:check')).toBeLessThan(
+    core.steps.indexOf(upload!)
+  )
+
+  const lanes = [
+    ['packed-conversation', 'bun run check:packed-conversation'],
+    ['packed-layout', 'bun run check:packed-layout && bun run check:packed-layout-renderer'],
+    ['packed-appearance', 'bun run check:packed-appearance'],
+  ] as const
+  for (const [id, command] of lanes) {
+    const lane = workflow.jobs[id]
+    expect(lane.needs).toEqual(['changes', 'registry-core'])
+    expect(lane.if).toContain("needs.changes.result != 'success'")
+    expect(lane.if).toContain("needs.changes.outputs.registry != 'false'")
+    expect(lane.if).toContain("needs.registry-core.result == 'success'")
+
+    const checkout = lane.steps.find((step) => step.name === 'Checkout')
+    expect(checkout?.uses).toBe('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')
+    expect(checkout?.with?.ref).toBe('${{ github.sha }}')
+    expect(checkout?.with?.['persist-credentials']).toBe(false)
+    expect(lane.steps.some((step) => step.run === 'bun install --frozen-lockfile')).toBe(true)
+    expect(
+      lane.steps.some((step) => step.run === 'bunx playwright install --with-deps chromium webkit')
+    ).toBe(true)
+
+    const download = lane.steps.find((step) => step.name === 'Download the built UI package')
+    expect(download?.uses).toBe(
+      'actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131'
+    )
+    expect(download?.with?.name).toBe('ui-dist-registry')
+    expect(download?.with?.path).toBe('packages/ui/dist/')
+    expect(download?.with?.['run-id']).toBeUndefined()
+    expect(download?.with?.repository).toBeUndefined()
+    expect(lane.steps.some((step) => step.run === command)).toBe(true)
+  }
+
+  const gate = workflow.jobs.registry
+  expect(gate.name).toBe('Registry')
+  expect(gate.needs).toEqual([
+    'changes',
+    'registry-core',
+    'packed-conversation',
+    'packed-layout',
+    'packed-appearance',
+  ])
+  const gateStep = gate.steps[0]
+  expect(gateStep.env).toEqual({
+    SCOPE_RESULT: '${{ needs.changes.result }}',
+    REGISTRY_NEEDED: '${{ needs.changes.outputs.registry }}',
+    CORE_RESULT: '${{ needs.registry-core.result }}',
+    CONVERSATION_RESULT: '${{ needs.packed-conversation.result }}',
+    LAYOUT_RESULT: '${{ needs.packed-layout.result }}',
+    APPEARANCE_RESULT: '${{ needs.packed-appearance.result }}',
+  })
+
+  const defaults = {
+    SCOPE_RESULT: 'success',
+    REGISTRY_NEEDED: 'true',
+    CORE_RESULT: 'success',
+    CONVERSATION_RESULT: 'success',
+    LAYOUT_RESULT: 'success',
+    APPEARANCE_RESULT: 'success',
+  }
+  const passes = (overrides: Record<string, string>) =>
+    Bun.spawnSync(['bash', '-c', gateStep.run!], {
+      env: { ...process.env, ...defaults, ...overrides },
+    }).exitCode === 0
+  expect(passes({})).toBe(true)
+  for (const key of [
+    'SCOPE_RESULT',
+    'CORE_RESULT',
+    'CONVERSATION_RESULT',
+    'LAYOUT_RESULT',
+    'APPEARANCE_RESULT',
+  ]) {
+    for (const value of ['failure', 'cancelled', 'skipped', '']) {
+      expect(passes({ [key]: value })).toBe(false)
+    }
+  }
+  expect(
+    passes({
+      REGISTRY_NEEDED: 'false',
+      CORE_RESULT: 'skipped',
+      CONVERSATION_RESULT: 'skipped',
+      LAYOUT_RESULT: 'skipped',
+      APPEARANCE_RESULT: 'skipped',
+    })
+  ).toBe(true)
+  expect(
+    passes({
+      REGISTRY_NEEDED: 'false',
+      CORE_RESULT: 'success',
+      CONVERSATION_RESULT: 'skipped',
+      LAYOUT_RESULT: 'skipped',
+      APPEARANCE_RESULT: 'skipped',
+    })
+  ).toBe(false)
+  expect(passes({ REGISTRY_NEEDED: '' })).toBe(false)
 })
