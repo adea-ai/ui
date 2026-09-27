@@ -1,41 +1,137 @@
-name: Registry Pages
+name: Storybook and Registry Pages
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/ui/public/r/**'
-      - 'packages/ui/registry.json'
-      - '.github/workflows/registry-pages.yml'
+  workflow_run:
+    workflows: ['Design System Gates']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: registry-pages-${{ github.ref }}
+  group: registry-pages-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: false
 
-# Publishes the registry so the install command in the README resolves:
+# The root of GitHub Pages is the built Storybook. Registry payloads
+# remain available at /r/** for the documented shadcn install URLs.
 #
-#   bunx shadcn@latest add https://adea-ai.github.io/ui/r/button.json
-#
-# Without this, the documented URL is aspirational. The registry payloads are
-# generated from source and committed, so this lane only has to serve them —
-# it deliberately does not rebuild, because a page that differs from the
-# committed registry is worse than no page at all.
-#
-# The payloads are not self-contained: each one's `files[].path` names a file the
-# CLI fetches from this site, so the tree has to be published too. Copying only the
-# JSON — which is what this lane used to do — left every one of the 74 items
-# resolving to a 404: the payload served fine, the file it pointed at did not exist,
-# and the whole install path failed with an error that named neither. `public/r/**`
-# rather than `public/r/*.json` is the fix, and it is the difference between a
-# registry that works and one that looks like it works.
+# A successful Design System Gates run builds `storybook-static` when either
+# Storybook or published registry content changes. This workflow consumes only
+# that exact run's artifact when present. If a later docs-only main push
+# supersedes a Pages build, it builds the exact still-current main revision
+# instead of reusing an older artifact. Manual dispatch on main is also a
+# current-main build fallback.
 jobs:
-  publish:
-    name: Publish
-    if: vars.CI_BILLING_PAUSED != 'true'
+  prepare:
+    name: Prepare Pages artifact
+    if: >-
+      vars.CI_BILLING_PAUSED != 'true' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.conclusion == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      publish: ${{ steps.guard.outputs.publish }}
+      source: ${{ steps.guard.outputs.source }}
+      head_sha: ${{ steps.guard.outputs.head_sha }}
+    steps:
+      - name: Check run freshness and select the site source
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node .github/scripts/registry-pages.mjs
+
+      - name: Checkout the exact source revision
+        if: steps.guard.outputs.publish == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.guard.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Setup Bun for a current-main build
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies for a current-main build
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
+        run: bun install --frozen-lockfile
+
+      - name: Build Storybook from current main
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
+        run: bun run storybook:build
+
+      - name: Download this run's Storybook artifact
+        if: steps.guard.outputs.source == 'workflow_run'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static/
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify the built workshop exists
+        if: steps.guard.outputs.publish == 'true'
+        run: test -s apps/storybook/storybook-static/index.html
+
+      - name: Assemble and validate the site
+        if: steps.guard.outputs.publish == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p _site/r _site/registry
+          # Storybook is the project-page root. Its relative build assets work
+          # under GitHub's /ui/ prefix without changing public registry routes.
+          cp -R apps/storybook/storybook-static/. _site/
+          cp -R packages/ui/public/r/. _site/r/
+          cp apps/storybook/styleguide/registry-index.html _site/registry/index.html
+
+          node - "$PWD/_site/r" <<'NODE'
+            const fs = require('fs')
+            const path = require('path')
+            const root = path.resolve(process.argv[2])
+            let missing = 0
+            for (const name of fs.readdirSync(root).filter((n) => n.endsWith(".json"))) {
+              const item = JSON.parse(fs.readFileSync(path.join(root, name), "utf8"))
+              for (const file of item.files ?? []) {
+                const target = path.resolve(root, file.path)
+                if (!target.startsWith(`${root}${path.sep}`) || !fs.existsSync(target)) {
+                  console.error('::error title=' + item.name + ' points at an unpublished file::' + file.path)
+                  missing++
+                }
+              }
+            }
+            console.log(missing === 0 ? 'every payload resolves to a published file' : missing + ' payload file(s) missing or outside /r')
+            process.exit(missing === 0 ? 0 : 1)
+          NODE
+
+      - name: Upload the Pages artifact
+        if: steps.guard.outputs.publish == 'true'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: prepare
+    if: needs.prepare.result == 'success' && needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -46,47 +142,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Assemble the site
-        run: |
-          set -euo pipefail
-          mkdir -p _site/r
-          # The whole published tree: the payloads and the files they point at.
-          cp -R packages/ui/public/r/. _site/r/
-          # A consumer landing on the bare origin should learn what this is
-          # rather than see a directory listing.
-          cp apps/storybook/styleguide/registry-index.html _site/index.html 2>/dev/null || true
-          # The payloads make promises this site can check, and should: every
-          # `files[].path` a payload names must exist in what is being published.
-          node -e '
-            const fs = require("fs")
-            const path = require("path")
-            const root = process.argv[1]
-            let missing = 0
-            for (const name of fs.readdirSync(root).filter((n) => n.endsWith(".json"))) {
-              const item = JSON.parse(fs.readFileSync(path.join(root, name), "utf8"))
-              for (const file of item.files ?? []) {
-                if (!fs.existsSync(path.join(root, file.path))) {
-                  console.error(`::error title=${item.name} points at an unpublished file::${file.path}`)
-                  missing++
-                }
-              }
-            }
-            console.log(missing === 0 ? "every payload resolves to a published file" : `${missing} payload file(s) missing`)
-            process.exit(missing === 0 ? 0 : 1)
-          ' "$PWD/_site/r"
-
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-
-      - name: Upload the site
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
-        with:
-          path: _site
 
       - name: Deploy
         id: deploy

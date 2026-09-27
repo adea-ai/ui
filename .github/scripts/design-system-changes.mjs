@@ -1,19 +1,18 @@
 import { appendFileSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
-const fullCoverage = () => ({ registry: true, workshop: true, components: true })
+const fullCoverage = () => ({ registry: true, workshop: true, components: true, pages: true })
 const validImmutableRef = (ref) => /^[a-f0-9]{40}$/.test(ref ?? '') && ref !== '0'.repeat(40)
 
 /** Conservative impact map. Unknown inputs retain every gate. */
 export function classifyDesignSystemChanges(paths) {
-  const result = { registry: false, workshop: false, components: false }
+  const result = { registry: false, workshop: false, components: false, pages: false }
   for (const path of paths) {
-    if (
-      /^(?:LICENSE|NOTICE)(?:\.|$)/.test(path) ||
-      path === 'packages/ui/registry.json' ||
-      path.startsWith('packages/ui/public/r/')
-    ) {
+    if (/^(?:LICENSE|NOTICE)(?:\.|$)/.test(path)) {
       result.registry = true
+    } else if (path === 'packages/ui/registry.json' || path.startsWith('packages/ui/public/r/')) {
+      result.registry = true
+      result.pages = true
     } else if (path.startsWith('packages/ui/') && path.endsWith('.md')) {
       result.registry = true
     } else if (path.endsWith('.md') && !path.startsWith('packages/ui/')) {
@@ -38,6 +37,7 @@ export function classifyDesignSystemChanges(paths) {
     } else if (path.startsWith('apps/storybook/')) {
       result.workshop = true
       result.components = true
+      result.pages = true
     } else if (path.startsWith('packages/ui/public/') || path.startsWith('packages/ui/scripts/')) {
       result.registry = true
     } else {

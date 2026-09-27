@@ -14,7 +14,10 @@ bun run storybook        # the workshop: every component, every variant, both th
 ```
 
 `build` produces the publishable library. CI builds the workshop once in its
-dedicated gate and shares that artifact across the ten browser shards.
+dedicated gate and shares that artifact across the ten browser shards. Successful
+main pushes that update Storybook or the public registry payload publish that build at
+[`adea-ai.github.io/ui`](https://adea-ai.github.io/ui/); registry-only pushes
+build the site without allocating story-browser shards.
 `bun run verify` includes both builds and the package checks. Workshop prop
 documentation is extracted from local components; dependency TSX is excluded
 from extraction while its imported types remain available.
@@ -58,7 +61,8 @@ decision lives in one place.
   gzipped against 275 kB for the library, and the gate fails if that stops being
   true. The chart splits from itself: one chart type is 10 kB cheaper than seven.
 - **Storybook 10** with per-story accessibility checks, MDX documentation and token
-  galleries. It is the review surface; if a component is not in it, it is not done.
+  galleries. The [published Storybook](https://adea-ai.github.io/ui/) is the review
+  surface; if a component is not in it, it is not done.
 - **A shadcn registry** of 74 items, so a consumer can take one component without
   adopting the package — or install the whole thing from npm.
 
