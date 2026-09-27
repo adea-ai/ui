@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.2](https://github.com/adea-ai/ui/compare/v0.68.1...v0.68.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* check out trusted Pages workflow helpers ([#55](https://github.com/adea-ai/ui/issues/55)) ([19d1cff](https://github.com/adea-ai/ui/commit/19d1cff60885ae7cabe62c2238465954d76ef903))
+
 ## [0.68.1](https://github.com/adea-ai/ui/compare/v0.68.0...v0.68.1) (2026-09-27)
 
 
