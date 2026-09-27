@@ -18,13 +18,14 @@ test.beforeAll(async () => {
   ;({ script, css } = await buildAppearanceBrowser())
 })
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  const inlineEditor = testInfo.title.includes('inline AppearanceEditor')
   await page.setContent(
-    '<!doctype html><html lang="en"><head><title>Appearance fixture</title></head><body></body></html>'
+    `<!doctype html><html lang="en"${inlineEditor ? ' data-appearance-fixture="inline"' : ''}><head><title>Appearance fixture</title></head><body></body></html>`
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
-  await page.getByRole('button', { name: 'Appearance settings' }).click()
+  if (!inlineEditor) await page.getByRole('button', { name: 'Appearance settings' }).click()
 })
 
 test('the popup and nested controls retain their shared CSS contract', async ({ page }) => {
@@ -51,12 +52,10 @@ test('the popup and nested controls retain their shared CSS contract', async ({ 
     )
   ).toBeGreaterThan(16)
   await page.getByRole('button', { name: /^Dark theme/ }).click()
-  const list = page.getByRole('listbox')
-  await expect(list).toBeVisible()
-  const menu = await list.evaluate((element) => {
-    const content = element.parentElement
-    if (!content) throw new Error('Missing Select content')
-    const style = getComputedStyle(content)
+  const menu = page.getByRole('menu')
+  await expect(dialog.getByRole('menu')).toBeVisible()
+  const menuStyle = await menu.evaluate((element) => {
+    const style = getComputedStyle(element)
     return {
       background: style.backgroundColor,
       overflowX: style.overflowX,
@@ -64,9 +63,9 @@ test('the popup and nested controls retain their shared CSS contract', async ({ 
       rem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
     }
   })
-  expect(menu.background).not.toBe('rgba(0, 0, 0, 0)')
-  expect(menu.overflowX).toBe('hidden')
-  expect(menu.minWidth).toBeCloseTo(menu.rem * 8, 1)
+  expect(menuStyle.background).not.toBe('rgba(0, 0, 0, 0)')
+  expect(menuStyle.overflowX).toBe('hidden')
+  expect(menuStyle.minWidth).toBeCloseTo(menuStyle.rem * 8, 1)
   await page.keyboard.press('Escape')
   await page.getByText('Custom', { exact: true }).click()
   const input = await page.getByRole('textbox', { name: 'Custom accent' }).evaluate((element) => {
@@ -146,7 +145,9 @@ test('donor helper copy distinguishes palette defaults and explicit overrides', 
   await page.getByText('Opaque', { exact: true }).click()
   await expect(page.getByText('Solid surfaces for every theme.', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: /^Light theme/ }).click()
-  await expect(page.getByRole('option', { name: 'Catppuccin Latte', exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('menuitemradio', { name: 'Catppuccin Latte', exact: true })
+  ).toBeVisible()
 })
 
 test('unsaved theme selection updates live miniatures and Cancel restores the snapshot', async ({
@@ -155,15 +156,16 @@ test('unsaved theme selection updates live miniatures and Cancel restores the sn
   const preview = page.locator('[data-live-preview]')
   const initial = await preview.evaluate((element) => getComputedStyle(element).color)
   await page.getByRole('button', { name: /^Dark theme/ }).click()
-  await expect(page.getByRole('listbox')).toBeVisible()
+  await expect(page.getByRole('menu')).toBeVisible()
   const menuAccessibility = await new AxeBuilder({ page }).analyze()
   expect(
     menuAccessibility.violations.filter((finding) =>
       ['serious', 'critical'].includes(finding.impact ?? '')
     )
   ).toEqual([])
-  await page.getByRole('option', { name: 'Dracula', exact: true }).click()
+  await page.getByRole('menuitemradio', { name: 'Dracula', exact: true }).click()
   await expect(page.getByRole('button', { name: /^Dark theme/ })).toContainText('Dracula')
+  await expect(page.getByRole('button', { name: /^Dark theme/ })).toBeFocused()
   await expect
     .poll(() => preview.evaluate((element) => getComputedStyle(element).color))
     .not.toBe(initial)
@@ -180,9 +182,11 @@ test('nested theme-menu Escape closes only the menu; a second Escape rolls back'
   page,
 }) => {
   await page.getByText('Light', { exact: true }).click()
-  await page.getByRole('button', { name: /^Dark theme/ }).click()
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
   await page.keyboard.press('Escape')
-  await expect(page.locator('[role="listbox"]')).toHaveCount(0)
+  await expect(page.locator('[role="menu"]')).toHaveCount(0)
+  await expect(trigger).toBeFocused()
   await expect(page.getByRole('dialog', { name: 'Appearance' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: 'Appearance' })).toHaveCount(0)
@@ -233,6 +237,295 @@ test('a pending save disables changes and duplicate commits', async ({ page }) =
   await expect(page.getByRole('switch', { name: 'Reduce transparency' })).toBeDisabled()
 })
 
+test('a pending save disables theme choices when the menu is already open', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  const themes = menu.getByRole('menuitemradio')
+  await expect(themes).toHaveCount(2)
+
+  await page.evaluate(() => {
+    document.body.dataset['pendingSave'] = 'true'
+  })
+  await page.getByRole('button', { name: 'Save', exact: true }).evaluate((button) => {
+    if (!(button instanceof HTMLButtonElement)) throw new Error('Save should be a native button')
+    button.click()
+  })
+  await expect(page.getByRole('button', { name: 'Saving…', exact: true })).toBeDisabled()
+  await expect(trigger).toBeDisabled()
+  await expect(themes.nth(0)).toBeDisabled()
+  await expect(themes.nth(1)).toBeDisabled()
+})
+
+test('theme menu radios retain Home/End, arrow, typeahead, and selection behavior', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  const themes = menu.getByRole('menuitemradio')
+  await expect(themes).toHaveCount(2)
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+  await page.keyboard.press('Home')
+  await expect(themes.nth(0)).toBeFocused()
+  await page.keyboard.press('End')
+  await expect(themes.nth(1)).toBeFocused()
+  await page.keyboard.press('ArrowUp')
+  await expect(themes.nth(0)).toBeFocused()
+  await page.keyboard.press('d')
+  await expect(menu.getByRole('menuitemradio', { name: 'Dracula', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(trigger).toContainText('Dracula')
+  await expect(trigger).toBeFocused()
+  await expect(page.getByLabel('Draft preference')).toContainText('"darkThemeId":"dracula"')
+})
+
+test('selecting the current theme closes the menu and restores trigger focus', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  const current = menu.getByRole('menuitemradio', { name: 'Adea Dark', exact: true })
+  await expect(current).toHaveAttribute('aria-checked', 'true')
+  await current.click()
+  await expect(menu).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await expect(trigger).toContainText('Adea Dark')
+})
+
+test('theme menu dismisses when focus moves to another control inside its dialog', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = dialog.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  const save = dialog.getByRole('button', { name: 'Save', exact: true })
+  await save.focus()
+  await expect(menu).toHaveCount(0)
+  await expect(save).toBeFocused()
+  await expect(dialog).toBeVisible()
+})
+
+test('theme menu dismisses on pointer interaction elsewhere in its dialog', async ({ page }) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = dialog.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Reset', exact: true }).click()
+  await expect(menu).toHaveCount(0)
+  await expect(dialog).toBeVisible()
+})
+
+test('theme menu restores trigger focus when dismissed by nonfocusable dialog content', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance' })
+  const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = dialog.getByRole('menu')
+  const firstTheme = menu.getByRole('menuitemradio').first()
+  await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+  await page.keyboard.press('Home')
+  await expect(firstTheme).toBeFocused()
+
+  await dialog.getByRole('heading', { name: 'Dark theme', exact: true }).click()
+
+  await expect(menu).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+})
+
+test('theme menu Tab exits to the next or previous control in its dialog', async ({ page }) => {
+  await page.evaluate(() => {
+    const browserWindow = window as Window & { appearanceFocusTrace?: string[] }
+    const trace: string[] = (browserWindow.appearanceFocusTrace = [])
+    const record = (kind: string, target: EventTarget | null) => {
+      const description =
+        target instanceof HTMLElement
+          ? [
+              target.tagName.toLowerCase(),
+              target.getAttribute('role'),
+              target.getAttribute('aria-label'),
+              target.getAttribute('aria-checked'),
+              target.hasAttribute('data-highlighted') ? 'highlighted' : undefined,
+              target.textContent?.trim().replace(/\s+/g, ' ').slice(0, 32),
+            ]
+              .filter(Boolean)
+              .join('|')
+          : String(target)
+      trace.push(`${performance.now().toFixed(1)} ${kind} ${description}`)
+    }
+    document.addEventListener('focusin', (event) => record('focusin', event.target), true)
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key === 'Home' || event.key === 'Tab') {
+          record(`keydown ${event.key} target`, event.target)
+          record(`keydown ${event.key} active`, document.activeElement)
+        }
+      },
+      true
+    )
+  })
+  const logFocusTrace = async () => {
+    const trace = await page.evaluate(
+      () => (window as Window & { appearanceFocusTrace?: string[] }).appearanceFocusTrace ?? []
+    )
+    console.info(`[appearance-focus-lifecycle] ${JSON.stringify(trace)}`)
+  }
+  try {
+    const dialog = page.getByRole('dialog', { name: 'Appearance' })
+    const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
+    await trigger.click()
+    const menu = dialog.getByRole('menu')
+    await expect(menu).toBeVisible()
+    await expect(menu).toBeFocused()
+    await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+    const firstTheme = menu.getByRole('menuitemradio').first()
+    await page.keyboard.press('Home')
+    await expect(firstTheme).toBeFocused()
+
+    await page.keyboard.press('Tab')
+    await expect(menu).toHaveCount(0)
+    await expect(
+      dialog
+        .getByRole('radiogroup', { name: 'Accent' })
+        .getByRole('radio', { name: 'Theme default' })
+    ).toBeFocused()
+
+    await trigger.click()
+    const previousMenu = dialog.getByRole('menu')
+    await expect(previousMenu).toBeVisible()
+    await expect(previousMenu).toBeFocused()
+    await expect(previousMenu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+    await page.keyboard.press('Home')
+    await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(previousMenu).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+  } catch (error) {
+    await logFocusTrace()
+    throw error
+  }
+})
+
+test('inline AppearanceEditor Tab closes the menu and focuses the next control', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Tab')
+
+  await expect(menu).toHaveCount(0)
+  await expect(
+    page.getByRole('radiogroup', { name: 'Accent' }).getByRole('radio', { name: 'Theme default' })
+  ).toBeFocused()
+})
+
+test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous control', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Shift+Tab')
+
+  await expect(menu).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+})
+
+test('inline AppearanceEditor Tab follows native summaries and skips negative tabindex', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const trigger = document.querySelector<HTMLButtonElement>('button[aria-label="Dark theme"]')
+    const row = trigger?.closest('section')
+    if (!row) throw new Error('The dark theme row should be present')
+
+    const beforeStops = document.createElement('div')
+    const before = document.createElement('details')
+    const beforeSummary = document.createElement('summary')
+    beforeSummary.textContent = 'Details before dark theme'
+    before.append(beforeSummary)
+
+    const skippedBefore = document.createElement('details')
+    const skippedBeforeSummary = document.createElement('summary')
+    skippedBeforeSummary.setAttribute('tabindex', '-1')
+    skippedBeforeSummary.textContent = 'Programmatically focusable details before dark theme'
+    skippedBefore.append(skippedBeforeSummary)
+    beforeStops.append(before, skippedBefore)
+    row.before(beforeStops)
+
+    const afterStops = document.createElement('div')
+    const after = document.createElement('details')
+    const afterSummary = document.createElement('summary')
+    afterSummary.textContent = 'Details after dark theme'
+    after.append(afterSummary)
+
+    const skippedAfter = document.createElement('details')
+    const skippedAfterSummary = document.createElement('summary')
+    skippedAfterSummary.setAttribute('tabindex', '-1')
+    skippedAfterSummary.textContent = 'Programmatically focusable details after dark theme'
+    skippedAfter.append(skippedAfterSummary)
+    afterStops.append(skippedAfter, after)
+    row.after(afterStops)
+  })
+
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  const summaries = page.locator('summary')
+  await expect(summaries).toHaveCount(4)
+  await expect(summaries).toHaveText([
+    'Details before dark theme',
+    'Programmatically focusable details before dark theme',
+    'Programmatically focusable details after dark theme',
+    'Details after dark theme',
+  ])
+  await expect(summaries.nth(0)).not.toHaveAttribute('tabindex', '-1')
+  await expect(summaries.nth(1)).toHaveAttribute('tabindex', '-1')
+  await expect(summaries.nth(2)).toHaveAttribute('tabindex', '-1')
+  await expect(summaries.nth(3)).not.toHaveAttribute('tabindex', '-1')
+  await trigger.click()
+  const nextMenu = page.getByRole('menu')
+  await expect(nextMenu).toBeVisible()
+  // Kobalte first hands focus to the menu container; wait for that handoff
+  // before sending keyboard navigation.
+  await expect(nextMenu).toBeFocused()
+  await expect(nextMenu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+  await page.keyboard.press('Home')
+  await expect(nextMenu.getByRole('menuitemradio').first()).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(nextMenu).toHaveCount(0)
+  await expect(summaries.nth(3)).toBeFocused()
+
+  await trigger.click()
+  const previousMenu = page.getByRole('menu')
+  await expect(previousMenu).toBeVisible()
+  await expect(previousMenu).toBeFocused()
+  await expect(previousMenu.getByRole('menuitemradio', { checked: true })).toBeVisible()
+  await page.keyboard.press('Home')
+  await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(previousMenu).toHaveCount(0)
+  await expect(summaries.first()).toBeFocused()
+})
+
 test.describe('narrow theme picker', () => {
   // Fix the viewport before beforeEach opens the popup: selection tests must not
   // race the asynchronous position update of an already-open, resized overlay.
@@ -240,8 +533,8 @@ test.describe('narrow theme picker', () => {
 
   test('theme options remain visible and selectable in the narrow popup', async ({ page }) => {
     await page.getByRole('button', { name: /^Dark theme/ }).click()
-    await expect(page.getByRole('option', { name: 'Dracula', exact: true })).toBeVisible()
-    await page.getByRole('option', { name: 'Dracula', exact: true }).click()
+    await expect(page.getByRole('menuitemradio', { name: 'Dracula', exact: true })).toBeVisible()
+    await page.getByRole('menuitemradio', { name: 'Dracula', exact: true }).click()
     await expect(page.getByRole('button', { name: /^Dark theme/ })).toContainText('Dracula')
   })
 })

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.69.1](https://github.com/adea-ai/ui/compare/v0.69.0...v0.69.1) (2026-09-27)
+
+
+### Maintenance
+
+* scope CI to Pages and release metadata ([#58](https://github.com/adea-ai/ui/issues/58)) ([d7d49cd](https://github.com/adea-ai/ui/commit/d7d49cd5c24daa47cced3c031b78c3dd96655e3b))
+
 ## [0.69.0](https://github.com/adea-ai/ui/compare/v0.68.2...v0.69.0) (2026-09-27)
 
 
