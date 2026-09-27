@@ -1,7 +1,13 @@
 import { appendFileSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
-const fullCoverage = () => ({ registry: true, workshop: true, components: true, pages: true })
+const fullCoverage = () => ({
+  registry: true,
+  workshop: true,
+  components: true,
+  pages: true,
+  pagesBuild: true,
+})
 const validImmutableRef = (ref) => /^[a-f0-9]{40}$/.test(ref ?? '') && ref !== '0'.repeat(40)
 const pageOnlyPaths = new Set([
   'apps/storybook/.storybook/manager.ts',
@@ -101,10 +107,17 @@ function isVersionOnlyReleaseMetadata(paths, base, head) {
 
 /** Conservative impact map. Unknown inputs retain every gate. */
 export function classifyDesignSystemChanges(paths) {
-  const result = { registry: false, workshop: false, components: false, pages: false }
+  const result = {
+    registry: false,
+    workshop: false,
+    components: false,
+    pages: false,
+    pagesBuild: false,
+  }
   for (const path of paths) {
     if (pageOnlyPaths.has(path)) {
       result.pages = true
+      result.pagesBuild = true
     } else if (/^(?:LICENSE|NOTICE)(?:\.|$)/.test(path)) {
       result.registry = true
     } else if (path === 'packages/ui/registry.json' || path.startsWith('packages/ui/public/r/')) {
@@ -169,7 +182,7 @@ if (import.meta.main) {
           ? execFileSync('git', ['merge-base', base, head], { encoding: 'utf8' }).trim()
           : base
       result = isVersionOnlyReleaseMetadata(paths, comparisonBase, head)
-        ? { registry: true, workshop: false, components: false, pages: false }
+        ? { registry: true, workshop: false, components: false, pages: false, pagesBuild: false }
         : classifyDesignSystemChanges(paths)
     }
   } catch {

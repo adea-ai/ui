@@ -11,30 +11,35 @@ test('documentation skips expensive gates, but distribution notices do not', () 
     workshop: false,
     components: false,
     pages: false,
+    pagesBuild: false,
   })
   expect(classifyDesignSystemChanges(['packages/ui/README.md'])).toEqual({
     registry: true,
     workshop: false,
     components: false,
     pages: false,
+    pagesBuild: false,
   })
   expect(classifyDesignSystemChanges(['NOTICE'])).toEqual({
     registry: true,
     workshop: false,
     components: false,
     pages: false,
+    pagesBuild: false,
   })
   expect(classifyDesignSystemChanges(['packages/ui/registry.json'])).toEqual({
     registry: true,
     workshop: false,
     components: false,
     pages: true,
+    pagesBuild: false,
   })
   expect(classifyDesignSystemChanges(['packages/ui/public/r/button.json'])).toEqual({
     registry: true,
     workshop: false,
     components: false,
     pages: true,
+    pagesBuild: false,
   })
 })
 test('rendering, tokens and dependencies retain complete coverage', () => {
@@ -49,6 +54,7 @@ test('rendering, tokens and dependencies retain complete coverage', () => {
       workshop: true,
       components: true,
       pages: true,
+      pagesBuild: true,
     })
   }
 })
@@ -58,21 +64,24 @@ test('story and component test lanes follow their actual inputs', () => {
     workshop: true,
     components: false,
     pages: false,
+    pagesBuild: false,
   })
   expect(
     classifyDesignSystemChanges(['apps/storybook/tests/component-chat-composer.spec.ts'])
-  ).toEqual({ registry: false, workshop: false, components: true, pages: false })
+  ).toEqual({ registry: false, workshop: false, components: true, pages: false, pagesBuild: false })
   expect(classifyDesignSystemChanges(['apps/storybook/tests/helpers/new-helper.ts'])).toEqual({
     registry: false,
     workshop: true,
     components: true,
     pages: true,
+    pagesBuild: false,
   })
   expect(classifyDesignSystemChanges(['packages/ui/public/r/button.json'])).toEqual({
     registry: true,
     workshop: false,
     components: false,
     pages: true,
+    pagesBuild: false,
   })
 })
 test('known Storybook Pages-only inputs retain the artifact build without UI or registry suites', () => {
@@ -87,6 +96,7 @@ test('known Storybook Pages-only inputs retain the artifact build without UI or 
       workshop: false,
       components: false,
       pages: true,
+      pagesBuild: true,
     })
   }
   expect(classifyDesignSystemChanges(['.github/scripts/new-pages-helper.mjs'])).toEqual({
@@ -94,6 +104,7 @@ test('known Storybook Pages-only inputs retain the artifact build without UI or 
     workshop: true,
     components: true,
     pages: true,
+    pagesBuild: true,
   })
 })
 test('mixed changes union the needed lanes and unknown paths fail closed', () => {
@@ -103,18 +114,20 @@ test('mixed changes union the needed lanes and unknown paths fail closed', () =>
       'apps/storybook/tests/a11y.spec.ts',
       'packages/ui/public/r/button.json',
     ])
-  ).toEqual({ registry: true, workshop: true, components: false, pages: true })
+  ).toEqual({ registry: true, workshop: true, components: false, pages: true, pagesBuild: false })
   expect(classifyDesignSystemChanges(['new-build.config.ts'])).toEqual({
     registry: true,
     workshop: true,
     components: true,
     pages: true,
+    pagesBuild: true,
   })
   expect(classifyDesignSystemChanges(['.github/workflows/design-system-gates.yml'])).toEqual({
     registry: true,
     workshop: true,
     components: true,
     pages: true,
+    pagesBuild: true,
   })
 })
 
@@ -124,6 +137,7 @@ test('rename paths include removed source when selecting coverage', () => {
     workshop: true,
     components: true,
     pages: true,
+    pagesBuild: true,
   })
 })
 
@@ -166,7 +180,7 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
     git('mv', 'packages/ui/src/old.tsx', 'docs/retired.md')
     git('commit', '-qm', 'fixture rename')
     const head = git('rev-parse', 'HEAD')
-    const all = 'registry=true\nworkshop=true\ncomponents=true\npages=true\n'
+    const all = 'registry=true\nworkshop=true\ncomponents=true\npages=true\npagesBuild=true\n'
     expect(
       run('pull_request', { pull_request: { base: { sha: base }, head: { sha: head } } })
     ).toBe(all)
@@ -178,9 +192,9 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
     const docsHead = git('rev-parse', 'HEAD')
     expect(
       run('pull_request', { pull_request: { base: { sha: head }, head: { sha: docsHead } } })
-    ).toBe('registry=false\nworkshop=false\ncomponents=false\npages=false\n')
+    ).toBe('registry=false\nworkshop=false\ncomponents=false\npages=false\npagesBuild=false\n')
     expect(run('push', { before: head, after: docsHead })).toBe(
-      'registry=false\nworkshop=false\ncomponents=false\npages=false\n'
+      'registry=false\nworkshop=false\ncomponents=false\npages=false\npagesBuild=false\n'
     )
     expect(run('push', { before: base, after: head })).toBe(all)
     expect(run('push', { before: base, after: docsHead })).toBe(all)
@@ -268,7 +282,9 @@ test('Release Please version-only metadata keeps Registry qualification and skip
       join(directory, 'event.json'),
       JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: release } } })
     )
-    expect(run()).toBe('registry=true\nworkshop=false\ncomponents=false\npages=false\n')
+    expect(run()).toBe(
+      'registry=true\nworkshop=false\ncomponents=false\npages=false\npagesBuild=false\n'
+    )
     writeFileSync(join(directory, 'event.json'), JSON.stringify({ before: base, after: release }))
     const pushOutputPath = join(directory, 'push-output.txt')
     writeFileSync(pushOutputPath, '')
@@ -282,7 +298,7 @@ test('Release Please version-only metadata keeps Registry qualification and skip
       },
     })
     expect(readFileSync(pushOutputPath, 'utf8')).toBe(
-      'registry=true\nworkshop=false\ncomponents=false\npages=false\n'
+      'registry=true\nworkshop=false\ncomponents=false\npages=false\npagesBuild=false\n'
     )
 
     uiPackage.exports = { '.': './src/index.ts', './button': './src/components/button.tsx' }
@@ -294,12 +310,16 @@ test('Release Please version-only metadata keeps Registry qualification and skip
       join(directory, 'event.json'),
       JSON.stringify({ pull_request: { base: { sha: release }, head: { sha: contract } } })
     )
-    expect(run()).toBe('registry=true\nworkshop=true\ncomponents=true\npages=true\n')
+    expect(run()).toBe(
+      'registry=true\nworkshop=true\ncomponents=true\npages=true\npagesBuild=true\n'
+    )
     writeFileSync(
       join(directory, 'event.json'),
       JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: contract } } })
     )
-    expect(run()).toBe('registry=true\nworkshop=true\ncomponents=true\npages=true\n')
+    expect(run()).toBe(
+      'registry=true\nworkshop=true\ncomponents=true\npages=true\npagesBuild=true\n'
+    )
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
@@ -315,10 +335,15 @@ test('the actual aggregate gate rejects failed, cancelled, missing and required 
   expect(workflow.jobs['workshop-gate'].steps[0].env?.PAGES_NEEDED).toContain(
     'needs.changes.outputs.pages'
   )
+  expect(workflow.jobs['workshop-gate'].steps[0].env?.PAGES_BUILD_NEEDED).toContain(
+    'needs.changes.outputs.pagesBuild'
+  )
   const defaults = {
     SCOPE_RESULT: 'success',
+    EVENT_NAME: 'pull_request',
     WORKSHOP_NEEDED: 'true',
     PAGES_NEEDED: 'false',
+    PAGES_BUILD_NEEDED: 'false',
     COMPONENTS_NEEDED: 'true',
     BUILD_RESULT: 'success',
     STORIES_RESULT: 'success',
@@ -352,6 +377,7 @@ test('the actual aggregate gate rejects failed, cancelled, missing and required 
     passes({
       WORKSHOP_NEEDED: 'false',
       PAGES_NEEDED: 'true',
+      PAGES_BUILD_NEEDED: 'true',
       BUILD_RESULT: 'success',
       STORIES_RESULT: 'skipped',
       COMPONENTS_NEEDED: 'false',
@@ -362,6 +388,30 @@ test('the actual aggregate gate rejects failed, cancelled, missing and required 
     passes({
       WORKSHOP_NEEDED: 'false',
       PAGES_NEEDED: 'true',
+      PAGES_BUILD_NEEDED: 'true',
+      BUILD_RESULT: 'skipped',
+      STORIES_RESULT: 'skipped',
+      COMPONENTS_NEEDED: 'false',
+      COMPONENTS_RESULT: 'skipped',
+    })
+  ).toBe(false)
+  expect(
+    passes({
+      WORKSHOP_NEEDED: 'false',
+      PAGES_NEEDED: 'true',
+      PAGES_BUILD_NEEDED: 'false',
+      BUILD_RESULT: 'skipped',
+      STORIES_RESULT: 'skipped',
+      COMPONENTS_NEEDED: 'false',
+      COMPONENTS_RESULT: 'skipped',
+    })
+  ).toBe(true)
+  expect(
+    passes({
+      EVENT_NAME: 'push',
+      WORKSHOP_NEEDED: 'false',
+      PAGES_NEEDED: 'true',
+      PAGES_BUILD_NEEDED: 'false',
       BUILD_RESULT: 'skipped',
       STORIES_RESULT: 'skipped',
       COMPONENTS_NEEDED: 'false',
@@ -389,13 +439,20 @@ test('Pages publishes the exact successful main build and keeps registry install
     >
   }
   expect(gates.jobs['changes'].outputs?.pages).toContain('steps.scope.outputs.pages')
-  expect(gates.jobs['workshop-build'].if).toContain("needs.changes.outputs.pages != 'false'")
-  expect(gates.jobs['workshop-build'].if).not.toContain("github.event_name == 'push'")
+  expect(gates.jobs['changes'].outputs?.pagesBuild).toContain('steps.scope.outputs.pagesBuild')
+  expect(gates.jobs['workshop-build'].if).toContain("needs.changes.outputs.pagesBuild != 'false'")
+  expect(gates.jobs['workshop-build'].if).toContain(
+    "(github.event_name == 'push' && needs.changes.outputs.pages != 'false')"
+  )
+  expect(gates.jobs['workshop-build'].if).toContain("github.event_name == 'push'")
   expect(gates.jobs['workshop'].if).toContain("needs.changes.outputs.workshop != 'false'")
   expect(gates.jobs['components'].if).toContain("needs.changes.outputs.components != 'false'")
   expect(gates.jobs['registry'].if).toContain("needs.changes.outputs.registry != 'false'")
   expect(gates.jobs['workshop-gate'].steps?.[0].env?.PAGES_NEEDED).toContain(
     'needs.changes.outputs.pages'
+  )
+  expect(gates.jobs['workshop-gate'].steps?.[0].env?.PAGES_BUILD_NEEDED).toContain(
+    'needs.changes.outputs.pagesBuild'
   )
 
   const pages = Bun.YAML.parse(
