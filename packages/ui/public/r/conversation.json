@@ -4,6 +4,7 @@
   "title": "Conversation",
   "description": "",
   "dependencies": [
+    "@kobalte/core@^0.13.14",
     "lucide-solid@^1.48.0"
   ],
   "registryDependencies": [
@@ -17,6 +18,16 @@
     "lib"
   ],
   "files": [
+    {
+      "path": "src/components/conversation/atomic/chat-composer.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/atomic/chat-composer.tsx"
+    },
+    {
+      "path": "src/components/conversation/atomic/index.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/atomic/index.ts"
+    },
     {
       "path": "src/components/conversation/busy-send-button.tsx",
       "type": "registry:ui",
@@ -48,6 +59,11 @@
       "target": "components/conversation/index.ts"
     },
     {
+      "path": "src/components/conversation/internal/chat-composer-shell.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/internal/chat-composer-shell.tsx"
+    },
+    {
       "path": "src/components/conversation/message-composer.tsx",
       "type": "registry:ui",
       "target": "components/conversation/message-composer.tsx"
@@ -56,6 +72,16 @@
       "path": "src/components/conversation/message-row.tsx",
       "type": "registry:ui",
       "target": "components/conversation/message-row.tsx"
+    },
+    {
+      "path": "src/components/conversation/paste-preview.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/paste-preview.ts"
+    },
+    {
+      "path": "src/components/conversation/paste-token-editor.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/paste-token-editor.tsx"
     },
     {
       "path": "src/components/conversation/paste-tokens.ts",

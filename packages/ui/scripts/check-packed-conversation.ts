@@ -8,6 +8,11 @@ import { chromium, webkit, expect } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
+import {
+  assertAtomicIncrementBudget,
+  assertComposedGzipBudget,
+  MAX_ATOMIC_INCREMENT_GZIP_BYTES,
+} from './conversation-packed-budget'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -18,9 +23,18 @@ const MAX_GZIP_BYTES = 26 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
 const MAX_BUSY_GZIP_BYTES = 50 * 1024
-// Composed input baseline: 53,234/53,320 gzip JS bytes, with a 54 KiB cap.
-const MAX_COMPOSED_GZIP_BYTES = 54 * 1024
 const results: unknown[] = []
+const sizeMeasurements = new Map<
+  string,
+  {
+    js: number
+    gzip: number
+    css: number
+    editorBytes: number
+    tooltipBytes: number
+    kobalteModules: { id: string; bytes: number }[]
+  }
+>()
 const fixture = `
 import { render } from 'solid-js/web';
 import { createSignal, For, Show } from 'solid-js';
@@ -93,14 +107,14 @@ function Pilot() {
  const [references,setReferences]=createSignal(false);
  const [delayed,setDelayed]=createSignal(false);
  let finish;
+ const submit=input=>{setLast(input.action);if(delayed()) return new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('')};
  return <main class="p-4">
   <h1>Composed input pilot</h1>
   <ChatComposer value={draft()} onValueChange={setDraft}
    sendableActions={references()?{send:true,queue:true,steer:false}:undefined}
    collapse={{value:collapsed(),onChange:setCollapsed}}
    busy={busy()?{mode:mode(),onModeChange:setMode}:undefined}
-   context={<button type="button">Model context</button>}
-   onSubmit={input=>{setLast(input.action);if(delayed()) return new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('')}}/>
+   context={<button type="button">Model context</button>} onSubmit={submit}/>
   <div class="mt-64 flex gap-2">
    <button type="button" onClick={()=>setFail(false)}>Recover delivery</button>
    <button type="button" onClick={()=>setBusy(true)}>Run busy</button>
@@ -109,6 +123,51 @@ function Pilot() {
    <button type="button" onClick={()=>finish?.()}>Finish delivery</button>
   </div>
   <output aria-label="Submitted action">{last()}</output>
+  <output aria-label="Sent">{sent()}</output>
+ </main>;
+}
+render(Pilot, document.getElementById('app')!);
+`
+const atomicFixture = `
+import { render } from 'solid-js/web';
+import { createSignal } from 'solid-js';
+import { AtomicChatComposer } from '@adea-ai/ui/components/conversation/atomic';
+import './style.css';
+function Pilot() {
+ const [draft,setDraft]=createSignal('');
+ const [blocks,setBlocks]=createSignal([]);
+ const [transactions,setTransactions]=createSignal(0);
+ const [collapsed,setCollapsed]=createSignal(false);
+ const [fail,setFail]=createSignal(true);
+ const [sent,setSent]=createSignal(0);
+ const [busy,setBusy]=createSignal(false);
+ const [mode,setMode]=createSignal('steer');
+ const [last,setLast]=createSignal('none');
+ const [submittedBlocks,setSubmittedBlocks]=createSignal('[]');
+ const [references,setReferences]=createSignal(false);
+ const [delayed,setDelayed]=createSignal(false);
+ let blockId=0;
+ let finish;
+ const submit=async input=>{setLast(input.action);setSubmittedBlocks(JSON.stringify(input.blocks));if(delayed()) await new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('');setBlocks([])};
+ return <main class="p-4">
+  <h1>Atomic composed input pilot</h1>
+  <AtomicChatComposer value={draft()} pasteTokens={{blocks:blocks(),createBlockId:()=>\`packed-\${++blockId}\`,
+   onChange:next=>{setDraft(next.text);setBlocks(next.blocks);setTransactions(transactions()+1)}}}
+   sendableActions={references()?{send:true,queue:true,steer:false}:undefined}
+   collapse={{value:collapsed(),onChange:setCollapsed}}
+   busy={busy()?{mode:mode(),onModeChange:setMode}:undefined}
+   context={<button type="button">Model context</button>} onSubmit={submit}/>
+  <div class="mt-64 flex gap-2">
+   <button type="button" onClick={()=>setFail(false)}>Recover delivery</button>
+   <button type="button" onClick={()=>setBusy(true)}>Run busy</button>
+   <button type="button" onClick={()=>setReferences(true)}>Stage references</button>
+   <button type="button" onClick={()=>{setBusy(false);setDelayed(true)}}>Delay delivery</button>
+   <button type="button" onClick={()=>finish?.()}>Finish delivery</button>
+  </div>
+  <output aria-label="Submitted action">{last()}</output>
+  <output aria-label="Submitted blocks">{submittedBlocks()}</output>
+  <output aria-label="Token transactions">{transactions()}</output>
+  <output aria-label="Token blocks">{blocks().length}</output>
   <output aria-label="Sent">{sent()}</output>
  </main>;
 }
@@ -141,6 +200,42 @@ try {
     stdio: 'pipe',
     timeout: 120_000,
   })
+  const packedUi = join(consumer, 'node_modules/@adea-ai/ui')
+  const publicComposerDeclarations = readFileSync(
+    join(packedUi, 'dist/components/conversation/index.d.ts'),
+    'utf8'
+  )
+  const atomicComposerDeclarations = readFileSync(
+    join(packedUi, 'dist/components/conversation/atomic/index.d.ts'),
+    'utf8'
+  )
+  if (
+    /ChatComposerShell|ChatComposerInputRenderProps/.test(
+      publicComposerDeclarations + atomicComposerDeclarations
+    )
+  )
+    throw new Error('Packed public composer declarations exposed the private input-render seam')
+  if (Object.keys(manifest.exports).some((key) => /(?:^|\/)internal(?:\/|$)/.test(key)))
+    throw new Error('Packed UI export map exposes an internal module path')
+  const privateImportProbe = `
+    for (const specifier of [
+      '@adea-ai/ui/internal/chat-composer-shell',
+      '@adea-ai/ui/components/conversation/internal/chat-composer-shell',
+    ]) {
+      try {
+        await import(specifier);
+        throw new Error('Private composer shell unexpectedly resolved: ' + specifier);
+      } catch (error) {
+        if (error.message?.startsWith('Private composer shell unexpectedly resolved:')) throw error;
+        if (!['ERR_PACKAGE_PATH_NOT_EXPORTED', 'ERR_MODULE_NOT_FOUND'].includes(error.code)) throw error;
+      }
+    }
+  `
+  execFileSync('node', ['--input-type=module', '-e', privateImportProbe], {
+    cwd: consumer,
+    stdio: 'pipe',
+    timeout: 30_000,
+  })
   for (const peer of ['chart.js', 'solid-chartjs', 'embla-carousel', 'embla-carousel-solid']) {
     if (existsSync(join(consumer, 'node_modules', peer)))
       throw new Error(`Optional engine installed in core composition: ${peer}`)
@@ -151,6 +246,8 @@ try {
     'Plain transcript follow translated from KiroCrew',
     'Busy composer action translated from KiroCrew',
     'Composed input and reading collapse translated from KiroCrew',
+    'Paste-token model translated from KiroCrew (issue #532)',
+    'Controlled paste-token editor translated from KiroCrew (issue #532)',
   ]) {
     if (!notice.includes(heading)) throw new Error(`Packed NOTICE lost ${heading}`)
   }
@@ -160,63 +257,105 @@ try {
     )
   )
     throw new Error('Packed LICENSE missing')
-  // Required production SSR lane compiles installed Solid source, then runs
-  // native Node. Browser-compiled output is deliberately not server input.
-  const serverEntry = join(consumer, 'composed-server.tsx')
-  writeFileSync(
-    serverEntry,
-    readFileSync(join(root, 'tests/fixtures/chat-composer-ssr.tsx'), 'utf8').replace(
-      '../../src/components/conversation/chat-composer',
-      '@adea-ai/ui/components/conversation'
-    )
-  )
-  const serverBuild = await build({
-    root: consumer,
-    configFile: false,
-    logLevel: 'warn',
-    plugins: [solid({ ssr: true })],
-    resolve: { conditions: ['solid', 'node', 'import'] },
-    ssr: { noExternal: true },
-    build: { write: false, minify: false, ssr: serverEntry },
-  })
-  const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
-    .flatMap((output) => ('output' in output ? output.output : []))
-    .filter((asset) => asset.type === 'chunk')
-  if (serverChunks.length !== 1) throw new Error('Expected one packed SSR chunk')
-  const serverChunk = serverChunks[0]
-  if (!serverChunk) throw new Error('Missing packed SSR chunk')
-  const serverModules = Object.keys(serverChunk.modules)
-  const serverUi = serverModules.filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
-  if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
-    throw new Error('Packed SSR did not select unmixed Solid source')
-  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
-  writeFileSync(
-    join(consumer, 'render.mjs'),
-    "import { renderComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderComposer(false),renderComposer(true)]));"
-  )
-  const [expanded, collapsed] = JSON.parse(
-    execFileSync('node', [join(consumer, 'render.mjs')], {
-      cwd: consumer,
-      encoding: 'utf8',
-      timeout: 30_000,
+  // Each public entry gets an independent source-condition SSR graph. The plain
+  // shell must not retain the optional atomic editor.
+  const serverCases = [
+    {
+      pilot: 'composed',
+      fixture: 'chat-composer-ssr.tsx',
+      localImport: '../../src/components/conversation/chat-composer',
+      publicImport: '@adea-ai/ui/components/conversation',
+      renderSource:
+        "import { renderComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderComposer(false),renderComposer(true)]));",
+    },
+    {
+      pilot: 'atomic',
+      fixture: 'atomic-chat-composer-ssr.tsx',
+      localImport: '../../src/components/conversation/atomic',
+      publicImport: '@adea-ai/ui/components/conversation/atomic',
+      renderSource:
+        "import { renderTokenComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderTokenComposer()]));",
+    },
+  ] as const
+  for (const serverCase of serverCases) {
+    const serverEntry = join(consumer, `${serverCase.pilot}-server.tsx`)
+    const fixtureSource = readFileSync(join(root, 'tests/fixtures', serverCase.fixture), 'utf8')
+    const packedFixture = fixtureSource.replace(serverCase.localImport, serverCase.publicImport)
+    if (packedFixture === fixtureSource)
+      throw new Error(`Failed to map ${serverCase.pilot} SSR entry`)
+    writeFileSync(serverEntry, packedFixture)
+    const serverBuild = await build({
+      root: consumer,
+      configFile: false,
+      logLevel: 'warn',
+      plugins: [solid({ ssr: true })],
+      resolve: { conditions: ['solid', 'node', 'import'] },
+      ssr: { noExternal: true },
+      build: { write: false, minify: false, ssr: serverEntry },
     })
-  ) as string[]
-  if (
-    !expanded?.includes('data-slot="composer-input"') ||
-    !expanded.includes('data-slot="composer-context"') ||
-    collapsed?.includes('data-slot="composer-input"') ||
-    collapsed?.includes('data-slot="composer-context"') ||
-    !collapsed?.includes('Show the message input') ||
-    !collapsed.includes('A server-side draft')
-  )
-    throw new Error('Packed native Node SSR lost expanded/collapsed composition')
-  results.push({
-    pilot: 'composed',
-    condition: 'solid-ssr-native-node',
-    checks: ['expanded-input-context', 'collapsed-draft-preview'],
-    retainedModules: serverModules,
-  })
-  for (const pilot of ['conversation', 'busy', 'composed'] as const) {
+    const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
+      .flatMap((output) => ('output' in output ? output.output : []))
+      .filter((asset) => asset.type === 'chunk')
+    if (serverChunks.length !== 1) throw new Error(`Expected one ${serverCase.pilot} SSR chunk`)
+    const serverChunk = serverChunks[0]
+    if (!serverChunk) throw new Error(`Missing ${serverCase.pilot} SSR chunk`)
+    const serverModules = Object.keys(serverChunk.modules)
+    const serverUi = serverModules.filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+    if (
+      !serverUi.some((id) => id.includes('/src/')) ||
+      serverUi.some((id) => id.includes('/dist/'))
+    )
+      throw new Error(`${serverCase.pilot} packed SSR did not select unmixed Solid source`)
+    const hasAtomicEditor = serverUi.some((id) =>
+      /\/conversation\/atomic\/chat-composer\./.test(id)
+    )
+    const hasPasteEditor = serverUi.some((id) => /\/conversation\/paste-token-editor\./.test(id))
+    if (serverCase.pilot === 'composed' && (hasAtomicEditor || hasPasteEditor))
+      throw new Error('Plain packed SSR retained the optional atomic editor')
+    if (serverCase.pilot === 'atomic' && (!hasAtomicEditor || !hasPasteEditor))
+      throw new Error('Atomic packed SSR lost its editor modules')
+    writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+    writeFileSync(join(consumer, `${serverCase.pilot}-render.mjs`), serverCase.renderSource)
+    const rendered = JSON.parse(
+      execFileSync('node', [join(consumer, `${serverCase.pilot}-render.mjs`)], {
+        cwd: consumer,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+    ) as string[]
+    if (serverCase.pilot === 'composed') {
+      const [expanded, collapsed] = rendered
+      if (
+        !expanded?.includes('data-slot="composer-input"') ||
+        !expanded.includes('data-slot="composer-context"') ||
+        expanded.includes('data-slot="paste-token-mirror"') ||
+        collapsed?.includes('data-slot="composer-input"') ||
+        collapsed?.includes('data-slot="composer-context"') ||
+        !collapsed?.includes('Show the message input') ||
+        !collapsed.includes('A server-side draft')
+      )
+        throw new Error('Packed native Node SSR lost plain composer composition')
+    } else {
+      const [tokenized] = rendered
+      if (
+        !tokenized?.includes('Paste-token server draft') ||
+        !tokenized.includes('data-slot="paste-token-mirror"') ||
+        !tokenized.includes('aria-hidden="true"') ||
+        !tokenized.includes('[ Paste #1 · 3 lines ]')
+      )
+        throw new Error('Packed native Node SSR lost atomic token-editor composition')
+    }
+    results.push({
+      pilot: serverCase.pilot,
+      condition: 'solid-ssr-native-node',
+      checks:
+        serverCase.pilot === 'composed'
+          ? ['expanded-input-context', 'collapsed-draft-preview', 'plain-excludes-atomic-editor']
+          : ['token-editor-mirror', 'atomic-public-subpath'],
+      retainedModules: serverModules,
+    })
+  }
+  for (const pilot of ['conversation', 'busy', 'composed', 'atomic'] as const) {
     for (const condition of ['compiled', 'solid'] as const) {
       const dir = join(consumer, pilot + '-' + condition)
       mkdirSync(dir)
@@ -226,7 +365,13 @@ try {
       )
       writeFileSync(
         join(dir, 'main.tsx'),
-        pilot === 'conversation' ? fixture : pilot === 'busy' ? busyFixture : composedFixture
+        pilot === 'conversation'
+          ? fixture
+          : pilot === 'busy'
+            ? busyFixture
+            : pilot === 'composed'
+              ? composedFixture
+              : atomicFixture
       )
       writeFileSync(
         join(dir, 'style.css'),
@@ -240,12 +385,13 @@ try {
                 'components/ui/kbd/kbd.tsx',
               ]
             : [
-                ...(pilot === 'composed'
+                ...(pilot === 'composed' || pilot === 'atomic'
                   ? [
                       'components/conversation/chat-composer.tsx',
                       'components/ui/spinner/spinner.tsx',
                     ]
                   : []),
+                ...(pilot === 'atomic' ? ['components/conversation/paste-token-editor.tsx'] : []),
                 'components/conversation/busy-send-button.tsx',
                 'components/ui/button-group/button-group.tsx',
                 'components/ui/separator/separator.tsx',
@@ -294,6 +440,11 @@ try {
           .filter(([, value]) => value.renderedLength > 0)
           .map(([id]) => id)
       )
+      const renderedModules = js.flatMap((chunk) =>
+        Object.entries(chunk.modules)
+          .filter(([, value]) => value.renderedLength > 0)
+          .map(([id, value]) => ({ id, bytes: value.renderedLength }))
+      )
       const uiModules = modules.filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
       const expected = condition === 'compiled' ? '/dist/' : '/src/'
       if (!uiModules.some((id) => id.includes(expected)))
@@ -308,15 +459,60 @@ try {
       if (forbidden.length) throw new Error(`Unrelated retained modules: ${forbidden.join(', ')}`)
       const unrelatedConversation = uiModules.filter((id) =>
         pilot === 'busy'
-          ? /\/conversation\/(?:message-composer|chat-composer|conversation-surface|ime-guard|scroll-follow)/.test(
+          ? /\/conversation\/(?:message-composer|chat-composer|atomic|conversation-surface|ime-guard|scroll-follow)/.test(
               id
             )
           : pilot === 'conversation'
-            ? /\/conversation\/(?:busy-send-button|chat-composer)/.test(id)
+            ? /\/conversation\/(?:busy-send-button|chat-composer|atomic|paste-token-editor)/.test(
+                id
+              )
             : /\/conversation\/(?:message-composer|conversation-surface|scroll-follow)/.test(id)
       )
       if (unrelatedConversation.length)
         throw new Error(`Unrelated conversation units: ${unrelatedConversation.join(', ')}`)
+      if (
+        pilot === 'composed' &&
+        uiModules.some((id) =>
+          /\/conversation\/(?:atomic\/chat-composer|paste-token-editor|paste-tokens)(?:\/|\.)/.test(
+            id
+          )
+        )
+      )
+        throw new Error('Plain composed entry retained the optional atomic editor/model')
+      const kobalteModules = renderedModules.filter(({ id }) => /@kobalte(?:\+|\/)core/.test(id))
+      if (pilot === 'atomic') {
+        const atomicEntries = uiModules.filter((id) =>
+          /\/conversation\/atomic\/chat-composer\./.test(id)
+        )
+        const editorEntries = uiModules.filter((id) =>
+          /\/conversation\/paste-token-editor\./.test(id)
+        )
+        const sharedShells = uiModules.filter((id) =>
+          /\/conversation\/internal\/chat-composer-shell\.(?:js|tsx?)$/.test(id)
+        )
+        const hasTooltipSource = readFileSync(
+          join(root, 'src/components/conversation/paste-token-editor.tsx'),
+          'utf8'
+        ).includes("from '@kobalte/core/tooltip'")
+        if (
+          atomicEntries.length !== 1 ||
+          editorEntries.length !== 1 ||
+          !hasTooltipSource ||
+          !kobalteModules.length ||
+          sharedShells.length !== 1
+        )
+          throw new Error(
+            `Atomic entry lost its editor, one shared shell, or Kobalte Tooltip closure: ${JSON.stringify(
+              {
+                atomicEntries,
+                editorEntries,
+                hasTooltipSource,
+                retainedKobalteModules: kobalteModules.length,
+                sharedShells,
+              }
+            )}`
+          )
+      }
       const solidRoots = new Set(
         modules
           .filter((id) => id.includes('/node_modules/solid-js/'))
@@ -329,28 +525,65 @@ try {
       if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
         throw new Error('Unexpected font asset')
       const code = js.map((chunk) => chunk.code).join('\n')
+      const gzipBytes = gzipSync(code).length
       const css = chunks
         .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
         .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
         .join('\n')
+      const editorBytes = renderedModules
+        .filter(({ id }) =>
+          /\/conversation\/atomic\/chat-composer\.|\/conversation\/paste-token-editor\.|\/conversation\/paste-tokens\./.test(
+            id
+          )
+        )
+        .reduce((total, module) => total + module.bytes, 0)
+      const plainKobalteModules =
+        sizeMeasurements.get(`${condition}:composed`)?.kobalteModules ?? []
+      const tooltipModules =
+        pilot === 'atomic'
+          ? kobalteModules.filter(
+              ({ id }) => !plainKobalteModules.some((module) => module.id === id)
+            )
+          : []
+      const tooltipBytes = tooltipModules.reduce((total, module) => total + module.bytes, 0)
+      sizeMeasurements.set(`${condition}:${pilot}`, {
+        js: Buffer.byteLength(code),
+        gzip: gzipBytes,
+        css: Buffer.byteLength(css),
+        editorBytes,
+        tooltipBytes,
+        kobalteModules,
+      })
       console.log(
         JSON.stringify({
           pilot,
           condition,
           js: Buffer.byteLength(code),
-          gzip: gzipSync(code).length,
+          gzip: gzipBytes,
           css: Buffer.byteLength(css),
+          ...(pilot === 'atomic'
+            ? {
+                editorBytes,
+                kobalteTooltipIncrementalBytes: tooltipBytes,
+                incrementalGzipBudget: MAX_ATOMIC_INCREMENT_GZIP_BYTES,
+              }
+            : {}),
         })
       )
-      if (
-        gzipSync(code).length >
-        (pilot === 'conversation'
+      const acceptedGzipBudget =
+        pilot === 'conversation'
           ? MAX_GZIP_BYTES
           : pilot === 'busy'
             ? MAX_BUSY_GZIP_BYTES
-            : MAX_COMPOSED_GZIP_BYTES)
-      )
+            : undefined
+      if (acceptedGzipBudget !== undefined && gzipBytes > acceptedGzipBudget)
         throw new Error(`Packed ${pilot} exceeds its gzip JS budget`)
+      if (pilot === 'composed') assertComposedGzipBudget(gzipBytes)
+      if (pilot === 'atomic') {
+        const plain = sizeMeasurements.get(`${condition}:composed`)
+        if (!plain) throw new Error(`Missing ${condition} composed baseline for atomic size check`)
+        assertAtomicIncrementBudget(plain.gzip, gzipBytes)
+      }
       if (Buffer.byteLength(css) > MAX_CSS_BYTES)
         throw new Error(`Packed ${pilot} exceeds its raw CSS budget`)
       for (const [engine, browserType] of [
@@ -365,6 +598,229 @@ try {
           await page.setContent('<div id="app"></div>')
           await page.addStyleTag({ content: css })
           await page.addScriptTag({ type: 'module', content: code })
+          if (pilot === 'atomic') {
+            const field = page.getByRole('textbox', { name: 'Message', exact: true })
+            await field.fill('Atomic draft before collapse')
+            await expect(page.getByLabel('Token transactions')).toHaveText('1')
+            await page.getByRole('button', { name: 'Message input options' }).press('ArrowDown')
+            await page.getByRole('menuitem', { name: /Collapse the message input/ }).click()
+            const bar = page.getByRole('button', { name: 'Show the message input', exact: true })
+            await expect(bar).toBeFocused()
+            await expect(field).toHaveCount(0)
+            await bar.click()
+            await expect(field).toBeFocused()
+            await expect(field).toHaveValue('Atomic draft before collapse')
+            await field.fill('')
+            const tracePointerAndSelection = async () =>
+              page.evaluate(() => {
+                const events: unknown[] = []
+                const record = (event: Event) => {
+                  const mouse = event instanceof MouseEvent ? event : null
+                  const target = event.target
+                  const fieldElement = document.querySelector<HTMLTextAreaElement>(
+                    '[data-slot="composer-input"]'
+                  )
+                  const hit =
+                    mouse && Number.isFinite(mouse.clientX) && Number.isFinite(mouse.clientY)
+                      ? document.elementFromPoint(mouse.clientX, mouse.clientY)
+                      : null
+                  events.push({
+                    type: event.type,
+                    target:
+                      target instanceof Element
+                        ? `${target.tagName}[${target.getAttribute('data-slot') ?? ''}]`
+                        : null,
+                    hit:
+                      hit instanceof Element
+                        ? `${hit.tagName}[${hit.getAttribute('data-slot') ?? ''}]`
+                        : null,
+                    x: mouse?.clientX ?? null,
+                    y: mouse?.clientY ?? null,
+                    buttons: mouse?.buttons ?? null,
+                    selectionStart: fieldElement?.selectionStart ?? null,
+                    selectionEnd: fieldElement?.selectionEnd ?? null,
+                    valueLength: fieldElement?.value.length ?? null,
+                    fieldScrollTop: fieldElement?.scrollTop ?? null,
+                    mirrorScrollTop:
+                      document.querySelector<HTMLElement>('[data-slot="paste-token-mirror"]')
+                        ?.scrollTop ?? null,
+                    activeSlot: document.activeElement?.getAttribute('data-slot') ?? null,
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    coarsePointer: matchMedia('(pointer: coarse)').matches,
+                    noHover: matchMedia('(hover: none)').matches,
+                    timeStamp: event.timeStamp,
+                    time: performance.now(),
+                  })
+                  document.documentElement.dataset.pasteHoverTrace = JSON.stringify(events)
+                }
+                for (const type of [
+                  'pointermove',
+                  'pointerout',
+                  'pointerleave',
+                  'mousemove',
+                  'mouseleave',
+                  'select',
+                  'scroll',
+                ])
+                  document.addEventListener(type, record, true)
+              })
+            const paste = async () =>
+              field.evaluate((element) => {
+                const clipboardData = new DataTransfer()
+                clipboardData.setData('text/plain', 'red\ngreen\nblue')
+                const event = new ClipboardEvent('paste', {
+                  bubbles: true,
+                  cancelable: true,
+                  clipboardData,
+                })
+                element.dispatchEvent(event)
+                return event.defaultPrevented
+              })
+            await tracePointerAndSelection()
+            if (!(await paste())) throw new Error('Packed atomic paste was not collapsed')
+            await expect(field).toHaveValue('[ Paste #1 · 3 lines ]')
+            await expect(page.getByLabel('Token transactions')).toHaveText('3')
+            await expect(page.getByLabel('Token blocks')).toHaveText('1')
+            const token = page.locator('[data-paste-seq="1"]')
+            const tokenBox = (await token.boundingBox())!
+            const pointer = {
+              x: tokenBox.x + tokenBox.width / 2,
+              y: tokenBox.y + tokenBox.height / 2,
+            }
+            const inspectPointer = () =>
+              page.evaluate(({ x, y }) => {
+                const tokenElement = document.querySelector<HTMLElement>('[data-paste-seq="1"]')
+                const fieldElement = document.querySelector<HTMLTextAreaElement>(
+                  '[data-slot="composer-input"]'
+                )
+                const hit = document.elementFromPoint(x, y)
+                const tokenBounds = tokenElement?.getBoundingClientRect()
+                const fieldBounds = fieldElement?.getBoundingClientRect()
+                return {
+                  point: { x, y },
+                  token: tokenBounds
+                    ? {
+                        x: tokenBounds.x,
+                        y: tokenBounds.y,
+                        width: tokenBounds.width,
+                        height: tokenBounds.height,
+                        right: tokenBounds.right,
+                        bottom: tokenBounds.bottom,
+                      }
+                    : null,
+                  textarea: fieldBounds
+                    ? {
+                        x: fieldBounds.x,
+                        y: fieldBounds.y,
+                        width: fieldBounds.width,
+                        height: fieldBounds.height,
+                        right: fieldBounds.right,
+                        bottom: fieldBounds.bottom,
+                      }
+                    : null,
+                  tokenPointerEvents: tokenElement
+                    ? getComputedStyle(tokenElement).pointerEvents
+                    : null,
+                  hit: hit
+                    ? {
+                        tagName: hit.tagName,
+                        slot: hit.getAttribute('data-slot'),
+                        className: typeof hit.className === 'string' ? hit.className : null,
+                      }
+                    : null,
+                  hitIsTextarea: hit === fieldElement,
+                  activeSlot: document.activeElement?.getAttribute('data-slot') ?? null,
+                  selectionStart: fieldElement?.selectionStart ?? null,
+                  selectionEnd: fieldElement?.selectionEnd ?? null,
+                  valueLength: fieldElement?.value.length ?? null,
+                  fieldScrollTop: fieldElement?.scrollTop ?? null,
+                  mirrorScrollTop:
+                    document.querySelector<HTMLElement>('[data-slot="paste-token-mirror"]')
+                      ?.scrollTop ?? null,
+                  maxTouchPoints: navigator.maxTouchPoints,
+                  coarsePointer: matchMedia('(pointer: coarse)').matches,
+                  noHover: matchMedia('(hover: none)').matches,
+                  preview: document.querySelector('[data-slot="paste-token-preview"]') !== null,
+                  describedBy: fieldElement?.getAttribute('aria-describedby') ?? null,
+                }
+              }, pointer)
+            const pointerBeforeMove = await inspectPointer()
+            await page.mouse.move(pointer.x, pointer.y)
+            try {
+              await expect(page.getByRole('tooltip')).toContainText('red\ngreen\nblue')
+            } catch (error) {
+              console.error(
+                'Packed paste-token hover geometry before mouse move:',
+                pointerBeforeMove
+              )
+              console.error(
+                'Packed paste-token hover geometry after tooltip failure:',
+                await inspectPointer()
+              )
+              console.error(
+                'Packed paste-token hover event trace after tooltip failure:',
+                await page.locator('html').getAttribute('data-paste-hover-trace')
+              )
+              throw error
+            }
+            await expect(field).toHaveAttribute('aria-describedby', /.+/)
+            await page.keyboard.press('Escape')
+            await field.fill('Ordinary text prunes the token')
+            await expect(page.getByLabel('Token transactions')).toHaveText('4')
+            await expect(page.getByLabel('Token blocks')).toHaveText('0')
+            if (!(await paste())) throw new Error('Packed paste after pruning was not collapsed')
+            await expect(page.getByLabel('Token transactions')).toHaveText('5')
+            await expect(page.getByLabel('Token blocks')).toHaveText('1')
+            await field.press('Enter')
+            await expect(page.getByRole('alert')).toContainText('Message not sent')
+            const snapshot = JSON.stringify([
+              { id: 'packed-2', seq: 1, lines: 3, content: 'red\ngreen\nblue' },
+            ])
+            await expect(page.getByLabel('Submitted blocks')).toHaveText(snapshot)
+            await expect(page.getByLabel('Sent')).toHaveText('0')
+            await expect(page.getByLabel('Token blocks')).toHaveText('1')
+            await page.getByRole('button', { name: 'Recover delivery' }).click()
+            await field.press('Enter')
+            await expect(page.getByLabel('Sent')).toHaveText('1')
+            await expect(page.getByLabel('Submitted blocks')).toHaveText(snapshot)
+            await expect(page.getByLabel('Token blocks')).toHaveText('0')
+            await page.getByRole('button', { name: 'Delay delivery' }).click()
+            await field.fill('Pending delivery')
+            await field.press('Enter')
+            await expect(page.getByRole('button', { name: 'Sending message' })).toBeDisabled()
+            await expect(field).toHaveAttribute('readonly', '')
+            const spinner = page.locator('[data-slot="spinner"]')
+            await expect(spinner).toBeVisible()
+            if (
+              (await spinner.evaluate((element) => getComputedStyle(element).animationName)) !==
+              'spin'
+            )
+              throw new Error('Packed atomic pending spinner CSS missing')
+            await page.getByRole('button', { name: 'Finish delivery' }).click()
+            await expect(field).not.toHaveAttribute('readonly', '')
+            await expect(page.getByLabel('Sent')).toHaveText('2')
+            if (errors.length) throw new Error(`Browser errors: ${errors.join(', ')}`)
+            results.push({
+              pilot,
+              condition,
+              engine,
+              checks: [
+                'shared-collapse-and-caret-focus',
+                'atomic-paste-transaction',
+                'plain-input-prunes-blocks',
+                'accessible-hover-preview',
+                'failed-submit-retains-paired-draft',
+                'submit-snapshot-before-host-clear',
+                'pending-readonly-and-spinner',
+              ],
+              js: Buffer.byteLength(code),
+              gzip: gzipBytes,
+              css: Buffer.byteLength(css),
+              chunks: js.length,
+              retainedModules: modules,
+            })
+            continue
+          }
           if (pilot === 'composed') {
             const field = page.getByRole('textbox', { name: 'Message', exact: true })
             await field.fill('A packed unsent draft')
@@ -637,6 +1093,27 @@ try {
         }
       }
     }
+  }
+  for (const condition of ['compiled', 'solid'] as const) {
+    const plain = sizeMeasurements.get(`${condition}:composed`)
+    const atomic = sizeMeasurements.get(`${condition}:atomic`)
+    if (!plain || !atomic) throw new Error(`Missing ${condition} atomic/ plain measurements`)
+    const wholeGzipDelta = assertAtomicIncrementBudget(plain.gzip, atomic.gzip)
+    results.push({
+      pilot: 'atomic-increment',
+      condition,
+      plainWholeGzip: plain.gzip,
+      atomicWholeGzip: atomic.gzip,
+      wholeGzipDelta,
+      incrementalGzipBudget: MAX_ATOMIC_INCREMENT_GZIP_BYTES,
+      editorAndModelRenderedBytes: atomic.editorBytes,
+      kobalteTooltipIncrementalBytes: atomic.tooltipBytes,
+      kobalteTooltipIncrementalModuleCount: atomic.kobalteModules.filter(
+        ({ id }) => !plain.kobalteModules.some((module) => module.id === id)
+      ).length,
+      cssDelta: atomic.css - plain.css,
+      note: '6 KiB feature-specific increment cap; common plain modules are excluded by paired-fixture delta.',
+    })
   }
   console.log(JSON.stringify({ archive: archive.filename, results }, null, 2))
 } finally {

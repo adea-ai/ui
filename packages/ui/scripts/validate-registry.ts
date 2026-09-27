@@ -99,6 +99,20 @@ const itemNames = new Set(registryItems.map((item) => item.name))
 
 export function validateRegistry(): string[] {
   const findings: string[] = []
+  const targetOwners = new Map<string, string>()
+
+  for (const item of registryItems) {
+    for (const file of item.files) {
+      const owner = targetOwners.get(file.target)
+      if (owner) {
+        findings.push(
+          `${item.name}: target "${file.target}" is also assigned to ${owner}; install targets must be unique.`
+        )
+      } else {
+        targetOwners.set(file.target, `${item.name}/${file.path}`)
+      }
+    }
+  }
 
   for (const item of registryItems) {
     // --- files exist on disk -------------------------------------------------

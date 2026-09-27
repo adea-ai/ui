@@ -158,6 +158,61 @@ busy-action behavior compose the separately attributed units above. Caret
 selection is retained for reading collapse and local delivery feedback is fenced
 to an injected host reset key. Full Chat composition and product adoption remain
 separate gates.
+
+## Paste-token model translated from KiroCrew (issue #532)
+
+`packages/ui/src/components/conversation/paste-tokens.ts` translates the pure
+block and text transformations from `website/src/utils/pasteTokens.ts`, plus
+the trailing-blank-line policy from `website/src/components/composerPastePolicy.ts`,
+at KiroCrew revision `283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: the three-line/200-character collapse thresholds; canonical marker
+formatting and ranges; monotonic sequence allocation and collision remapping;
+token pruning, expansion and content-based re-collapse, including the
+trailing-whitespace fallback; and the linear trailing-blank-line scan. Bun unit
+cases adapt the pure expectations from `website/src/test/pasteTokens.test.ts` and
+the trailing-text policy from `website/src/test/ChatInput.paste.test.tsx`.
+
+The host supplies stable block IDs. Invalid IDs/sequences, duplicate identities,
+ambiguous sequence mappings and noncanonical or line-mismatched markers are
+refused. React, Lexical, browser clipboard/File handling, localStorage side-table
+recovery, backend message reconciliation, uploads, textarea editing, previews,
+chips, undo/history and submit/persistence authority are not included. This
+selected model is not rich editing, complete Chat, or application adoption.
+
+## Controlled paste-token editor translated from KiroCrew (issue #532)
+
+`packages/ui/src/components/conversation/paste-token-editor.tsx` and the
+`AtomicChatComposer` entry substantially translate selected text-editing
+behavior from `website/src/components/ChatInput.tsx`,
+`website/src/components/PasteHighlightLayer.tsx`,
+`website/src/components/PasteHoverLayer.tsx`, and
+`website/src/components/PastePreviewTooltip.tsx`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: plain-text thresholded paste, trailing-blank cleanup, raw-paste
+bypass, standalone and quote-prefix placement, atomic token deletion and
+navigation, selection snapping, expansion, pruning and expanded copy/cut. The
+Solid mirror and Kobalte tooltip retain the aria-hidden highlight, dwell and
+caret previews, touch suppression, dismissal and `aria-describedby` association.
+`AtomicChatComposer` emits a single controlled `{ text, blocks }` transaction
+and submits a captured text/action/block snapshot; hosts supply IDs, state and
+delivery. Browser cases translate applicable text-input expectations from
+`website/src/test/ChatInputCoverage.test.tsx`,
+`website/src/test/ChatInput.paste.test.tsx`, and
+`website/src/test/PasteHoverLayer.test.tsx`. Upload, image/file clipboard,
+optimizer, React/Lexical/Framer runtime, persistence, undo/history, and
+application transport or restoration behavior are not copied. This is the
+selected editor unit, not a claim of full Chat or product adoption.
+
 ## Appearance editor translated from Zeron
 
 The System/Light/Dark miniature composition, palette bands, theme selectors,
@@ -267,30 +322,6 @@ pane-title gesture, replacing plaintext leaf IDs and string casts with typed
 intent, an instance-local active drag payload, and cancellation/removal checks.
 Header action composition injects application keyboard controls without owning
 shortcuts or domain transitions. No new upstream source or license is introduced.
-## Paste-token model translated from KiroCrew (issue #532)
-
-`packages/ui/src/components/conversation/paste-tokens.ts` translates the pure
-block and text transformations from `website/src/utils/pasteTokens.ts`, plus
-the trailing-blank-line policy from `website/src/components/composerPastePolicy.ts`,
-at KiroCrew revision `283e136c0f902e965a535a7c9548c57c7504fed0`.
-
-    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    This product includes software developed at Amazon.com, Inc.
-    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
-
-Retained: the three-line/200-character collapse thresholds; canonical marker
-formatting and ranges; monotonic sequence allocation and collision remapping;
-token pruning, expansion and content-based re-collapse, including the
-trailing-whitespace fallback; and the linear trailing-blank-line scan. Bun unit
-cases adapt the pure expectations from `website/src/test/pasteTokens.test.ts` and
-the trailing-text policy from `website/src/test/ChatInput.paste.test.tsx`.
-
-The host supplies stable block IDs. Invalid IDs/sequences, duplicate identities,
-ambiguous sequence mappings and noncanonical or line-mismatched markers are
-refused. React, Lexical, browser clipboard/File handling, localStorage side-table
-recovery, backend message reconciliation, uploads, textarea editing, previews,
-chips, undo/history and submit/persistence authority are not included. This
-selected model is not rich editing, complete Chat, or application adoption.
 
 ## Shared transcript composition translated from KiroCrew
 

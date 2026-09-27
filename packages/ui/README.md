@@ -279,19 +279,29 @@ host contributions in `context`.
 
 This is an unshipped release proposal for UI issue #21, dependent on the
 packing/IME/follow/busy PRs #16/#18/#19/#20. It is not full donor Chat,
-canonical runtime restoration or application adoption. The donor's paste-token
-editor, sent-prompt undo/history, manual resize, upload/skill/voice/optimizer and
-stop/resume operations are not claimed by these ports. They require their own
-mapped reusable behavior or application composition as the owning issues specify.
+canonical runtime restoration or application adoption. The separately scoped,
+opt-in paste-token editor for issue #532 is documented below. Sent-prompt
+undo/history, manual resize, upload/skill/voice/optimizer and stop/resume
+operations are not claimed by these ports. They require their own mapped reusable
+behavior or application composition as the owning issues specify.
 
 The composed-input packed fixture checks collapse/draft retention, shelf unmount,
 focus restoration, failed-delivery recovery, controlled busy mode, its alternate
 gesture, native IME defaults and external Tailwind styles under both exports and
 both engines, including reference-only queue eligibility/steer refusal and the
-pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,344/53,435 bytes with a 54 KiB cap
-and 42,366 raw CSS bytes under the shared 42 KiB cap. The three browser fixtures total 100
-check groups, with the native Node SSR expanded/collapsed checks reported separately, retain one Solid runtime/JS chunk each, and exclude unrelated units.
-All four selected Kiro NOTICE sections and the license must survive the tarball.
+pending-delivery state with its explicitly scanned spinner CSS. On the current
+actual-tarball run, its gzip JS is 53,554 bytes compiled and 53,650 bytes Solid,
+below the unchanged 55,296-byte cap; CSS is 41,624 bytes under the shared 43,008-byte
+cap. The separate atomic fixture measures 58,922/59,043 gzip JS and 42,289 CSS.
+Its measured incremental cost over the same-condition composed fixture is
+5,368/5,393 gzip JS, with 751 bytes of headroom under the accepted 6 KiB feature
+increment ceiling, and 665 additional CSS bytes. The gate applies the 6 KiB
+limit to that paired-fixture delta; modules retained in both bundles are excluded
+from the increment. The unchanged 54 KiB composed ceiling and shared 43,008-byte
+CSS ceiling still apply, and no production bundle cap has changed. The gate checks
+both export conditions and engines, reports native Node SSR separately, and keeps
+plain/atomic module ownership separate. Selected Kiro NOTICE attributions and the
+license must survive the tarball.
 Native CSS content sizing replaces live-field measurement on the two verified
 engines, both of which support it; legacy-engine fallback is not claimed.
 
@@ -299,17 +309,21 @@ The release gate `bun run check:packed-conversation` installs the actual tarball
 with optional engines absent, checks compiled and Solid browser conditions in
 Chromium and WebKit, and compiles installed Solid source for native Node SSR.
 The expanded server output includes the input and context; collapsed output
-keeps the draft preview while omitting both. Browser cases check opaque menu
-surfaces, control sizing, streaming follow, IME ownership, draft recovery,
-collapse/focus, busy actions and pending spinner styling.
+keeps the draft preview while omitting both, and token-mode SSR retains its
+highlight mirror and token text. Browser cases check opaque menu surfaces,
+control sizing, streaming follow, IME ownership, draft recovery, collapse/focus,
+busy actions, pending spinner styling, atomic token paste/pruning, accessible
+previews and the referenced-block submit snapshot.
 
 External CSS discovery includes the exact component files used by the fixture,
-Button's `src/lib/variants.ts`, and menu compositions' `src/lib/overlay.ts`.
+Button's `src/lib/variants.ts`, the token editor and Tooltip source, and menu
+compositions' `src/lib/overlay.ts`.
 `node_modules` is excluded from automatic Tailwind scanning; importing a
 stylesheet alone does not discover these shared class strings. Stories are
-excluded from discovery. Complete measured raw CSS is 37,060 bytes for plain
-conversation, 40,644 for busy controls, and 42,366 for composed input; all remain
-under the existing 42 KiB cap. Existing gzip JS caps remain 26, 50 and 54 KiB,
+excluded from discovery. Earlier plain and busy CSS measurements were 37,060
+and 40,644 bytes; current composed and atomic fixture measurements are listed
+above, all under the existing shared 43,008-byte cap. Existing gzip JS caps
+remain 26, 50 and 54 KiB for the plain, busy and composed fixtures,
 respectively. This fixture proves the published component contract; mounted
 Adea/Cortana services, hydration and manual IME/assistive-technology acceptance
 remain application evidence lanes.
@@ -322,6 +336,56 @@ an unavailable action cannot override this contract through keyboard delivery.
 Local packed interaction gates require `bunx playwright install chromium webkit`
 after dependency installation. On Linux, use `--with-deps` when required system
 libraries are absent. Automation uses headless disposable browser contexts.
+
+## Paste-token model (issue #532 selected unit)
+
+`@adea-ai/ui/components/conversation` also exports the pure paste-token model:
+`PasteBlock`, `isPasteBlock`, `countLines`, `shouldCollapse`, `nextSeq`,
+`formatToken`, `findTokenRanges`, `tokenRangeAt`, `pruneBlocks`, `expandAll`,
+`recollapsePastes`, `remapCarriedBlocks`, `stripTrailingBlankLines`, and the
+threshold and marker constants. Hosts provide stable, bounded ASCII block IDs and own
+draft state, persistence, message reconciliation and editor behavior. The model
+does not read storage or the clipboard, upload files, edit a textarea, or
+provide undo/history, previews or chips. The opt-in editor below composes this
+pure model with a controlled textarea. The selected source and Apache-2.0
+attribution are recorded in the issue #532 entries in `NOTICE`.
+
+### Controlled paste-token composer (issue #532 selected editor)
+
+`ChatComposer` keeps its plain-text API and bundle closure. Consumers that need
+atomic paste editing import `AtomicChatComposer` from the direct
+`@adea-ai/ui/components/conversation/atomic` subpath. It accepts host-owned
+`blocks`, a synchronous `createBlockId()` and one `onChange({ text, blocks })`
+callback. Paste, native typing and pruning report the complete draft together.
+Submit receives one snapshot containing `text`, the selected `action` and cloned
+referenced `blocks` before delivery starts. Both entries share a private
+composition shell; the UI owns no paste identity, history, storage, transport or
+undo state.
+
+The selected editor collapses text-only pastes at the existing three-line or
+200-character thresholds, supports raw Cmd/Ctrl+Shift+V for the next paste,
+preserves standalone and Markdown quote-prefix placement, and keeps token
+deletion, navigation, selection and dropped-text replacement atomic.
+Double-click or touch expands a token. Copy and cut expand fully selected tokens
+in order while partial selections remain native. An `aria-hidden` mirror
+highlights tokens behind the single labeled textarea. Hover and caret previews
+wait 300 ms, scan and show at most 1,200 characters across up to 12 lines, close
+when their text/block/scope becomes stale, and stay suppressed on touch devices. Keyboard
+users can open the token next to the caret or current selection with Alt+Down
+Arrow and dismiss it with Escape.
+The input announces that shortcut and the open preview through `aria-describedby`
+while keeping focus in the textarea. The preview uses the existing tooltip
+portal without intercepting textarea input.
+
+Only `ClipboardEvent.clipboardData` text is read. Clipboard permissions,
+images/files, uploads, rich editors, persistence, sent-prompt history and
+application adoption remain with the host. The added `AtomicPasteTokens` story
+shows the controlled contract; component browser and packed conversation gates
+exercise Chromium and WebKit. The plain fixture retains its existing caps.
+Atomic whole-bundle and incremental costs are reported above; the packed gate
+enforces the accepted 6 KiB incremental ceiling while retaining the existing
+composed and CSS ceilings. Donor source/test provenance is in the issue #532
+editor entry in `NOTICE`.
 
 ## Binary layout model checkpoint
 
