@@ -4,6 +4,7 @@ import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
 import {
   menuContentPadding,
+  destructiveMenuItem,
   menuItem,
   menuLabel,
   menuSeparator,
@@ -25,8 +26,9 @@ import { cn } from '#lib/utils'
  * highlight, Escape to close and return focus — which is exactly what a
  * hand-rolled `div` with click handlers gets wrong.
  *
- * The `destructive` variant on an item is a *colour*, not a confirmation.
- * Pairing it with an AlertDialog is the caller's job.
+ * The `destructive` variant marks the row with a status-coloured edge and
+ * highlighted tint while keeping its label on the body foreground. Pairing it
+ * with an AlertDialog is the caller's job.
  */
 export function DropdownMenu(props: ComponentProps<typeof KobalteDropdownMenu>) {
   return <KobalteDropdownMenu {...props} />
@@ -83,8 +85,7 @@ export function DropdownMenuItem(
       class={cn(
         menuItem,
         {
-          'text-destructive data-[highlighted]:bg-destructive-subtle data-[highlighted]:text-destructive':
-            local.variant === 'destructive',
+          [destructiveMenuItem]: local.variant === 'destructive',
         },
         local.class
       )}

@@ -59,6 +59,10 @@ export const menuItem = [
   '[&_svg:not([class*=text-])]:text-muted-foreground',
 ].join(' ')
 
+/** A destructive action keeps readable text and marks its row with a status edge. */
+export const destructiveMenuItem =
+  'border-s-2 border-destructive ps-1.5 text-foreground data-[highlighted]:bg-destructive-subtle'
+
 /** The label above a group of menu rows. */
 export const menuLabel =
   'px-2 py-1.5 text-2xs font-medium tracking-wide text-muted-foreground uppercase'

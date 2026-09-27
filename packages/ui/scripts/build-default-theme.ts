@@ -51,7 +51,6 @@ import { fileURLToPath } from 'node:url'
 import {
   ACCENTS,
   accentRoles,
-  contrastRatio,
   formatOklch,
   parseColor,
   primaryHover,
@@ -135,40 +134,6 @@ function sunken(theme: ThemeVariant): string {
 }
 
 /**
- * The status labels, which are measured rather than assumed.
- *
- * A dark theme's body text is near-white and near-white on a bright green is about
- * 2.6:1, so the label on a filled status control is chosen per theme from whichever of
- * the two extremes measures better against the fill. That is the same rule the
- * catalogue applies in `statusForeground`, restated here because the tokens this
- * system exposes (`--success-foreground` and friends) are not catalogue roles.
- */
-function statusLabels(theme: ThemeVariant): Record<'success' | 'warning' | 'info', string> {
-  const label = (role: 'success' | 'warning' | 'info'): string => {
-    const fill = parseColor(theme.colors[role])
-    if (!fill) return theme.colors.foreground
-
-    // Whichever of the theme's two extremes measures better on this fill. Computed
-    // rather than fixed because it genuinely differs per theme: near-white is the
-    // right label on a deep red and the wrong one on a bright green.
-    let best = theme.colors.foreground
-    let bestRatio = contrastRatio(parseColor(best)!, fill)
-    for (const candidate of [theme.colors.background, theme.colors.foreground]) {
-      const parsed = parseColor(candidate)
-      if (!parsed) continue
-      const ratio = contrastRatio(parsed, fill)
-      if (ratio > bestRatio) {
-        best = candidate
-        bestRatio = ratio
-      }
-    }
-    return best
-  }
-
-  return { success: label('success'), warning: label('warning'), info: label('info') }
-}
-
-/**
  * The declarations for one default theme.
  *
  * Ordered by the groups `theme.css` has always used, so that regenerating produces a
@@ -220,19 +185,18 @@ function generate(theme: ThemeVariant): string {
     'muted-foreground',
   ])
 
-  const labels = statusLabels(theme)
-  lines.push('  /* Status. The fills are catalogue roles; the labels are measured. */')
+  lines.push('  /* Status fills; solid labels and subtle surfaces come from the catalogue. */')
   lines.push(`  --destructive: ${value('--destructive')};`)
   lines.push(`  --destructive-foreground: ${value('--destructive-foreground')};`)
   for (const role of ['success', 'warning', 'info'] as const) {
     lines.push(`  --${role}: ${value(`--${role}`)};`)
-    lines.push(`  --${role}-foreground: ${labels[role]};`)
+    lines.push(`  --${role}-foreground: ${value(`--${role}-foreground`)};`)
   }
   lines.push(
-    '  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);',
-    '  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);',
-    '  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);',
-    '  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);',
+    `  --destructive-subtle: ${value('--destructive-subtle')};`,
+    `  --success-subtle: ${value('--success-subtle')};`,
+    `  --warning-subtle: ${value('--warning-subtle')};`,
+    `  --info-subtle: ${value('--info-subtle')};`,
     ''
   )
 
