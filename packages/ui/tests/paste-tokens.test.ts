@@ -35,6 +35,42 @@ describe('paste token model', () => {
     expect(shouldCollapse('')).toBe(false)
   })
 
+  test('counts newline-heavy text without materializing split lines', () => {
+    const text = Object.assign(new String('line\n'.repeat(4_096)), {
+      split: () => {
+        throw new Error('countLines must not allocate a split array')
+      },
+    })
+
+    expect(countLines(text as unknown as string)).toBe(4_097)
+  })
+
+  test('short-circuits long pastes and stops scanning once the line threshold is reached', () => {
+    const longText = Object.assign(new String('x'.repeat(200)), {
+      charCodeAt: () => {
+        throw new Error('the character threshold should avoid scanning')
+      },
+      split: () => {
+        throw new Error('the character threshold should avoid counting lines')
+      },
+    })
+    expect(shouldCollapse(longText as unknown as string)).toBe(true)
+
+    const inspected: number[] = []
+    const newlineHeavy = Object.assign(new String('x'.repeat(32)), {
+      charCodeAt: (index: number) => {
+        inspected.push(index)
+        return index === 1 || index === 3 ? 10 : 120
+      },
+      split: () => {
+        throw new Error('shouldCollapse must not allocate a split array')
+      },
+    })
+
+    expect(shouldCollapse(newlineHeavy as unknown as string)).toBe(true)
+    expect(inspected).toEqual([0, 1, 2, 3])
+  })
+
   test('formats canonical markers and accepts host-provided stable IDs', () => {
     const paste = block({ id: 'host_01.abc-123', seq: 3, lines: 42 })
     expect(isPasteBlock(paste)).toBe(true)
