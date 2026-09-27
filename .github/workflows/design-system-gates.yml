@@ -123,7 +123,7 @@ jobs:
   workshop-build:
     name: Workshop build
     needs: changes
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false' || (github.event_name == 'push' && needs.changes.outputs.pages != 'false'))
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false' || needs.changes.outputs.pages != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -262,6 +262,7 @@ jobs:
         env:
           SCOPE_RESULT: ${{ needs.changes.result }}
           WORKSHOP_NEEDED: ${{ needs.changes.outputs.workshop }}
+          PAGES_NEEDED: ${{ needs.changes.outputs.pages }}
           COMPONENTS_NEEDED: ${{ needs.changes.outputs.components }}
           BUILD_RESULT: ${{ needs.workshop-build.result }}
           STORIES_RESULT: ${{ needs.workshop.result }}
@@ -272,7 +273,7 @@ jobs:
             exit 1
           fi
           if [ "$SCOPE_RESULT" = success ] && [ "$WORKSHOP_NEEDED" = false ]; then
-            if [ "$BUILD_RESULT" = skipped ]; then BUILD_RESULT=success; fi
+            if [ "$BUILD_RESULT" = skipped ] && [ "$PAGES_NEEDED" = false ]; then BUILD_RESULT=success; fi
             if [ "$STORIES_RESULT" = skipped ]; then STORIES_RESULT=success; fi
           fi
           if [ "$SCOPE_RESULT" = success ] && [ "$COMPONENTS_NEEDED" = false ] && [ "$COMPONENTS_RESULT" = skipped ]; then

@@ -140,11 +140,16 @@ checks every story across the two default and five sampled themes with the same
 WCAG rules. Ordinary review
 and interaction URLs retain the addon's automatic analysis and manual panel.
 
-PR changes select Registry, Workshop, and Component interactions independently.
-Markdown documentation outside the published UI package skips these expensive
-gates; published docs/notices and registry payload changes retain distribution
-checks. Story harness changes retain Workshop, component-test changes retain
-Component interactions, and shared/unknown inputs retain both. Component/token
-source, dependency/toolchain changes, and all main pushes retain the full suite.
+PR changes select Registry, Storybook build/shards, Component interactions, and
+Pages artifact production independently. Changes limited to the Storybook
+manager or the Pages publisher/guard run the Storybook build without the UI
+browser suites. That build runs for PRs and main so a successful main gate can
+publish its exact-run artifact. Markdown documentation outside the published UI
+package skips these expensive gates; published docs/notices and registry payload
+changes retain distribution checks. Story harness changes retain Workshop,
+component-test changes retain Component interactions, and unknown inputs retain
+all gates. A Release Please update that changes only the root/UI package version
+and its single-package manifest retains Registry packaging/consumer checks while
+skipping UI browser suites; any other metadata changes retain full coverage.
 The filter uses immutable PR refs and the merge-base diff; unavailable refs fall
 back to full coverage. A filter-test failure fails the required Workshop gate.
