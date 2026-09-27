@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.1](https://github.com/adea-ai/ui/compare/v0.72.0...v0.72.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* preserve native input accessibility metadata ([#95](https://github.com/adea-ai/ui/issues/95)) ([31d06f9](https://github.com/adea-ai/ui/commit/31d06f9c7331b9793d277deac3f61dbacb196828))
+
 ## [0.72.0](https://github.com/adea-ai/ui/compare/v0.71.6...v0.72.0) (2026-09-27)
 
 
