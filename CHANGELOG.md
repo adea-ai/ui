@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.6](https://github.com/adea-ai/ui/compare/v0.71.5...v0.71.6) (2026-09-27)
+
+
+### Bug Fixes
+
+* anchor dialog close button to content ([#89](https://github.com/adea-ai/ui/issues/89)) ([eaf149f](https://github.com/adea-ai/ui/commit/eaf149f451c039542144bd01e46fd3a10076e2c1))
+
 ## [0.71.5](https://github.com/adea-ai/ui/compare/v0.71.4...v0.71.5) (2026-09-27)
 
 
