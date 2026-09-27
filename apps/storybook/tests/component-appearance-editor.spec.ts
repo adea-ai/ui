@@ -401,38 +401,48 @@ test('inline AppearanceEditor Tab follows native summaries and skips negative ta
     const row = trigger?.closest('section')
     if (!row) throw new Error('The dark theme row should be present')
 
+    const beforeStops = document.createElement('div')
     const before = document.createElement('details')
     const beforeSummary = document.createElement('summary')
     beforeSummary.textContent = 'Details before dark theme'
     before.append(beforeSummary)
-    row.before(before)
 
     const skippedBefore = document.createElement('details')
     const skippedBeforeSummary = document.createElement('summary')
     skippedBeforeSummary.setAttribute('tabindex', '-1')
     skippedBeforeSummary.textContent = 'Programmatically focusable details before dark theme'
     skippedBefore.append(skippedBeforeSummary)
-    row.before(skippedBefore)
+    beforeStops.append(before, skippedBefore)
+    row.before(beforeStops)
 
+    const afterStops = document.createElement('div')
     const after = document.createElement('details')
     const afterSummary = document.createElement('summary')
     afterSummary.textContent = 'Details after dark theme'
     after.append(afterSummary)
-    row.after(after)
 
     const skippedAfter = document.createElement('details')
     const skippedAfterSummary = document.createElement('summary')
     skippedAfterSummary.setAttribute('tabindex', '-1')
     skippedAfterSummary.textContent = 'Programmatically focusable details after dark theme'
     skippedAfter.append(skippedAfterSummary)
-    row.after(skippedAfter)
+    afterStops.append(skippedAfter, after)
+    row.after(afterStops)
   })
 
   const trigger = page.getByRole('button', { name: /^Dark theme/ })
   const summaries = page.locator('summary')
   await expect(summaries).toHaveCount(4)
+  await expect(summaries).toHaveText([
+    'Details before dark theme',
+    'Programmatically focusable details before dark theme',
+    'Programmatically focusable details after dark theme',
+    'Details after dark theme',
+  ])
+  await expect(summaries.nth(0)).not.toHaveAttribute('tabindex', '-1')
   await expect(summaries.nth(1)).toHaveAttribute('tabindex', '-1')
   await expect(summaries.nth(2)).toHaveAttribute('tabindex', '-1')
+  await expect(summaries.nth(3)).not.toHaveAttribute('tabindex', '-1')
   await trigger.click()
   const nextMenu = page.getByRole('menu')
   await expect(nextMenu).toBeVisible()
