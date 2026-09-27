@@ -2,29 +2,44 @@
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { execFileSync } from 'node:child_process'
 import { gzipSync } from 'node:zlib'
+import { installCancellationHandlers, runCommand } from './packed-layout-process.mjs'
+
 const root = resolve(import.meta.dirname, '../../..')
-const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-'))
+const packageDirectory = join(root, 'packages/ui')
+const cancellation = installCancellationHandlers()
+let consumer
+
 try {
-  const [pack] = JSON.parse(
-    execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
-      cwd: join(root, 'packages/ui'),
-      encoding: 'utf8',
-    })
-  )
+  consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-'))
+
+  const pack = await runCommand('npm', ['pack', '--json', '--pack-destination', consumer], {
+    stage: 'npm pack local UI package',
+    cwd: packageDirectory,
+    timeoutMs: 120_000,
+    signal: cancellation.signal,
+    displayArgs: ['pack', '--json', '--pack-destination', '<consumer-temp>'],
+    displayCwd: '<workspace>/packages/ui',
+  })
+  const [packedArtifact] = JSON.parse(pack.stdout)
+  if (!packedArtifact?.filename) throw Error('npm pack did not return a tarball filename')
+
   writeFileSync(
     join(consumer, 'package.json'),
     JSON.stringify({
       private: true,
       type: 'module',
-      dependencies: { '@adea-ai/ui': `file:${join(consumer, pack.filename)}` },
+      dependencies: { '@adea-ai/ui': `file:${join(consumer, packedArtifact.filename)}` },
     })
   )
-  execFileSync('bun', ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'], {
+  await runCommand('bun', ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'], {
+    stage: 'install packed UI consumer',
     cwd: consumer,
-    stdio: 'pipe',
+    timeoutMs: 300_000,
+    signal: cancellation.signal,
+    displayArgs: ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'],
   })
+
   const installed = join(consumer, 'node_modules/@adea-ai/ui')
   const license = readFileSync(join(installed, 'dist/LICENSE'), 'utf8')
   const notice = readFileSync(join(installed, 'dist/NOTICE'), 'utf8')
@@ -35,6 +50,7 @@ try {
     !notice.includes('Permission is hereby granted, free of charge')
   )
     throw Error('Packed layout license or MIT attribution is missing')
+
   const probe = `import { createLayoutState, splitPane, closePane, undoClosePane, movePane, countLeaves, listLeaves } from '@adea-ai/ui/components/layout/split-layout/model';
  const first={kind:'leaf',id:'first',opaque:{fixture:true}};
  const second={kind:'leaf',id:'second',opaque:{fixture:false}};
@@ -45,10 +61,23 @@ try {
  if(restored.focusedLeafId!=='second'||listLeaves(restored.center)[0]!==second) throw Error('undo failed');
  console.log(JSON.stringify({entry:import.meta.resolve('@adea-ai/ui/components/layout/split-layout/model'),result:'packed model behavior passed'}));`
   writeFileSync(join(consumer, 'probe.mjs'), probe)
-  const outputs = [
-    execFileSync(process.execPath, ['probe.mjs'], { cwd: consumer, encoding: 'utf8' }),
-    execFileSync('bun', ['--conditions=solid', 'probe.mjs'], { cwd: consumer, encoding: 'utf8' }),
-  ]
+
+  const nodeProbe = await runCommand(process.execPath, ['probe.mjs'], {
+    stage: 'Node import-condition model probe',
+    cwd: consumer,
+    timeoutMs: 30_000,
+    signal: cancellation.signal,
+    displayFile: 'node',
+    displayArgs: ['probe.mjs'],
+  })
+  const bunProbe = await runCommand('bun', ['--conditions=solid', 'probe.mjs'], {
+    stage: 'Bun Solid import-condition model probe',
+    cwd: consumer,
+    timeoutMs: 30_000,
+    signal: cancellation.signal,
+    displayArgs: ['--conditions=solid', 'probe.mjs'],
+  })
+  const outputs = [nodeProbe.stdout, bunProbe.stdout]
   const entries = outputs.map((output) => JSON.parse(output).entry)
   if (!entries[0].includes('/dist/') || !entries[1].includes('/src/'))
     throw Error('Packed model export conditions were mixed')
@@ -71,6 +100,20 @@ try {
         'Direct model subpath only; required root compatibility and app gates remain separate.',
     })
   )
+} catch (error) {
+  console.error(
+    JSON.stringify({
+      event: 'packed-layout-gate-failure',
+      stage: error.stage,
+      code: error.code,
+      message: error.message,
+    })
+  )
+  process.exitCode = 1
 } finally {
-  rmSync(consumer, { recursive: true, force: true })
+  if (consumer) {
+    rmSync(consumer, { recursive: true, force: true })
+    console.log(JSON.stringify({ event: 'packed-layout-temp-cleanup', result: 'removed' }))
+  }
+  cancellation.dispose()
 }
