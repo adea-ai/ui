@@ -337,28 +337,75 @@ test('theme menu restores trigger focus when dismissed by nonfocusable dialog co
 })
 
 test('theme menu Tab exits to the next or previous control in its dialog', async ({ page }) => {
-  const dialog = page.getByRole('dialog', { name: 'Appearance' })
-  const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
-  await trigger.click()
-  const menu = dialog.getByRole('menu')
-  const firstTheme = menu.getByRole('menuitemradio').first()
-  await page.keyboard.press('Home')
-  await expect(firstTheme).toBeFocused()
+  await page.evaluate(() => {
+    const browserWindow = window as Window & { appearanceFocusTrace?: string[] }
+    const trace: string[] = (browserWindow.appearanceFocusTrace = [])
+    const record = (kind: string, target: EventTarget | null) => {
+      const description =
+        target instanceof HTMLElement
+          ? [
+              target.tagName.toLowerCase(),
+              target.getAttribute('role'),
+              target.getAttribute('aria-label'),
+              target.getAttribute('aria-checked'),
+              target.hasAttribute('data-highlighted') ? 'highlighted' : undefined,
+              target.textContent?.trim().replace(/\s+/g, ' ').slice(0, 32),
+            ]
+              .filter(Boolean)
+              .join('|')
+          : String(target)
+      trace.push(`${performance.now().toFixed(1)} ${kind} ${description}`)
+    }
+    document.addEventListener('focusin', (event) => record('focusin', event.target), true)
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key === 'Home' || event.key === 'Tab') {
+          record(`keydown ${event.key} target`, event.target)
+          record(`keydown ${event.key} active`, document.activeElement)
+        }
+      },
+      true
+    )
+  })
+  const logFocusTrace = async () => {
+    const trace = await page.evaluate(
+      () => (window as Window & { appearanceFocusTrace?: string[] }).appearanceFocusTrace ?? []
+    )
+    console.info(`[appearance-focus-lifecycle] ${JSON.stringify(trace)}`)
+  }
+  try {
+    const dialog = page.getByRole('dialog', { name: 'Appearance' })
+    const trigger = dialog.getByRole('button', { name: /^Dark theme/ })
+    await trigger.click()
+    const menu = dialog.getByRole('menu')
+    await expect(menu).toBeVisible()
+    await expect(menu.getByRole('menuitemradio', { checked: true })).toBeFocused()
+    const firstTheme = menu.getByRole('menuitemradio').first()
+    await page.keyboard.press('Home')
+    await expect(firstTheme).toBeFocused()
 
-  await page.keyboard.press('Tab')
-  await expect(menu).toHaveCount(0)
-  await expect(
-    dialog.getByRole('radiogroup', { name: 'Accent' }).getByRole('radio', { name: 'Theme default' })
-  ).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(menu).toHaveCount(0)
+    await expect(
+      dialog
+        .getByRole('radiogroup', { name: 'Accent' })
+        .getByRole('radio', { name: 'Theme default' })
+    ).toBeFocused()
 
-  await trigger.click()
-  const previousMenu = dialog.getByRole('menu')
-  await page.keyboard.press('Home')
-  await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
-
-  await page.keyboard.press('Shift+Tab')
-  await expect(previousMenu).toHaveCount(0)
-  await expect(dialog.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+    await trigger.click()
+    const previousMenu = dialog.getByRole('menu')
+    await expect(previousMenu).toBeVisible()
+    await expect(previousMenu.getByRole('menuitemradio', { checked: true })).toBeFocused()
+    await page.keyboard.press('Home')
+    await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(previousMenu).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+  } catch (error) {
+    await logFocusTrace()
+    throw error
+  }
 })
 
 test('inline AppearanceEditor Tab closes the menu and focuses the next control', async ({
