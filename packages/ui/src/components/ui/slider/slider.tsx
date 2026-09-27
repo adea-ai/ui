@@ -95,6 +95,7 @@ export function Slider(props: SliderProps) {
                   )
                 })
               }}
+              hidden
               aria-hidden="true"
             />
             <Show when={local.valueLabel}>
