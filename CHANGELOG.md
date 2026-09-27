@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.67.1](https://github.com/adea-ai/ui/compare/v0.67.0...v0.67.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **conversation:** preserve restored reading position and follow intent ([#42](https://github.com/adea-ai/ui/issues/42)) ([76751f8](https://github.com/adea-ai/ui/commit/76751f8b3b71c7b0cad9f9b3d9121e8a76e2539a))
+
+
+### Performance
+
+* **ci:** run ten workshop shards and filter affected gates ([#45](https://github.com/adea-ai/ui/issues/45)) ([8ccd4af](https://github.com/adea-ai/ui/commit/8ccd4af9cc825d5ddc068542d3b25299046e4dd6))
+
 ## [0.67.0](https://github.com/adea-ai/ui/compare/v0.66.1...v0.67.0) (2026-09-26)
 
 
