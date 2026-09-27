@@ -41,7 +41,7 @@ jobs:
       workshop: ${{ steps.scope.outputs.workshop }}
       components: ${{ steps.scope.outputs.components }}
     steps:
-      - name: Checkout complete history for the immutable PR diff
+      - name: Checkout complete history for the immutable change diff
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
