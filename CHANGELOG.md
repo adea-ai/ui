@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.2](https://github.com/adea-ai/ui/compare/v0.72.1...v0.72.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* **forms:** preserve empty states and native slider values ([#97](https://github.com/adea-ai/ui/issues/97)) ([b9440f1](https://github.com/adea-ai/ui/commit/b9440f1b51b71757ae7c1ad4ce144ac8729425fb))
+
 ## [0.72.1](https://github.com/adea-ai/ui/compare/v0.72.0...v0.72.1) (2026-09-27)
 
 
