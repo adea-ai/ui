@@ -41,6 +41,7 @@ jobs:
       workshop: ${{ steps.scope.outputs.workshop }}
       components: ${{ steps.scope.outputs.components }}
       pages: ${{ steps.scope.outputs.pages }}
+      pagesBuild: ${{ steps.scope.outputs.pagesBuild }}
     steps:
       - name: Checkout complete history for the immutable change diff
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -123,7 +124,7 @@ jobs:
   workshop-build:
     name: Workshop build
     needs: changes
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false' || (github.event_name == 'push' && needs.changes.outputs.pages != 'false'))
+    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false' || needs.changes.outputs.pagesBuild != 'false' || (github.event_name == 'push' && needs.changes.outputs.pages != 'false'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -261,7 +262,10 @@ jobs:
       - name: Require every workshop and component check
         env:
           SCOPE_RESULT: ${{ needs.changes.result }}
+          EVENT_NAME: ${{ github.event_name }}
           WORKSHOP_NEEDED: ${{ needs.changes.outputs.workshop }}
+          PAGES_NEEDED: ${{ needs.changes.outputs.pages }}
+          PAGES_BUILD_NEEDED: ${{ needs.changes.outputs.pagesBuild }}
           COMPONENTS_NEEDED: ${{ needs.changes.outputs.components }}
           BUILD_RESULT: ${{ needs.workshop-build.result }}
           STORIES_RESULT: ${{ needs.workshop.result }}
@@ -272,9 +276,11 @@ jobs:
             exit 1
           fi
           if [ "$SCOPE_RESULT" = success ] && [ "$WORKSHOP_NEEDED" = false ]; then
-            if [ "$BUILD_RESULT" = skipped ]; then BUILD_RESULT=success; fi
             if [ "$STORIES_RESULT" = skipped ]; then STORIES_RESULT=success; fi
           fi
+          BUILD_REQUIRED=false
+          if [ "$WORKSHOP_NEEDED" = true ] || [ "$PAGES_BUILD_NEEDED" = true ] || { [ "$EVENT_NAME" = push ] && [ "$PAGES_NEEDED" = true ]; }; then BUILD_REQUIRED=true; fi
+          if [ "$SCOPE_RESULT" = success ] && [ "$BUILD_REQUIRED" = false ] && [ "$BUILD_RESULT" = skipped ]; then BUILD_RESULT=success; fi
           if [ "$SCOPE_RESULT" = success ] && [ "$COMPONENTS_NEEDED" = false ] && [ "$COMPONENTS_RESULT" = skipped ]; then
             COMPONENTS_RESULT=success
           fi

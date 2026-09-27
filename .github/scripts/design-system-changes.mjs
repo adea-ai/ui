@@ -1,14 +1,124 @@
 import { appendFileSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
-const fullCoverage = () => ({ registry: true, workshop: true, components: true, pages: true })
+const fullCoverage = () => ({
+  registry: true,
+  workshop: true,
+  components: true,
+  pages: true,
+  pagesBuild: true,
+})
 const validImmutableRef = (ref) => /^[a-f0-9]{40}$/.test(ref ?? '') && ref !== '0'.repeat(40)
+const pageOnlyPaths = new Set([
+  'apps/storybook/.storybook/manager.ts',
+  '.github/workflows/registry-pages.yml',
+  '.github/scripts/registry-pages.mjs',
+  '.github/scripts/registry-pages.test.ts',
+])
+const versionOnlyReleasePaths = new Set([
+  'package.json',
+  'packages/ui/package.json',
+  '.release-please-manifest.json',
+  'CHANGELOG.md',
+])
+const packageMetadataPaths = ['package.json', 'packages/ui/package.json']
+const versionPattern = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value)
+      .toSorted(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+function readJsonAtRef(ref, path) {
+  const content = execFileSync('git', ['show', `${ref}:${path}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  return JSON.parse(content)
+}
+
+function onlyPackageVersionChanged(before, after) {
+  if (
+    !before ||
+    !after ||
+    typeof before !== 'object' ||
+    Array.isArray(before) ||
+    typeof after !== 'object' ||
+    Array.isArray(after) ||
+    !versionPattern.test(before.version ?? '') ||
+    !versionPattern.test(after.version ?? '') ||
+    before.version === after.version
+  ) {
+    return false
+  }
+  const { version: _beforeVersion, ...beforeFields } = before
+  const { version: _afterVersion, ...afterFields } = after
+  return stableJson(beforeFields) === stableJson(afterFields)
+}
+
+function isVersionOnlyReleaseMetadata(paths, base, head) {
+  const pathSet = new Set(paths)
+  if (
+    paths.length !== versionOnlyReleasePaths.size ||
+    pathSet.size !== versionOnlyReleasePaths.size ||
+    [...versionOnlyReleasePaths].some((path) => !pathSet.has(path))
+  ) {
+    return false
+  }
+
+  try {
+    const packageVersions = packageMetadataPaths.map((path) => [
+      readJsonAtRef(base, path),
+      readJsonAtRef(head, path),
+    ])
+    if (!packageVersions.every(([before, after]) => onlyPackageVersionChanged(before, after))) {
+      return false
+    }
+
+    const [beforeRoot, afterRoot] = packageVersions[0]
+    const [beforeUi, afterUi] = packageVersions[1]
+    const beforeManifest = readJsonAtRef(base, '.release-please-manifest.json')
+    const afterManifest = readJsonAtRef(head, '.release-please-manifest.json')
+    return (
+      beforeRoot.version === beforeUi.version &&
+      afterRoot.version === afterUi.version &&
+      beforeRoot.version !== afterRoot.version &&
+      beforeManifest &&
+      typeof beforeManifest === 'object' &&
+      !Array.isArray(beforeManifest) &&
+      Object.keys(beforeManifest).length === 1 &&
+      beforeManifest['.'] === beforeRoot.version &&
+      afterManifest &&
+      typeof afterManifest === 'object' &&
+      !Array.isArray(afterManifest) &&
+      Object.keys(afterManifest).length === 1 &&
+      afterManifest['.'] === afterRoot.version
+    )
+  } catch {
+    return false
+  }
+}
 
 /** Conservative impact map. Unknown inputs retain every gate. */
 export function classifyDesignSystemChanges(paths) {
-  const result = { registry: false, workshop: false, components: false, pages: false }
+  const result = {
+    registry: false,
+    workshop: false,
+    components: false,
+    pages: false,
+    pagesBuild: false,
+  }
   for (const path of paths) {
-    if (/^(?:LICENSE|NOTICE)(?:\.|$)/.test(path)) {
+    if (pageOnlyPaths.has(path)) {
+      result.pages = true
+      result.pagesBuild = true
+    } else if (/^(?:LICENSE|NOTICE)(?:\.|$)/.test(path)) {
       result.registry = true
     } else if (path === 'packages/ui/registry.json' || path.startsWith('packages/ui/public/r/')) {
       result.registry = true
@@ -67,7 +177,13 @@ if (import.meta.main) {
       })
         .split('\0')
         .filter(Boolean)
-      result = classifyDesignSystemChanges(paths)
+      const comparisonBase =
+        eventName === 'pull_request'
+          ? execFileSync('git', ['merge-base', base, head], { encoding: 'utf8' }).trim()
+          : base
+      result = isVersionOnlyReleaseMetadata(paths, comparisonBase, head)
+        ? { registry: true, workshop: false, components: false, pages: false, pagesBuild: false }
+        : classifyDesignSystemChanges(paths)
     }
   } catch {
     console.warn('::warning::Change filtering unavailable; retaining all design-system gates.')
