@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.0](https://github.com/adea-ai/ui/compare/v0.69.1...v0.70.0) (2026-09-27)
+
+
+### Features
+
+* share appearance theme choices in the dropdown menu ([#43](https://github.com/adea-ai/ui/issues/43)) ([caafdd0](https://github.com/adea-ai/ui/commit/caafdd0a2a33af0aa7722ea13e1765bc77212be9))
+
 ## [0.69.1](https://github.com/adea-ai/ui/compare/v0.69.0...v0.69.1) (2026-09-27)
 
 
