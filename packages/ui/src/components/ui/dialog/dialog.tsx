@@ -262,7 +262,12 @@ export function DialogContent(props: DialogContentProps) {
       <DialogOverlay />
       <div class={overlayPositioner}>
         <KobalteDialog.Content
-          class={cn(overlaySurface, overlayMotion, 'grid w-full max-w-lg gap-4 p-5', local.class)}
+          class={cn(
+            overlaySurface,
+            overlayMotion,
+            'relative grid w-full max-w-lg gap-4 p-5',
+            local.class
+          )}
           {...rest}
         >
           {local.children}

@@ -100,8 +100,29 @@ try {
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
     )
   writeFileSync(
+    join(consumer, 'modal.tsx'),
+    readFileSync(join(uiRoot, 'tests/fixtures/modal-dialog.tsx'), 'utf8')
+      .replaceAll(
+        '../../src/components/ui/modal-dialog/modal-dialog',
+        '@adea-ai/ui/components/ui/modal-dialog'
+      )
+      .replaceAll('../../src/styles/globals.css', './modal-style.css')
+  )
+  writeFileSync(
     join(consumer, 'style.css'),
     "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+  )
+  writeFileSync(
+    join(consumer, 'modal-style.css'),
+    [
+      "@import 'tailwindcss';",
+      "@import '@adea-ai/ui/theme.css';",
+      "@import '@adea-ai/ui/base.css';",
+      "@source './modal.tsx';",
+      "@source './node_modules/@adea-ai/ui/src/components/ui/{button,dialog,modal-dialog}';",
+      "@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';",
+      '',
+    ].join('\n')
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
@@ -116,6 +137,19 @@ try {
       join(root, 'apps/storybook'),
       { ADEA_APPEARANCE_PACKED_ROOT: consumer, ADEA_APPEARANCE_PACKED_CONDITION: condition }
     )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-modal-dialog.spec.ts',
+        '--grep=default modal close',
+        '--output',
+        `test-results/packed-modal-close-${condition}`,
+      ],
+      join(root, 'apps/storybook'),
+      { ADEA_MODAL_DIALOG_PACKED_ROOT: consumer, ADEA_MODAL_DIALOG_PACKED_CONDITION: condition }
+    )
   }
   console.log(
     JSON.stringify({
@@ -124,6 +158,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
       checks: 100,
+      dialogCloseAnchorChecks: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Controlled editor host fixture; production persistence, native transparency, hydration and manual AT remain separate.',
