@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.71.4](https://github.com/adea-ai/ui/compare/v0.71.3...v0.71.4) (2026-09-27)
+
+
+### Bug Fixes
+
+* align packed layout consumer installation ([#86](https://github.com/adea-ai/ui/issues/86)) ([3a0e8f3](https://github.com/adea-ai/ui/commit/3a0e8f37131b69c5eb05c39a1b7b932ac9af6cd4))
+* align UI dependency with Themes 0.6 ([#84](https://github.com/adea-ai/ui/issues/84)) ([5d680e6](https://github.com/adea-ai/ui/commit/5d680e65a8eb4d17f516d6711c96be6bc9bbf98f))
+
 ## [0.71.3](https://github.com/adea-ai/ui/compare/v0.71.2...v0.71.3) (2026-09-27)
 
 
