@@ -88,7 +88,7 @@ for (const order of ['root-first', 'ui-first'] as const) {
       await page.addScriptTag({ content: script })
     })
 
-    test('keeps a regular Dialog a dismissible dialog and restores its opener', async ({
+    test(`${order}: keeps a regular Dialog dismissible and restores its opener`, async ({
       page,
     }) => {
       const trigger = page.getByRole('button', { name: 'Open regular dialog' })
@@ -102,7 +102,7 @@ for (const order of ['root-first', 'ui-first'] as const) {
       await expect(trigger).toBeFocused()
     })
 
-    test('keeps a Sheet a dismissible dialog and restores its opener', async ({ page }) => {
+    test(`${order}: keeps a Sheet dismissible and restores its opener`, async ({ page }) => {
       const trigger = page.getByRole('button', { name: 'Open details sheet' })
       await trigger.focus()
       await trigger.press('Enter')
@@ -114,7 +114,7 @@ for (const order of ['root-first', 'ui-first'] as const) {
       await expect(trigger).toBeFocused()
     })
 
-    test('keeps an AlertDialog blocking Escape and restores its opener after a choice', async ({
+    test(`${order}: keeps AlertDialog blocking Escape and restores focus after a choice`, async ({
       page,
     }) => {
       const trigger = page.getByRole('button', { name: 'Open confirmation' })
