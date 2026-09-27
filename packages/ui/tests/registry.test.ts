@@ -42,6 +42,28 @@ describe('registry', () => {
     expect(names.length).toBeGreaterThan(50)
   })
 
+  test('preserves nested conversation install paths without target collisions', () => {
+    const targets = registryItems.flatMap((item) => item.files.map((file) => file.target))
+    expect(new Set(targets).size).toBe(targets.length)
+
+    const conversation = registryItems.find((item) => item.name === 'conversation')
+    const targetFor = (path: string) =>
+      conversation?.files.find((file) => file.path === path)?.target
+
+    expect(targetFor('src/components/conversation/chat-composer.tsx')).toBe(
+      'components/conversation/chat-composer.tsx'
+    )
+    expect(targetFor('src/components/conversation/atomic/chat-composer.tsx')).toBe(
+      'components/conversation/atomic/chat-composer.tsx'
+    )
+    expect(targetFor('src/components/conversation/atomic/index.ts')).toBe(
+      'components/conversation/atomic/index.ts'
+    )
+    expect(targetFor('src/components/conversation/internal/chat-composer-shell.tsx')).toBe(
+      'components/conversation/internal/chat-composer-shell.tsx'
+    )
+  })
+
   test('ships no stories or documentation as consumer source', () => {
     const offenders = registryItems.flatMap((item) =>
       item.files
