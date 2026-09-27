@@ -88,7 +88,12 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
   const directory = mkdtempSync(join(tmpdir(), 'design-system-scope-'))
   const script = new URL('./design-system-changes.mjs', import.meta.url).pathname
   const git = (...args: string[]) =>
-    execFileSync('git', args, { cwd: directory, encoding: 'utf8' }).trim()
+    // This disposable tree fixture must not invoke the developer's signing
+    // agent or global hooks. Actual repository commits retain their policies.
+    execFileSync('git', ['-c', 'commit.gpgSign=false', '-c', 'core.hooksPath=/dev/null', ...args], {
+      cwd: directory,
+      encoding: 'utf8',
+    }).trim()
   const run = (eventName: string, event: object) => {
     const eventPath = join(directory, 'event.json')
     const outputPath = join(directory, 'output.txt')
@@ -131,6 +136,19 @@ test('CLI preserves renamed source coverage and falls back on missing immutable 
     expect(
       run('pull_request', { pull_request: { base: { sha: head }, head: { sha: docsHead } } })
     ).toBe('registry=false\nworkshop=false\ncomponents=false\n')
+    expect(run('push', { before: head, after: docsHead })).toBe(
+      'registry=false\nworkshop=false\ncomponents=false\n'
+    )
+    expect(run('push', { before: base, after: head })).toBe(all)
+    expect(run('push', { before: base, after: docsHead })).toBe(all)
+    for (const event of [
+      { before: '0'.repeat(40), after: docsHead },
+      { before: head, after: '0'.repeat(40) },
+      { before: 'invalid', after: docsHead },
+      { before: head },
+      { before: 'f'.repeat(40), after: docsHead },
+    ])
+      expect(run('push', event)).toBe(all)
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
