@@ -13,7 +13,7 @@ declare global {
     updateDialogLifecycle?: {
       resolveStatus(index: number, state: UpdateState): Promise<void>
       resolveCheck(index: number, state: UpdateState): Promise<void>
-      rejectCheck(index: number, message: string): Promise<void>
+      rejectCheck(index: number, reason: unknown): Promise<void>
       resolveInstall(index: number, state: UpdateState): Promise<void>
       rejectInstall(index: number, message: string): Promise<void>
     }
@@ -34,7 +34,7 @@ function Fixture() {
   let installCallCount = 0
   const statusResolvers: Array<(state: UpdateState) => void> = []
   const checkResolvers: Array<(state: UpdateState) => void> = []
-  const checkRejectors: Array<(error: Error) => void> = []
+  const checkRejectors: Array<(error: unknown) => void> = []
   const installResolvers: Array<(state: UpdateState) => void> = []
   const installRejectors: Array<(error: Error) => void> = []
   const deferInitialStatus = window.updateDialogLifecycleConfig?.deferInitialStatus ?? false
@@ -76,8 +76,8 @@ function Fixture() {
         checkResolvers[index]!(state)
         await Promise.resolve()
       },
-      async rejectCheck(index, message) {
-        checkRejectors[index]!(new Error(message))
+      async rejectCheck(index, reason) {
+        checkRejectors[index]!(reason)
         await Promise.resolve()
       },
       async resolveInstall(index, state) {

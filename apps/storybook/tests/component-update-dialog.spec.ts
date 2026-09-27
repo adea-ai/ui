@@ -5,9 +5,12 @@ import solid from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
 
 type UpdateState = {
-  phase: 'current' | 'available' | 'installed'
+  phase: 'current' | 'available' | 'downloading' | 'installed' | 'failed'
   currentVersion: string
   availableVersion?: string
+  downloadedBytes?: number
+  totalBytes?: number
+  error?: unknown
 }
 
 type FixtureWindow = Window & {
@@ -15,7 +18,7 @@ type FixtureWindow = Window & {
   updateDialogLifecycle?: {
     resolveStatus(index: number, state: UpdateState): Promise<void>
     resolveCheck(index: number, state: UpdateState): Promise<void>
-    rejectCheck(index: number, message: string): Promise<void>
+    rejectCheck(index: number, reason: unknown): Promise<void>
     resolveInstall(index: number, state: UpdateState): Promise<void>
     rejectInstall(index: number, message: string): Promise<void>
   }
@@ -96,12 +99,12 @@ async function resolveCheck(
   )
 }
 
-async function rejectCheck(page: import('@playwright/test').Page, index: number, message: string) {
+async function rejectCheck(page: import('@playwright/test').Page, index: number, reason: unknown) {
   await page.evaluate(
-    async ({ requestIndex, errorMessage }) => {
-      await (window as FixtureWindow).updateDialogLifecycle!.rejectCheck(requestIndex, errorMessage)
+    async ({ requestIndex, error }) => {
+      await (window as FixtureWindow).updateDialogLifecycle!.rejectCheck(requestIndex, error)
     },
-    { requestIndex: index, errorMessage: message }
+    { requestIndex: index, error: reason }
   )
 }
 
@@ -155,6 +158,194 @@ test('a status request from a closed dialog cannot update after reopen', async (
   await expect(page.getByLabel('Update checks')).toHaveText('1')
   await expect(page.getByRole('region', { name: 'Version status' })).toContainText('v0.72.1')
   await expect(page.getByText('v0.69.0', { exact: true })).toHaveCount(0)
+})
+
+test('a failed auto-check hides cached current status and retry recovers', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await rejectCheck(page, 0, {
+    safe: { message: 'The update feed is temporarily unavailable.' },
+    accessToken: 'test-token-must-not-render',
+  })
+  await expect(page.getByRole('alert')).toHaveText('The update feed is temporarily unavailable.')
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('You are running the latest release.', { exact: true })).toHaveCount(
+    0
+  )
+  await expect(page.getByText('test-token-must-not-render', { exact: true })).toHaveCount(0)
+
+  const retry = page.getByRole('button', { name: 'Retry update check' })
+  await expect(retry).toBeEnabled()
+  await retry.click()
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await resolveCheck(page, 1, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('a failed auto-check preserves an available update snapshot', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await rejectCheck(page, 0, 'The release feed could not be reached.')
+  await expect(page.getByRole('alert')).toHaveText('The release feed could not be reached.')
+  await expect(page.getByRole('region', { name: 'Available update' })).toContainText(
+    'Version 0.73.0 is ready'
+  )
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toBeEnabled()
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+})
+
+test('a failed auto-check preserves active download progress', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, {
+    phase: 'downloading',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+    downloadedBytes: 1024,
+    totalBytes: 4096,
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await rejectCheck(page, 0, 'The release feed could not be reached.')
+  await expect(page.getByRole('alert')).toHaveText('The release feed could not be reached.')
+  await expect(page.getByRole('region', { name: 'Update progress' })).toContainText('25%')
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+})
+
+test('a failed manual check cannot discard an available snapshot during status reload', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+
+  await page.getByRole('button', { name: 'Check latest version' }).click()
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await rejectCheck(page, 1, 'The release feed could not be reached.')
+  await expect(page.getByLabel('Status requests')).toHaveText('3')
+  await resolveStatus(page, 1, { phase: 'current', currentVersion: '0.72.0' })
+
+  await expect(page.getByRole('alert')).toHaveText('The release feed could not be reached.')
+  await expect(page.getByRole('region', { name: 'Available update' })).toContainText(
+    'Version 0.73.0 is ready'
+  )
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toBeEnabled()
+})
+
+test('unsafe object messages use a generic check failure', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await rejectCheck(page, 0, {
+    message: 'test-token-must-not-render',
+    error: { message: 'also-not-safe-to-render' },
+  })
+  await expect(page.getByRole('alert')).toHaveText('Could not check for updates')
+  await expect(page.getByText('test-token-must-not-render', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('also-not-safe-to-render', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+})
+
+test('a failed check status reports a safe fallback and can be retried', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await resolveCheck(page, 0, {
+    phase: 'failed',
+    currentVersion: '0.72.0',
+    error: '[object Object]',
+  })
+  await expect(page.getByRole('alert')).toHaveText('Could not check for updates')
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Available update' })).toContainText(
+    'Version 0.73.0 is ready'
+  )
+
+  await page.getByRole('button', { name: 'Retry update check' }).click()
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await resolveCheck(page, 1, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByText('Adea is up to date.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('a late manual check cannot change the closed dialog trigger', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+
+  await page.getByRole('button', { name: 'Check latest version' }).click()
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await rejectCheck(page, 1, 'This result arrived after the dialog closed.')
+
+  await expect(trigger).not.toContainText('Retry')
+})
+
+test('a successful install clears retry state after a failed check reloads availability', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Open version and updates' }).click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, { phase: 'current', currentVersion: '0.72.0' })
+
+  await page.getByRole('button', { name: 'Check latest version' }).click()
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await rejectCheck(page, 1, 'The release feed could not be reached.')
+  await expect(page.getByLabel('Status requests')).toHaveText('3')
+  await resolveStatus(page, 1, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByRole('region', { name: 'Available update' })).toContainText(
+    'Version 0.73.0 is ready'
+  )
+  await expect(page.getByRole('button', { name: 'Retry update check' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Install and restart' }).click()
+  await expect(page.getByLabel('Update installs')).toHaveText('1')
+  await resolveInstall(page, 0, { phase: 'installed', currentVersion: '0.73.0' })
+
+  await expect(page.getByRole('button', { name: 'Check latest version' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Retry update check' })).toHaveCount(0)
+  await expect(page.getByRole('alert')).toHaveCount(0)
 })
 
 test('a pending initial status cannot overwrite reopened state', async ({ page }) => {
