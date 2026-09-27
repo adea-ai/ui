@@ -39,6 +39,7 @@ import {
   chartSeries,
   getAccent,
   hasTheme,
+  shadcnDestructiveProjection,
   statusForeground,
   tint,
   primaryHover,
@@ -78,6 +79,9 @@ export type ThemeColors = {
   destructive: string
   destructiveForeground: string
   destructiveSubtle: string
+  /** Contrast-safe solid-action presentation, derived from the canonical error role. */
+  destructiveAction: string
+  destructiveActionForeground: string
   success: string
   successForeground: string
   successSubtle: string
@@ -170,10 +174,12 @@ export type ThemeVariant = {
 /**
  * Canonical role → this system's `ThemeColors` key.
  *
- * Read by {@link toVariant}. Every key of `ThemeColors` must appear, so a role added
- * to this system fails the type check rather than silently resolving to `undefined`.
+ * Read by {@link toVariant}. The two derived destructive-action presentation values
+ * are intentionally excluded; the shared Themes adapter owns their color math.
  */
-const ROLE_FOR: Readonly<Record<keyof ThemeColors, keyof AdeaThemeRecord['colors']>> = {
+type ThemeRole = Exclude<keyof ThemeColors, 'destructiveAction' | 'destructiveActionForeground'>
+
+const ROLE_FOR: Readonly<Record<ThemeRole, keyof AdeaThemeRecord['colors']>> = {
   background: 'background',
   foreground: 'text',
   card: 'surface',
@@ -216,14 +222,17 @@ const ROLE_FOR: Readonly<Record<keyof ThemeColors, keyof AdeaThemeRecord['colors
 /** Builds the design system's view of one catalogue entry. */
 function toVariant(theme: AdeaThemeRecord): ThemeVariant {
   const colors = {} as ThemeColors
-  for (const key of Object.keys(ROLE_FOR) as (keyof ThemeColors)[]) {
+  for (const key of Object.keys(ROLE_FOR) as ThemeRole[]) {
     colors[key] = theme.colors[ROLE_FOR[key]]
   }
-  // The label on a solid destructive fill is measured rather than mapped: on a bright
-  // red it is black and on a deep red it is white, and using the body text would put
-  // white on a mid-tone red at about 3:1.
+  // Keep the semantic foreground paired with the canonical error role. Filled
+  // destructive actions use the distinct projection below so their /90 hover state
+  // remains readable without changing icons, borders, or tinted status surfaces.
   colors.destructiveForeground = statusForeground(theme, 'error')
   colors.destructiveSubtle = tint(theme.colors.error, theme.colors.background)
+  const destructiveAction = shadcnDestructiveProjection(theme)
+  colors.destructiveAction = destructiveAction.fill
+  colors.destructiveActionForeground = destructiveAction.foreground
   colors.successForeground = statusForeground(theme, 'success')
   colors.successSubtle = tint(theme.colors.success, theme.colors.background)
   colors.warningForeground = statusForeground(theme, 'warning')
@@ -397,6 +406,8 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
     '--destructive': c.destructive,
     '--destructive-foreground': c.destructiveForeground,
     '--destructive-subtle': c.destructiveSubtle,
+    '--destructive-action': c.destructiveAction,
+    '--destructive-action-foreground': c.destructiveActionForeground,
     '--success': c.success,
     '--success-foreground': c.successForeground,
     '--success-subtle': c.successSubtle,

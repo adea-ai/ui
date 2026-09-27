@@ -188,6 +188,8 @@ function generate(theme: ThemeVariant): string {
   lines.push('  /* Status fills; solid labels and subtle surfaces come from the catalogue. */')
   lines.push(`  --destructive: ${value('--destructive')};`)
   lines.push(`  --destructive-foreground: ${value('--destructive-foreground')};`)
+  lines.push(`  --destructive-action: ${value('--destructive-action')};`)
+  lines.push(`  --destructive-action-foreground: ${value('--destructive-action-foreground')};`)
   for (const role of ['success', 'warning', 'info'] as const) {
     lines.push(`  --${role}: ${value(`--${role}`)};`)
     lines.push(`  --${role}-foreground: ${value(`--${role}-foreground`)};`)

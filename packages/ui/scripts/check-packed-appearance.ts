@@ -53,6 +53,13 @@ const replaceImports = (source: string) =>
       '@adea-ai/ui/components/composites/appearance-editor'
     )
     .replaceAll('../../src/styles/globals.css', './style.css')
+const replaceDestructiveImports = (source: string) =>
+  source
+    .replaceAll('../../src/components/ui/alert/alert', '@adea-ai/ui/components/ui/alert')
+    .replaceAll('../../src/components/ui/badge/badge', '@adea-ai/ui/components/ui/badge')
+    .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/lib/themes', '@adea-ai/ui/lib/themes')
+    .replaceAll('../../src/styles/globals.css', './destructive-style.css')
 try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
@@ -100,6 +107,12 @@ try {
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
     )
   writeFileSync(
+    join(consumer, 'destructive.tsx'),
+    replaceDestructiveImports(
+      readFileSync(join(uiRoot, 'tests/fixtures/destructive-actions.tsx'), 'utf8')
+    )
+  )
+  writeFileSync(
     join(consumer, 'modal.tsx'),
     readFileSync(join(uiRoot, 'tests/fixtures/modal-dialog.tsx'), 'utf8')
       .replaceAll(
@@ -111,6 +124,10 @@ try {
   writeFileSync(
     join(consumer, 'style.css'),
     "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+  )
+  writeFileSync(
+    join(consumer, 'destructive-style.css'),
+    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './destructive.tsx';\n@source './node_modules/@adea-ai/ui/src/components/ui/{alert,badge,button}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay,themes}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'modal-style.css'),
@@ -131,11 +148,17 @@ try {
         'test',
         '--config=playwright.components.config.ts',
         'component-appearance-editor.spec.ts',
+        'component-destructive-action.spec.ts',
         '--output',
         `test-results/packed-appearance-${condition}`,
       ],
       join(root, 'apps/storybook'),
-      { ADEA_APPEARANCE_PACKED_ROOT: consumer, ADEA_APPEARANCE_PACKED_CONDITION: condition }
+      {
+        ADEA_APPEARANCE_PACKED_ROOT: consumer,
+        ADEA_APPEARANCE_PACKED_CONDITION: condition,
+        ADEA_DESTRUCTIVE_PACKED_ROOT: consumer,
+        ADEA_DESTRUCTIVE_PACKED_CONDITION: condition,
+      }
     )
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
@@ -153,12 +176,13 @@ try {
   }
   console.log(
     JSON.stringify({
-      result: 'packed editor passed',
+      result: 'packed appearance, dialog, and destructive-action checks passed',
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 100,
+      checks: 108,
       dialogCloseAnchorChecks: 4,
+      destructiveActionBrowserCases: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Controlled editor host fixture; production persistence, native transparency, hydration and manual AT remain separate.',
