@@ -17,8 +17,13 @@ import { ModalDialog } from './modal-dialog'
  *      hiding the rest of the application from assistive technology.
  *   2. **It marks the background `inert`**, restoring only the elements that were not
  *      already inert — so a nested dialog does not un-inert its parent.
- *   3. **It labels itself explicitly**, rather than relying on the title's id
- *      registration winning a race.
+ *   3. **It names the dialog explicitly** from `title`, rather than relying on
+ *      the title's id registration winning a race. `aria-label` overrides that
+ *      name without changing the visible heading; `aria-labelledby` can name it
+ *      from a visible label instead.
+ *
+ * `modal` controls Kobalte's own focus, scroll and screen-reader isolation. The
+ * component continues its managed background `inert` behavior in both modes.
  *
  * Use `Dialog` when you need its composition; use this when you want one that is
  * correct by default.
@@ -87,6 +92,27 @@ export const WithLeading: Story = {
               Discard
             </Button>
           </div>
+        </ModalDialog>
+      </>
+    )
+  },
+}
+
+/** A distinct accessible name keeps the visible heading while changing how the dialog is announced. */
+export const AccessibleNameOverride: Story = {
+  render: () => {
+    const [open, setOpen] = createSignal(false)
+    return (
+      <>
+        <Button onClick={() => setOpen(true)}>Open project details</Button>
+        <ModalDialog
+          open={open()}
+          onClose={() => setOpen(false)}
+          title="Details"
+          aria-label="Details for the active project"
+          description="This name adds context for assistive technology."
+        >
+          <Button onClick={() => setOpen(false)}>Done</Button>
         </ModalDialog>
       </>
     )
