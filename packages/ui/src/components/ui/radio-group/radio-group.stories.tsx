@@ -91,3 +91,20 @@ export const Keyboard: Story = {
     </div>
   ),
 }
+
+/** The accessible name and help may come from the surrounding settings field. */
+export const ExternalHelp: Story = {
+  render: () => (
+    <div>
+      <p id="provider-help">Choose which provider to connect.</p>
+      <RadioGroup aria-label="Provider">
+        <RadioGroupItem
+          value="files"
+          aria-label="Files and code"
+          aria-describedby="provider-help"
+        />
+        <RadioGroupItem value="calendar" label="Calendar" />
+      </RadioGroup>
+    </div>
+  ),
+}

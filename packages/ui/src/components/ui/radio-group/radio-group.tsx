@@ -25,7 +25,8 @@ export type RadioGroupItemProps = ComponentProps<typeof KobalteRadioGroup.Item> 
   controlClass?: string
   /**
    * The option's visible label. A radio with no accessible name is unreachable
-   * by a screen reader and by voice control, so supply this or a child.
+   * by a screen reader and by voice control, so supply this, a labelled child,
+   * `aria-label`, or `aria-labelledby`.
    */
   label?: string
   description?: string
@@ -38,14 +39,28 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
     'label',
     'description',
     'children',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-busy',
+    'title',
   ])
 
   return (
     <KobalteRadioGroup.Item
+      title={local.title}
       class={cn('group/radio flex items-start gap-2.5', local.class)}
       {...rest}
     >
-      <KobalteRadioGroup.ItemInput />
+      <KobalteRadioGroup.ItemInput
+        aria-label={local['aria-label']}
+        aria-labelledby={local['aria-labelledby']}
+        aria-describedby={local['aria-describedby']}
+        aria-invalid={local['aria-invalid']}
+        aria-busy={local['aria-busy']}
+        title={local.title}
+      />
       <KobalteRadioGroup.ItemControl
         class={cn(
           'border-input bg-transparent flex size-4 shrink-0 items-center justify-center rounded-full border',
@@ -63,9 +78,11 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
       </KobalteRadioGroup.ItemControl>
       {local.children ?? (
         <div class="grid gap-0.5 leading-none">
-          <KobalteRadioGroup.ItemLabel class="text-sm font-medium">
-            {local.label}
-          </KobalteRadioGroup.ItemLabel>
+          {local.label ? (
+            <KobalteRadioGroup.ItemLabel class="text-sm font-medium">
+              {local.label}
+            </KobalteRadioGroup.ItemLabel>
+          ) : null}
           {local.description ? (
             <KobalteRadioGroup.ItemDescription class="text-muted-foreground text-sm">
               {local.description}

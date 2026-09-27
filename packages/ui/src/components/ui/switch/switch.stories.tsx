@@ -119,3 +119,18 @@ export const SettingsGroup: Story = {
     </div>
   ),
 }
+
+/** Help and validation belong to the focusable input, even with an external label. */
+export const ExternalHelp: Story = {
+  render: () => (
+    <div>
+      <p id="external-switch-help">Assign a workspace before enabling sync.</p>
+      <Switch
+        aria-label="Workspace sync"
+        aria-describedby="external-switch-help"
+        aria-invalid="true"
+        title="Workspace required"
+      />
+    </div>
+  ),
+}
