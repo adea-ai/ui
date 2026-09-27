@@ -1,6 +1,60 @@
 import { expect, test } from '@playwright/test'
 import { openStory } from './stories'
 
+test.describe('workshop navigation', () => {
+  test('the root opens the branded Overview with current catalogue data and a working sidebar link', async ({
+    page,
+  }) => {
+    const response = await page.goto('/')
+    expect(response?.status()).toBe(200)
+
+    const preview = page.frameLocator('#storybook-preview-iframe')
+    const overview = preview.locator('body')
+    await expect(page.getByRole('link', { name: 'Adea UI — Storybook' })).toBeVisible()
+    const overviewHeading = preview.locator('.sbdocs-content > h1')
+    await expect(overviewHeading).toHaveText('Adea UI')
+
+    const overviewText = await overview.innerText()
+    const overviewCounts = overviewText.match(
+      /Theme selects from the (\d+) variants in the catalogue, across\s+(\d+) families:/
+    )
+    const overviewAccentCount = overviewText.match(
+      /The (\d+) named presets compose with every theme/
+    )
+    expect(overviewCounts).not.toBeNull()
+    expect(overviewAccentCount).not.toBeNull()
+
+    await page.getByRole('link', { name: 'Conventions', exact: true }).click()
+    await expect(page).toHaveURL(/path=\/docs\/conventions--docs/)
+    await expect(preview.locator('.sbdocs-content > h1')).toHaveText('Conventions')
+
+    await page.goto('/?path=/story/foundations-themes--what-is-missing')
+    await expect(preview.locator('body')).toContainText(
+      /The catalogue is \d+ themes across \d+ families/
+    )
+    const missingStoryText = await preview.locator('body').innerText()
+    const missingCounts = missingStoryText.match(
+      /The catalogue is (\d+) themes across (\d+) families/
+    )
+    const missingAccentCount = missingStoryText.match(
+      /The (\d+) named accent presets compose with all/
+    )
+    const combinations = missingStoryText.match(
+      /the (\d+) combinations do not need hand-authored variants/
+    )
+
+    expect(missingCounts).not.toBeNull()
+    expect(missingAccentCount).not.toBeNull()
+    expect(combinations).not.toBeNull()
+    expect(overviewCounts?.[1]).toBe(missingCounts?.[1])
+    expect(overviewCounts?.[2]).toBe(missingCounts?.[2])
+    expect(overviewAccentCount?.[1]).toBe(missingAccentCount?.[1])
+    expect(Number(combinations?.[1])).toBe(
+      Number(missingCounts?.[1]) * (Number(missingAccentCount?.[1]) + 1)
+    )
+  })
+})
+
 /**
  * Interaction: the behaviours the components are *for*.
  *

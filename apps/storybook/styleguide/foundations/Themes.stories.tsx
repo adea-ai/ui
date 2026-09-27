@@ -1,5 +1,13 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { builtinThemes, Badge, Button, Input, ThemePreview, themeFamilies } from '@adea-ai/ui'
+import {
+  accentPresets,
+  builtinThemes,
+  Badge,
+  Button,
+  Input,
+  ThemePreview,
+  themeFamilies,
+} from '@adea-ai/ui'
 import { For, Show } from 'solid-js'
 
 /**
@@ -172,8 +180,10 @@ export const WhatIsMissing: Story = {
         </li>
         <li>
           <span class="text-foreground">A theme picker for the accent</span> is a separate axis, not
-          a theme. Six accents compose with every theme, which is 100+ combinations from 17 palettes
-          and 6 presets rather than 100 hand-authored variants.
+          a theme. The {accentPresets.length - 1} named accent presets compose with all{' '}
+          {builtinThemes.length} themes. The Theme choice uses each variant's own primary, so the{' '}
+          {accentPresets.length * builtinThemes.length} combinations do not need hand-authored
+          variants.
         </li>
       </ul>
     </div>
