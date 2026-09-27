@@ -1,4 +1,12 @@
-import { createEffect, createMemo, createSignal, onMount, Show, splitProps } from 'solid-js'
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+  splitProps,
+} from 'solid-js'
 import { Check, Download, ExternalLink, LoaderCircle, RefreshCw, Sparkles } from 'lucide-solid'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
@@ -177,18 +185,31 @@ export function UpdateDialog(props: UpdateDialogProps) {
   const [state, setState] = createSignal<UpdateState | null>(null)
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal('')
+  let lifecycleEpoch = 0
+  let activeOpenEpoch: number | undefined
+  let disposed = false
 
-  const loadStatus = async () => {
-    if (!desktop()) return
+  onCleanup(() => {
+    disposed = true
+    activeOpenEpoch = undefined
+    lifecycleEpoch += 1
+  })
+
+  const loadStatus = async (isCurrent: () => boolean = () => !disposed) => {
+    if (!desktop() || !isCurrent()) return
     try {
-      setState(await local.adapter.getStatus())
+      const status = await local.adapter.getStatus()
+      if (isCurrent()) setState(status)
     } catch (caught) {
-      setError(errorMessage(caught, 'Version status is unavailable'))
+      if (isCurrent()) setError(errorMessage(caught, 'Version status is unavailable'))
     }
   }
 
   onMount(() => {
-    if (desktop()) void loadStatus()
+    if (desktop() && !open()) {
+      const epoch = lifecycleEpoch
+      void loadStatus(() => !disposed && lifecycleEpoch === epoch)
+    }
   })
 
   const check = async () => {
@@ -196,15 +217,25 @@ export function UpdateDialog(props: UpdateDialogProps) {
       setError(local.desktopOnlyMessage ?? `Update checks are available from the desktop app.`)
       return
     }
+    const epoch = activeOpenEpoch
+    const isCurrent = () =>
+      !disposed &&
+      epoch !== undefined &&
+      activeOpenEpoch === epoch &&
+      lifecycleEpoch === epoch &&
+      open()
+    if (!isCurrent()) return
     setBusy(true)
     setError('')
     try {
-      setState(await local.adapter.check())
+      const checked = await local.adapter.check()
+      if (isCurrent()) setState(checked)
     } catch (caught) {
+      if (!isCurrent()) return
       setError(errorMessage(caught, 'Could not check for updates'))
-      await loadStatus()
+      await loadStatus(isCurrent)
     } finally {
-      setBusy(false)
+      if (isCurrent()) setBusy(false)
     }
   }
 
@@ -214,35 +245,57 @@ export function UpdateDialog(props: UpdateDialogProps) {
    * disposed scope.
    */
   createEffect(() => {
-    if (!open() || !desktop()) return
+    if (!open() || !desktop()) {
+      if (activeOpenEpoch !== undefined) {
+        activeOpenEpoch = undefined
+        lifecycleEpoch += 1
+      }
+      return
+    }
+    const epoch = ++lifecycleEpoch
+    activeOpenEpoch = epoch
     let active = true
+    const isCurrent = () =>
+      active && !disposed && activeOpenEpoch === epoch && lifecycleEpoch === epoch && open()
+    onCleanup(() => {
+      active = false
+      if (activeOpenEpoch === epoch) {
+        activeOpenEpoch = undefined
+        lifecycleEpoch += 1
+      }
+    })
     setError('')
     setBusy(true)
     void (async () => {
       try {
         const current = await local.adapter.getStatus()
-        if (!active) return
+        if (!isCurrent()) return
         setState(current)
         const checked = await local.adapter.check()
-        if (active) setState(checked)
+        if (isCurrent()) setState(checked)
       } catch (caught) {
-        if (active) setError(errorMessage(caught, 'Could not check for updates'))
+        if (isCurrent()) setError(errorMessage(caught, 'Could not check for updates'))
       } finally {
-        if (active) setBusy(false)
+        if (isCurrent()) setBusy(false)
       }
     })()
-    return () => {
-      active = false
-    }
   })
 
   const install = async () => {
     const version = state()?.availableVersion
-    if (!version) return
+    const epoch = activeOpenEpoch
+    const isCurrent = () =>
+      !disposed &&
+      epoch !== undefined &&
+      activeOpenEpoch === epoch &&
+      lifecycleEpoch === epoch &&
+      open()
+    if (!version || !isCurrent()) return
     setBusy(true)
     setError('')
     try {
       const next = await local.adapter.install(version)
+      if (!isCurrent()) return
       setState(next)
       // A refused install answers with a normal payload whose phase is `failed`.
       // Without this the click looked like nothing happened.
@@ -250,10 +303,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
         setError(errorMessage(next.error, 'Update installation failed'))
       }
     } catch (caught) {
+      if (!isCurrent()) return
       setError(errorMessage(caught, 'Update installation failed'))
-      await loadStatus()
+      await loadStatus(isCurrent)
     } finally {
-      setBusy(false)
+      if (isCurrent()) setBusy(false)
     }
   }
 
