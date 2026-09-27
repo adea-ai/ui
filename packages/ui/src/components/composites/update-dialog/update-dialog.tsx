@@ -56,9 +56,13 @@ import { formatBytes, formatReleaseDate, plainTextFromMarkdown } from '#lib/vers
  * the other order leaves the dialog blank for as long as the check takes, on a
  * dialog whose first question is always "what am I running?".
  *
- * **Errors are not always `Error`s.** An adapter can reject with a string, and a
- * shell can answer with an error field. Both are read, and a fallback is shown
- * rather than an empty alert.
+ * **A failed check is not a current result.** A cached `current` status can only
+ * be shown as up to date after the latest check succeeds; a failed check remains
+ * retryable and suppresses that claim.
+ *
+ * **Errors are not always `Error`s.** An adapter can reject with a string or a
+ * structured safe message. Unknown object fields are never serialized into the
+ * UI; a generic fallback is shown instead.
  *
  * The adapter's `isDesktopRuntime` gate exists because an update is a desktop
  * concern: a browser build has no installer, and the honest thing to show is that
@@ -151,10 +155,22 @@ export type UpdateDialogProps = {
   class?: string
 }
 
+function messageText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const message = value.trim()
+  return message && message !== '[object Object]' ? message : undefined
+}
+
 function errorMessage(caught: unknown, fallback: string): string {
-  if (caught instanceof Error && caught.message) return caught.message
-  if (typeof caught === 'string' && caught) return caught
-  return fallback
+  if (caught instanceof Error) return messageText(caught.message) ?? fallback
+  const plainMessage = messageText(caught)
+  if (plainMessage) return plainMessage
+  if (!caught || typeof caught !== 'object') return fallback
+
+  const record = caught as { error?: unknown; safe?: unknown }
+  const safe = record.safe as { message?: unknown } | null | undefined
+  const nestedError = record.error as { safe?: { message?: unknown } | null } | null | undefined
+  return messageText(safe?.message) ?? messageText(nestedError?.safe?.message) ?? fallback
 }
 
 /**
@@ -199,6 +215,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
   const [state, setState] = createSignal<UpdateState | null>(null)
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal('')
+  const [checkFailed, setCheckFailed] = createSignal(false)
   let lifecycleEpoch = 0
   let activeOpenEpoch: number | undefined
   let disposed = false
@@ -213,7 +230,19 @@ export function UpdateDialog(props: UpdateDialogProps) {
     if (!desktop() || !isCurrent()) return
     try {
       const status = await local.adapter.getStatus()
-      if (isCurrent()) setState(status)
+      const previous = state()
+      const hasActionableSnapshot = (candidate: UpdateState | null) =>
+        candidate?.phase === 'available' || isBusy(candidate)
+      const preservesSnapshot =
+        previous?.phase === 'available'
+          ? status.phase === 'available' || isBusy(status)
+          : isBusy(previous) && isBusy(status)
+      if (
+        isCurrent() &&
+        !(checkFailed() && hasActionableSnapshot(previous) && !preservesSnapshot)
+      ) {
+        setState(status)
+      }
     } catch (caught) {
       if (isCurrent()) setError(errorMessage(caught, 'Version status is unavailable'))
     }
@@ -225,6 +254,24 @@ export function UpdateDialog(props: UpdateDialogProps) {
       void loadStatus(() => !disposed && lifecycleEpoch === epoch)
     }
   })
+
+  const failCheck = (caught: unknown, fallback: string) => {
+    const message = errorMessage(caught, fallback)
+    setCheckFailed(true)
+    setError(message)
+  }
+
+  const applyCheckResult = (next: UpdateState) => {
+    if (next.phase === 'failed') {
+      const current = state()
+      if (!current) setState(next)
+      failCheck(next.error, 'Could not check for updates')
+      return
+    }
+    setState(next)
+    setCheckFailed(false)
+    setError('')
+  }
 
   const check = async () => {
     if (!desktop()) {
@@ -241,13 +288,15 @@ export function UpdateDialog(props: UpdateDialogProps) {
     if (!isCurrent()) return
     setBusy(true)
     setError('')
+    setCheckFailed(false)
     try {
       const checked = await local.adapter.check()
-      if (isCurrent()) setState(checked)
+      if (isCurrent()) applyCheckResult(checked)
     } catch (caught) {
-      if (!isCurrent()) return
-      setError(errorMessage(caught, 'Could not check for updates'))
-      await loadStatus(isCurrent)
+      if (isCurrent()) {
+        failCheck(caught, 'Could not check for updates')
+        await loadStatus(isCurrent)
+      }
     } finally {
       if (isCurrent()) setBusy(false)
     }
@@ -279,6 +328,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
       }
     })
     setError('')
+    setCheckFailed(false)
     setBusy(true)
     void (async () => {
       try {
@@ -286,9 +336,9 @@ export function UpdateDialog(props: UpdateDialogProps) {
         if (!isCurrent()) return
         setState(current)
         const checked = await local.adapter.check()
-        if (isCurrent()) setState(checked)
+        if (isCurrent()) applyCheckResult(checked)
       } catch (caught) {
-        if (isCurrent()) setError(errorMessage(caught, 'Could not check for updates'))
+        if (isCurrent()) failCheck(caught, 'Could not check for updates')
       } finally {
         if (isCurrent()) setBusy(false)
       }
@@ -315,6 +365,8 @@ export function UpdateDialog(props: UpdateDialogProps) {
       // Without this the click looked like nothing happened.
       if (next.phase === 'failed') {
         setError(errorMessage(next.error, 'Update installation failed'))
+      } else {
+        setCheckFailed(false)
       }
     } catch (caught) {
       if (!isCurrent()) return
@@ -331,10 +383,12 @@ export function UpdateDialog(props: UpdateDialogProps) {
     return value ? plainTextFromMarkdown(value) : ''
   }
   const working = () => busy() || isBusy(state())
+  const isCurrent = () => state()?.phase === 'current' && !error() && !checkFailed() && !working()
 
   const triggerLabel = () => {
     const current = state()
     const fallback = `v${local.fallbackVersion ?? '0.1.0'}`
+    if (checkFailed()) return `Version ${current?.currentVersion || fallback} · Retry`
     if (!current) return `${appName()} ${fallback}`
     switch (current.phase) {
       case 'checking':
@@ -410,7 +464,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 </p>
                 <p class="text-sm text-muted-foreground">
                   <Show
-                    when={state()?.phase === 'current'}
+                    when={isCurrent()}
                     fallback={
                       <Show
                         when={state()?.phase === 'available' && state()?.availableVersion}
@@ -439,7 +493,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 <Show when={working()} fallback={<RefreshCw aria-hidden="true" />}>
                   <LoaderCircle class="animate-spin" aria-hidden="true" />
                 </Show>
-                Check latest version
+                {checkFailed() ? 'Retry update check' : 'Check latest version'}
               </Button>
             </div>
           </section>
@@ -503,7 +557,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
             </section>
           </Show>
 
-          <Show when={state()?.phase === 'current'}>
+          <Show when={isCurrent()}>
             <p class="text-foreground flex items-center gap-2 text-sm" role="status">
               <Check class="size-4 text-success" aria-hidden="true" />
               {appName()} is up to date.

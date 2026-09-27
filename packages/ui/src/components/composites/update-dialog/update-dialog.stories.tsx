@@ -118,6 +118,23 @@ export const InstallFailed: Story = {
   },
 }
 
+/** A failed release-channel check hides cached current status and offers retry. */
+export const CheckFailed: Story = {
+  args: {
+    defaultOpen: true,
+    adapter: demoAdapter([
+      base,
+      {
+        ...base,
+        phase: 'failed',
+        error: 'The update channel is temporarily unavailable.',
+      },
+      base,
+    ]),
+    appName: 'Adea',
+  },
+}
+
 export const RestartRequired: Story = {
   args: {
     adapter: demoAdapter([
