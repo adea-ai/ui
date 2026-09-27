@@ -35,7 +35,7 @@ const coreSamples: PackedSample[] = [
   {
     name: 'overlay',
     imports: "import { ModalDialog } from '@adea-ai/ui'",
-    jsx: '<ModalDialog open onClose={() => {}} title="Details">Content</ModalDialog>',
+    jsx: '<><ModalDialog open onClose={() => {}} title="Details">Content</ModalDialog><ModalDialog open modal={false} onClose={() => {}} title="Details" aria-label="Custom details">Custom content</ModalDialog></>',
     source: 'ui/modal-dialog',
   },
   {
