@@ -291,3 +291,37 @@ refused. React, Lexical, browser clipboard/File handling, localStorage side-tabl
 recovery, backend message reconciliation, uploads, textarea editing, previews,
 chips, undo/history and submit/persistence authority are not included. This
 selected model is not rich editing, complete Chat, or application adoption.
+
+## Shared transcript composition translated from KiroCrew
+
+`packages/ui/src/components/conversation/transcript-grouping.ts`,
+`transcript-folding.ts` and the `transcript-composition.tsx` component substantially
+translate the ordered display grouping and turn disclosure contracts in
+`website/src/app-sdk/ChatMessageList.tsx`,
+`website/src/pages/chat/groupDisplayItems.ts`,
+`website/src/pages/chat/TurnBlock.tsx`,
+`website/src/pages/chat/CollapsibleToolGroup.tsx` and
+`website/src/pages/chat/rowDisclosure.tsx`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: ordered host-classified turns and contiguous groups, structural sharing,
+stable row owners during loose-to-turn promotion, running/default disclosure,
+host-restorable explicit pins, distinct request counting, tool-payload unmounting,
+mounted interim prose, and visible host-marked actionable or interactive rows.
+The host supplies row identity, redaction, conclusion and call classifications;
+the renderer owns no protocol parser, permission, session, event or success
+authority. Solid/Kobalte-compatible controls and keyed row owners replace React,
+Redux and Framer Motion ownership. Relevant test contracts come from
+`website/src/test/groupDisplayItems.test.ts`,
+`website/src/test/groupDisplayItems.structuralSharing.test.ts`,
+`website/src/test/TurnBlock.test.tsx`,
+`website/src/test/TurnBlock.disclosurePin.test.tsx`,
+`website/src/test/TurnBlock.disclosureDurable.test.tsx`,
+`website/src/test/TurnBlock.rowMemo.test.tsx` and
+`website/src/test/rowDisclosure.test.tsx`; compiled and Solid packed consumers are
+exercised in headless Chromium, WebKit and native Node SSR. Full runtime projection,
+durable application storage and production Chat adoption remain host-owned gates.

@@ -453,3 +453,61 @@ draft state, persistence, message reconciliation and editor behavior. The model
 does not read storage or the clipboard, upload files, edit a textarea, or
 provide undo/history, previews or chips. Its selected source and Apache-2.0
 attribution are recorded in the issue #532 entry in `NOTICE`.
+
+## Transcript composition
+
+`TranscriptComposition` assembles ordered host-classified rows, contiguous groups,
+turn presentation and accessible fold controls. Import it from the public component
+subpath:
+
+```tsx
+import {
+  TranscriptComposition,
+  type TranscriptCompositionRendererProps,
+  type TranscriptRow,
+} from '@adea-ai/ui/components/conversation/transcript-composition'
+
+type Message = { text: string }
+const rows: readonly TranscriptRow<Message>[] = [
+  { id: 'question-1', value: { text: 'Inspect the cursor.' }, opensTurn: 'reset' },
+  {
+    id: 'tool-1',
+    value: { text: 'Read the cursor.' },
+    fold: 'tool',
+    call: { phase: 'request', id: 'call-1' },
+  },
+]
+
+function HostMessage(props: TranscriptCompositionRendererProps<Message>) {
+  return <article>{props.row.value.text}</article>
+}
+
+export function TranscriptPreview() {
+  return <TranscriptComposition rows={rows} renderRow={HostMessage} />
+}
+```
+
+Each row needs a stable unique `id` within its transcript. The host supplies the
+Solid row component and classifies turn boundaries, calls, conclusions,
+always-visible actions and redacted values. The renderer does not parse protocol
+payloads or decide permission, session, event, delivery or success state.
+
+Settled tool folds start closed and unmount their hidden row payloads. Live rows
+stay open until the host marks them settled; an explicit row choice survives that
+running-state transition. `foldMode="prose"` folds host-marked eligible activity
+before a host-designated conclusion, leaving that conclusion visible.
+The `foldState="collapsed"` command keeps hidden
+content mounted. It folds eligible rows before a host-marked conclusion; without
+that boundary it leaves prose visible and can still collapse explicitly classified
+tool calls. Always-visible rows stay in place. `disclosure` plus
+`onDisclosureChange` lets an application restore explicit choices from its own
+durable store using `transcriptDisclosureKey`.
+
+`bun run check:packed-transcript` installs the actual tarball without optional
+chart/carousel engines, compiles both published export conditions, and checks the
+same behavior in headless Chromium, WebKit and native Node SSR. It covers row-owner
+identity through loose-to-turn promotion, tool request counting, mounted prose,
+keyboard disclosure, visible actions and automated accessibility. This is shared
+composition evidence; bounded runtime projection, storage and production chat
+integration remain application acceptance gates. Attribution for the selected
+KiroCrew source contracts is recorded in the issue-specific `NOTICE` entry.
