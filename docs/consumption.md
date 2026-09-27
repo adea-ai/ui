@@ -400,6 +400,49 @@ takes the presentation plus the behaviour that is easy to get wrong.
 | `on-screen-controls`, `scene-settings`    | **stays in adea**                            | Agent Sim's 3D scene is domain, not design               |
 | `virtual-*`                               | **stays in adea**                            | the virtual-room transport is domain                     |
 
+### Returning focus from a controlled dialog
+
+`ModalDialog` captures the focused element before it opens and restores focus
+after a conditionally mounted dialog closes. When a pointer-opened dialog may
+open while the browser still has `body` focused, pass an accessor for the real,
+stable opener. A host wrapper should forward this prop to `ModalDialog`:
+
+```tsx
+import { createSignal, Show } from 'solid-js'
+import { ModalDialog } from '@adea-ai/ui/components/ui/modal-dialog'
+
+function Preferences() {
+  const [open, setOpen] = createSignal(false)
+  const [opener, setOpener] = createSignal<HTMLButtonElement>()
+
+  return (
+    <>
+      <button ref={setOpener} type="button" onClick={() => setOpen(true)}>
+        Open preferences
+      </button>
+      <Show when={open()}>
+        <ModalDialog
+          open
+          onClose={() => setOpen(false)}
+          restoreFocusRef={() => opener()}
+          title="Preferences"
+        >
+          {/* Preferences content */}
+        </ModalDialog>
+      </Show>
+    </>
+  )
+}
+```
+
+Pass the element that should receive focus back, not a closing menu item that
+will be removed or a guessed document element. The opener must still be
+connected, visible, enabled, and outside inert or hidden content when the dialog
+closes. A caller that prevents close autofocus owns focus restoration; the
+component also leaves focus alone when a different overlay has taken control.
+Use the accessor for controlled dialogs without a composed `DialogTrigger`; a
+focused opener can be inferred automatically when it is available.
+
 And the new surfaces neither application had: `CodeBlock`, `DiffBlock`,
 `NavigationMenu`, `Calendar`/`DatePicker`, `Carousel`, `Chart`, plus `Board`,
 `DetailPanel`, `EntityIcon`, `StatusChip` and `UpdateDialog` above.
