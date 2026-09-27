@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { contrastRatio, parseColor as parseCatalogueColor } from '@adea-ai/themes'
+import { alertVariants } from '../src/components/ui/alert/alert'
+import { badgeVariants } from '../src/components/ui/badge/badge'
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
+import { builtinThemes, themeCssVariables } from '../src/lib/themes'
+import { destructiveMenuItem } from '../src/lib/overlay'
 import { declarations, declaredNames, valueOf, type Scope } from './helpers/theme-css'
 
 /* ---------------------------------------------------------------------------
@@ -99,9 +103,9 @@ describe('contrast', () => {
    * either. It is the stricter promise the defaults make, and the catalogue's own
    * suite is the one that checks everything else.
    *
-   * `color-mix()` fills (the `-subtle` family, the diff backgrounds) are not
-   * covered here because their resolved value depends on what they are mixed
-   * into. Their foregrounds are chosen from the solid tokens, which are.
+   * Opaque status-subtle fills are checked against body foreground for every
+   * catalogue theme below. The remaining translucent diff and primary fills are
+   * not text surfaces: their rendered value depends on what they are mixed into.
    */
   const pairings: { fg: string; bg: string; minimum: number; why: string }[] = [
     { fg: 'foreground', bg: 'background', minimum: 7, why: 'body text on the canvas' },
@@ -199,6 +203,66 @@ describe('contrast', () => {
         ).toBeGreaterThanOrEqual(1.1)
       }
     }
+  })
+
+  test('status component labels and their actual fills compose across every catalogue theme', () => {
+    const statuses = [
+      { token: 'destructive', badge: 'destructive', alert: 'destructive' },
+      { token: 'success', badge: 'success', alert: 'success' },
+      { token: 'warning', badge: 'warning', alert: 'warning' },
+      { token: 'info', badge: 'info', alert: 'info' },
+    ] as const
+
+    for (const theme of builtinThemes) {
+      const variables = themeCssVariables(theme)
+      const required = (name: string): string => {
+        const value = variables[name]
+        expect(value, `${theme.id} is missing ${name}`).toBeDefined()
+        return value ?? ''
+      }
+      const bodyText = parseCatalogueColor(required('--foreground'))
+
+      expect(bodyText, `${theme.id} has no body foreground`).toBeDefined()
+
+      for (const status of statuses) {
+        const fill = parseCatalogueColor(required(`--${status.token}-subtle`))
+        const roleColor = parseCatalogueColor(required(`--${status.token}`))
+        expect(fill, `${theme.id} ${status.token}-subtle is not a resolved colour`).toBeDefined()
+        expect(roleColor, `${theme.id} ${status.token} is not a resolved colour`).toBeDefined()
+
+        const textRatio = contrastRatio(bodyText!, fill!)
+        expect(
+          textRatio,
+          `${theme.id} foreground on ${status.token}-subtle is ${textRatio.toFixed(2)}:1`
+        ).toBeGreaterThanOrEqual(4.5)
+
+        const iconRatio = contrastRatio(roleColor!, fill!)
+        expect(
+          iconRatio,
+          `${theme.id} ${status.token} icon on its subtle fill is ${iconRatio.toFixed(2)}:1`
+        ).toBeGreaterThanOrEqual(3)
+
+        const menuIndicatorRatio = contrastRatio(
+          roleColor!,
+          parseCatalogueColor(required('--popover'))!
+        )
+        expect(
+          menuIndicatorRatio,
+          `${theme.id} ${status.token} menu edge on popover is ${menuIndicatorRatio.toFixed(2)}:1`
+        ).toBeGreaterThanOrEqual(3)
+
+        const badge = badgeVariants({ variant: status.badge })
+        const alert = alertVariants({ variant: status.alert })
+        expect(badge).toContain(`bg-${status.token}-subtle`)
+        expect(badge).toContain('text-foreground')
+        expect(alert).toContain(`bg-${status.token}-subtle`)
+        expect(alert).toContain('text-foreground')
+      }
+    }
+
+    expect(destructiveMenuItem).toContain('text-foreground')
+    expect(destructiveMenuItem).toContain('border-destructive')
+    expect(destructiveMenuItem).toContain('data-[highlighted]:bg-destructive-subtle')
   })
 })
 

@@ -205,8 +205,8 @@ export function DiffBlock(props: DiffBlockProps) {
           {/* The counts are text, so the summary survives greyscale and a reader
               who cannot separate the two line tones still gets the shape of it. */}
           <span class="shrink-0 font-mono text-2xs text-muted-foreground">
-            <span class="text-success">+{stats().added}</span>{' '}
-            <span class="text-destructive">−{stats().removed}</span>
+            <span class="text-foreground">+{stats().added}</span>{' '}
+            <span class="text-foreground">−{stats().removed}</span>
           </span>
         </span>
         {local.actions}
@@ -278,8 +278,8 @@ export function DiffSummary(props: { patch: string; class?: string; onSelect?: (
     >
       <span class="truncate text-foreground">{name()}</span>
       <span class="shrink-0 text-2xs">
-        <span class="text-success">+{stats().added}</span>{' '}
-        <span class="text-destructive">−{stats().removed}</span>
+        <span class="text-foreground">+{stats().added}</span>{' '}
+        <span class="text-foreground">−{stats().removed}</span>
       </span>
     </button>
   )

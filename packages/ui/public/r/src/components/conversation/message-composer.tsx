@@ -197,7 +197,9 @@ export function MessageComposer(props: MessageComposerProps) {
           field the user is typing in. */}
       <div aria-live="polite" class="min-h-0">
         <Show when={error()}>
-          {(message) => <p class="text-destructive text-xs">{message()}</p>}
+          {(message) => (
+            <p class="text-foreground border-s-2 border-destructive ps-2 text-xs">{message()}</p>
+          )}
         </Show>
       </div>
     </form>

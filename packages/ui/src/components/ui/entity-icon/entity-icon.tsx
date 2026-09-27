@@ -17,9 +17,9 @@ import { cn } from '#lib/utils'
  * 1. **A glyph is always present.** A brand with no logo gets a monogram, not an
  *    empty box. `fallback` takes the name and returns the glyph, so a caller can
  *    choose initials, a domain letter, or a kind icon.
- * 2. **The tile owns its own contrast.** `tone` tints the background and the
- *    glyph together, so a caller never picks a colour pair and never ships an
- *    icon that disappears against its tile.
+ * 2. **The tile owns its own contrast.** `tone` tints the background while
+ *    monogram text keeps the body foreground; vector glyphs retain the status
+ *    colour. A caller never picks a colour pair or ships a glyph that disappears.
  * 3. **Size is on the control ladder**, not arbitrary. A tile in a rail and a
  *    tile in a detail header are the same two or three sizes every other
  *    interactive element uses.
@@ -51,10 +51,10 @@ export const entityIconVariants = cva(
         primary: 'border-transparent bg-primary-subtle text-primary',
         /** Bare: no fill and no edge, for a tile that already sits on a surface. */
         bare: 'border-transparent bg-transparent text-foreground',
-        success: 'border-transparent bg-success-subtle text-success',
-        warning: 'border-transparent bg-warning-subtle text-warning',
-        danger: 'border-transparent bg-destructive-subtle text-destructive',
-        info: 'border-transparent bg-info-subtle text-info',
+        success: 'border-transparent bg-success-subtle text-foreground [&_svg]:text-success',
+        warning: 'border-transparent bg-warning-subtle text-foreground [&_svg]:text-warning',
+        danger: 'border-transparent bg-destructive-subtle text-foreground [&_svg]:text-destructive',
+        info: 'border-transparent bg-info-subtle text-foreground [&_svg]:text-info',
       },
     },
     defaultVariants: { shape: 'rounded', size: 'md', tone: 'neutral' },

@@ -4,6 +4,7 @@ import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
 import {
   menuContentPadding,
+  destructiveMenuItem,
   menuItem,
   menuLabel,
   menuSeparator,
@@ -65,8 +66,7 @@ export function ContextMenuItem(
       class={cn(
         menuItem,
         {
-          'text-destructive data-[highlighted]:bg-destructive-subtle data-[highlighted]:text-destructive':
-            local.variant === 'destructive',
+          [destructiveMenuItem]: local.variant === 'destructive',
         },
         local.class
       )}
