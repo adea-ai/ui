@@ -20,10 +20,10 @@ export const badgeVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground',
         outline: 'border-border text-foreground',
         /** Tinted status fills, for counts and states rather than actions. */
-        success: 'bg-success-subtle text-success',
-        warning: 'bg-warning-subtle text-warning',
-        destructive: 'bg-destructive-subtle text-destructive',
-        info: 'bg-info-subtle text-info',
+        success: 'bg-success-subtle text-foreground',
+        warning: 'bg-warning-subtle text-foreground',
+        destructive: 'bg-destructive-subtle text-foreground',
+        info: 'bg-info-subtle text-foreground',
         subtle: 'bg-primary-subtle text-primary',
       },
       size: {

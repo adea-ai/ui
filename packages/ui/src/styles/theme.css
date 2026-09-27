@@ -78,7 +78,7 @@
   --muted: oklch(0.898 0.0108 261.79);
   --muted-foreground: oklch(0.474 0.0245 265.01);
 
-  /* Status. The fills are catalogue roles; the labels are measured. */
+  /* Status fills; solid labels and subtle surfaces come from the catalogue. */
   --destructive: oklch(0.4705 0.1626 25.78);
   --destructive-foreground: oklch(0.933 0.016 261.79);
   --success: oklch(0.4311 0.1809 145.62);
@@ -87,10 +87,10 @@
   --warning-foreground: oklch(0.933 0.016 261.79);
   --info: oklch(0.4915 0.1155 202.14);
   --info-foreground: oklch(0.933 0.016 261.79);
-  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
-  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
-  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
-  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
+  --destructive-subtle: oklch(0.8683 0.0365 279.15);
+  --success-subtle: oklch(0.8627 0.0391 245.53);
+  --warning-subtle: oklch(0.8662 0.0334 286.73);
+  --info-subtle: oklch(0.8712 0.0299 253.44);
 
   /* Lines */
   --border: oklch(0.783 0.0144 261.79);
@@ -213,7 +213,7 @@
   --muted: oklch(0.2268 0.0288 265.37);
   --muted-foreground: oklch(0.6308 0.0224 262.91);
 
-  /* Status. The fills are catalogue roles; the labels are measured. */
+  /* Status fills; solid labels and subtle surfaces come from the catalogue. */
   --destructive: oklch(0.7345 0.1626 25.78);
   --destructive-foreground: oklch(0.1918 0.0238 265.37);
   --success: oklch(0.6951 0.1809 145.62);
@@ -222,10 +222,10 @@
   --warning-foreground: oklch(0.1918 0.0238 265.37);
   --info: oklch(0.7555 0.1155 202.14);
   --info-foreground: oklch(0.1918 0.0238 265.37);
-  --destructive-subtle: color-mix(in oklch, var(--destructive) 16%, transparent);
-  --success-subtle: color-mix(in oklch, var(--success) 16%, transparent);
-  --warning-subtle: color-mix(in oklch, var(--warning) 16%, transparent);
-  --info-subtle: color-mix(in oklch, var(--info) 16%, transparent);
+  --destructive-subtle: oklch(0.2678 0.0432 282.23);
+  --success-subtle: oklch(0.2623 0.0458 248.61);
+  --warning-subtle: oklch(0.2657 0.0401 289.81);
+  --info-subtle: oklch(0.2707 0.0366 256.52);
 
   /* Lines */
   --border: oklch(0.3418 0.0214 265.37);

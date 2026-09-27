@@ -486,15 +486,15 @@ export function UpdateDialog(props: UpdateDialogProps) {
           </Show>
 
           <Show when={state()?.phase === 'current'}>
-            <p class="flex items-center gap-2 text-sm text-success" role="status">
-              <Check class="size-4" aria-hidden="true" />
+            <p class="text-foreground flex items-center gap-2 text-sm" role="status">
+              <Check class="size-4 text-success" aria-hidden="true" />
               {appName()} is up to date.
             </p>
           </Show>
 
           <Show when={state()?.phase === 'installed'}>
-            <p class="flex items-center gap-2 text-sm text-success" role="status">
-              <Check class="size-4" aria-hidden="true" />
+            <p class="text-foreground flex items-center gap-2 text-sm" role="status">
+              <Check class="size-4 text-success" aria-hidden="true" />
               <Show when={state()?.restartRequired} fallback="The update is applied.">
                 Restart {appName()} to finish the update.
               </Show>
@@ -503,7 +503,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
           <Show when={error()}>
             <p
-              class="rounded-lg border border-destructive/35 bg-destructive-subtle px-3 py-2 text-sm text-destructive"
+              class="text-foreground rounded-lg border border-destructive/35 bg-destructive-subtle px-3 py-2 text-sm"
               role="alert"
             >
               {error()}

@@ -26,7 +26,7 @@ const meta = {
         'destructive',
         'info',
       ],
-      description: 'Status meaning. The `-subtle` family is a tinted fill on any surface.',
+      description: 'Status meaning. The `-subtle` fill uses readable body text on any surface.',
     },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },

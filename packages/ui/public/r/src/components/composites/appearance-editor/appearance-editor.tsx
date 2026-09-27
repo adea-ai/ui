@@ -121,7 +121,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
               onInput={(event) => props.onChange({ accent: event.currentTarget.value })}
             />
             <Show when={props.customAccentError}>
-              <p id={errorId} role="alert" class="mt-1 text-xs text-destructive">
+              <p id={errorId} role="alert" class="mt-1 text-xs text-foreground">
                 {props.customAccentError}
               </p>
             </Show>

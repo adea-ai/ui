@@ -14,7 +14,9 @@ import { cn } from '../../../lib/utils'
  *
  * The glyph follows the tone rather than being passed in, so an alert cannot
  * be given a green checkmark on a destructive fill. A caller that genuinely
- * needs a different icon passes `icon`; `icon={null}` removes it.
+ * needs a different icon passes `icon`; `icon={null}` removes it. Text stays on
+ * the body foreground over the tinted status surface, while the glyph and edge
+ * carry the status hue.
  */
 const alertVariants = cva(
   'relative grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1 rounded-lg border px-3 py-2.5 text-sm',
@@ -22,10 +24,10 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground border-border',
-        destructive: 'bg-destructive-subtle text-destructive border-destructive/30',
-        success: 'bg-success-subtle text-success border-success/30',
-        warning: 'bg-warning-subtle text-warning border-warning/30',
-        info: 'bg-info-subtle text-info border-info/30',
+        destructive: 'bg-destructive-subtle text-foreground border-destructive/30',
+        success: 'bg-success-subtle text-foreground border-success/30',
+        warning: 'bg-warning-subtle text-foreground border-warning/30',
+        info: 'bg-info-subtle text-foreground border-info/30',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -38,6 +40,14 @@ const alertIcons = {
   success: CheckCircle2,
   warning: TriangleAlert,
   info: Info,
+} as const
+
+const alertIconTones = {
+  default: 'text-muted-foreground',
+  destructive: 'text-destructive',
+  success: 'text-success',
+  warning: 'text-warning',
+  info: 'text-info',
 } as const
 
 type AlertVariantProps = VariantProps<typeof alertVariants>
@@ -61,7 +71,10 @@ export function Alert(props: AlertProps) {
       {...rest}
     >
       {local.icon === null ? null : (
-        <span data-slot="alert-icon" class="row-span-2 pt-0.5 [&_svg]:size-4">
+        <span
+          data-slot="alert-icon"
+          class={cn('row-span-2 pt-0.5 [&_svg]:size-4', alertIconTones[tone()])}
+        >
           {local.icon ?? <Dynamic component={alertIcons[tone()]} />}
         </span>
       )}
@@ -86,7 +99,7 @@ export function AlertDescription(props: ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-description"
-      class={cn('col-start-2 text-sm opacity-90 [&_p]:leading-relaxed', local.class)}
+      class={cn('col-start-2 text-sm [&_p]:leading-relaxed', local.class)}
       {...rest}
     />
   )

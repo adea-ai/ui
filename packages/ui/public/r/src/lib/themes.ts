@@ -40,6 +40,7 @@ import {
   getAccent,
   hasTheme,
   statusForeground,
+  tint,
   primaryHover,
   primarySubtleCss,
   syntaxRoles,
@@ -76,9 +77,16 @@ export type ThemeColors = {
   accentForeground: string
   destructive: string
   destructiveForeground: string
+  destructiveSubtle: string
   success: string
+  successForeground: string
+  successSubtle: string
   warning: string
+  warningForeground: string
+  warningSubtle: string
   info: string
+  infoForeground: string
+  infoSubtle: string
   border: string
   input: string
   ring: string
@@ -186,9 +194,16 @@ const ROLE_FOR: Readonly<Record<keyof ThemeColors, keyof AdeaThemeRecord['colors
   destructive: 'error',
   // Overwritten below from the measured pairing; nominal here so the table is total.
   destructiveForeground: 'error',
+  destructiveSubtle: 'error',
   success: 'success',
+  successForeground: 'success',
+  successSubtle: 'success',
   warning: 'warning',
+  warningForeground: 'warning',
+  warningSubtle: 'warning',
   info: 'info',
+  infoForeground: 'info',
+  infoSubtle: 'info',
   border: 'border',
   input: 'border',
   ring: 'accent',
@@ -208,6 +223,13 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
   // red it is black and on a deep red it is white, and using the body text would put
   // white on a mid-tone red at about 3:1.
   colors.destructiveForeground = statusForeground(theme, 'error')
+  colors.destructiveSubtle = tint(theme.colors.error, theme.colors.background)
+  colors.successForeground = statusForeground(theme, 'success')
+  colors.successSubtle = tint(theme.colors.success, theme.colors.background)
+  colors.warningForeground = statusForeground(theme, 'warning')
+  colors.warningSubtle = tint(theme.colors.warning, theme.colors.background)
+  colors.infoForeground = statusForeground(theme, 'info')
+  colors.infoSubtle = tint(theme.colors.info, theme.colors.background)
 
   const syntax = syntaxRoles(theme)
 
@@ -374,9 +396,16 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
     '--accent-foreground': c.accentForeground,
     '--destructive': c.destructive,
     '--destructive-foreground': c.destructiveForeground,
+    '--destructive-subtle': c.destructiveSubtle,
     '--success': c.success,
+    '--success-foreground': c.successForeground,
+    '--success-subtle': c.successSubtle,
     '--warning': c.warning,
+    '--warning-foreground': c.warningForeground,
+    '--warning-subtle': c.warningSubtle,
     '--info': c.info,
+    '--info-foreground': c.infoForeground,
+    '--info-subtle': c.infoSubtle,
     '--border': c.border,
     '--input': c.input,
     '--ring': c.ring,
