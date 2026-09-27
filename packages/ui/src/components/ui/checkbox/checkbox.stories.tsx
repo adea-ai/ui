@@ -132,3 +132,18 @@ export const InAForm: Story = {
     </div>
   ),
 }
+
+/** Help and validation belong to the focusable input, even with an external label. */
+export const ExternalHelp: Story = {
+  render: () => (
+    <div>
+      <p id="external-checkbox-help">Assign a workspace before enabling sync.</p>
+      <Checkbox
+        aria-label="Workspace sync"
+        aria-describedby="external-checkbox-help"
+        aria-invalid="true"
+        title="Workspace required"
+      />
+    </div>
+  ),
+}

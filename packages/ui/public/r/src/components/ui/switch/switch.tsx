@@ -21,6 +21,8 @@ export type SwitchProps = Omit<ComponentProps<typeof KobalteSwitch>, 'children'>
   thumbClass?: string
   labelClass?: string
   descriptionClass?: string
+  label?: JSX.Element
+  description?: JSX.Element
   /**
    * Replaces the control and label. Omit it to get the default control beside
    * `label` and `description`; supply it to compose the parts yourself.
@@ -36,8 +38,14 @@ export function Switch(props: SwitchProps) {
     'labelClass',
     'descriptionClass',
     'children',
+    'label',
+    'description',
     'aria-label',
     'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-busy',
+    'title',
   ])
 
   return (
@@ -46,6 +54,10 @@ export function Switch(props: SwitchProps) {
       <KobalteSwitch.Input
         aria-label={local['aria-label']}
         aria-labelledby={local['aria-labelledby']}
+        aria-describedby={local['aria-describedby']}
+        aria-invalid={local['aria-invalid']}
+        aria-busy={local['aria-busy']}
+        title={local.title}
       />
       <KobalteSwitch.Control
         class={cn(
@@ -67,14 +79,23 @@ export function Switch(props: SwitchProps) {
           )}
         />
       </KobalteSwitch.Control>
-      {local.children ?? (
-        <div class="grid gap-0.5">
-          <KobalteSwitch.Label class={cn('text-sm leading-none font-medium', local.labelClass)} />
-          <KobalteSwitch.Description
-            class={cn('text-muted-foreground text-sm', local.descriptionClass)}
-          />
-        </div>
-      )}
+      {local.children ??
+        (local.label || local.description ? (
+          <div class="grid gap-0.5">
+            {local.label ? (
+              <KobalteSwitch.Label class={cn('text-sm leading-none font-medium', local.labelClass)}>
+                {local.label}
+              </KobalteSwitch.Label>
+            ) : null}
+            {local.description ? (
+              <KobalteSwitch.Description
+                class={cn('text-muted-foreground text-sm', local.descriptionClass)}
+              >
+                {local.description}
+              </KobalteSwitch.Description>
+            ) : null}
+          </div>
+        ) : null)}
     </KobalteSwitch>
   )
 }

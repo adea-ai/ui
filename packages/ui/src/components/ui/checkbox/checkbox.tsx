@@ -21,6 +21,8 @@ export type CheckboxProps = Omit<ComponentProps<typeof KobalteCheckbox>, 'childr
   controlClass?: string
   labelClass?: string
   descriptionClass?: string
+  label?: JSX.Element
+  description?: JSX.Element
   /**
    * Replaces the control and label. Omit it to get the default control beside
    * `label` and `description`; supply it to compose the parts yourself.
@@ -35,9 +37,15 @@ export function Checkbox(props: CheckboxProps) {
     'labelClass',
     'descriptionClass',
     'children',
+    'label',
+    'description',
     'indeterminate',
     'aria-label',
     'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-busy',
+    'title',
   ])
 
   return (
@@ -50,6 +58,10 @@ export function Checkbox(props: CheckboxProps) {
       <KobalteCheckbox.Input
         aria-label={local['aria-label']}
         aria-labelledby={local['aria-labelledby']}
+        aria-describedby={local['aria-describedby']}
+        aria-invalid={local['aria-invalid']}
+        aria-busy={local['aria-busy']}
+        title={local.title}
       />
       <KobalteCheckbox.Control
         class={cn(
@@ -67,14 +79,23 @@ export function Checkbox(props: CheckboxProps) {
           {local.indeterminate ? <Minus class="size-3" /> : <Check class="size-3" />}
         </KobalteCheckbox.Indicator>
       </KobalteCheckbox.Control>
-      {local.children ?? (
-        <div class="grid gap-0.5 leading-none">
-          <KobalteCheckbox.Label class={cn('text-sm font-medium', local.labelClass)} />
-          <KobalteCheckbox.Description
-            class={cn('text-muted-foreground text-sm', local.descriptionClass)}
-          />
-        </div>
-      )}
+      {local.children ??
+        (local.label || local.description ? (
+          <div class="grid gap-0.5">
+            {local.label ? (
+              <KobalteCheckbox.Label class={cn('text-sm font-medium', local.labelClass)}>
+                {local.label}
+              </KobalteCheckbox.Label>
+            ) : null}
+            {local.description ? (
+              <KobalteCheckbox.Description
+                class={cn('text-muted-foreground text-sm', local.descriptionClass)}
+              >
+                {local.description}
+              </KobalteCheckbox.Description>
+            ) : null}
+          </div>
+        ) : null)}
     </KobalteCheckbox>
   )
 }
