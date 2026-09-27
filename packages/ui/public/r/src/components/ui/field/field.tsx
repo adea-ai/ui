@@ -44,7 +44,7 @@ export function FieldDescription(props: ComponentProps<typeof KobalteTextField.D
 export function FieldError(props: ComponentProps<typeof KobalteTextField.ErrorMessage>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
-    <KobalteTextField.ErrorMessage class={cn('text-destructive text-sm', local.class)} {...rest} />
+    <KobalteTextField.ErrorMessage class={cn('text-foreground text-sm', local.class)} {...rest} />
   )
 }
 
