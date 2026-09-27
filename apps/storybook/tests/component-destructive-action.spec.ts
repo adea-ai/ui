@@ -202,11 +202,21 @@ test('packed destructive actions and semantic notices compose across the catalog
       const alert = theme.querySelector<HTMLElement>('[data-destructive-alert]')
       const icon = alert?.querySelector<HTMLElement>('[data-slot="alert-icon"]')
       if (!badge || !alert || !icon) throw new Error('Semantic status fixture is incomplete')
+      const swatch = theme.querySelector<HTMLElement>(
+        '[data-slot="theme-swatch"] > span:last-child'
+      )
+      const preview = theme.querySelector<HTMLElement>(
+        '[data-slot="theme-preview"] .mt-auto > span:nth-child(2)'
+      )
+      if (!swatch || !preview) throw new Error('Theme preview fixture is incomplete')
       const badgeStyle = getComputedStyle(badge)
       const alertStyle = getComputedStyle(alert)
       return {
         id: theme.dataset['themeId'],
         error: colorPixels(variables.getPropertyValue('--destructive')),
+        action: colorPixels(variables.getPropertyValue('--destructive-action')),
+        swatch: colorPixels(getComputedStyle(swatch).backgroundColor),
+        preview: colorPixels(getComputedStyle(preview).backgroundColor),
         subtle: colorPixels(variables.getPropertyValue('--destructive-subtle')),
         body: colorPixels(variables.getPropertyValue('--foreground')),
         badgeFill: colorPixels(badgeStyle.backgroundColor),
@@ -219,6 +229,12 @@ test('packed destructive actions and semantic notices compose across the catalog
   })
 
   for (const item of semantic) {
+    expect(item.swatch, `${item.id} swatch differs from its destructive action`).toEqual(
+      item.action
+    )
+    expect(item.preview, `${item.id} preview differs from its destructive action`).toEqual(
+      item.action
+    )
     expect(item.badgeFill, `${item.id} Badge lost its canonical subtle tint`).toEqual(item.subtle)
     expect(item.badgeText, `${item.id} Badge lost body text contrast`).toEqual(item.body)
     expect(item.alertFill, `${item.id} Alert lost its canonical subtle tint`).toEqual(item.subtle)

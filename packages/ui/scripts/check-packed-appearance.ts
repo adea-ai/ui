@@ -58,6 +58,7 @@ const replaceDestructiveImports = (source: string) =>
     .replaceAll('../../src/components/ui/alert/alert', '@adea-ai/ui/components/ui/alert')
     .replaceAll('../../src/components/ui/badge/badge', '@adea-ai/ui/components/ui/badge')
     .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/theme/theme-picker', '@adea-ai/ui/components/theme')
     .replaceAll('../../src/lib/themes', '@adea-ai/ui/lib/themes')
     .replaceAll('../../src/styles/globals.css', './destructive-style.css')
 try {

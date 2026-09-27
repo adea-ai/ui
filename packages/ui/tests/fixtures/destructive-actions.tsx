@@ -2,6 +2,7 @@ import { For } from 'solid-js'
 import { render } from 'solid-js/web'
 import { Alert, AlertDescription, AlertTitle } from '../../src/components/ui/alert/alert'
 import { Badge } from '../../src/components/ui/badge/badge'
+import { ThemePreview, ThemeSwatch } from '../../src/components/theme/theme-picker'
 import { Button } from '../../src/components/ui/button/button'
 import { builtinThemes, themeCssVariables } from '../../src/lib/themes'
 import '../../src/styles/globals.css'
@@ -48,6 +49,8 @@ function Fixture() {
               </div>
             </div>
             <div class="flex items-center gap-2">
+              <ThemeSwatch theme={theme} />
+              <ThemePreview theme={theme} />
               <Badge variant="destructive" data-destructive-badge>
                 Failed
               </Badge>

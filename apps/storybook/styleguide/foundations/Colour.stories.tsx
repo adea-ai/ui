@@ -95,6 +95,7 @@ export const ContrastGuarantees: Story = {
             { fg: 'muted-foreground', bg: 'sidebar', floor: '4.5:1' },
             { fg: 'primary-foreground', bg: 'primary', floor: '4.5:1' },
             { fg: 'destructive-foreground', bg: 'destructive', floor: '4.5:1' },
+            { fg: 'destructive-action-foreground', bg: 'destructive-action', floor: '4.5:1' },
           ]}
         >
           {(pair) => (
