@@ -433,8 +433,9 @@ The disposable host explicitly imports four isolated canonical theme records plu
 color/CSS adapters from published `@adea-ai/themes`; the UI composition imports only
 theme types. Both conditions retain one Solid runtime and one JS chunk, external CSS,
 no fonts or unrelated engines, and full donor attribution. The combined host/editor
-budgets are 64 KiB gzip JS and 50 KiB raw CSS; measured baselines are 62,203/62,643
-gzip JS bytes and 50,060 raw CSS bytes with complete discovery of nested controls and shared helpers. This includes host theme-preview behavior,
+budgets are 64 KiB gzip JS and 50 KiB raw CSS; measured baselines are 63,570 gzip
+JS / 50,059 raw CSS bytes for compiled and 64,086 gzip JS / 50,059 raw CSS bytes
+for Solid, with complete discovery of nested controls and shared helpers. This includes host theme-preview behavior,
 not just the editor primitive.
 
 Local packed interaction gates require `bunx playwright install chromium webkit`
