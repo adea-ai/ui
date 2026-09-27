@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { createSignal, Show } from 'solid-js'
+import { Button } from '../../ui/button'
 import { UpdateDialog, type UpdateAdapter, type UpdateState } from './update-dialog'
 
 const CHANGELOG = `# 0.55.0
@@ -47,7 +49,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "A software-update surface driven by an adapter, because the transport is the one thing a component library cannot implement — it is signed, downloaded and applied by the application's own updater. What is general is the phase machine and how each phase is presented. Two details are hard-won: a refused install answers with a normal payload whose phase is `failed` rather than throwing (without handling that, clicking install looks like nothing happened), and busy is derived from the snapshot as well as the click, because an update can be downloading while the dialog is open.",
+          "A software-update surface driven by an adapter, because the transport is the one thing a component library cannot implement — it is signed, downloaded and applied by the application's own updater. What is general is the phase machine and how each phase is presented. Two details are hard-won: a refused install answers with a normal payload whose phase is `failed` rather than throwing (without handling that, clicking install looks like nothing happened), and busy is derived from the snapshot as well as the click, because an update can be downloading while the dialog is open. A controlled dialog opened after another layer closes can receive `restoreFocusRef` so focus returns to its stable opener.",
       },
     },
   },
@@ -155,5 +157,37 @@ export const WithReleaseNotes: Story = {
         releaseUrl: 'https://example.com/releases',
       },
     ]),
+  },
+}
+
+/** A controlled dialog opened after the account menu closes. */
+export const ControlledFromExternalMenu: Story = {
+  render: () => {
+    const [open, setOpen] = createSignal(false)
+    let opener: HTMLButtonElement | undefined
+
+    return (
+      <>
+        <Button
+          ref={(element) => (opener = element)}
+          onClick={() => {
+            // A menu selection closes its layer before the dialog opens.
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+            setOpen(true)
+          }}
+        >
+          Open updates from account menu
+        </Button>
+        <Show when={open()}>
+          <UpdateDialog
+            adapter={demoAdapter([base])}
+            appName="Adea"
+            open={open()}
+            onOpenChange={setOpen}
+            restoreFocusRef={() => opener}
+          />
+        </Show>
+      </>
+    )
   },
 }

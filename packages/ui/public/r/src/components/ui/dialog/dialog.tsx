@@ -1,9 +1,211 @@
 import { Dialog as KobalteDialog } from '@kobalte/core/dialog'
 import { X } from 'lucide-solid'
-import type { ComponentProps, JSX } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import type { Accessor, ComponentProps, JSX } from 'solid-js'
+import { createRenderEffect, onCleanup, Show, splitProps } from 'solid-js'
 import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
+
+type FocusCycle = {
+  content: HTMLElement
+  opener: HTMLElement | null
+  openerEligible: boolean
+  closed: boolean
+  focusMovedOutside: boolean
+  closeAutoFocusScheduled: boolean
+  frame?: number
+  fallbackTimer?: number
+  observer?: MutationObserver
+  onFocusIn: (event: FocusEvent) => void
+}
+
+function canRestoreFocus(target: HTMLElement): boolean {
+  return (
+    target.isConnected &&
+    target !== document.body &&
+    target !== document.documentElement &&
+    !target.closest('[inert], [aria-hidden="true"]') &&
+    !target.matches(':disabled') &&
+    target.getClientRects().length > 0
+  )
+}
+
+function hasOtherOverlay(content: HTMLElement, opener: HTMLElement): boolean {
+  return [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')].some(
+    (overlay) =>
+      overlay !== content &&
+      !content.contains(overlay) &&
+      !overlay.contains(opener) &&
+      !overlay.closest('[aria-hidden="true"], [inert]') &&
+      overlay.getClientRects().length > 0
+  )
+}
+
+type DialogFocusRestorationOptions = {
+  open: Accessor<boolean>
+  restoreFocusRef?: Accessor<HTMLElement | undefined>
+  onOpenAutoFocus?: ComponentProps<typeof KobalteDialog.Content>['onOpenAutoFocus']
+  onCloseAutoFocus?: ComponentProps<typeof KobalteDialog.Content>['onCloseAutoFocus']
+}
+
+/**
+ * Adds guarded opener capture and restoration to a Kobalte dialog content.
+ * Composed surfaces use this internal helper; it is omitted from the public
+ * dialog barrel so the restoration policy stays with the dialog components.
+ */
+export function createDialogFocusRestoration({
+  open,
+  restoreFocusRef,
+  onOpenAutoFocus: callerOnOpenAutoFocus,
+  onCloseAutoFocus: callerOnCloseAutoFocus,
+}: DialogFocusRestorationOptions) {
+  const focusCycles = new WeakMap<HTMLElement, FocusCycle>()
+  let activeFocusCycle: FocusCycle | undefined
+  let pendingOpener: HTMLElement | null = null
+  let pendingOpenerEligible = false
+
+  createRenderEffect(() => {
+    if (!open() || typeof document === 'undefined') {
+      pendingOpener = null
+      pendingOpenerEligible = false
+      return
+    }
+    const active = restoreFocusRef?.() ?? document.activeElement
+    pendingOpener = active instanceof HTMLElement ? active : null
+    pendingOpenerEligible = active instanceof HTMLElement && canRestoreFocus(active)
+  })
+
+  const finishFocusCycle = (cycle: FocusCycle) => {
+    if (cycle.frame !== undefined) window.cancelAnimationFrame(cycle.frame)
+    if (cycle.fallbackTimer !== undefined) window.clearTimeout(cycle.fallbackTimer)
+    cycle.observer?.disconnect()
+    document.removeEventListener('focusin', cycle.onFocusIn)
+    if (activeFocusCycle === cycle) activeFocusCycle = undefined
+  }
+
+  const scheduleFocusRestore = (cycle: FocusCycle) => {
+    if (cycle.frame !== undefined) return
+    cycle.frame = window.requestAnimationFrame(() => {
+      cycle.frame = undefined
+      const opener = cycle.opener
+      const active = document.activeElement
+      const focusIsAvailable =
+        active === document.body ||
+        active === document.documentElement ||
+        active === cycle.content ||
+        (active instanceof Node && cycle.content.contains(active))
+      if (
+        activeFocusCycle !== cycle ||
+        !cycle.closed ||
+        cycle.focusMovedOutside ||
+        !opener ||
+        !opener.isConnected ||
+        opener.matches(':disabled') ||
+        opener.getClientRects().length === 0 ||
+        !focusIsAvailable ||
+        hasOtherOverlay(cycle.content, opener)
+      ) {
+        finishFocusCycle(cycle)
+        return
+      }
+
+      // Inert and aria-hidden are removed by the dialog's containment cleanup.
+      // Wait for that cleanup before returning focus to the original control.
+      if (opener.closest('[inert], [aria-hidden="true"]')) return
+      if (cycle.openerEligible && canRestoreFocus(opener)) {
+        opener.focus({ preventScroll: true })
+      }
+      finishFocusCycle(cycle)
+    })
+  }
+
+  const onOpenAutoFocus = (event: Event) => {
+    const element = event.currentTarget
+    if (element instanceof HTMLElement) {
+      if (activeFocusCycle) finishFocusCycle(activeFocusCycle)
+
+      const openerWasCaptured = pendingOpener !== null
+      const opener = pendingOpener ?? document.activeElement
+      const openerEligible = openerWasCaptured
+        ? pendingOpenerEligible
+        : opener instanceof HTMLElement && canRestoreFocus(opener)
+      pendingOpener = null
+      pendingOpenerEligible = false
+      const cycle: FocusCycle = {
+        content: element,
+        opener: opener instanceof HTMLElement ? opener : null,
+        openerEligible,
+        closed: false,
+        focusMovedOutside: false,
+        closeAutoFocusScheduled: false,
+        onFocusIn: (focusEvent) => {
+          const target = focusEvent.target
+          if (
+            !(target instanceof HTMLElement) ||
+            target === document.body ||
+            target === document.documentElement ||
+            target === element ||
+            element.contains(target) ||
+            target === (opener instanceof HTMLElement ? opener : null)
+          ) {
+            return
+          }
+          cycle.focusMovedOutside = true
+        },
+      }
+      focusCycles.set(element, cycle)
+      activeFocusCycle = cycle
+      document.addEventListener('focusin', cycle.onFocusIn)
+    }
+    callerOnOpenAutoFocus?.(event)
+  }
+
+  const onCloseAutoFocus = (event: Event) => {
+    const element = event.currentTarget
+    const cycle = element instanceof HTMLElement ? focusCycles.get(element) : undefined
+    callerOnCloseAutoFocus?.(event)
+
+    if (!cycle) return
+    cycle.closed = true
+
+    // A caller that prevents Kobalte's close autofocus owns the focus decision.
+    if (event.defaultPrevented) {
+      finishFocusCycle(cycle)
+      return
+    }
+
+    if (cycle.fallbackTimer !== undefined) {
+      window.clearTimeout(cycle.fallbackTimer)
+      cycle.fallbackTimer = undefined
+    }
+    cycle.closeAutoFocusScheduled = true
+    cycle.observer = new MutationObserver(() => scheduleFocusRestore(cycle))
+    cycle.observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['aria-hidden', 'inert'],
+      childList: true,
+      subtree: true,
+    })
+    scheduleFocusRestore(cycle)
+  }
+
+  onCleanup(() => {
+    const cycle = activeFocusCycle
+    if (!cycle) return
+    cycle.closed = true
+
+    // Kobalte dispatches unmount autofocus from a timer. This fallback only
+    // releases the scoped focus listener if the content did not dispatch it.
+    queueMicrotask(() => {
+      if (cycle.closeAutoFocusScheduled) return
+      cycle.fallbackTimer = window.setTimeout(() => {
+        cycle.fallbackTimer = undefined
+        if (!cycle.closeAutoFocusScheduled) finishFocusCycle(cycle)
+      }, 0)
+    })
+  })
+
+  return { onOpenAutoFocus, onCloseAutoFocus }
+}
 
 /**
  * Dialog.
