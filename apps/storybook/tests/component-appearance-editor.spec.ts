@@ -265,6 +265,8 @@ test('theme menu radios retain Home/End, arrow, typeahead, and selection behavio
   const menu = page.getByRole('menu')
   const themes = menu.getByRole('menuitemradio')
   await expect(themes).toHaveCount(2)
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
   await page.keyboard.press('Home')
   await expect(themes.nth(0)).toBeFocused()
   await page.keyboard.press('End')
@@ -327,6 +329,9 @@ test('theme menu restores trigger focus when dismissed by nonfocusable dialog co
   await trigger.click()
   const menu = dialog.getByRole('menu')
   const firstTheme = menu.getByRole('menuitemradio').first()
+  await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
   await page.keyboard.press('Home')
   await expect(firstTheme).toBeFocused()
 
@@ -417,6 +422,8 @@ test('inline AppearanceEditor Tab closes the menu and focuses the next control',
   await trigger.click()
   const menu = page.getByRole('menu')
   await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
 
   await page.keyboard.press('Home')
   await page.keyboard.press('Tab')
@@ -434,6 +441,8 @@ test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous
   await trigger.click()
   const menu = page.getByRole('menu')
   await expect(menu).toBeVisible()
+  await expect(menu).toBeFocused()
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
 
   await page.keyboard.press('Home')
   await page.keyboard.press('Shift+Tab')
