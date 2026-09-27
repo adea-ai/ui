@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.67.0](https://github.com/adea-ai/ui/compare/v0.66.1...v0.67.0) (2026-09-26)
+
+
+### Features
+
+* add pure paste-token model ([#26](https://github.com/adea-ai/ui/issues/26)) ([a323850](https://github.com/adea-ai/ui/commit/a323850f7b2691a857f1c9c8bfcdac6eef16195b))
+
 ## [0.66.1](https://github.com/adea-ai/ui/compare/v0.66.0...v0.66.1) (2026-09-26)
 
 

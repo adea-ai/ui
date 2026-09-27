@@ -242,6 +242,19 @@ test.describe('story readiness', () => {
     await expect.poll(() => page.evaluate(() => document.fonts.status)).toBe('loaded')
   })
 
+  test('automated Axe ownership uses the supported manual global only for that navigation', async ({
+    page,
+  }) => {
+    await openStory(page, 'fixture--delayed-success', 'adea-dark', {
+      baseUrl: fixtureBaseUrl,
+      a11yOwner: 'playwright',
+    })
+    expect(new URL(page.url()).searchParams.get('globals')).toContain('a11y.manual:!true')
+    await expect(page.locator('#storybook-root')).toHaveAttribute('data-play-complete', 'true')
+    await openStory(page, 'fixture--delayed-success', 'adea-dark', { baseUrl: fixtureBaseUrl })
+    expect(new URL(page.url()).searchParams.get('globals')).not.toContain('a11y.manual')
+  })
+
   test('openStory waits for a successful delayed play and terminal report', async ({ page }) => {
     await openStory(page, 'fixture--delayed-success', 'adea-dark', { baseUrl: fixtureBaseUrl })
 
