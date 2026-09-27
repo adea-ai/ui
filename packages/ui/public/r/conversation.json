@@ -102,6 +102,21 @@
       "path": "src/components/conversation/thread-panel.tsx",
       "type": "registry:ui",
       "target": "components/conversation/thread-panel.tsx"
+    },
+    {
+      "path": "src/components/conversation/transcript-composition.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/transcript-composition.tsx"
+    },
+    {
+      "path": "src/components/conversation/transcript-folding.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/transcript-folding.ts"
+    },
+    {
+      "path": "src/components/conversation/transcript-grouping.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/transcript-grouping.ts"
     }
   ]
 }

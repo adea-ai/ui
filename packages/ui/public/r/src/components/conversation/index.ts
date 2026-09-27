@@ -24,6 +24,23 @@ export {
   type MessageRowProps,
 } from './message-row'
 export {
+  TranscriptComposition,
+  transcriptDisclosureKey,
+  type TranscriptCompositionProps,
+  type TranscriptCompositionFold,
+  type TranscriptCompositionRowContext,
+  type TranscriptCompositionRendererProps,
+  type TranscriptDisplayKind,
+  type GroupedTranscript,
+  type TranscriptDisplayItem,
+  type TranscriptFoldState,
+  type TranscriptFoldMode,
+  type TranscriptFoldPlan,
+  type TranscriptMounting,
+  type TranscriptRow,
+  type TranscriptTurnItem,
+} from './transcript-composition'
+export {
   AttachmentCard,
   ThreadPanel,
   type AttachmentCardProps,
