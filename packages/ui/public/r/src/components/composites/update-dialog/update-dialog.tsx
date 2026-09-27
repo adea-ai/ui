@@ -7,6 +7,7 @@ import {
   Show,
   splitProps,
 } from 'solid-js'
+import type { Accessor } from 'solid-js'
 import { Check, Download, ExternalLink, LoaderCircle, RefreshCw, Sparkles } from 'lucide-solid'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
@@ -20,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../ui/dialog'
+import { createDialogFocusRestoration } from '../../ui/dialog/dialog'
 import { Progress } from '../../ui/progress'
 import { cn } from '../../../lib/utils'
 import { formatBytes, formatReleaseDate, plainTextFromMarkdown } from '../../../lib/version-notes'
@@ -139,6 +141,12 @@ export type UpdateDialogProps = {
    */
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
+  /**
+   * Supplies a stable external control to focus when a controlled dialog closes.
+   * Useful when a menu or other layer closes before this dialog opens; when omitted,
+   * the element focused immediately before the dialog opens is used when available.
+   */
+  restoreFocusRef?: Accessor<HTMLElement | undefined>
   /** Render only the panel, for a caller that provides its own dialog. */
   class?: string
 }
@@ -170,6 +178,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
     'open',
     'defaultOpen',
     'onOpenChange',
+    'restoreFocusRef',
     'class',
   ])
 
@@ -179,6 +188,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
     if (local.open === undefined) setUncontrolledOpen(next)
     local.onOpenChange?.(next)
   }
+
+  const focusRestoration = createDialogFocusRestoration({
+    open,
+    restoreFocusRef: local.restoreFocusRef,
+  })
 
   const appName = () => local.appName ?? 'the application'
   const desktop = () => local.adapter.isDesktopRuntime()
@@ -362,7 +376,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
         </DialogTrigger>
       </Show>
 
-      <DialogContent class={cn('max-w-3xl', local.class)}>
+      <DialogContent
+        class={cn('max-w-3xl', local.class)}
+        onOpenAutoFocus={focusRestoration.onOpenAutoFocus}
+        onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
+      >
         <DialogHeader>
           <div class="flex items-center gap-3">
             <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
