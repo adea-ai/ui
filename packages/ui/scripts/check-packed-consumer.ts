@@ -45,6 +45,23 @@ const coreSamples: PackedSample[] = [
     source: 'ui/modal-dialog',
   },
   {
+    name: 'update-dialog',
+    imports:
+      "import { UpdateDialog, type UpdateAdapter, type UpdateState } from '@adea-ai/ui/components/composites/update-dialog';\nconst current: UpdateState = { phase: 'current', currentVersion: '0.70.1' };\nconst adapter: UpdateAdapter = { getStatus: async () => current, check: async () => current, install: async () => current, isDesktopRuntime: () => true }",
+    jsx: '<UpdateDialog adapter={adapter} appName="Adea" />',
+    sources: [
+      'components/composites/update-dialog/update-dialog.tsx',
+      'components/ui/badge/badge.tsx',
+      'components/ui/button/button.tsx',
+      'components/ui/dialog/dialog.tsx',
+      'components/ui/progress/progress.tsx',
+      'lib/overlay.ts',
+      'lib/utils.ts',
+      'lib/variants.ts',
+      'lib/version-notes.ts',
+    ],
+  },
+  {
     name: 'tooltip-subpath',
     imports:
       "import { Tooltip, TooltipContent, TooltipTrigger } from '@adea-ai/ui/components/ui/tooltip'",
@@ -231,6 +248,13 @@ try {
           const expectedPath = condition === 'compiled' ? '/dist/' : '/src/'
           if (sample.name !== 'baseline' && !uiModules.some((id) => id.includes(expectedPath)))
             throw new Error(`Expected ${condition} UI exports`)
+          if (
+            sample.name === 'update-dialog' &&
+            !uiModules.some((id) =>
+              id.includes('/components/composites/update-dialog/update-dialog')
+            )
+          )
+            throw new Error(`Packed ${condition} consumer did not include UpdateDialog`)
           if (uiModules.some((id) => id.includes(condition === 'compiled' ? '/src/' : '/dist/')))
             throw new Error('Mixed UI export conditions')
           const forbidden = modules.filter((id) => {
@@ -282,6 +306,8 @@ try {
             throw new Error('Packed BusySendButton is missing shared menu styling')
           if (sample.name === 'overlay' && !css.includes('.bg-popover'))
             throw new Error('Packed dialog is missing shared overlay styling')
+          if (sample.name === 'update-dialog' && !css.includes('.max-h-52'))
+            throw new Error('Packed UpdateDialog is missing release-note sizing styles')
           if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
             throw new Error('Fonts were shipped without fonts.css')
           const bytes = gzipSync(code).length
@@ -300,17 +326,19 @@ try {
           // Complete discovered CSS: Button 32,155; dialog 39,385; shell 25,389.
           // The dialog's earlier 25,088 measurement omitted nested primitives/helpers.
           const cssCapKiB =
-            sample.name === 'overlay'
-              ? 40
-              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
-                    sample.name
-                  )
-                ? 42
-                : sample.name === 'chart-subpath'
-                  ? 28
-                  : sample.name === 'carousel-subpath'
-                    ? 35
-                    : 32
+            sample.name === 'update-dialog'
+              ? 48
+              : sample.name === 'overlay'
+                ? 40
+                : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                      sample.name
+                    )
+                  ? 42
+                  : sample.name === 'chart-subpath'
+                    ? 28
+                    : sample.name === 'carousel-subpath'
+                      ? 35
+                      : 32
           if (Buffer.byteLength(css) > cssCapKiB * 1024)
             throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
           if ((sample.name === 'overlay' || sample.name === 'shell') && bytes > 32 * 1024)
