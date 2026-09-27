@@ -24,20 +24,24 @@ try {
   const [packedArtifact] = JSON.parse(pack.stdout)
   if (!packedArtifact?.filename) throw Error('npm pack did not return a tarball filename')
 
+  const packageManifest = JSON.parse(readFileSync(join(packageDirectory, 'package.json'), 'utf8'))
   writeFileSync(
     join(consumer, 'package.json'),
     JSON.stringify({
       private: true,
       type: 'module',
-      dependencies: { '@adea-ai/ui': `file:${join(consumer, packedArtifact.filename)}` },
+      dependencies: {
+        '@adea-ai/ui': `file:${join(consumer, packedArtifact.filename)}`,
+        'solid-js': packageManifest.peerDependencies['solid-js'],
+      },
     })
   )
-  await runCommand('bun', ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'], {
+  await runCommand('bun', ['install', '--ignore-scripts', '--omit', 'optional'], {
     stage: 'install packed UI consumer',
     cwd: consumer,
     timeoutMs: 300_000,
     signal: cancellation.signal,
-    displayArgs: ['install', '--ignore-scripts', '--omit', 'peer', '--omit', 'optional'],
+    displayArgs: ['install', '--ignore-scripts', '--omit', 'optional'],
   })
 
   const installed = join(consumer, 'node_modules/@adea-ai/ui')
