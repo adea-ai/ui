@@ -1,4 +1,5 @@
-import { Dialog as KobalteDialog } from '@kobalte/core/dialog'
+import { Dialog as KobalteDialog, Content as KobalteDialogContent } from '@kobalte/core/dialog'
+// AlertDialog shares DialogRoot.Content; Sheet uses the stable named primitive.
 import { X } from 'lucide-solid'
 import type { ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
@@ -35,7 +36,7 @@ const sheetVariants = cva(
   }
 )
 
-export type SheetContentProps = ComponentProps<typeof KobalteDialog.Content> &
+export type SheetContentProps = ComponentProps<typeof KobalteDialogContent> &
   VariantProps<typeof sheetVariants> & {
     closeButton?: JSX.Element | false
   }
@@ -46,7 +47,7 @@ export function SheetContent(props: SheetContentProps) {
   return (
     <KobalteDialog.Portal>
       <DialogOverlay />
-      <KobalteDialog.Content
+      <KobalteDialogContent
         class={cn(
           sheetVariants({ side: local.side }),
           'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:duration-200',
@@ -64,7 +65,7 @@ export function SheetContent(props: SheetContentProps) {
             {local.closeButton ?? <X class="size-4" />}
           </KobalteDialog.CloseButton>
         </Show>
-      </KobalteDialog.Content>
+      </KobalteDialogContent>
     </KobalteDialog.Portal>
   )
 }

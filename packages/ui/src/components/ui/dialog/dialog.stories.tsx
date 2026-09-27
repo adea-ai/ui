@@ -19,7 +19,8 @@ import {
  * A modal surface for a decision or a short task. The portal keeps the panel out
  * of the app's stacking and overflow contexts, the overlay dims what is behind
  * it, and Kobalte handles the focus trap, the escape key, scroll locking and
- * returning focus to the trigger on close.
+ * returning focus to the trigger on close. Its content keeps the ordinary
+ * `dialog` role; use AlertDialog when dismissal must require a named choice.
  *
  * The close button is part of the content rather than optional, because every
  * modal needs a way out that is not the keyboard. A dialog whose only exit is

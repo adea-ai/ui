@@ -1,4 +1,9 @@
-import { Dialog as KobalteDialog } from '@kobalte/core/dialog'
+import {
+  Dialog as KobalteDialog,
+  Content as KobalteDialogContent,
+  Overlay as KobalteDialogOverlay,
+} from '@kobalte/core/dialog'
+// AlertDialog assigns to the shared DialogRoot.Content object, so these named exports stay role-stable.
 import { X } from 'lucide-solid'
 import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { createRenderEffect, onCleanup, Show, splitProps } from 'solid-js'
@@ -43,8 +48,8 @@ function hasOtherOverlay(content: HTMLElement, opener: HTMLElement): boolean {
 type DialogFocusRestorationOptions = {
   open: Accessor<boolean>
   restoreFocusRef?: Accessor<HTMLElement | undefined>
-  onOpenAutoFocus?: ComponentProps<typeof KobalteDialog.Content>['onOpenAutoFocus']
-  onCloseAutoFocus?: ComponentProps<typeof KobalteDialog.Content>['onCloseAutoFocus']
+  onOpenAutoFocus?: ComponentProps<typeof KobalteDialogContent>['onOpenAutoFocus']
+  onCloseAutoFocus?: ComponentProps<typeof KobalteDialogContent>['onCloseAutoFocus']
 }
 
 /**
@@ -231,10 +236,10 @@ export function DialogPortal(props: ComponentProps<typeof KobalteDialog.Portal>)
   return <KobalteDialog.Portal {...props} />
 }
 
-export function DialogOverlay(props: ComponentProps<typeof KobalteDialog.Overlay>) {
+export function DialogOverlay(props: ComponentProps<typeof KobalteDialogOverlay>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
-    <KobalteDialog.Overlay
+    <KobalteDialogOverlay
       class={cn(
         overlayScrim,
         'data-expanded:animate-in data-expanded:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
@@ -245,7 +250,7 @@ export function DialogOverlay(props: ComponentProps<typeof KobalteDialog.Overlay
   )
 }
 
-export type DialogContentProps = ComponentProps<typeof KobalteDialog.Content> & {
+export type DialogContentProps = ComponentProps<typeof KobalteDialogContent> & {
   /**
    * Replaces the default close button. Pass `false` to remove it — only for a
    * dialog that cannot be dismissed (an update that must finish); anything the
@@ -261,7 +266,7 @@ export function DialogContent(props: DialogContentProps) {
     <KobalteDialog.Portal>
       <DialogOverlay />
       <div class={overlayPositioner}>
-        <KobalteDialog.Content
+        <KobalteDialogContent
           class={cn(
             overlaySurface,
             overlayMotion,
@@ -283,7 +288,7 @@ export function DialogContent(props: DialogContentProps) {
               {local.closeButton ?? <X class="size-4" />}
             </KobalteDialog.CloseButton>
           </Show>
-        </KobalteDialog.Content>
+        </KobalteDialogContent>
       </div>
     </KobalteDialog.Portal>
   )

@@ -17,8 +17,9 @@ import {
  *
  * A dialog that cannot be dismissed by accident: Escape and a click on the scrim
  * do nothing, and the user must choose one of the actions. That is the whole
- * difference from Dialog, and it is why this exists as its own component rather
- * than a prop — a caller has to reach for it deliberately.
+ * difference from Dialog, and the content uses the `alertdialog` role to make
+ * that consequence clear to assistive technology. It is why this exists as its
+ * own component rather than a prop — a caller has to reach for it deliberately.
  *
  * The consequence is a rule of use: this is for confirming a destructive or
  * irreversible step. Wrapping an ordinary form in an AlertDialog traps someone who

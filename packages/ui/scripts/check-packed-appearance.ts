@@ -61,6 +61,14 @@ const replaceDestructiveImports = (source: string) =>
     .replaceAll('../../src/components/theme/theme-picker', '@adea-ai/ui/components/theme')
     .replaceAll('../../src/lib/themes', '@adea-ai/ui/lib/themes')
     .replaceAll('../../src/styles/globals.css', './destructive-style.css')
+const replaceOverlayImports = (source: string) =>
+  source
+    .replaceAll('../../src/components/ui/dialog/dialog', '@adea-ai/ui/components/ui/dialog')
+    .replaceAll('../../src/components/ui/sheet/sheet', '@adea-ai/ui/components/ui/sheet')
+    .replaceAll(
+      '../../src/components/ui/alert-dialog/alert-dialog',
+      '@adea-ai/ui/components/ui/alert-dialog'
+    )
 try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
@@ -85,6 +93,7 @@ try {
       dependencies: {
         '@adea-ai/ui': `file:${archivePath}`,
         '@adea-ai/themes': manifest.dependencies['@adea-ai/themes'],
+        'cmdk-solid': manifest.dependencies['cmdk-solid'],
         'solid-js': solidVersion,
         tailwindcss: tailwindVersion,
       },
@@ -121,6 +130,19 @@ try {
         '@adea-ai/ui/components/ui/modal-dialog'
       )
       .replaceAll('../../src/styles/globals.css', './modal-style.css')
+  )
+  for (const order of ['root-first', 'ui-first'] as const)
+    writeFileSync(
+      join(consumer, `kobalte-overlay-${order}.tsx`),
+      replaceOverlayImports(
+        readFileSync(join(uiRoot, `tests/fixtures/kobalte-overlay-${order}.tsx`), 'utf8')
+      )
+    )
+  writeFileSync(
+    join(consumer, 'kobalte-overlay-role-fixture.tsx'),
+    replaceOverlayImports(
+      readFileSync(join(uiRoot, 'tests/fixtures/kobalte-overlay-role-fixture.tsx'), 'utf8')
+    )
   )
   writeFileSync(
     join(consumer, 'style.css'),
@@ -174,6 +196,21 @@ try {
       join(root, 'apps/storybook'),
       { ADEA_MODAL_DIALOG_PACKED_ROOT: consumer, ADEA_MODAL_DIALOG_PACKED_CONDITION: condition }
     )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-kobalte-overlay-roles.spec.ts',
+        '--output',
+        `test-results/packed-kobalte-overlay-${condition}`,
+      ],
+      join(root, 'apps/storybook'),
+      {
+        ADEA_KOBALTE_OVERLAY_PACKED_ROOT: consumer,
+        ADEA_KOBALTE_OVERLAY_PACKED_CONDITION: condition,
+      }
+    )
   }
   console.log(
     JSON.stringify({
@@ -181,8 +218,9 @@ try {
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
-      checks: 108,
+      checks: 132,
       dialogCloseAnchorChecks: 4,
+      kobalteOverlayRoleCases: 24,
       destructiveActionBrowserCases: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
