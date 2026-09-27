@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.1](https://github.com/adea-ai/ui/compare/v0.70.0...v0.70.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **ui:** honor TooltipContent hideArrow ([#59](https://github.com/adea-ai/ui/issues/59)) ([375e896](https://github.com/adea-ai/ui/commit/375e8968dc4696bae72955aa7c7cba868f64c37a))
+
 ## [0.70.0](https://github.com/adea-ai/ui/compare/v0.69.1...v0.70.0) (2026-09-27)
 
 
