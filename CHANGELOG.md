@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.0](https://github.com/adea-ai/ui/compare/v0.71.6...v0.72.0) (2026-09-27)
+
+
+### Features
+
+* add contrast-safe destructive action colors ([#93](https://github.com/adea-ai/ui/issues/93)) ([3205dbb](https://github.com/adea-ai/ui/commit/3205dbbc6621da4eafaa1aa9554042667b448e9d))
+
 ## [0.71.6](https://github.com/adea-ai/ui/compare/v0.71.5...v0.71.6) (2026-09-27)
 
 
