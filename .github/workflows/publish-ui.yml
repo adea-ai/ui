@@ -77,20 +77,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish @adea-ai/ui
+  prepare:
+    name: Prepare @adea-ai/ui
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-      # Trusted publishing: npm exchanges this run's OIDC identity for a
-      # short-lived publish token. Absent this, the publish cannot authenticate.
-      id-token: write
-    env:
-      # Resolved per-event below; a tag push has no inputs, so `oidc` is the
-      # default there and matches the configured trusted publisher.
-      PUBLISH_METHOD: ${{ inputs.method || 'oidc' }}
-      NPM_TOKEN: ${{ inputs.method == 'token' && secrets.NPM_TOKEN || '' }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      archive_sha256: ${{ steps.archive.outputs.sha256 }}
+      archive_integrity: ${{ steps.archive.outputs.integrity }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -102,6 +98,248 @@ jobs:
         with:
           bun-version: 1.4.0
           no-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The tarball must contain dist/: exports serve ./dist/index.js and
+      # ./dist/index.d.ts to registry consumers, and dist/ is gitignored.
+      - name: Build the library
+        run: bun run --cwd packages/ui build
+
+      - name: Read the version to publish
+        id: version
+        working-directory: packages/ui
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse to publish a version that already exists
+        if: ${{ inputs.dry-run != true }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if npm view "@adea-ai/ui@${VERSION}" version >/dev/null 2>&1; then
+            echo "::error title=Version already published::@adea-ai/ui@${VERSION} is already on the registry. Versions are immutable; bump the manifest and merge a new release instead of retagging."
+            exit 1
+          fi
+          echo "@adea-ai/ui@${VERSION} is available"
+
+      - name: Verify the publishable archive
+        working-directory: packages/ui
+        run: bun run pack:check
+
+      - name: Pack one immutable UI archive
+        id: archive
+        working-directory: packages/ui
+        run: node scripts/prepare-packed-ui.mjs "$RUNNER_TEMP/prepared-ui"
+
+      - name: Verify packed consumers
+        working-directory: packages/ui
+        env:
+          ADEA_PACKED_UI_TARBALL: ${{ runner.temp }}/prepared-ui/package.tgz
+          ADEA_PACKED_UI_SHA256: ${{ steps.archive.outputs.sha256 }}
+        run: bun run check:packed-consumer
+
+      - name: Verify packed pure paste model
+        working-directory: packages/ui
+        env:
+          ADEA_PACKED_UI_TARBALL: ${{ runner.temp }}/prepared-ui/package.tgz
+          ADEA_PACKED_UI_SHA256: ${{ steps.archive.outputs.sha256 }}
+        run: bun run check:packed-paste-model
+
+      - name: Upload the verified UI package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ runner.temp }}/prepared-ui/
+          retention-days: 1
+          if-no-files-found: error
+
+  packed-conversation:
+    name: Packed conversation
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed conversation composition
+        working-directory: packages/ui
+        run: bun run check:packed-conversation
+
+  packed-layout:
+    name: Packed layout
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed pane model and renderer
+        working-directory: packages/ui
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer
+
+  packed-appearance:
+    name: Packed appearance
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify packed appearance interactions and SSR
+        working-directory: packages/ui
+        run: bun run check:packed-appearance
+
+  packed-native-select:
+    name: Packed native select
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Install headless engines
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Verify native select from the packed artifact
+        working-directory: packages/ui
+        run: bun run check:packed-native-select
+
+  publish:
+    name: Publish @adea-ai/ui
+    if: ${{ inputs.dry-run != true }}
+    needs:
+      - prepare
+      - packed-conversation
+      - packed-layout
+      - packed-appearance
+      - packed-native-select
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Only the final publisher receives an OIDC identity for npm trusted publishing.
+      id-token: write
+    env:
+      PUBLISH_METHOD: ${{ inputs.method || 'oidc' }}
+      NPM_TOKEN: ${{ inputs.method == 'token' && secrets.NPM_TOKEN || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -131,99 +369,58 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ runner.temp }}/prepared-ui/
 
-      # The tarball must contain `dist/`: `exports` serves `./dist/index.js` and
-      # `./dist/index.d.ts` to registry consumers, and `dist/` is gitignored, so
-      # a fresh checkout has none of it.
-      - name: Build the library
-        run: bun run --cwd packages/ui build
-
-      - name: Read the version to publish
-        id: version
-        working-directory: packages/ui
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Refuse to publish a version that already exists
+      - name: Verify the exact release archive
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          EXPECTED_VERSION: ${{ needs.prepare.outputs.version }}
+          EXPECTED_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+          EXPECTED_INTEGRITY: ${{ needs.prepare.outputs.archive_integrity }}
         run: |
           set -euo pipefail
-          if npm view "@adea-ai/ui@${VERSION}" version >/dev/null 2>&1; then
-            echo "::error title=Version already published::@adea-ai/ui@${VERSION} is already on the registry. Versions are immutable; bump the manifest and merge a new release instead of retagging."
-            exit 1
-          fi
-          echo "@adea-ai/ui@${VERSION} is available"
-
-      - name: Verify the publishable archive
-        working-directory: packages/ui
-        run: bun run pack:check
-
-      - name: Verify packed consumers
-        working-directory: packages/ui
-        run: bun run check:packed-consumer
-
-      - name: Verify packed pure paste model
-        working-directory: packages/ui
-        run: bun run check:packed-paste-model
-
-      - name: Install headless engines for packed composition contracts
-        run: bunx playwright install --with-deps chromium webkit
-
-      - name: Verify packed conversation composition
-        working-directory: packages/ui
-        run: bun run check:packed-conversation
-      - name: Verify packed pane model and renderer
-        working-directory: packages/ui
-        run: bun run check:packed-layout && bun run check:packed-layout-renderer
-      - name: Verify packed appearance interactions and SSR
-        working-directory: packages/ui
-        run: bun run check:packed-appearance
-      - name: Verify native select from the packed artifact
-        working-directory: packages/ui
-        run: bun run check:packed-native-select
-
-      - name: Pack
-        if: ${{ inputs.dry-run != true }}
-        working-directory: packages/ui
-        run: npm pack
+          archive="$RUNNER_TEMP/prepared-ui/package.tgz"
+          printf '%s  %s\n' "$EXPECTED_SHA256" "$archive" | sha256sum --check
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto'
+          import { readFileSync } from 'node:fs'
+          const archivePath = process.env.RUNNER_TEMP + '/prepared-ui/package.tgz'
+          const bytes = readFileSync(archivePath)
+          const manifest = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/prepared-ui/manifest.json', 'utf8'))
+          const sha256 = createHash('sha256').update(bytes).digest('hex')
+          const integrity = 'sha512-' + createHash('sha512').update(bytes).digest('base64')
+          if (manifest.name !== '@adea-ai/ui' || manifest.version !== process.env.EXPECTED_VERSION)
+            throw new Error('Prepared package identity does not match release version')
+          if (sha256 !== process.env.EXPECTED_SHA256 || manifest.sha256 !== sha256)
+            throw new Error('Prepared package SHA-256 does not match the verified artifact')
+          if (integrity !== process.env.EXPECTED_INTEGRITY || manifest.integrity !== integrity)
+            throw new Error('Prepared package npm integrity does not match the verified artifact')
+          console.log(JSON.stringify({ name: manifest.name, version: manifest.version, sha256, integrity, size: bytes.byteLength }))
+          NODE
 
       # Two steps rather than one conditional command, so a failure names the
       # method that failed instead of reporting a bare 401.
       - name: Publish (trusted publishing)
-        if: ${{ inputs.dry-run != true && env.PUBLISH_METHOD == 'oidc' }}
-        working-directory: packages/ui
-        run: npm publish --access public --provenance
+        if: ${{ env.PUBLISH_METHOD == 'oidc' }}
+        run: npm publish "$RUNNER_TEMP/prepared-ui/package.tgz" --access public --provenance
 
       - name: Publish (org token)
-        if: ${{ inputs.dry-run != true && env.PUBLISH_METHOD == 'token' }}
-        working-directory: packages/ui
+        if: ${{ env.PUBLISH_METHOD == 'token' }}
         env:
           NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        run: npm publish "$RUNNER_TEMP/prepared-ui/package.tgz" --access public --provenance
 
       - name: Confirm the release is what consumers get
-        if: ${{ inputs.dry-run != true }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           set -euo pipefail
-          # `latest` is the tag every unpinned install resolves, so it is the
-          # thing that actually has to be right — not merely the version's
-          # existence on the registry.
-          #
-          # This polls, because the registry is not readable the instant the publish
-          # returns. npm answers a successful publish with "your package is being
-          # processed and may take a few minutes to become available", and on 0.61.0
-          # `latest` was still the old version roughly a minute later; the check read
-          # it once, saw the old value, and failed a release that had in fact
-          # succeeded. A single read cannot distinguish "still propagating" from
-          # "another publisher owns this name", and reporting the second as the first
-          # is how a green publish gets investigated as a red one.
-          #
-          # Ten minutes is well past the propagation npm documents, so anything still
-          # wrong at that point is a real conflict and worth failing on.
+          # latest is the tag every unpinned install resolves, so it must match.
+          # Keep polling: npm may acknowledge a successful publish before the
+          # latest dist-tag is readable from every registry endpoint.
           for attempt in $(seq 1 20); do
             latest="$(npm view @adea-ai/ui dist-tags.latest 2>/dev/null || echo '')"
             echo "attempt ${attempt}/20: latest is ${latest:-<unreadable>}"

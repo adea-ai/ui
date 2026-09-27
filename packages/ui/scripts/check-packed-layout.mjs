@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { installCancellationHandlers, runCommand } from './packed-layout-process.mjs'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const packageDirectory = join(root, 'packages/ui')
@@ -13,16 +14,22 @@ let consumer
 try {
   consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-'))
 
-  const pack = await runCommand('npm', ['pack', '--json', '--pack-destination', consumer], {
-    stage: 'npm pack local UI package',
-    cwd: packageDirectory,
-    timeoutMs: 120_000,
-    signal: cancellation.signal,
-    displayArgs: ['pack', '--json', '--pack-destination', '<consumer-temp>'],
-    displayCwd: '<workspace>/packages/ui',
-  })
-  const [packedArtifact] = JSON.parse(pack.stdout)
-  if (!packedArtifact?.filename) throw Error('npm pack did not return a tarball filename')
+  let archivePath = sharedPackedUiArchive()
+  if (archivePath) {
+    console.log(JSON.stringify({ stage: 'use verified shared UI archive', archivePath }))
+  } else {
+    const pack = await runCommand('npm', ['pack', '--json', '--pack-destination', consumer], {
+      stage: 'npm pack local UI package',
+      cwd: packageDirectory,
+      timeoutMs: 120_000,
+      signal: cancellation.signal,
+      displayArgs: ['pack', '--json', '--pack-destination', '<consumer-temp>'],
+      displayCwd: '<workspace>/packages/ui',
+    })
+    const [packedArtifact] = JSON.parse(pack.stdout)
+    if (!packedArtifact?.filename) throw Error('npm pack did not return a tarball filename')
+    archivePath = join(consumer, packedArtifact.filename)
+  }
 
   const packageManifest = JSON.parse(readFileSync(join(packageDirectory, 'package.json'), 'utf8'))
   writeFileSync(
@@ -31,7 +38,7 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@adea-ai/ui': `file:${join(consumer, packedArtifact.filename)}`,
+        '@adea-ai/ui': `file:${archivePath}`,
         'solid-js': packageManifest.peerDependencies['solid-js'],
       },
     })
