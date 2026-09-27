@@ -37,10 +37,10 @@ import {
 } from '../../ui/dropdown-menu/dropdown-menu'
 import { PalettePreview } from './theme-preview'
 
-const DIALOG_FOCUS_STOP_SELECTOR =
+const FOCUS_STOP_SELECTOR =
   'a[href], area[href], button, input, select, textarea, iframe, [tabindex], [contenteditable]'
 
-function isDialogFocusStop(element: HTMLElement) {
+function isFocusStop(element: HTMLElement) {
   return (
     element.tabIndex >= 0 &&
     !element.matches(':disabled') &&
@@ -82,8 +82,9 @@ export function SettingsRow(props: {
 
 /**
  * A compact persistent theme choice. Kobalte handles menu navigation and
- * dismissal; this row preserves its parent dialog's Tab order because menus
- * consume Tab by default.
+ * dismissal; this row returns Tab to the adjacent focus stop because menus
+ * consume Tab by default. A dialog remains the traversal boundary, while an
+ * inline editor follows document order.
  */
 export function ThemeRow(props: {
   appearance: 'light' | 'dark'
@@ -95,6 +96,7 @@ export function ThemeRow(props: {
 }) {
   const [portalMount, setPortalMount] = createSignal<HTMLDivElement>()
   const [triggerElement, setTriggerElement] = createSignal<HTMLButtonElement>()
+  const [menuOpen, setMenuOpen] = createSignal(false)
   const [focusOutsideTarget, setFocusOutsideTarget] = createSignal<HTMLElement>()
   const [restoreTriggerFocus, setRestoreTriggerFocus] = createSignal(false)
   const options = createMemo(() =>
@@ -109,41 +111,56 @@ export function ThemeRow(props: {
   const moveFocusOnTab = (event: KeyboardEvent) => {
     if (event.key !== 'Tab' || event.isComposing) return
 
-    // Kobalte consumes Tab in menus; preserve the enclosing dialog's tab order.
-    event.preventDefault()
-    event.stopPropagation()
-
-    const parentDialog = portalMount()?.closest('[role="dialog"]')
     const trigger = triggerElement()
     if (!trigger) return
+    const parentDialog = portalMount()?.closest<HTMLElement>('[role="dialog"]')
+    const focusScope = parentDialog ?? portalMount()?.ownerDocument.body
+    if (!focusScope) return
 
-    const focusStops = parentDialog
-      ? Array.from(parentDialog.querySelectorAll<HTMLElement>(DIALOG_FOCUS_STOP_SELECTOR)).filter(
-          (element) =>
-            element !== trigger &&
-            isDialogFocusStop(element) &&
-            element.closest('[role="menu"], [hidden], [inert], [aria-hidden="true"]') === null
-        )
-      : []
+    const focusStops = Array.from(
+      focusScope.querySelectorAll<HTMLElement>(FOCUS_STOP_SELECTOR)
+    ).filter(
+      (element) =>
+        element !== trigger &&
+        isFocusStop(element) &&
+        element.closest('[role="menu"], [hidden], [inert], [aria-hidden="true"]') === null
+    )
     const isAfterTrigger = (element: HTMLElement) =>
       !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
     const isBeforeTrigger = (element: HTMLElement) =>
       !!(trigger.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING)
     const direction = event.shiftKey ? -1 : 1
-    const adjacent =
-      direction > 0
+    const adjacent = parentDialog
+      ? direction > 0
         ? (focusStops.find(isAfterTrigger) ?? focusStops[0])
         : (focusStops.filter(isBeforeTrigger).at(-1) ?? focusStops.at(-1))
+      : direction > 0
+        ? focusStops.find(isAfterTrigger)
+        : focusStops.filter(isBeforeTrigger).at(-1)
 
-    // The modal dialog remains the Tab boundary; only the menu popup is skipped.
-    ;(adjacent ?? trigger).focus({ preventScroll: true })
+    // Kobalte consumes Tab in menus. Explicitly close and transfer focus when
+    // an adjacent stop exists; at an inline document boundary, leave the
+    // browser's native Tab default available instead of wrapping to the start.
+    event.stopPropagation()
+    setRestoreTriggerFocus(false)
+    if (adjacent) {
+      event.preventDefault()
+      setFocusOutsideTarget(adjacent)
+      setMenuOpen(false)
+      adjacent.focus({ preventScroll: true })
+    } else {
+      setFocusOutsideTarget(undefined)
+      setMenuOpen(false)
+    }
   }
   return (
     <SettingsRow title={label()} icon={<Palette />}>
       <div ref={setPortalMount}>
         <DropdownMenu
           modal={false}
+          open={menuOpen()}
           onOpenChange={(open) => {
+            setMenuOpen(open)
             if (open) {
               setFocusOutsideTarget(undefined)
               setRestoreTriggerFocus(false)
@@ -170,12 +187,13 @@ export function ThemeRow(props: {
             class="max-h-(--kb-popper-content-available-height) w-(--kb-popper-anchor-width) min-w-32 overflow-x-hidden overflow-y-auto"
             onInteractOutside={(event) => {
               if (event.detail.originalEvent.type !== 'pointerdown') return
-              const parentDialog = portalMount()?.closest('[role="dialog"]')
+              const parentDialog = portalMount()?.closest<HTMLElement>('[role="dialog"]')
+              const focusScope = parentDialog ?? portalMount()?.ownerDocument.body
               const target = event.detail.originalEvent.target
-              if (!(target instanceof Element) || !parentDialog?.contains(target)) return
+              if (!(target instanceof Element) || !focusScope?.contains(target)) return
 
-              const focusStop = target.closest<HTMLElement>(DIALOG_FOCUS_STOP_SELECTOR)
-              if (focusStop && isDialogFocusStop(focusStop)) {
+              const focusStop = target.closest<HTMLElement>(FOCUS_STOP_SELECTOR)
+              if (focusStop && isFocusStop(focusStop)) {
                 setRestoreTriggerFocus(false)
                 setFocusOutsideTarget(focusStop)
               } else {
@@ -186,11 +204,12 @@ export function ThemeRow(props: {
               // The containing dialog may reclaim focus momentarily as the
               // menu mounts. Keep that internal handoff from dismissing it;
               // focus moving to any other target still closes the menu.
-              const parentDialog = portalMount()?.closest('[role="dialog"]')
+              const parentDialog = portalMount()?.closest<HTMLElement>('[role="dialog"]')
+              const focusScope = parentDialog ?? portalMount()?.ownerDocument.body
               const target = event.detail.originalEvent.target
-              if (target === parentDialog) {
+              if (target === focusScope) {
                 event.preventDefault()
-              } else if (target instanceof HTMLElement && parentDialog?.contains(target)) {
+              } else if (target instanceof HTMLElement && focusScope?.contains(target)) {
                 setRestoreTriggerFocus(false)
                 setFocusOutsideTarget(target)
               }
@@ -209,8 +228,9 @@ export function ThemeRow(props: {
                 return
               }
 
-              const parentDialog = portalMount()?.closest('[role="dialog"]')
-              if (focusTarget?.isConnected && parentDialog?.contains(focusTarget)) {
+              const parentDialog = portalMount()?.closest<HTMLElement>('[role="dialog"]')
+              const focusScope = parentDialog ?? portalMount()?.ownerDocument.body
+              if (focusTarget?.isConnected && focusScope?.contains(focusTarget)) {
                 // FocusOutside records the intended in-dialog destination;
                 // preserve it across Kobalte's deferred stale-focus restore.
                 event.preventDefault()
@@ -221,9 +241,7 @@ export function ThemeRow(props: {
                     activeElement.closest('[role="menu"]') !== null
                   if (
                     activeElement !== focusTarget &&
-                    (activeElement === document.body ||
-                      activeElement === parentDialog ||
-                      isMenuFocus)
+                    (activeElement === document.body || activeElement === focusScope || isMenuFocus)
                   ) {
                     focusTarget.focus({ preventScroll: true })
                   }
@@ -233,10 +251,10 @@ export function ThemeRow(props: {
 
               const activeElement = document.activeElement
               if (
-                parentDialog &&
+                focusScope &&
                 activeElement instanceof HTMLElement &&
-                activeElement !== parentDialog &&
-                parentDialog.contains(activeElement) &&
+                activeElement !== focusScope &&
+                focusScope.contains(activeElement) &&
                 activeElement.closest('[role="menu"]') === null
               ) {
                 // Preserve a real in-dialog focus target instead of restoring

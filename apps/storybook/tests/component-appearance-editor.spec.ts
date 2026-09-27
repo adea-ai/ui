@@ -18,13 +18,14 @@ test.beforeAll(async () => {
   ;({ script, css } = await buildAppearanceBrowser())
 })
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  const inlineEditor = testInfo.title.includes('inline AppearanceEditor')
   await page.setContent(
-    '<!doctype html><html lang="en"><head><title>Appearance fixture</title></head><body></body></html>'
+    `<!doctype html><html lang="en"${inlineEditor ? ' data-appearance-fixture="inline"' : ''}><head><title>Appearance fixture</title></head><body></body></html>`
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
-  await page.getByRole('button', { name: 'Appearance settings' }).click()
+  if (!inlineEditor) await page.getByRole('button', { name: 'Appearance settings' }).click()
 })
 
 test('the popup and nested controls retain their shared CSS contract', async ({ page }) => {
@@ -358,6 +359,38 @@ test('theme menu Tab exits to the next or previous control in its dialog', async
   await page.keyboard.press('Shift+Tab')
   await expect(previousMenu).toHaveCount(0)
   await expect(dialog.getByRole('button', { name: /^Light theme/ })).toBeFocused()
+})
+
+test('inline AppearanceEditor Tab closes the menu and focuses the next control', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Tab')
+
+  await expect(menu).toHaveCount(0)
+  await expect(
+    page.getByRole('radiogroup', { name: 'Accent' }).getByRole('radio', { name: 'Theme default' })
+  ).toBeFocused()
+})
+
+test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous control', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: /^Dark theme/ })
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  await page.keyboard.press('Home')
+  await page.keyboard.press('Shift+Tab')
+
+  await expect(menu).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Light theme/ })).toBeFocused()
 })
 
 test.describe('narrow theme picker', () => {
