@@ -12,6 +12,7 @@ import {
   shadcnVariables,
 } from '@adea-ai/themes'
 import {
+  AppearanceEditor,
   AppearancePopover,
   type AppearanceDraft,
 } from '../../src/components/composites/appearance-editor'
@@ -106,4 +107,28 @@ function Fixture() {
     </main>
   )
 }
-render(() => <Fixture />, document.body)
+
+function InlineFixture() {
+  return (
+    <main>
+      <button type="button">Before the editor</button>
+      <AppearanceEditor
+        draft={defaults}
+        lightTheme={adeaLight}
+        darkTheme={adeaDark}
+        resolvedAppearance="dark"
+        themes={themes}
+        accentOptions={ACCENTS}
+        surfaceCapability={{ frosted: false }}
+        onChange={() => {}}
+        onSave={() => {}}
+        onCancel={() => {}}
+        onReset={() => {}}
+      />
+      <button type="button">After the editor</button>
+    </main>
+  )
+}
+
+const inlineFixture = document.documentElement.dataset['appearanceFixture'] === 'inline'
+render(() => (inlineFixture ? <InlineFixture /> : <Fixture />), document.body)
