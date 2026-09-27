@@ -51,25 +51,79 @@ async function waitForGroupExit(pid, timeoutMs) {
   return !groupExists(pid)
 }
 
+async function killWindowsProcessTree(pid) {
+  const killer = spawn('taskkill.exe', ['/PID', String(pid), '/T', '/F'], {
+    stdio: 'ignore',
+    windowsHide: true,
+  })
+  let spawnError
+  killer.on('error', (error) => {
+    spawnError = error
+  })
+  const closePromise = new Promise((resolve) => {
+    killer.once('close', (code, signal) => resolve({ code, signal }))
+  })
+  emit('packed-layout-tree-cleanup-start', {
+    platform: 'win32',
+    targetPid: pid,
+    cleanupPid: killer.pid,
+  })
+  const timeout = setTimeout(() => {
+    try {
+      killer.kill('SIGKILL')
+    } catch {
+      // The cleanup child may exit between the deadline and the signal.
+    }
+  }, 1_000)
+  const outcome = await Promise.race([
+    closePromise.then((exit) => ({ kind: 'closed', exit })),
+    delay(PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: 'timeout' })),
+  ])
+  clearTimeout(timeout)
+  if (outcome.kind === 'timeout')
+    throw new Error(`taskkill.exe did not close the process tree rooted at ${pid}`)
+  if (spawnError) throw spawnError
+  if (outcome.exit.code !== 0)
+    throw new Error(
+      `taskkill.exe failed for process tree ${pid} with exit code ${outcome.exit.code}`
+    )
+  emit('packed-layout-tree-cleanup-exit', {
+    platform: 'win32',
+    targetPid: pid,
+    cleanupPid: killer.pid,
+    exitCode: outcome.exit.code,
+  })
+}
+
 async function stopOwnedProcessGroup(child, closePromise, graceMs) {
   if (!child.pid) return
 
-  signalGroup(child, 'SIGTERM')
   if (process.platform === 'win32') {
-    const closedOnTerm = await Promise.race([
-      closePromise.then(() => true),
-      delay(graceMs).then(() => false),
-    ])
-    if (!closedOnTerm) signalGroup(child, 'SIGKILL')
+    try {
+      await killWindowsProcessTree(child.pid)
+    } catch (error) {
+      try {
+        child.kill('SIGKILL')
+      } catch {
+        // Preserve the tree-cleanup failure as the actionable error.
+      }
+      throw error
+    }
     const closed = await Promise.race([
       closePromise.then(() => true),
       delay(PROCESS_GROUP_CLEANUP_MS).then(() => false),
     ])
-    if (!closed) throw new Error(`Child process ${child.pid} did not close after SIGKILL`)
+    if (!closed) throw new Error(`Child process ${child.pid} did not close after taskkill.exe`)
     return
   }
 
-  const stoppedOnTerm = await waitForGroupExit(child.pid, graceMs)
+  let termError
+  try {
+    signalGroup(child, 'SIGTERM')
+  } catch (error) {
+    termError = error
+  }
+  const stoppedOnTerm = termError ? false : await waitForGroupExit(child.pid, graceMs)
   if (!stoppedOnTerm) signalGroup(child, 'SIGKILL')
 
   const closed = await Promise.race([
@@ -91,7 +145,7 @@ function commandError(message, details) {
 
 /**
  * Run a packed-layout child with bounded output, a deadline, and owned process-group cleanup.
- * On POSIX, detached creates a process group so descendants are terminated with the command.
+ * POSIX uses a detached process group; Windows uses taskkill's process-tree mode.
  */
 export async function runCommand(file, args, options) {
   const {
@@ -138,6 +192,10 @@ export async function runCommand(file, args, options) {
   let stopReason
   let stopPromise
   let cleanupError
+  let resolveStopRequested
+  const stopRequested = new Promise((resolve) => {
+    resolveStopRequested = resolve
+  })
   child.stdout.on('data', (chunk) => {
     const output = appendOutput(stdout, chunk, stdoutLimitBytes)
     stdout = output.buffer
@@ -167,12 +225,21 @@ export async function runCommand(file, args, options) {
     stopPromise = stopOwnedProcessGroup(child, closePromise, terminationGraceMs).catch((error) => {
       cleanupError = error
     })
+    resolveStopRequested()
   }
   const onAbort = () => requestStop({ kind: 'aborted', reason: signal.reason })
   signal?.addEventListener('abort', onAbort, { once: true })
   const timeout = setTimeout(() => requestStop({ kind: 'timeout' }), timeoutMs)
 
-  const exit = await closePromise
+  const completion = await Promise.race([
+    closePromise.then((exit) => ({ exit })),
+    stopRequested.then(async () => {
+      await stopPromise
+      if (cleanupError) return { exit: { code: null, signal: null } }
+      return { exit: await closePromise }
+    }),
+  ])
+  const exit = completion.exit
   clearTimeout(timeout)
   signal?.removeEventListener('abort', onAbort)
 

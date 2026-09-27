@@ -31,13 +31,11 @@ test('a timed-out packed command terminates its owned process tree', async () =>
   const directory = mkdtempSync(join(tmpdir(), 'adea-packed-layout-process-test-'))
   const marker = join(directory, 'children.json')
   const stubbornChild = "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"
-  const processTreeSetup =
-    process.platform === 'win32'
-      ? `import { writeFileSync } from 'node:fs'
-    writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ parent: process.pid }))`
-      : `import { spawn } from 'node:child_process'
+  const processTreeSetup = `import { spawn } from 'node:child_process'
     import { writeFileSync } from 'node:fs'
-    const grandchild = spawn(process.execPath, ['-e', ${JSON.stringify(stubbornChild)}], { stdio: 'ignore' })
+    const grandchild = spawn(process.execPath, ['-e', ${JSON.stringify(stubbornChild)}], {
+      stdio: ['ignore', 'inherit', 'inherit'],
+    })
     writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ parent: process.pid, grandchild: grandchild.pid }))`
   const commandSource = `
     ${processTreeSetup}
