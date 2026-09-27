@@ -11,6 +11,8 @@ const fullCoverage = () => ({
 const validImmutableRef = (ref) => /^[a-f0-9]{40}$/.test(ref ?? '') && ref !== '0'.repeat(40)
 const pageOnlyPaths = new Set([
   'apps/storybook/.storybook/manager.ts',
+  'apps/storybook/styleguide/Overview.mdx',
+  'apps/storybook/styleguide/Conventions.mdx',
   '.github/workflows/registry-pages.yml',
   '.github/scripts/registry-pages.mjs',
   '.github/scripts/registry-pages.test.ts',

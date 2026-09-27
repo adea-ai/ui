@@ -107,6 +107,27 @@ test('known Storybook Pages-only inputs retain the artifact build without UI or 
     pagesBuild: true,
   })
 })
+test('guide-only MDX rebuilds Pages while component edits retain their gates', () => {
+  expect(
+    classifyDesignSystemChanges([
+      'apps/storybook/styleguide/Overview.mdx',
+      'apps/storybook/styleguide/Conventions.mdx',
+    ])
+  ).toEqual({ registry: false, workshop: false, components: false, pages: true, pagesBuild: true })
+  expect(
+    classifyDesignSystemChanges([
+      'apps/storybook/styleguide/Overview.mdx',
+      'packages/ui/src/components/ui/button/button.tsx',
+    ])
+  ).toEqual({ registry: true, workshop: true, components: true, pages: true, pagesBuild: true })
+  expect(classifyDesignSystemChanges(['apps/storybook/styleguide/new-example.mdx'])).toEqual({
+    registry: false,
+    workshop: true,
+    components: true,
+    pages: true,
+    pagesBuild: false,
+  })
+})
 test('mixed changes union the needed lanes and unknown paths fail closed', () => {
   expect(
     classifyDesignSystemChanges([
