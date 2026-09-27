@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
 import { Slider } from './slider'
+import { Button } from '../button/button'
 
 /**
  * Slider.
@@ -34,7 +35,12 @@ export const Default: Story = {
 export const Range: Story = {
   render: () => (
     <div class="w-80">
-      <Slider defaultValue={[20, 70]} valueLabel aria-label="Port range" />
+      <Slider
+        defaultValue={[20, 70]}
+        valueLabel
+        aria-label="Port range"
+        thumbLabels={['Minimum port', 'Maximum port']}
+      />
     </div>
   ),
 }
@@ -79,4 +85,33 @@ export const Disabled: Story = {
       <Slider defaultValue={[75]} disabled aria-label="Not available" />
     </div>
   ),
+}
+
+/** Native form submission includes both range endpoints and reset restores them. */
+export const InAForm: Story = {
+  render: () => {
+    const [submitted, setSubmitted] = createSignal('')
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          setSubmitted(new FormData(event.currentTarget).getAll('threshold').join(' – '))
+        }}
+        class="flex w-80 flex-col gap-3"
+      >
+        <Slider
+          name="threshold"
+          defaultValue={[20, 70]}
+          aria-label="Threshold"
+          thumbLabels={['Minimum threshold', 'Maximum threshold']}
+          valueLabel
+        />
+        <Button type="submit">Apply thresholds</Button>
+        <Button type="reset" variant="secondary">
+          Reset thresholds
+        </Button>
+        <output aria-label="Submitted thresholds">{submitted()}</output>
+      </form>
+    )
+  },
 }

@@ -93,3 +93,25 @@ export const Multiple: Story = {
     </Combobox>
   ),
 }
+
+/** Empty-result guidance remains in the popup alongside the primitive’s listbox. */
+export const NoResults: Story = {
+  render: () => (
+    <Combobox<string>
+      options={[]}
+      allowsEmptyCollection
+      defaultOpen
+      itemComponent={(props) => (
+        <ComboboxItem item={props.item}>{props.item.rawValue}</ComboboxItem>
+      )}
+    >
+      <ComboboxControl class="w-72">
+        <ComboboxInput aria-label="Provider" />
+        <ComboboxTrigger aria-label="Show providers" />
+      </ComboboxControl>
+      <ComboboxContent>
+        <p role="status">No matching providers. Try another search.</p>
+      </ComboboxContent>
+    </Combobox>
+  ),
+}

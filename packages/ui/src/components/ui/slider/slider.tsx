@@ -1,6 +1,6 @@
 import { Slider as KobalteSlider } from '@kobalte/core/slider'
 import type { ComponentProps } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import { For, Show, createUniqueId, createRenderEffect, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 
 /**
@@ -12,9 +12,13 @@ import { cn } from '#lib/utils'
  * nobody can set exactly.
  *
  * Kobalte handles pointer capture, keyboard stepping and the ARIA value
- * wiring; this paints the track, fill and thumb.
+ * wiring; this paints the track, fill and one thumb per value. Each thumb
+ * contains a form-native input, hidden from accessibility because the visible
+ * thumb already exposes the slider role.
  */
 export type SliderProps = ComponentProps<typeof KobalteSlider> & {
+  /** Accessible names for individual thumbs, in value order (for example minimum and maximum). */
+  thumbLabels?: readonly string[]
   trackClass?: string
   rangeClass?: string
   thumbClass?: string
@@ -23,11 +27,13 @@ export type SliderProps = ComponentProps<typeof KobalteSlider> & {
 }
 
 export function Slider(props: SliderProps) {
+  const inputId = createUniqueId()
   const [local, rest] = splitProps(props, [
     'class',
     'trackClass',
     'rangeClass',
     'thumbClass',
+    'thumbLabels',
     'valueLabel',
     'children',
     'aria-label',
@@ -61,21 +67,42 @@ export function Slider(props: SliderProps) {
         />
       </KobalteSlider.Track>
       {local.children}
-      <KobalteSlider.Thumb
-        aria-label={local['aria-label']}
-        aria-labelledby={local['aria-labelledby']}
-        class={cn(
-          'border-primary bg-background block size-4 shrink-0 rounded-full border-2 shadow-xs',
-          'transition-[color,box-shadow] ease-out outline-none',
-          'hover:ring-4 hover:ring-primary-subtle',
-          'focus-visible:ring-4 focus-visible:ring-primary-subtle',
-          local.thumbClass
+      <For
+        each={Array.from(
+          { length: (props.value ?? props.defaultValue ?? [0]).length },
+          (_, index) => index
         )}
       >
-        <Show when={local.valueLabel}>
-          <KobalteSlider.ValueLabel class="bg-popover text-popover-foreground absolute -top-6 left-1/2 -translate-x-1/2 rounded-sm border border-border px-1 text-2xs tabular-nums" />
-        </Show>
-      </KobalteSlider.Thumb>
+        {(index) => (
+          <KobalteSlider.Thumb
+            aria-label={local.thumbLabels?.[index] ?? local['aria-label']}
+            aria-labelledby={local.thumbLabels?.[index] ? undefined : local['aria-labelledby']}
+            class={cn(
+              'border-primary bg-background block size-4 shrink-0 rounded-full border-2 shadow-xs',
+              'transition-[color,box-shadow] ease-out outline-none',
+              'hover:ring-4 hover:ring-primary-subtle',
+              'focus-visible:ring-4 focus-visible:ring-primary-subtle',
+              local.thumbClass
+            )}
+          >
+            {/* Native reset uses the value property’s default, not an HTML defaultValue attribute. */}
+            <KobalteSlider.Input
+              id={`slider-${inputId}-${index}`}
+              ref={(input) => {
+                createRenderEffect(() => {
+                  input.defaultValue = String(
+                    props.defaultValue?.[index] ?? props.value?.[index] ?? props.minValue ?? 0
+                  )
+                })
+              }}
+              aria-hidden="true"
+            />
+            <Show when={local.valueLabel}>
+              <KobalteSlider.ValueLabel class="bg-popover text-popover-foreground absolute -top-6 left-1/2 -translate-x-1/2 rounded-sm border border-border px-1 text-2xs tabular-nums" />
+            </Show>
+          </KobalteSlider.Thumb>
+        )}
+      </For>
     </KobalteSlider>
   )
 }

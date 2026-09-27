@@ -96,6 +96,7 @@ export function ComboboxContent(props: ComponentProps<typeof KobalteCombobox.Con
         {...rest}
       >
         <KobalteCombobox.Listbox class={cn('max-h-72 overflow-y-auto', menuContentPadding)} />
+        {local.children}
         <KobalteCombobox.Arrow aria-hidden="true" class={popoverArrow} />
       </KobalteCombobox.Content>
     </KobalteCombobox.Portal>
