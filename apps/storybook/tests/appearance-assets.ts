@@ -66,7 +66,7 @@ function inspectPackedBundle(
   console.log(JSON.stringify({ packedAppearanceMeasurement: measurement }))
   // The host fixture explicitly imports canonical theme records and color adapters.
   // Record the combined host/editor cost; UI never imports a palette engine.
-  // Baselines: compiled 62,203 and Solid 62,643 gzip JS bytes; 50,060 raw CSS with all nested primitives/shared helpers.
+  // Baselines: compiled 63,599 and Solid 64,126 gzip JS bytes; 50,059 raw CSS with all nested primitives/shared helpers.
   // New composition budgets have modest independent headroom, without widening core gates.
   if (measurement.gzipJsBytes > 64 * 1024)
     throw new Error('Packed appearance host/editor exceeds 64 KiB gzip JS budget')

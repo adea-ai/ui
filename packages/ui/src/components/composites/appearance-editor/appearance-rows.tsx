@@ -42,7 +42,8 @@ const POINTER_FOCUS_TARGET_SELECTOR =
 
 function isTabStop(element: HTMLElement) {
   return (
-    (element.tabIndex >= 0 || element.matches('details > summary:first-of-type')) &&
+    (element.tabIndex >= 0 ||
+      (element.matches('details > summary:first-of-type') && !element.hasAttribute('tabindex'))) &&
     !element.matches(':disabled') &&
     element.getAttribute('aria-disabled') !== 'true' &&
     element.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
@@ -84,7 +85,8 @@ export function SettingsRow(props: {
  * A compact persistent theme choice. Kobalte handles menu navigation and
  * dismissal; this row moves Tab to the adjacent browser-reported stop because
  * menus consume Tab by default. Enumerating elements and checking their native
- * tabIndex keeps browser controls such as details summaries in the order.
+ * tabIndex keeps details summaries in the order while preserving explicit
+ * tabindex overrides.
  */
 export function ThemeRow(props: {
   appearance: 'light' | 'dark'
@@ -99,6 +101,7 @@ export function ThemeRow(props: {
   const [menuOpen, setMenuOpen] = createSignal(false)
   const [focusOutsideTarget, setFocusOutsideTarget] = createSignal<HTMLElement>()
   const [restoreTriggerFocus, setRestoreTriggerFocus] = createSignal(false)
+  let focusTargetAfterTab: HTMLElement | undefined
   const options = createMemo(() =>
     props.themes.filter((theme) => theme.appearance === props.appearance)
   )
@@ -138,10 +141,12 @@ export function ThemeRow(props: {
     setRestoreTriggerFocus(false)
     if (adjacent) {
       event.preventDefault()
+      focusTargetAfterTab = adjacent
       setFocusOutsideTarget(adjacent)
       setMenuOpen(false)
       adjacent.focus({ preventScroll: true })
     } else {
+      focusTargetAfterTab = undefined
       setFocusOutsideTarget(undefined)
       setMenuOpen(false)
     }
@@ -155,6 +160,7 @@ export function ThemeRow(props: {
           onOpenChange={(open) => {
             setMenuOpen(open)
             if (open) {
+              focusTargetAfterTab = undefined
               setFocusOutsideTarget(undefined)
               setRestoreTriggerFocus(false)
             }
@@ -210,7 +216,8 @@ export function ThemeRow(props: {
             onEscapeKeyDown={() => setRestoreTriggerFocus(true)}
             onCloseAutoFocus={(event) => {
               const shouldRestore = restoreTriggerFocus()
-              const focusTarget = focusOutsideTarget()
+              const focusTarget = focusTargetAfterTab ?? focusOutsideTarget()
+              focusTargetAfterTab = undefined
               setFocusOutsideTarget(undefined)
               setRestoreTriggerFocus(false)
               if (shouldRestore) {
@@ -232,9 +239,13 @@ export function ThemeRow(props: {
                   const isMenuFocus =
                     activeElement instanceof HTMLElement &&
                     activeElement.closest('[role="menu"]') !== null
+                  const isTriggerFocus = activeElement === triggerElement()
                   if (
                     activeElement !== focusTarget &&
-                    (activeElement === document.body || activeElement === focusScope || isMenuFocus)
+                    (activeElement === document.body ||
+                      activeElement === focusScope ||
+                      isMenuFocus ||
+                      isTriggerFocus)
                   ) {
                     focusTarget.focus({ preventScroll: true })
                   }

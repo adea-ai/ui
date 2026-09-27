@@ -393,7 +393,9 @@ test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous
   await expect(page.getByRole('button', { name: /^Light theme/ })).toBeFocused()
 })
 
-test('inline AppearanceEditor Tab follows native details summary stops', async ({ page }) => {
+test('inline AppearanceEditor Tab follows native summaries and skips negative tabindex', async ({
+  page,
+}) => {
   await page.evaluate(() => {
     const trigger = document.querySelector<HTMLButtonElement>('button[aria-label="Dark theme"]')
     const row = trigger?.closest('section')
@@ -405,25 +407,46 @@ test('inline AppearanceEditor Tab follows native details summary stops', async (
     before.append(beforeSummary)
     row.before(before)
 
+    const skippedBefore = document.createElement('details')
+    const skippedBeforeSummary = document.createElement('summary')
+    skippedBeforeSummary.setAttribute('tabindex', '-1')
+    skippedBeforeSummary.textContent = 'Programmatically focusable details before dark theme'
+    skippedBefore.append(skippedBeforeSummary)
+    row.before(skippedBefore)
+
     const after = document.createElement('details')
     const afterSummary = document.createElement('summary')
     afterSummary.textContent = 'Details after dark theme'
     after.append(afterSummary)
     row.after(after)
+
+    const skippedAfter = document.createElement('details')
+    const skippedAfterSummary = document.createElement('summary')
+    skippedAfterSummary.setAttribute('tabindex', '-1')
+    skippedAfterSummary.textContent = 'Programmatically focusable details after dark theme'
+    skippedAfter.append(skippedAfterSummary)
+    row.after(skippedAfter)
   })
 
   const trigger = page.getByRole('button', { name: /^Dark theme/ })
   const summaries = page.locator('summary')
+  await expect(summaries).toHaveCount(4)
+  await expect(summaries.nth(1)).toHaveAttribute('tabindex', '-1')
+  await expect(summaries.nth(2)).toHaveAttribute('tabindex', '-1')
   await trigger.click()
   const nextMenu = page.getByRole('menu')
+  await expect(nextMenu).toBeVisible()
   await page.keyboard.press('Home')
+  await expect(nextMenu.getByRole('menuitemradio').first()).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(nextMenu).toHaveCount(0)
-  await expect(summaries.nth(1)).toBeFocused()
+  await expect(summaries.nth(3)).toBeFocused()
 
   await trigger.click()
   const previousMenu = page.getByRole('menu')
+  await expect(previousMenu).toBeVisible()
   await page.keyboard.press('Home')
+  await expect(previousMenu.getByRole('menuitemradio').first()).toBeFocused()
   await page.keyboard.press('Shift+Tab')
   await expect(previousMenu).toHaveCount(0)
   await expect(summaries.first()).toBeFocused()
