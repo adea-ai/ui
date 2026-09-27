@@ -24,7 +24,7 @@
 // Retains the compact divided row and palette-preview selector from the pinned
 // Zeron/Adea composition; Kobalte owns option navigation and nested dismissal.
 import type { AdeaTheme, AdeaThemeRecord } from '@adea-ai/themes'
-import { For, Show, createMemo, createSignal, type JSX } from 'solid-js'
+import { For, Show, createMemo, createSignal, onCleanup, type JSX } from 'solid-js'
 import { ChevronDown, Palette } from 'lucide-solid'
 import { cn } from '../../../lib/utils'
 import { Button } from '../../ui/button/button'
@@ -102,6 +102,10 @@ export function ThemeRow(props: {
   const [focusOutsideTarget, setFocusOutsideTarget] = createSignal<HTMLElement>()
   const [restoreTriggerFocus, setRestoreTriggerFocus] = createSignal(false)
   let focusTargetAfterTab: HTMLElement | undefined
+  let focusLifecycleVersion = 0
+  onCleanup(() => {
+    focusLifecycleVersion += 1
+  })
   const options = createMemo(() =>
     props.themes.filter((theme) => theme.appearance === props.appearance)
   )
@@ -111,6 +115,10 @@ export function ThemeRow(props: {
       options().find((theme) => theme.id === props.preview.id)
   )
   const label = () => (props.appearance === 'light' ? 'Light theme' : 'Dark theme')
+  const closeMenu = () => {
+    if (menuOpen()) focusLifecycleVersion += 1
+    setMenuOpen(false)
+  }
   const moveFocusOnTab = (event: KeyboardEvent) => {
     if (event.key !== 'Tab' || event.isComposing) return
 
@@ -143,12 +151,12 @@ export function ThemeRow(props: {
       event.preventDefault()
       focusTargetAfterTab = adjacent
       setFocusOutsideTarget(adjacent)
-      setMenuOpen(false)
+      closeMenu()
       adjacent.focus({ preventScroll: true })
     } else {
       focusTargetAfterTab = undefined
       setFocusOutsideTarget(undefined)
-      setMenuOpen(false)
+      closeMenu()
     }
   }
   return (
@@ -158,6 +166,7 @@ export function ThemeRow(props: {
           modal={false}
           open={menuOpen()}
           onOpenChange={(open) => {
+            if (open !== menuOpen()) focusLifecycleVersion += 1
             setMenuOpen(open)
             if (open) {
               focusTargetAfterTab = undefined
@@ -215,6 +224,14 @@ export function ThemeRow(props: {
             }}
             onEscapeKeyDown={() => setRestoreTriggerFocus(true)}
             onCloseAutoFocus={(event) => {
+              // A prior menu instance can finish its focus cleanup after this
+              // row has already reopened. Do not let that cleanup steal focus.
+              if (menuOpen()) {
+                event.preventDefault()
+                return
+              }
+
+              const lifecycleVersion = focusLifecycleVersion
               const shouldRestore = restoreTriggerFocus()
               const focusTarget = focusTargetAfterTab ?? focusOutsideTarget()
               focusTargetAfterTab = undefined
@@ -235,6 +252,8 @@ export function ThemeRow(props: {
                 // Kobalte's deferred stale-focus restore.
                 event.preventDefault()
                 queueMicrotask(() => {
+                  if (lifecycleVersion !== focusLifecycleVersion || menuOpen()) return
+
                   const activeElement = document.activeElement
                   const isMenuFocus =
                     activeElement instanceof HTMLElement &&
