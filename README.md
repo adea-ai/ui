@@ -14,14 +14,22 @@ bun run storybook        # the workshop: every component, every variant, both th
 ```
 
 `build` produces the publishable library. CI builds the workshop once in its
-dedicated gate and shares that artifact across the four browser shards.
+dedicated gate and shares that artifact across the ten browser shards.
 `bun run verify` includes both builds and the package checks. Workshop prop
 documentation is extracted from local components; dependency TSX is excluded
 from extraction while its imported types remain available.
 
 Draft pull requests allocate no Registry or Workshop runners. Mark a prepared
 pull request ready to run the complete gates; later ready-PR updates rerun them.
-Returning to draft cancels the active gate run. Pushes to `main` retain all gates.
+Returning to draft cancels the active gate run. PR and `main` push gates follow
+the changed paths: documentation outside the published package skips the heavy
+lanes, distribution metadata selects Registry, and browser harness changes
+select their affected lanes. Component, token, dependency, workflow and unknown
+paths retain full coverage. PRs use the immutable merge-base diff; pushes use
+the immutable before/after tree diff, including every commit in a batched push.
+Deleted and renamed source paths count. Missing, zero or unavailable refs retain
+all gates. The required Workshop aggregate rejects failed or cancelled lanes;
+it accepts a skip only when change classification explicitly excluded that lane.
 
 ---
 

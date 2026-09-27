@@ -2,8 +2,9 @@ import { appendFileSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
 const fullCoverage = () => ({ registry: true, workshop: true, components: true })
+const validImmutableRef = (ref) => /^[a-f0-9]{40}$/.test(ref ?? '') && ref !== '0'.repeat(40)
 
-/** Conservative PR impact map. Unknown inputs retain every gate; main is always full. */
+/** Conservative impact map. Unknown inputs retain every gate. */
 export function classifyDesignSystemChanges(paths) {
   const result = { registry: false, workshop: false, components: false }
   for (const path of paths) {
@@ -51,19 +52,19 @@ export function classifyDesignSystemChanges(paths) {
 if (import.meta.main) {
   let result = fullCoverage()
   try {
-    if (process.env['GITHUB_EVENT_NAME'] === 'pull_request') {
+    const eventName = process.env['GITHUB_EVENT_NAME']
+    if (eventName === 'pull_request' || eventName === 'push') {
       const event = JSON.parse(readFileSync(process.env['GITHUB_EVENT_PATH'], 'utf8'))
-      const base = event.pull_request?.base?.sha
-      const head = event.pull_request?.head?.sha
-      if (!/^[a-f0-9]{40}$/.test(base ?? '') || !/^[a-f0-9]{40}$/.test(head ?? ''))
-        throw new Error('Missing immutable PR refs')
-      const paths = execFileSync(
-        'git',
-        ['diff', '--no-renames', '--name-only', '-z', `${base}...${head}`],
-        {
-          encoding: 'utf8',
-        }
-      )
+      const base = eventName === 'pull_request' ? event.pull_request?.base?.sha : event.before
+      const head = eventName === 'pull_request' ? event.pull_request?.head?.sha : event.after
+      if (!validImmutableRef(base) || !validImmutableRef(head))
+        throw new Error('Missing immutable diff refs')
+      // PRs compare their branch to the merge base. Pushes compare the actual
+      // before/after trees so every commit in a batched push contributes paths.
+      const range = eventName === 'pull_request' ? [`${base}...${head}`] : [base, head]
+      const paths = execFileSync('git', ['diff', '--no-renames', '--name-only', '-z', ...range], {
+        encoding: 'utf8',
+      })
         .split('\0')
         .filter(Boolean)
       result = classifyDesignSystemChanges(paths)

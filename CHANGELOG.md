@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.67.2](https://github.com/adea-ai/ui/compare/v0.67.1...v0.67.2) (2026-09-27)
+
+
+### Performance
+
+* **ci:** filter design system gates on main pushes ([#47](https://github.com/adea-ai/ui/issues/47)) ([00339d7](https://github.com/adea-ai/ui/commit/00339d79847ccc88c3edb7b1b18c2d2fa58036c9))
+
 ## [0.67.1](https://github.com/adea-ai/ui/compare/v0.67.0...v0.67.1) (2026-09-27)
 
 
