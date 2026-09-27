@@ -96,7 +96,7 @@
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
     "theme:build": "bun scripts/build-default-theme.ts",
     "theme:check": "bun scripts/build-default-theme.ts --check",
-    "check:packed-layout": "node scripts/check-packed-layout.mjs",
+    "check:packed-layout": "node --test scripts/check-packed-layout-process.test.mjs && node scripts/check-packed-layout.mjs",
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
     "check:packed-conversation": "bun scripts/check-packed-conversation.ts",
     "check:packed-transcript": "bun scripts/check-packed-transcript.ts",
