@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.70.2](https://github.com/adea-ai/ui/compare/v0.70.1...v0.70.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* **ui:** expose ModalDialog label and modality options ([#68](https://github.com/adea-ai/ui/issues/68)) ([bba615f](https://github.com/adea-ai/ui/commit/bba615f593234ccfa60d4860a034eb231ca4e205))
+
+
+### CI
+
+* run packed Registry browser contracts in parallel ([#61](https://github.com/adea-ai/ui/issues/61)) ([770dca5](https://github.com/adea-ai/ui/commit/770dca51cab9217c65abe9493f22fcdb97965d8d))
+
 ## [0.70.1](https://github.com/adea-ai/ui/compare/v0.70.0...v0.70.1) (2026-09-27)
 
 
