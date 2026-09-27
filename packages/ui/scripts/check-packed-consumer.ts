@@ -39,6 +39,13 @@ const coreSamples: PackedSample[] = [
     source: 'ui/modal-dialog',
   },
   {
+    name: 'tooltip-subpath',
+    imports:
+      "import { Tooltip, TooltipContent, TooltipTrigger } from '@adea-ai/ui/components/ui/tooltip'",
+    jsx: '<Tooltip><TooltipTrigger as="button">Details</TooltipTrigger><TooltipContent hideArrow>More info</TooltipContent></Tooltip>',
+    source: 'ui/tooltip',
+  },
+  {
     name: 'conversation-transcript',
     imports:
       "import { ConversationSurface } from '@adea-ai/ui/components/conversation'; import { Button } from '@adea-ai/ui/components/ui/button'",
