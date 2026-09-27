@@ -37,12 +37,18 @@ test('a timed-out packed command terminates its owned process tree', async () =>
       stdio: ['ignore', 'inherit', 'inherit'],
     })
     writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ parent: process.pid, grandchild: grandchild.pid }))`
-  const commandSource = `
-    ${processTreeSetup}
-    process.on('SIGTERM', () => {})
-    setInterval(() => {}, 1000)
-  `
-  let processGroupId
+  const commandSource =
+    process.platform === 'win32'
+      ? `
+          ${processTreeSetup}
+          process.on('SIGTERM', () => {})
+          setInterval(() => {}, 1000)
+        `
+      : `
+          ${processTreeSetup}
+          process.exit(0)
+        `
+  let cleanupRootPid
   let descendants = []
   const cleanupFailures = []
 
@@ -57,7 +63,7 @@ test('a timed-out packed command terminates its owned process tree', async () =>
         displayArgs: ['--input-type=module', '-e', '<stubborn child fixture>'],
       }),
       (error) => {
-        processGroupId = error.pid
+        cleanupRootPid = error.pid
         assert.equal(error.code, 'ETIMEDOUT')
         assert.equal(error.stage, 'process-group cleanup regression')
         return true
@@ -66,13 +72,13 @@ test('a timed-out packed command terminates its owned process tree', async () =>
 
     const childPids = JSON.parse(readFileSync(marker, 'utf8'))
     descendants = [childPids.parent, childPids.grandchild].filter(Boolean)
-    assert.ok(processGroupId, 'the timeout error identifies the owned process group')
+    assert.ok(cleanupRootPid, 'the timeout error identifies the cleanup root')
     await waitForExit(descendants, 2_000)
-    if (process.platform !== 'win32') await waitForExit([processGroupId], 2_000)
+    await waitForExit([cleanupRootPid], 2_000)
   } finally {
-    if (processGroupId && process.platform !== 'win32') {
+    if (cleanupRootPid) {
       try {
-        process.kill(-processGroupId, 'SIGKILL')
+        process.kill(process.platform === 'win32' ? cleanupRootPid : -cleanupRootPid, 'SIGKILL')
       } catch (error) {
         if (error.code !== 'ESRCH') cleanupFailures.push(error.message)
       }

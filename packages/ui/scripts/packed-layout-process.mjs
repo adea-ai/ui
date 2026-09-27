@@ -144,8 +144,9 @@ function commandError(message, details) {
 }
 
 /**
- * Run a packed-layout child with bounded output, a deadline, and owned process-group cleanup.
- * POSIX uses a detached process group; Windows uses taskkill's process-tree mode.
+ * Run a packed-layout child with bounded output, a deadline, and owned process-tree cleanup.
+ * POSIX uses a detached process group. Windows uses taskkill's process-tree mode while the
+ * command root is alive; an exited root with reparented descendants cannot be enumerated here.
  */
 export async function runCommand(file, args, options) {
   const {
@@ -250,6 +251,12 @@ export async function runCommand(file, args, options) {
     } catch (error) {
       cleanupError = error
     }
+  }
+  if (cleanupError) {
+    // Do not let pipe-holding descendants keep this gate alive after cleanup already failed.
+    child.stdout.destroy()
+    child.stderr.destroy()
+    child.unref()
   }
 
   const elapsedMs = Date.now() - startedAt
