@@ -43,6 +43,12 @@ jobs:
       source: ${{ steps.guard.outputs.source }}
       head_sha: ${{ steps.guard.outputs.head_sha }}
     steps:
+      - name: Checkout trusted main for workflow scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
       - name: Check run freshness and select the site source
         id: guard
         env:
