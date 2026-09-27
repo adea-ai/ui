@@ -13,6 +13,7 @@ function Fixture() {
   const [open, setOpen] = createSignal(false)
   const [modal, setModal] = createSignal(true)
   const [customLabel, setCustomLabel] = createSignal(false)
+  const [externalLabel, setExternalLabel] = createSignal(false)
   const [closing, setClosing] = createSignal(false)
   window.completeModalDialogClose = () => {
     setOpen(false)
@@ -29,9 +30,13 @@ function Fixture() {
         <button type="button" onClick={() => setCustomLabel(true)}>
           Use custom dialog label
         </button>
+        <button type="button" onClick={() => setExternalLabel(true)}>
+          Use external dialog label
+        </button>
         <button type="button" onClick={() => setOpen(true)}>
           Open workspace details
         </button>
+        <h2 id="external-dialog-label">External workspace name</h2>
         <output aria-label="Close status">{closing() ? 'Closing' : 'Open'}</output>
       </main>
       <ModalDialog
@@ -39,7 +44,14 @@ function Fixture() {
         onClose={() => setClosing(true)}
         modal={modal()}
         title="Workspace details"
-        aria-label={customLabel() ? 'Custom workspace label' : undefined}
+        aria-label={
+          externalLabel()
+            ? 'Fallback custom workspace label'
+            : customLabel()
+              ? 'Custom workspace label'
+              : undefined
+        }
+        aria-labelledby={externalLabel() ? 'external-dialog-label' : undefined}
       >
         <button type="button">Dialog action</button>
       </ModalDialog>

@@ -103,3 +103,16 @@ test('an explicit aria-label overrides the title name without replacing the visi
   await expect(dialog).toHaveAttribute('aria-label', 'Custom workspace label')
   await expect(page.getByRole('heading', { name: 'Workspace details' })).toBeVisible()
 })
+
+test('aria-labelledby names the dialog ahead of a different aria-label and title', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Use external dialog label' }).click()
+  await page.getByRole('button', { name: 'Open workspace details' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'External workspace name' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveAttribute('aria-labelledby', 'external-dialog-label')
+  await expect(dialog).toHaveAttribute('aria-label', 'Fallback custom workspace label')
+  await expect(page.getByRole('heading', { name: 'Workspace details' })).toBeVisible()
+})
