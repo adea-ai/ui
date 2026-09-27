@@ -64,6 +64,41 @@ async function dispatchPlainPaste(page: import('@playwright/test').Page, text: s
   }, text)
 }
 
+async function dispatchTextDrop(
+  page: import('@playwright/test').Page,
+  text: string,
+  caret: number
+) {
+  return page.getByRole('textbox', { name: 'Paste-token message' }).evaluate(
+    (element, payload) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      element.setSelectionRange(payload.caret, payload.caret)
+      element.dispatchEvent(new Event('select', { bubbles: true }))
+      const caretAfterSnap = [element.selectionStart, element.selectionEnd]
+      const dataTransfer = new DataTransfer()
+      dataTransfer.setData('text/plain', payload.text)
+      const dragOver = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer,
+      })
+      element.dispatchEvent(dragOver)
+      element.setSelectionRange(payload.caret, payload.caret)
+      element.dispatchEvent(new Event('select', { bubbles: true }))
+      const caretDuringDrop = [element.selectionStart, element.selectionEnd]
+      const drop = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer })
+      element.dispatchEvent(drop)
+      return {
+        dragOverPrevented: dragOver.defaultPrevented,
+        dropPrevented: drop.defaultPrevented,
+        caretAfterSnap,
+        caretDuringDrop,
+      }
+    },
+    { text, caret }
+  )
+}
+
 async function enablePasteTokens(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Enable paste-token editor' }).click()
   return page.getByRole('textbox', { name: 'Paste-token message' })
@@ -358,6 +393,19 @@ test('selection and line navigation snap to token edges before mouse expansion',
     })
   ).toEqual([0, token.length])
 
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(4, 4)
+    element.dispatchEvent(new Event('select', { bubbles: true }))
+  })
+  await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return [element.selectionStart, element.selectionEnd]
+    })
+  ).toEqual([0, 0])
+
   for (const [key, expected] of [
     ['Home', 0],
     ['End', token.length],
@@ -398,6 +446,26 @@ test('selection and line navigation snap to token edges before mouse expansion',
       return [element.selectionStart, element.selectionEnd]
     })
   ).toEqual(['first\nsecond\nthird'.length, 'first\nsecond\nthird'.length])
+})
+
+test('dropping text at a collapsed token caret replaces the complete token atomically', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+
+  const dropped = await dispatchTextDrop(page, 'replacement', 4)
+  expect(dropped).toEqual({
+    dragOverPrevented: true,
+    dropPrevented: true,
+    caretAfterSnap: [0, 0],
+    caretDuringDrop: [4, 4],
+  })
+  await expect(field).toHaveValue('replacement')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
 })
 
 test('the aria-hidden token mirror tracks textarea scroll offsets', async ({ page }) => {

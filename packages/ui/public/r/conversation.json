@@ -74,6 +74,11 @@
       "target": "components/conversation/message-row.tsx"
     },
     {
+      "path": "src/components/conversation/paste-preview.ts",
+      "type": "registry:ui",
+      "target": "components/conversation/paste-preview.ts"
+    },
+    {
       "path": "src/components/conversation/paste-token-editor.tsx",
       "type": "registry:ui",
       "target": "components/conversation/paste-token-editor.tsx"

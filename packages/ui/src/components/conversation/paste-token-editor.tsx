@@ -8,6 +8,7 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createSignal,
   createUniqueId,
   on,
@@ -26,6 +27,7 @@ import {
   tokenRangeAt,
   type PasteBlock,
 } from './paste-tokens'
+import { summarizePastePreview } from './paste-preview'
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip'
 
 export type PasteTokenDraft = { text: string; blocks: PasteBlock[] }
@@ -52,8 +54,6 @@ export type PasteTokenEditorProps = {
 }
 
 const PREVIEW_OPEN_DELAY_MS = 300
-const PREVIEW_MAX_LINES = 12
-const PREVIEW_MAX_CHARACTERS = 1200
 
 function isTouchDevice(): boolean {
   return (
@@ -76,6 +76,10 @@ function isBlockquotePrefix(linePrefix: string): boolean {
 /** Controlled plain-text editor that treats known paste markers as atomic ranges. */
 export function PasteTokenEditor(props: PasteTokenEditorProps) {
   const [preview, setPreview] = createSignal<PasteBlock | null>(null)
+  const previewSummary = createMemo(() => {
+    const block = preview()
+    return block ? summarizePastePreview(block.content, block.lines) : null
+  })
   const descriptionId = `paste-preview-${createUniqueId()}`
   const keyboardHintId = `paste-keyboard-hint-${createUniqueId()}`
   let field: HTMLTextAreaElement | undefined
@@ -85,6 +89,9 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   let rawPasteNext = false
   let suppressPasteInput = false
   let nativePasteInputSeen = false
+  let keyboardNavigationPending = false
+  let acceptingTextDrop = false
+  let snappedCaretPreview: { blockId: string; position: number } | null = null
 
   const ranges = () => findTokenRanges(props.value, props.blocks)
   const clearTimer = () => {
@@ -94,6 +101,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   const closePreview = () => {
     clearTimer()
     scheduledBlockId = null
+    snappedCaretPreview = null
     setPreview(null)
   }
   const schedulePreview = (block: PasteBlock) => {
@@ -180,8 +188,16 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
     }
     const caret = field.selectionStart
     const range = ranges().find((candidate) => caret > candidate.start && caret < candidate.end)
-    if (!range) closePreview()
-    else schedulePreview(range.block)
+    if (range) {
+      schedulePreview(range.block)
+      return
+    }
+    const snappedRange =
+      snappedCaretPreview?.position === caret
+        ? ranges().find((candidate) => candidate.block.id === snappedCaretPreview?.blockId)
+        : undefined
+    if (snappedRange) schedulePreview(snappedRange.block)
+    else closePreview()
   }
 
   const openKeyboardPreview = (): boolean => {
@@ -224,13 +240,25 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   }
 
   const snapSelection = () => {
-    if (!field || props.composing()) return
+    if (!field || props.composing() || acceptingTextDrop) return
     const start = field.selectionStart
     const end = field.selectionEnd
-    scheduleCaretPreview()
-    if (start === end) return
     const direction = field.selectionDirection
     const tokenRanges = ranges()
+    if (start === end) {
+      if (keyboardNavigationPending) return
+      scheduleCaretPreview()
+      const next = snapToTokenEdge(start, tokenRanges)
+      if (next !== start) {
+        const range = tokenRanges.find(
+          (candidate) => start > candidate.start && start < candidate.end
+        )
+        if (range) snappedCaretPreview = { blockId: range.block.id, position: next }
+        field.setSelectionRange(next, next, direction)
+      }
+      return
+    }
+    scheduleCaretPreview()
     const nextStart = snapToTokenEdge(start, tokenRanges)
     const nextEnd = snapToTokenEdge(end, tokenRanges)
     if (nextStart !== start || nextEnd !== end) {
@@ -239,6 +267,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   }
 
   const handleKeyDown = (event: KeyboardEvent) => {
+    snappedCaretPreview = null
     rawPasteNext =
       (event.metaKey || event.ctrlKey) &&
       event.shiftKey &&
@@ -348,19 +377,22 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
         (event.metaKey || event.ctrlKey || event.altKey))
     if (navigation) {
       const leftward = event.key === 'ArrowLeft' || event.key === 'Home'
+      keyboardNavigationPending = true
       requestAnimationFrame(() => {
-        if (!field) return
-        const nextRanges = findTokenRanges(field.value, props.blocks)
-        const edge = leftward ? 'start' : 'end'
-        const nextStart = snapToTokenEdge(field.selectionStart, nextRanges, edge)
-        const nextEnd = snapToTokenEdge(field.selectionEnd, nextRanges, edge)
-        if (nextStart !== field.selectionStart || nextEnd !== field.selectionEnd) {
-          field.setSelectionRange(
-            Math.min(nextStart, nextEnd),
-            Math.max(nextStart, nextEnd),
-            field.selectionDirection
-          )
+        if (field) {
+          const nextRanges = findTokenRanges(field.value, props.blocks)
+          const edge = leftward ? 'start' : 'end'
+          const nextStart = snapToTokenEdge(field.selectionStart, nextRanges, edge)
+          const nextEnd = snapToTokenEdge(field.selectionEnd, nextRanges, edge)
+          if (nextStart !== field.selectionStart || nextEnd !== field.selectionEnd) {
+            field.setSelectionRange(
+              Math.min(nextStart, nextEnd),
+              Math.max(nextStart, nextEnd),
+              field.selectionDirection
+            )
+          }
         }
+        keyboardNavigationPending = false
       })
     }
     props.onKeyDown(event)
@@ -430,6 +462,51 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
       if (inserted && field.value === next) return
       setCaret(before.length + cleaned.length)
     }
+  }
+
+  const handleDragOver = (event: DragEvent) => {
+    if (!field || props.readOnly || props.disabled || props.composing()) return
+    if (event.dataTransfer?.types.includes('text/plain')) {
+      acceptingTextDrop = true
+      closePreview()
+      event.preventDefault()
+    }
+  }
+
+  const handleDragLeave = () => {
+    acceptingTextDrop = false
+  }
+
+  const handleDrop = (event: DragEvent) => {
+    if (!field || props.readOnly || props.disabled || props.composing()) {
+      acceptingTextDrop = false
+      return
+    }
+    if (!event.dataTransfer?.types.includes('text/plain')) {
+      acceptingTextDrop = false
+      return
+    }
+    const dropped = event.dataTransfer.getData('text/plain')
+    event.preventDefault()
+    acceptingTextDrop = false
+    if (!dropped) return
+
+    const tokenRanges = ranges()
+    let start = field.selectionStart
+    let end = field.selectionEnd
+    const removed = tokenRanges.filter((range) =>
+      start === end
+        ? start > range.start && start < range.end
+        : range.start < end && range.end > start
+    )
+    if (removed.length) {
+      start = Math.min(start, ...removed.map((range) => range.start))
+      end = Math.max(end, ...removed.map((range) => range.end))
+    }
+
+    change(props.value.slice(0, start) + dropped + props.value.slice(end))
+    closePreview()
+    setCaret(start + dropped.length)
   }
 
   const handleClipboard = (event: ClipboardEvent) => {
@@ -536,6 +613,9 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
             change(event.currentTarget.value)
           }}
           onPaste={handlePaste}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           onCopy={handleClipboard}
           onCut={handleClipboard}
           onClick={handleClick}
@@ -554,6 +634,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
           onFocus={props.onFocus}
           onBlur={() => {
             rawPasteNext = false
+            acceptingTextDrop = false
             props.onBlur()
             closePreview()
           }}
@@ -564,35 +645,27 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
           preview its text. Press Escape to close the preview.
         </span>
       </KobalteTooltip.Trigger>
-      <Show when={preview()}>
-        {(block) => {
-          const lines = () => block().content.split('\n')
-          const previewLines = () => lines().slice(0, PREVIEW_MAX_LINES).join('\n')
-          const shown = () => previewLines().slice(0, PREVIEW_MAX_CHARACTERS)
-          const remainder = () => Math.max(0, lines().length - PREVIEW_MAX_LINES)
-          const remainderCharacters = () =>
-            Math.max(0, previewLines().length - PREVIEW_MAX_CHARACTERS)
-          return (
-            <KobalteTooltip.Portal>
-              <KobalteTooltip.Content
-                id={descriptionId}
-                data-slot="paste-token-preview"
-                class="bg-scrim text-scrim-foreground z-(--z-tooltip) w-fit max-w-64 rounded-md px-2 py-1 text-xs origin-(--kb-tooltip-content-transform-origin) text-balance data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-expanded:duration-150 data-closed:duration-100"
-              >
-                <pre class="m-0 max-h-48 max-w-64 overflow-y-auto whitespace-pre-wrap break-words font-mono">
-                  {shown()}
-                </pre>
-                <Show when={remainder() > 0}>
-                  <span>+{remainder()} more lines</span>
-                </Show>
-                <Show when={remainderCharacters() > 0}>
-                  <span>+{remainderCharacters()} more characters</span>
-                </Show>
-                <KobalteTooltip.Arrow aria-hidden="true" />
-              </KobalteTooltip.Content>
-            </KobalteTooltip.Portal>
-          )
-        }}
+      <Show when={previewSummary()}>
+        {(summary) => (
+          <KobalteTooltip.Portal>
+            <KobalteTooltip.Content
+              id={descriptionId}
+              data-slot="paste-token-preview"
+              class="bg-scrim text-scrim-foreground z-(--z-tooltip) w-fit max-w-64 rounded-md px-2 py-1 text-xs origin-(--kb-tooltip-content-transform-origin) text-balance data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-expanded:duration-150 data-closed:duration-100"
+            >
+              <pre class="m-0 max-h-48 max-w-64 overflow-y-auto whitespace-pre-wrap break-words font-mono">
+                {summary().text}
+              </pre>
+              <Show when={summary().hiddenLines > 0}>
+                <span>+{summary().hiddenLines} more lines</span>
+              </Show>
+              <Show when={summary().hiddenLines === 0 && summary().hiddenCharacters > 0}>
+                <span>+{summary().hiddenCharacters} more characters</span>
+              </Show>
+              <KobalteTooltip.Arrow aria-hidden="true" />
+            </KobalteTooltip.Content>
+          </KobalteTooltip.Portal>
+        )}
       </Show>
     </KobalteTooltip>
   )
