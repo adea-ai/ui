@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.5](https://github.com/adea-ai/ui/compare/v0.71.4...v0.71.5) (2026-09-27)
+
+
+### CI
+
+* parallelize packed publish gates on one archive ([#87](https://github.com/adea-ai/ui/issues/87)) ([5f4f4d7](https://github.com/adea-ai/ui/commit/5f4f4d7d27402f9c9fbf270cde9bd78456e0d54a))
+
 ## [0.71.4](https://github.com/adea-ai/ui/compare/v0.71.3...v0.71.4) (2026-09-27)
 
 
