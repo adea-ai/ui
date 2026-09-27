@@ -180,9 +180,14 @@ transcript when its jump control disappears; automatic pins never move focus.
 
 `threshold` controls jump-button visibility (80px by default), independently of
 follow intent. `follow={false}` is fully inert: positioning belongs to the host,
-with no observer or mount pin. Re-enabling it explicitly re-arms at the bottom;
-it is not an automatic restore-and-resume flag. An optional `resetKey` also
-re-arms follow when that identity changes. Canonical
+with no observer or mount pin. Re-enabling it explicitly re-arms at the bottom
+unless the host supplies `initialReadingPosition: { top, following }`. That
+snapshot is consumed only on mount, identity reset or follow re-enable; ordinary
+snapshot prop changes never reposition the reader. A parked snapshot releases
+follow until an explicit jump or native return to the bottom. The
+`onReadingPositionChange` callback reports native offset and actual follow intent,
+including small upward moves inside the jump visibility threshold. An optional
+`resetKey` resets follow or consumes the current identity's snapshot. Canonical
 session identity, durable restoration and virtualized transcript windows remain
 application-owned. `ref` and `onScroll` still reach the inner scroller.
 

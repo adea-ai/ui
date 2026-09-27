@@ -13,7 +13,8 @@
  * Solid owner effects replace React refs/effects; native geometry and the
  * content/viewport observer contract are retained. No session store is copied.
  */
-import { createEffect, createSignal, onCleanup } from 'solid-js'
+import { createEffect, createSignal, onCleanup, untrack } from 'solid-js'
+import type { ConversationReadingPosition } from './conversation-surface'
 import {
   bottomTarget,
   computeAtBottom,
@@ -33,6 +34,8 @@ export function createScrollFollow(options: {
   enabled: () => boolean
   resetKey: () => string | undefined
   threshold: () => number
+  initialPosition?: () => ConversationReadingPosition | undefined
+  onPositionChange?: (position: ConversationReadingPosition) => void
 }) {
   const [atBottom, setAtBottom] = createSignal(true)
   let scroller: HTMLDivElement | undefined
@@ -42,6 +45,16 @@ export function createScrollFollow(options: {
   let lastWriteClientHeight = -1
   let previousTop = -1
   let lastScrollClientHeight = 0
+  const reportPosition = () => {
+    if (scroller)
+      untrack(() =>
+        options.onPositionChange?.({
+          top: scroller!.scrollTop,
+          following: options.enabled() && stick,
+        })
+      )
+  }
+  onCleanup(reportPosition)
 
   const writePin = (element: HTMLDivElement, target: number) => {
     // Instant writes keep the self-scroll reference synchronized. A smooth
@@ -67,9 +80,14 @@ export function createScrollFollow(options: {
       lastWriteClientHeight = geom.clientHeight
     }
     setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
+    reportPosition()
   }
   const onScroll = () => {
-    if (!scroller || !options.enabled()) return
+    if (!scroller) return
+    if (!options.enabled()) {
+      reportPosition()
+      return
+    }
     const geom = geometry(scroller)
     setAtBottom(computeAtBottom(geom, options.threshold()))
     if (!isSelfScroll(geom.scrollTop, lastWriteTop)) {
@@ -90,12 +108,14 @@ export function createScrollFollow(options: {
     // This baseline belongs only to scroll events, not observer callbacks.
     // Advancing it during resize would erase the viewport-clamp evidence.
     lastScrollClientHeight = geom.clientHeight
+    reportPosition()
   }
   const jump = () => {
     if (!scroller || !options.enabled()) return
     stick = true
     writePin(scroller, bottomTarget(geometry(scroller)))
     setAtBottom(true)
+    reportPosition()
     // The jump control disappears at the bottom. Return its keyboard focus to
     // the transcript instead of leaving the reader on a detached button.
     scroller.focus({ preventScroll: true })
@@ -104,6 +124,8 @@ export function createScrollFollow(options: {
   createEffect(() => {
     options.resetKey()
     const enabled = options.enabled()
+    // Capture before any reporting callback can replace the host snapshot.
+    const initial = untrack(() => options.initialPosition?.())
     stick = true
     lastWriteTop = -1
     lastWriteClientHeight = -1
@@ -111,7 +133,16 @@ export function createScrollFollow(options: {
     lastScrollClientHeight = 0
     setAtBottom(true)
     if (!enabled || !scroller) return
-    writePin(scroller, bottomTarget(geometry(scroller)))
+    // Snapshot updates must not become another positioning owner. Consume the
+    // host's snapshot only at entry/reset, then native reader intent owns follow.
+    if (initial && Number.isFinite(initial.top) && initial.top >= 0) {
+      stick = initial.following
+      writePin(scroller, stick ? bottomTarget(geometry(scroller)) : initial.top)
+      previousTop = scroller.scrollTop
+      lastScrollClientHeight = scroller.clientHeight
+    } else writePin(scroller, bottomTarget(geometry(scroller)))
+    setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
+    reportPosition()
     if (typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(pinAuto)
     observer.observe(scroller)

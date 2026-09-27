@@ -37,7 +37,7 @@ const sizeMeasurements = new Map<
 >()
 const fixture = `
 import { render } from 'solid-js/web';
-import { createSignal, For } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { ConversationSurface, MessageComposer } from '@adea-ai/ui/components/conversation';
 import './style.css';
 function Pilot() {
@@ -45,18 +45,22 @@ function Pilot() {
   const [tail, setTail] = createSignal('Streaming response');
   const [sends, setSends] = createSignal(0);
   const [fail, setFail] = createSignal(true);
+  const [mounted, setMounted] = createSignal(true);
+  let readingPosition;
   return <main class="flex h-96 flex-col gap-2 p-4">
     <h1>Shared conversation pilot</h1>
-    <ConversationSurface role="log" aria-label="Transcript">
+    <Show when={mounted()}><ConversationSurface role="log" aria-label="Transcript"
+      initialReadingPosition={readingPosition} onReadingPositionChange={position=>{readingPosition=position}}>
       <For each={Array.from({length: 30}, (_, i) => i)}>{i => <p>Retained event {i}: readable earlier content in the transcript.</p>}</For>
       <p data-tail>{tail()}</p>
-    </ConversationSurface>
+    </ConversationSurface></Show>
     <MessageComposer value={draft()} onValueChange={setDraft} onSubmit={() => {
       if (fail()) throw new Error('Disposable transport refusal');
       setSends(sends() + 1); setDraft('');
     }} />
     <button type="button" onClick={() => setFail(false)}>Recover transport</button>
     <button type="button" onClick={() => setTail(tail() + ' streamed text'.repeat(100))}>Grow response</button>
+    <button type="button" onClick={() => setMounted(!mounted())}>Toggle transcript</button>
     <output aria-label="Delivered count">{sends()}</output>
   </main>;
 }
@@ -912,6 +916,9 @@ try {
             element.dispatchEvent(new Event('scroll'))
           })
           const before = await scroller.evaluate((element) => element.scrollTop)
+          await page.getByRole('button', { name: 'Toggle transcript' }).click()
+          await page.getByRole('button', { name: 'Toggle transcript' }).click()
+          await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(before)
           await page.getByRole('button', { name: 'Grow response' }).click()
           await page.waitForFunction(
             () => document.querySelector('[data-tail]')!.textContent!.length > 1000
@@ -936,6 +943,7 @@ try {
             checks: [
               'failed-draft',
               'recovered-send',
+              'restored-reading-intent',
               'native-ime-default',
               'ime-commit-latch',
               'reader-intent',
