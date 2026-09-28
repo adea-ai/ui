@@ -7,8 +7,8 @@ import {
 } from '../scripts/conversation-packed-budget'
 
 describe('packed conversation size budgets', () => {
-  test('keeps the existing composed fixture ceiling at 54 KiB', () => {
-    expect(MAX_COMPOSED_GZIP_BYTES).toBe(54 * 1024)
+  test('keeps the composed fixture ceiling at its re-baselined 63 KiB', () => {
+    expect(MAX_COMPOSED_GZIP_BYTES).toBe(63 * 1024)
     expect(() => assertComposedGzipBudget(MAX_COMPOSED_GZIP_BYTES)).not.toThrow()
     expect(() => assertComposedGzipBudget(MAX_COMPOSED_GZIP_BYTES + 1)).toThrow(
       /Packed composed exceeds its gzip JS budget/

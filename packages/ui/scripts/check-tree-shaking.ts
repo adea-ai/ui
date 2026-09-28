@@ -38,7 +38,7 @@ const DIST = join(PACKAGE_ROOT, 'dist')
  *
  * `oneComponentBytes` is the number that matters most. It covers `Button` plus the
  * Solid runtime it needs and the class-name helpers — the floor for any Solid
- * component with `clsx` and `tailwind-merge` in it.
+ * component with `cn` in it.
  *
  * `heaviestComponentBytes` bounds the worst case a consumer can hit by importing
  * one component. It sits above the chart, which is the honest ceiling: a chart

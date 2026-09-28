@@ -20,10 +20,13 @@ const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
 console.log(`Owned pilot runner PID: ${process.pid}`)
 // First packed baseline: 23,880/23,936 gzip JS bytes and 40,203 raw CSS bytes.
 // Small fixture-specific headroom; module exclusions remain independent gates.
-const MAX_GZIP_BYTES = 26 * 1024
+// Re-baselined 26 → 33 KiB (2026-09) for the `cn` swap: measured 32,238 gzip —
+// the config-extended merge runtime ships cn's compiler and default tables.
+const MAX_GZIP_BYTES = 33 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
-const MAX_BUSY_GZIP_BYTES = 50 * 1024
+// Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
+const MAX_BUSY_GZIP_BYTES = 60 * 1024
 const results: unknown[] = []
 const sizeMeasurements = new Map<
   string,
