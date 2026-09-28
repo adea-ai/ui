@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.0](https://github.com/adea-ai/ui/compare/v0.72.5...v0.73.0) (2026-09-28)
+
+
+### Features
+
+* replace clsx + tailwind-merge with the shadcn cn package ([#105](https://github.com/adea-ai/ui/issues/105)) ([7be890c](https://github.com/adea-ai/ui/commit/7be890c4d02cd9e535f41408da94d9d68f2d839d))
+
 ## [0.72.5](https://github.com/adea-ai/ui/compare/v0.72.4...v0.72.5) (2026-09-28)
 
 
