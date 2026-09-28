@@ -7,7 +7,6 @@ test.describe('workshop navigation', () => {
   }) => {
     const response = await page.goto('/')
     expect(response?.status()).toBe(200)
-    await expect(page).toHaveTitle('Adea UI — Storybook')
 
     const preview = page.frameLocator('#storybook-preview-iframe')
     const overview = preview.locator('body')
@@ -24,17 +23,18 @@ test.describe('workshop navigation', () => {
     )
     expect(overviewCounts).not.toBeNull()
     expect(overviewAccentCount).not.toBeNull()
+    await expect(page).toHaveTitle('Adea UI — Storybook')
 
     await page.getByRole('link', { name: 'Conventions', exact: true }).click()
     await expect(page).toHaveURL(/path=\/docs\/conventions--docs/)
-    await expect(page).toHaveTitle('Adea UI — Storybook')
     await expect(preview.locator('.sbdocs-content > h1')).toHaveText('Conventions')
+    await expect(page).toHaveTitle('Adea UI — Storybook')
 
     await page.goto('/?path=/story/foundations-themes--what-is-missing')
-    await expect(page).toHaveTitle('Adea UI — Storybook')
     await expect(preview.locator('body')).toContainText(
       /The catalogue is \d+ themes across \d+ families/
     )
+    await expect(page).toHaveTitle('Adea UI — Storybook')
     const missingStoryText = await preview.locator('body').innerText()
     const missingCounts = missingStoryText.match(
       /The catalogue is (\d+) themes across (\d+) families/
