@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.5](https://github.com/adea-ai/ui/compare/v0.72.4...v0.72.5) (2026-09-28)
+
+
+### Bug Fixes
+
+* brand Storybook browser title ([#103](https://github.com/adea-ai/ui/issues/103)) ([2c4bc9b](https://github.com/adea-ai/ui/commit/2c4bc9b7bd9597bf9e4f3db3e1d6e529224d9158))
+
 ## [0.72.4](https://github.com/adea-ai/ui/compare/v0.72.3...v0.72.4) (2026-09-28)
 
 
