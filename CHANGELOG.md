@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.4](https://github.com/adea-ai/ui/compare/v0.72.3...v0.72.4) (2026-09-28)
+
+
+### Bug Fixes
+
+* keep UpdateDialog truthful after check failures ([#101](https://github.com/adea-ai/ui/issues/101)) ([8d66323](https://github.com/adea-ai/ui/commit/8d6632327b55c0e68cb6f7377fe62068ea80c7f4))
+
 ## [0.72.3](https://github.com/adea-ai/ui/compare/v0.72.2...v0.72.3) (2026-09-27)
 
 
