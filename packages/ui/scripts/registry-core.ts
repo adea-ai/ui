@@ -364,7 +364,7 @@ function libItem(): RegistryItem {
     title: 'Class-name and token helpers',
     description:
       'The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.',
-    dependencies: ['clsx', 'tailwind-merge', 'class-variance-authority', '@adea-ai/themes']
+    dependencies: ['cn', 'class-variance-authority', '@adea-ai/themes']
       .filter((name) => packageJson.dependencies[name])
       .toSorted()
       .map((name) => `${name}@${packageJson.dependencies[name]}`),

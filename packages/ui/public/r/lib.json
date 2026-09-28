@@ -6,8 +6,7 @@
   "dependencies": [
     "@adea-ai/themes@^0.6.2",
     "class-variance-authority@^0.7.1",
-    "clsx@^2.1.1",
-    "tailwind-merge@^3.7.0"
+    "cn@^0.4.0"
   ],
   "registryDependencies": [],
   "files": [

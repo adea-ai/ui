@@ -12,7 +12,8 @@ import solid from 'vite-plugin-solid'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-transcript-'))
-const MAX_GZIP_BYTES = 26 * 1024
+// Re-baselined 26 → 33 KiB (2026-09) for the `cn` swap; measured 32,305 gzip.
+const MAX_GZIP_BYTES = 33 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 console.log(`Owned transcript pilot runner PID: ${process.pid}`)
 
