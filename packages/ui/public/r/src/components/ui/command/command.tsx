@@ -47,11 +47,17 @@ export function Command(props: ComponentProps<typeof CmdkRoot>) {
 }
 
 export function CommandDialog(props: ComponentProps<typeof CmdkDialog>) {
+  // cmdk's Dialog splits `contentClassName` onto the role="dialog" content
+  // element and routes every other prop (including `class`) to the inner
+  // Command. The surface must live on the content: a `class` here styles the
+  // Command (fixed, so visible) while the dialog element itself renders as an
+  // unstyled zero-height wrapper at the end of body — invisible to role
+  // queries and axe.
   const [local, rest] = splitProps(props, ['class'])
 
   return (
     <CmdkDialog
-      class={cn(
+      contentClassName={cn(
         'bg-popover text-popover-foreground fixed top-1/3 left-1/2 z-(--z-dialog) w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
         'overflow-hidden rounded-xl border border-border shadow-xl',
         'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
