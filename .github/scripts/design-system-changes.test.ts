@@ -543,8 +543,11 @@ test('Pages publishes the exact successful main build and keeps registry install
   expect(registryPage).toContain('href="../r/theme.json"')
   expect(registryPage).toContain('href="../"')
   expect(registryPage).toContain('Return to Adea UI Storybook')
+  // The brand literal lives in `manager-theme.ts` since the manager palette became
+  // theme-driven: that file builds the config the manager boots with, so it is the
+  // place a dropped brand would actually happen.
   const managerConfig = readFileSync(
-    new URL('../../apps/storybook/.storybook/manager.ts', import.meta.url),
+    new URL('../../apps/storybook/.storybook/manager-theme.ts', import.meta.url),
     'utf8'
   )
   expect(managerConfig).toContain("brandTitle: 'Adea UI — Storybook'")
