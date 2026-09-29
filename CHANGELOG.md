@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.1](https://github.com/adea-ai/ui/compare/v0.76.0...v0.76.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **conversation:** a caret event no longer cancels a pointer-scheduled paste preview ([#115](https://github.com/adea-ai/ui/issues/115)) ([b1509db](https://github.com/adea-ai/ui/commit/b1509dba7ccbc2124ef6a424c9390b6070e3a9c1))
+
 ## [0.76.0](https://github.com/adea-ai/ui/compare/v0.75.1...v0.76.0) (2026-09-29)
 
 
