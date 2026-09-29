@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.1](https://github.com/adea-ai/ui/compare/v0.75.0...v0.75.1) (2026-09-29)
+
+
+### Maintenance
+
+* **storybook:** clear the onboarding checklist and add the vitest component lane ([#111](https://github.com/adea-ai/ui/issues/111)) ([ec842d0](https://github.com/adea-ai/ui/commit/ec842d07b14538ca6620ab0a7d84d900cd4a98bb))
+
 ## [0.75.0](https://github.com/adea-ai/ui/compare/v0.74.0...v0.75.0) (2026-09-29)
 
 
