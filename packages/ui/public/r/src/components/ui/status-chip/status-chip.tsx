@@ -90,7 +90,7 @@ export function StatusChip(props: StatusChipProps) {
           <TooltipTrigger as="span" class="inline-flex">
             {chip}
           </TooltipTrigger>
-          <TooltipContent>{detail()}</TooltipContent>
+          <TooltipContent hideArrow>{detail()}</TooltipContent>
         </Tooltip>
       )}
     </Show>
