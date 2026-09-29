@@ -324,6 +324,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # The manager bundle resolves `@adea-ai/ui` through the package's built
+      # `dist` — unlike the preview, which reads ui source through the framework's
+      # resolve conditions — so the library build has to exist before the workshop
+      # one. This mirrors the local and `verify` ordering.
+      - name: Build the library
+        run: bun run --cwd packages/ui build
+
       - name: Build the workshop
         run: bun run storybook:build
 
