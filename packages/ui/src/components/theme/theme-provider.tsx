@@ -163,15 +163,37 @@ export type ThemeProviderProps = {
   storageKey?: string
   /** Start from this instead of the stored preference. */
   initial?: Partial<ThemeSelection>
+  /**
+   * The selection, owned by the caller.
+   *
+   * For a consumer that keeps the state itself — a settings store, or a workshop
+   * whose selection lives in Storybook globals — rather than handing it to this
+   * provider's signal. Each change lands here and the document follows; nothing is
+   * written to the store, because the caller is the one who persists. A picker
+   * below the provider still works, and its change is the caller's to read back.
+   *
+   * Absent, the provider is the whole owner: it reads `storageKey` on mount,
+   * seeds from `initial`, and persists every `setSelection`.
+   */
+  selection?: Partial<ThemeSelection>
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
-  const [local] = splitProps(props, ['children', 'storageKey', 'initial'])
+  const [local] = splitProps(props, ['children', 'storageKey', 'initial', 'selection'])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
 
   const [selection, setSelectionState] = createSignal<ThemeSelection>({
     ...readSelection(storageKey()),
     ...local.initial,
+  })
+
+  // The controlled half of the contract. A patch from the owner replaces the
+  // matching axes; the stored preference is untouched, since the owner is the one
+  // that persists. Reading `local.selection` — a prop getter, not a destructured
+  // value — is what keeps this subscribed for the provider's lifetime.
+  createEffect(() => {
+    const incoming = local.selection
+    if (incoming) setSelectionState((current) => ({ ...current, ...incoming }))
   })
 
   const [systemAppearance, setSystemAppearance] = createSignal<ThemeAppearance>('light')

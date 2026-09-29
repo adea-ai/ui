@@ -1,16 +1,7 @@
-import {
-  accentPresets,
-  builtinThemes,
-  defaultDarkThemeId,
-  defaultLightThemeId,
-  fontOptions,
-  ThemeProvider,
-  themeById,
-  TooltipProvider,
-} from '@adea-ai/ui'
-import { withThemeByClassName } from '@storybook/addon-themes'
-import { themeClasses } from './theme-classes'
-import type { Decorator, Preview } from 'storybook-solidjs-vite'
+import { ThemeProvider, TooltipProvider, type ThemeSelection } from '@adea-ai/ui'
+import { createSignal } from 'solid-js'
+import { createJSXDecorator, type Decorator, type Preview } from 'storybook-solidjs-vite'
+import { resolveSelection, type WorkshopGlobals } from './appearance-globals'
 
 /**
  * The workshop's global setup.
@@ -21,8 +12,10 @@ import type { Decorator, Preview } from 'storybook-solidjs-vite'
  *   1. The real stylesheet is imported — the same `globals.css` a consumer
  *      imports. A workshop with its own copy of the tokens can look correct
  *      while the shipped package is broken.
- *   2. The theme is driven by a class on `<html>`, which is exactly how both
- *      applications drive it. The toolbar toggles the real mechanism.
+ *   2. The theme is driven by the same `ThemeProvider` the applications drive,
+ *      through its controlled `selection` prop. The toolbar edits Storybook
+ *      globals; this file is the only place that translates them into the
+ *      provider's vocabulary, and the document follows.
  *   3. The backdrop is a real app surface, so a component is never judged
  *      against a colour that does not exist in the product.
  *
@@ -38,143 +31,101 @@ import '../styleguide/workshop.css'
 import './preview.css'
 
 /**
- * The accent axis, density, and the tooltip provider — the three things
- * `addon-themes` does not do.
+ * The bridge between Storybook's globals and the provider's reactive graph.
+ *
+ * The Solid renderer mounts a story once and, on a globals change, re-runs the
+ * decorator chain *outside the mounted tree* and discards the JSX. A provider
+ * that only read globals at mount — the first version of this file — could never
+ * see a toolbar change again, and the theme selector was dead while looking
+ * alive. So the selection travels over a module-level signal: the pass-through
+ * decorator below re-runs on every pass and writes it, the JSX decorator reads
+ * it inside the mounted tree, and Solid does the rest.
+ */
+const [toolbarSelection, setToolbarSelection] = createSignal<ThemeSelection>()
+
+/**
+ * Writes the globals on every render pass.
+ *
+ * Runs outside the JSX decorators, which the renderer skips once a story is
+ * mounted — this one is the only place that is guaranteed to observe a globals
+ * change after the first paint. It is also where Storybook's own two-state
+ * chrome used to be handled by `addon-themes`; the provider writes the `dark`
+ * class, `data-theme` and `color-scheme` on the same `<html>`, which covers the
+ * canvas and the docs pages in one document, so the addon had nothing left to
+ * do and its all-themes toolbar switcher only duplicated the one below.
+ */
+const withWorkshopGlobals: Decorator = (Story, context) => {
+  setToolbarSelection(resolveSelection(context.globals as WorkshopGlobals))
+  return Story()
+}
+
+/**
+ * The provider itself, mounted once per story.
  *
  * The accent is a *selection*, not a second theme: it sets `data-accent` on the
- * same element that carries `dark`, and the `[data-accent]` blocks in `theme.css`
- * override the interactive primary, its label, the hover rung, the tint and the
- * focus ring. That is exactly how both applications apply a user's accent choice,
- * so what the toolbar shows is what ships — including the polarity flip, where a
- * bright accent in dark mode carries a black label and its deep light-mode form
- * carries a white one.
+ * same element that carries `dark`, and the provider applies it the way both
+ * applications do — including the polarity flip, where a bright accent in dark
+ * mode carries a black label and its deep light-mode form carries a white one.
  *
- * The preset list is read from the library rather than written out here, so the
- * workshop cannot offer an accent the package does not define.
- *
- * The theme itself is `withThemeByClassName`'s job. Writing that decorator by hand
- * was the first version of this file and it was a mistake: the hand-rolled version
- * toggled the class on the preview document only, so the docs pages kept
- * Storybook's own light chrome while the text took the dark theme's near-white —
- * a white sheet with white text. The addon exists because the docs container and
- * the preview are two documents, and it handles both.
+ * `initial` seeds the very first paint from the same globals, so a story opened
+ * with `globals=theme:adea-light` never flashes the dark default. After that the
+ * controlled `selection` prop is authoritative and nothing here re-renders the
+ * story on a change — the provider rewrites the document in place.
  */
-/**
- * The workshop runs on the library's own provider.
- *
- * Not a re-implementation of it: the theme control sets the same preference an
- * application sets, and `ThemeProvider` applies it the same way. That is what makes
- * the workshop a preview of the product rather than a picture of it, and it is why
- * a theme added to the catalogue appears in the toolbar with no change here.
- *
- * A variant declares its own appearance, so the picker pins the variant in the slot
- * that matches — the light/dark pair a user configures is still what an application
- * stores, but in the workshop there is one control rather than three.
- */
-const withWorkshopTheme: Decorator = (Story, context) => {
-  const themeId = (context.globals['theme'] as string | undefined) ?? defaultDarkThemeId
-  const accent = (context.globals['accent'] as string | undefined) ?? 'theme'
-  const font = (context.globals['font'] as string | undefined) ?? 'space-grotesk'
-  const density = (context.globals['density'] as string | undefined) ?? 'comfortable'
-  const variant = themeById(themeId) ?? themeById(defaultDarkThemeId)!
-
-  // Density is passed to the provider rather than written here.
-  //
-  // `data-density` is the provider's to set, like `data-accent` and `data-font`:
-  // it was written directly from this decorator for as long as density had no
-  // implementation, and leaving both in place would mean two writers for one
-  // attribute — where the workshop's value and the stored preference disagree, the
-  // last one to run wins, and which that is depends on effect ordering.
+const withWorkshopTheme: Decorator = createJSXDecorator((Story, context) => {
+  const initial = resolveSelection(context.globals as WorkshopGlobals)
   return (
     <ThemeProvider
       storageKey="adea-workshop-appearance"
-      initial={{
-        appearance: variant.appearance,
-        lightThemeId: variant.appearance === 'light' ? variant.id : defaultLightThemeId,
-        darkThemeId: variant.appearance === 'dark' ? variant.id : defaultDarkThemeId,
-        accent,
-        font,
-        density,
-      }}
+      initial={initial}
+      selection={toolbarSelection()}
     >
       <TooltipProvider>{Story()}</TooltipProvider>
     </ThemeProvider>
   )
-}
+})
 
 const preview: Preview = {
+  /**
+   * Declared so the vocabulary is written down somewhere a reader will find it,
+   * not because Storybook renders these — the globalTypes toolbar went away with
+   * the addon that rendered them. The three the toolbar drives are listed in
+   * `theme-toolbar.tsx`; `font` and `density` have no toolbar control and are
+   * set through the URL (`globals=font:system;density:compact`).
+   *
+   * Deliberately no `defaultValue`s. Storybook materializes a declared default
+   * into every story's globals, which would make `globals=theme:adea-light`
+   * arrive as `{appearance: 'dark', theme: 'adea-light'}` — a defaulted
+   * appearance overriding the theme the URL did name. Defaults live in one
+   * place, `appearance-globals.ts`, which sees a missing key as "unset".
+   */
   globalTypes: {
+    appearance: {
+      name: 'Appearance',
+      description: 'Light or dark. The workshop pins polarity; the toolbar owns this value.',
+    },
     theme: {
       name: 'Theme',
       description:
-        "Every theme in the library catalogue. The professional sets are other people's palettes, validated against the contrast floors rather than hand-checked.",
-      defaultValue: defaultDarkThemeId,
-      toolbar: {
-        icon: 'mirror',
-        items: builtinThemes.map((theme) => ({
-          value: theme.id,
-          title: `${theme.familyLabel} ${theme.label}`,
-        })),
-        showName: true,
-        dynamicTitle: true,
-      },
+        'A catalogue variant id, or the bare light/dark aliases the test lanes write. Every theme in the library is accepted; the resolver in appearance-globals.ts pins it to the matching side.',
+    },
+    accent: {
+      name: 'Accent',
+      description:
+        "adea's accent presets. `theme` is the default — the variant's own primary — and each named preset re-colours the interactive roles on top of whichever theme is active.",
     },
     font: {
       name: 'Typeface',
       description:
         'The interface face. Space Grotesk is the default the language was drawn against.',
-      defaultValue: 'space-grotesk',
-      toolbar: {
-        icon: 'type',
-        items: fontOptions.map((option) => ({ value: option.id, title: option.label })),
-        showName: true,
-        dynamicTitle: true,
-      },
-    },
-    accent: {
-      name: 'Accent',
-      description:
-        "adea's accent presets. A selection, not a theme: it re-colours the primary, its label and the focus ring.",
-      defaultValue: 'theme',
-      toolbar: {
-        icon: 'paintbrush',
-        items: accentPresets.map((preset) => ({
-          value: preset.id,
-          title: preset.label,
-        })),
-        showName: true,
-        dynamicTitle: true,
-      },
     },
     density: {
       name: 'Density',
       description:
         'The compact rung moves the control ladder one step tighter, so a control keeps its place in the ladder rather than becoming a different control.',
-      defaultValue: 'comfortable',
-      toolbar: {
-        icon: 'component',
-        items: [
-          { value: 'comfortable', title: 'Comfortable' },
-          { value: 'compact', title: 'Compact' },
-        ],
-        showName: true,
-        dynamicTitle: true,
-      },
     },
   },
-  decorators: [
-    withThemeByClassName({
-      // Derived, and it must cover every id the `theme` global can hold — the
-      // addon splits `themes[selected]` at render time and throws on a miss.
-      // `theme-classes.ts` explains why, and the unit test pins it.
-      themes: themeClasses,
-      defaultTheme: defaultDarkThemeId,
-      // The canvas is the app surface, so `color-scheme` follows the theme too —
-      // scrollbars, form controls and the caret are painted by the engine.
-      parentSelector: 'html',
-    }),
-    withWorkshopTheme,
-  ],
+  decorators: [withWorkshopGlobals, withWorkshopTheme],
   parameters: {
     layout: 'centered',
     controls: {

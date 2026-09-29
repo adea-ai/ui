@@ -83,6 +83,22 @@ body {
   color: var(--foreground);
 }
 
+/* The preview card on a docs page — the canvas a story renders into — is painted
+ * by Storybook's docs theme, which stays light while the story inside takes the
+ * active theme: a dark gallery rendered as pale text on white. Scoped under
+ * `.dark` rather than left unscoped because Storybook injects its docs styles at
+ * runtime, and an equal-specificity rule loses to whatever loads last; in light
+ * mode the default white card is already the app surface. */
+.dark .sbdocs-preview {
+  background: var(--background);
+  border-color: var(--border);
+}
+
+.dark .sbdocs-preview-actions {
+  border-color: var(--border);
+  color: var(--muted-foreground);
+}
+
 /* Storybook's own canvas padding: generous by default, which makes a 28px
    control look lost. Tightened so component density is judged at its real
    size. */

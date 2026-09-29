@@ -21,6 +21,7 @@
     "test:components": "playwright test --config=playwright.components.config.ts"
   },
   "dependencies": {
+    "@adea-ai/themes": "^0.6.2",
     "@adea-ai/ui": "workspace:*",
     "lucide-solid": "^1.48.0",
     "solid-js": "^1.9.15"
@@ -31,7 +32,6 @@
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/addon-links": "^10.6.0",
-    "@storybook/addon-themes": "^10.6.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.10.1",
     "storybook": "^10.6.0",

@@ -73,7 +73,8 @@ test.describe('workshop navigation', () => {
  * Every story opens in `adea-dark`, the default dark variant — the same theme the
  * accessibility lane runs, and a real catalogue id rather than the bare `dark` this
  * lane used to pass. The bare alias is what a person writes by hand, so the workshop
- * accepts it (see `theme-classes.ts`), but a lane should exercise what a user sees.
+ * still accepts it (see `appearance-globals.ts`), but a lane should exercise what a
+ * user sees.
  */
 
 test.describe('overlays', () => {
