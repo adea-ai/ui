@@ -71,16 +71,27 @@ const withWorkshopGlobals: Decorator = (Story, context) => {
  * with `globals=theme:adea-light` never flashes the dark default. After that the
  * controlled `selection` prop is authoritative and nothing here re-renders the
  * story on a change — the provider rewrites the document in place.
+ *
+ * `Story()` is called *here*, in the decorator body, and not inside the JSX:
+ * a call written as `{Story()}` compiles to a reactive children memo, and the
+ * memo's dependencies include the toolbar signal the other decorator writes.
+ * On a theme change the memo re-runs, and the renderer's story wrapper answers
+ * `null` on any pass after the first — its contract is "already mounted, skip" —
+ * so Solid receives `null` where children used to be and `cleanChildren` wipes
+ * the canvas. Every later pass then no-ops into the empty container, which is
+ * the blank preview that never reloads. A static child node cannot re-run, and
+ * the provider keeps observing the selection through its prop getter.
  */
 const withWorkshopTheme: Decorator = createJSXDecorator((Story, context) => {
   const initial = resolveSelection(context.globals as WorkshopGlobals)
+  const story = Story()
   return (
     <ThemeProvider
       storageKey="adea-workshop-appearance"
       initial={initial}
       selection={toolbarSelection()}
     >
-      <TooltipProvider>{Story()}</TooltipProvider>
+      <TooltipProvider>{story}</TooltipProvider>
     </ThemeProvider>
   )
 })
@@ -89,9 +100,9 @@ const preview: Preview = {
   /**
    * Declared so the vocabulary is written down somewhere a reader will find it,
    * not because Storybook renders these — the globalTypes toolbar went away with
-   * the addon that rendered them. The three the toolbar drives are listed in
-   * `theme-toolbar.tsx`; `font` and `density` have no toolbar control and are
-   * set through the URL (`globals=font:system;density:compact`).
+   * the addon that rendered them. The four the toolbar drives are listed in
+   * `theme-toolbar.tsx`; `density` has no toolbar control and is set through the
+   * URL (`globals=density:compact`).
    *
    * Deliberately no `defaultValue`s. Storybook materializes a declared default
    * into every story's globals, which would make `globals=theme:adea-light`
