@@ -25,9 +25,13 @@ let pluginPath: string
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), 'adea-lint-plugin-'))
   pluginPath = join(dir, 'adea-lint-plugin.mjs')
-  const built = spawnSync('bun', ['build', PLUGIN_SOURCE, '--outfile', pluginPath, '--format', 'esm'], {
-    encoding: 'utf8',
-  })
+  const built = spawnSync(
+    'bun',
+    ['build', PLUGIN_SOURCE, '--outfile', pluginPath, '--format', 'esm'],
+    {
+      encoding: 'utf8',
+    }
+  )
   if (built.status !== 0) throw new Error(`plugin build failed: ${built.stderr}`)
 })
 
@@ -68,7 +72,11 @@ describe('the design system lint plugin', () => {
 
   test('raw interactive elements are reported with their primitive', () => {
     const config = writeConfig({ 'no-raw-interactive-elements': 'error' })
-    const output = lint(config, 'raw.tsx', `export function Bad() {\n\treturn <button type="button">Save</button>\n}\n`)
+    const output = lint(
+      config,
+      'raw.tsx',
+      `export function Bad() {\n\treturn <button type="button">Save</button>\n}\n`
+    )
     expect(output).toContain('no-raw-interactive-elements')
     expect(output).toContain('use Button from @adea-ai/ui/components/ui/button')
   })
