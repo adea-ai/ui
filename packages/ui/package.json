@@ -59,6 +59,10 @@
       "development": "./src/lib/*.ts",
       "import": "./dist/lib/*.js"
     },
+    "./lint": {
+      "types": "./dist/lint/index.d.ts",
+      "default": "./dist/lint.js"
+    },
     "./globals.css": "./src/styles/globals.css",
     "./theme.css": "./src/styles/theme.css",
     "./base.css": "./src/styles/base.css",
