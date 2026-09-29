@@ -64,7 +64,25 @@ const config: StorybookConfig = {
     '../../../packages/ui/src/**/*.mdx',
     '../../../packages/ui/src/**/*.stories.@(ts|tsx)',
   ],
-  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-links'],
+  addons: [
+    '@storybook/addon-docs',
+    '@storybook/addon-a11y',
+    '@storybook/addon-links',
+    '@storybook/addon-vitest',
+  ],
+  /**
+   * The onboarding checklist is a first-run guide for a new Storybook, and this
+   * workshop is not one: the sidebar widget and the menu page both duplicate
+   * review surfaces the repository already owns (the galleries and the Overview),
+   * and one of the remaining tasks is an external service decision (Chromatic)
+   * that is not made in a sidebar. Opting out here is the supported switch, not
+   * a hack — the checklist's own "done" state is per-browser, so it could never
+   * be cleared for everyone.
+   */
+  features: {
+    sidebarOnboardingChecklist: false,
+    menuOnboardingChecklist: false,
+  },
   framework: {
     name: 'storybook-solidjs-vite',
     options: {},

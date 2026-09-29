@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { LoaderCircle, Plus, Trash2 } from 'lucide-solid'
 import { Button } from './button'
 
@@ -203,6 +204,44 @@ export const States: Story = {
       </p>
     </div>
   ),
+}
+
+/**
+ * The press contract, exercised.
+ *
+ * A click reaches `onClick` exactly once, and a disabled button swallows the same
+ * click silently — the second half is the one a component library can regress by
+ * accident, because "disabled" is usually one attribute away from doing nothing
+ * at all. This is the story the component test lane runs with a real browser
+ * behind it; the assertions are on the spies, not on paint.
+ */
+const pressSpy = fn()
+const disabledSpy = fn()
+
+export const Press: Story = {
+  render: () => (
+    <div class="flex gap-3">
+      <Button onClick={() => pressSpy()}>Save changes</Button>
+      <Button onClick={() => disabledSpy()} disabled>
+        Save changes
+      </Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const [enabled, disabled] = canvas.getAllByRole('button', { name: 'Save changes' })
+
+    await userEvent.click(enabled!)
+    await expect(pressSpy).toHaveBeenCalledTimes(1)
+
+    // `userEvent.click` refuses a `pointer-events: none` target, which is the
+    // disabled CSS contract working. The swallow is asserted through the
+    // activation path instead: the platform suppresses `click()` on a disabled
+    // control, so a spy that stays cold proves the attribute is really there.
+    disabled!.click()
+    await expect(disabledSpy).not.toHaveBeenCalled()
+    await expect(pressSpy).toHaveBeenCalledTimes(1)
+  },
 }
 
 /**
