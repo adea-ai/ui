@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.0](https://github.com/adea-ai/ui/compare/v0.75.1...v0.76.0) (2026-09-29)
+
+
+### Features
+
+* **storybook:** workshop typeface selector, 14px default fix, manager staleness note ([#110](https://github.com/adea-ai/ui/issues/110)) ([a01a4cc](https://github.com/adea-ai/ui/commit/a01a4ccbe098baae18d3db3e1a9ecceb259a5d26))
+
 ## [0.75.1](https://github.com/adea-ai/ui/compare/v0.75.0...v0.75.1) (2026-09-29)
 
 
