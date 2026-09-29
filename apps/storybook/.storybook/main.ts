@@ -64,7 +64,12 @@ const config: StorybookConfig = {
     '../../../packages/ui/src/**/*.mdx',
     '../../../packages/ui/src/**/*.stories.@(ts|tsx)',
   ],
-  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-links'],
+  addons: [
+    '@storybook/addon-docs',
+    '@storybook/addon-a11y',
+    '@storybook/addon-links',
+    '@storybook/addon-vitest',
+  ],
   /**
    * The onboarding checklist is a first-run guide for a new Storybook, and this
    * workshop is not one: the sidebar widget and the menu page both duplicate
