@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.0](https://github.com/adea-ai/ui/compare/v0.74.0...v0.75.0) (2026-09-29)
+
+
+### Features
+
+* **appearance-editor:** accent controls on the row and always-visible save actions ([#109](https://github.com/adea-ai/ui/issues/109)) ([b51811f](https://github.com/adea-ai/ui/commit/b51811f4cb967503f21dc15e2cef2122897e3979))
+
 ## [0.74.0](https://github.com/adea-ai/ui/compare/v0.73.0...v0.74.0) (2026-09-29)
 
 
