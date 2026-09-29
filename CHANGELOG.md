@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.0](https://github.com/adea-ai/ui/compare/v0.77.0...v0.78.0) (2026-09-29)
+
+
+### Features
+
+* **ui:** ship the design system lint plugin at @adea-ai/ui/lint ([#120](https://github.com/adea-ai/ui/issues/120)) ([54cd449](https://github.com/adea-ai/ui/commit/54cd4490308d6100f3cb409bbcc6846f00de810f))
+
 ## [0.77.0](https://github.com/adea-ai/ui/compare/v0.76.1...v0.77.0) (2026-09-29)
 
 
