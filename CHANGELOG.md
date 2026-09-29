@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.77.0](https://github.com/adea-ai/ui/compare/v0.76.1...v0.77.0) (2026-09-29)
+
+
+### Features
+
+* **storybook:** consume themes 0.8.0 — six managed Adea variants, dropdown divider ([#118](https://github.com/adea-ai/ui/issues/118)) ([16e08d5](https://github.com/adea-ai/ui/commit/16e08d59cfdf5454adecc5b94a0e43f8d3d9e1d3))
+
+
+### Bug Fixes
+
+* **ui:** style the command dialog content, not the inner command ([#117](https://github.com/adea-ai/ui/issues/117)) ([28dbba2](https://github.com/adea-ai/ui/commit/28dbba2bace997d0fbd69d416b38fd48422e43a7))
+
 ## [0.76.1](https://github.com/adea-ai/ui/compare/v0.76.0...v0.76.1) (2026-09-29)
 
 
