@@ -21,7 +21,7 @@
     "test:components": "playwright test --config=playwright.components.config.ts"
   },
   "dependencies": {
-    "@adea-ai/themes": "^0.6.2",
+    "@adea-ai/themes": "^0.7.0",
     "@adea-ai/ui": "workspace:*",
     "lucide-solid": "^1.48.0",
     "solid-js": "^1.9.15"

@@ -25,7 +25,7 @@
       "name": "@adea-ai/storybook",
       "version": "0.1.0",
       "dependencies": {
-        "@adea-ai/themes": "^0.6.2",
+        "@adea-ai/themes": "^0.7.0",
         "@adea-ai/ui": "workspace:*",
         "lucide-solid": "^1.48.0",
         "solid-js": "^1.9.15",
@@ -47,9 +47,9 @@
     },
     "packages/ui": {
       "name": "@adea-ai/ui",
-      "version": "0.73.0",
+      "version": "0.75.0",
       "dependencies": {
-        "@adea-ai/themes": "^0.6.2",
+        "@adea-ai/themes": "^0.7.0",
         "@corvu/calendar": "^0.1.2",
         "@corvu/drawer": "^0.2.4",
         "@corvu/otp-field": "^0.1.4",
@@ -96,7 +96,7 @@
   "packages": {
     "@adea-ai/storybook": ["@adea-ai/storybook@workspace:apps/storybook"],
 
-    "@adea-ai/themes": ["@adea-ai/themes@0.6.2", "", {}, "sha512-MTaJCNSSf8AC2JPrUeH8EGfPDTXJWOtKAjNh4RjilIFgT/Rv4y+TGMW4nFuL2SshJZEuSZ+MwDp+Pua9DPYOgg=="],
+    "@adea-ai/themes": ["@adea-ai/themes@0.7.1", "", {}, "sha512-c5Z967RpMoNZo6sSqtiOqzk6h0FoU1uS1fVJ9DEZpQSxyqFb5h4iT7prNBX4YyjlpTExnc7U1xik6lyksg1Zzw=="],
 
     "@adea-ai/ui": ["@adea-ai/ui@workspace:packages/ui"],
 
