@@ -77,9 +77,10 @@ export function storyUrl(id: string, theme: string, baseUrl = BASE_URL): string 
 }
 
 function resolvedStoryTheme(theme: string): { id: string; appearance: 'light' | 'dark' } {
-  // Keep this fallback in lockstep with `.storybook/preview.tsx`: the addon accepts
-  // the conventional `light`/`dark` aliases, while the provider resolves unknown
-  // ids to the default dark variant before it writes the document authority.
+  // Keep this fallback in lockstep with `.storybook/appearance-globals.ts`: the
+  // resolver there accepts the conventional `light`/`dark` aliases and resolves
+  // unknown ids to the default dark variant before the provider writes the
+  // document authority.
   const variant = themeById(theme) ?? themeById(defaultDarkThemeId)!
   return { id: variant.id, appearance: variant.appearance }
 }

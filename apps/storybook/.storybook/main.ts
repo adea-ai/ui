@@ -2,6 +2,7 @@ import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
 import type { StorybookConfig } from 'storybook-solidjs-vite'
 import tailwindcss from '@tailwindcss/vite'
+import { searchForWorkspaceRoot } from 'vite'
 import { scopeComponentMetadataPlugins } from './component-metadata'
 
 const require = createRequire(import.meta.url)
@@ -63,12 +64,7 @@ const config: StorybookConfig = {
     '../../../packages/ui/src/**/*.mdx',
     '../../../packages/ui/src/**/*.stories.@(ts|tsx)',
   ],
-  addons: [
-    '@storybook/addon-docs',
-    '@storybook/addon-a11y',
-    '@storybook/addon-themes',
-    '@storybook/addon-links',
-  ],
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-links'],
   framework: {
     name: 'storybook-solidjs-vite',
     options: {},
@@ -84,11 +80,20 @@ const config: StorybookConfig = {
 
     // The dev server only. A build resolves and emits the font files itself, so
     // allowing these roots there would widen the config for no reason.
+    //
+    // The allow list must be written whole: at `viteFinal` time Vite has not yet
+    // applied its default (the workspace root), so spreading whatever is here
+    // plus the fonts produced a list of four font directories — and Vite refuses
+    // anything outside an explicit list with a bare 403. Every story file lives
+    // outside `.storybook` (`../styleguide`, and the globs reach into
+    // `packages/ui/src`), so the preview stalled on its loading placeholder with
+    // nothing on screen and no error in the server log. Naming the workspace root
+    // here is what makes the story globs servable again.
     viteConfig.server = {
       ...viteConfig.server,
       fs: {
         ...viteConfig.server?.fs,
-        allow: [...(viteConfig.server?.fs?.allow ?? []), ...fontDirs],
+        allow: [searchForWorkspaceRoot(process.cwd()), ...fontDirs],
       },
     }
 

@@ -108,6 +108,16 @@
         "shadcn/no-inline-styles": "off",
         "shadcn/no-raw-colors": "off"
       }
+    },
+    {
+      "files": [
+        "apps/storybook/.storybook/manager-theme.ts",
+        "apps/storybook/.storybook/theme-toolbar.tsx",
+        "apps/storybook/.storybook/toolbar-icons.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ],
   "ignorePatterns": [
