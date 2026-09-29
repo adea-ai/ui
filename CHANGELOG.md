@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.1](https://github.com/adea-ai/ui/compare/v0.78.0...v0.78.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **status-chip:** render the detail tooltip without an arrow ([#122](https://github.com/adea-ai/ui/issues/122)) ([7bc487c](https://github.com/adea-ai/ui/commit/7bc487c45bfe9031de6a239e8de064863136ffcb))
+
 ## [0.78.0](https://github.com/adea-ai/ui/compare/v0.77.0...v0.78.0) (2026-09-29)
 
 
