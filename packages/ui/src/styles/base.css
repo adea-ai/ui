@@ -512,18 +512,21 @@
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* The interface default: 14px/1.55, matching the `text-sm` rung. */
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm--line-height);
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
   }
 
   body {
     margin: 0;
+    /* The interface default: 14px/1.55, matching the `text-sm` rung. It lives on
+       the body, not the root: every rung is written in rem against a 16px root,
+       so `font-size: var(--text-sm)` on `html` would make 1rem = 14px and
+       `text-sm` would compute to 12.25px — 87.5% of the size it defines. */
     background: var(--background);
     color: var(--foreground);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     transition:
       background-color var(--duration-normal) var(--ease-out),
       color var(--duration-normal) var(--ease-out);

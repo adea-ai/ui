@@ -5,6 +5,15 @@ import './theme-toolbar'
 import { managerTheme } from './manager-theme'
 import { resolveSelection } from './appearance-globals'
 
+/**
+ * The manager bundle is built once, at server start, and snapshots whatever
+ * `@adea-ai/themes` resolved to in that moment. The preview serves the catalogue
+ * per request, so after rebuilding the catalogue's dist — or repointing the
+ * install — the toolbar can still list the old catalogue while the canvas
+ * renders the new one. A restart of `bun run storybook` is the fix, and a
+ * dropdown whose order disagrees with the canvas is the symptom.
+ */
+
 const storybookTitle = 'Adea UI — Storybook'
 
 if (typeof document !== 'undefined') {
