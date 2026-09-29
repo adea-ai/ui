@@ -10,7 +10,7 @@
 import { createElement, Fragment, useState } from 'react'
 import { addons, types, useGlobals } from 'storybook/manager-api'
 import { Select, Separator, ToggleButton } from 'storybook/internal/components'
-import { accentPresets } from '@adea-ai/ui/lib/tokens'
+import { accentPresets, fontOptions } from '@adea-ai/ui/lib/tokens'
 import {
   defaultDarkThemeId,
   defaultLightThemeId,
@@ -18,7 +18,7 @@ import {
   type ThemeAppearance,
 } from '@adea-ai/ui/lib/themes'
 import { resolveSelection, type WorkshopGlobals } from './appearance-globals'
-import { BrushIcon, PaletteIcon, SunMoonIcon } from './toolbar-icons'
+import { BrushIcon, PaletteIcon, SunMoonIcon, TypeIcon } from './toolbar-icons'
 
 const TOOL_ID = 'workshop/theme-toolbar'
 
@@ -31,7 +31,11 @@ const TOOL_ID = 'workshop/theme-toolbar'
  *     canvas, which is how the old all-themes selector produced white-on-white
  *     documents;
  *   - the brush dropdown is the accent axis, with "Theme Default" for the
- *     variant's own primary.
+ *     variant's own primary;
+ *   - the type dropdown is the font axis — the same curated `fontOptions` the
+ *     `data-font` blocks implement, not a scan of the OS's installed faces,
+ *     because the family ladder is a system decision and `system` is already on
+ *     it for whoever wants the platform's own face.
  *
  * All three write the same globals the preview's `appearance-globals.ts`
  * resolves, and that resolver is shared, so the toolbar's view of the world and
@@ -40,6 +44,10 @@ const TOOL_ID = 'workshop/theme-toolbar'
  * The toggle keeps one remembered theme per side in memory: flipping to light
  * and back restores the dark variant you were on, which is the same "a theme per
  * appearance" the applications' preference model holds.
+ *
+ * The typeface axis is preview-scoped: the manager document does not load the
+ * self-hosted faces, so chrome that followed the selection would silently
+ * render a fallback while claiming to have changed.
  */
 const ThemeToolbar = () => {
   const [globals, updateGlobals] = useGlobals()
@@ -97,6 +105,21 @@ const ThemeToolbar = () => {
         onSelect={(id) => updateGlobals({ accent: id })}
       >
         Accent
+      </Select>
+      <Select
+        key={`font-${selection.font}`}
+        icon={<TypeIcon />}
+        ariaLabel="Typeface"
+        tooltip="Typeface"
+        defaultOptions={selection.font}
+        options={fontOptions.map((font) => ({
+          title: font.label,
+          description: font.description,
+          value: font.id,
+        }))}
+        onSelect={(id) => updateGlobals({ font: id })}
+      >
+        Typeface
       </Select>
       <Separator />
     </>

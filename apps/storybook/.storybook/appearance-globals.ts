@@ -17,7 +17,7 @@ import type { ThemeSelection } from '@adea-ai/ui/components/theme/theme-provider
  *
  * ## The vocabulary
  *
- * Three of the globals are the toolbar's; two more are URL-settable axes with no
+ * Four of the globals are the toolbar's; one more is a URL-settable axis with no
  * toolbar control.
  *
  *   - `appearance` — `light` or `dark`. The workshop pins polarity rather than
@@ -29,8 +29,9 @@ import type { ThemeSelection } from '@adea-ai/ui/components/theme/theme-provider
  *     URL that names a light variant *is* a request for the light side.
  *   - `accent` — an `accentPresets` id. `theme` is the default and means the
  *     variant's own primary; the toolbar shows it as "Theme Default".
- *   - `font`, `density` — no toolbar control by design; the URLs are how a lane
- *     pins them.
+ *   - `font` — a `fontOptions` id; the toolbar's type dropdown offers the same
+ *     list.
+ *   - `density` — no toolbar control by design; the URL is how a lane pins it.
  *
  * When `appearance` and a `theme` variant disagree, appearance wins and the
  * variant falls back to that side's default — the two globals must describe one
