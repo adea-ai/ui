@@ -116,7 +116,9 @@
         "apps/storybook/.storybook/toolbar-icons.tsx"
       ],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": "off",
+        "shadcn/no-unknown-classes": "off",
+        "shadcn/no-inline-styles": "off"
       }
     }
   ],
