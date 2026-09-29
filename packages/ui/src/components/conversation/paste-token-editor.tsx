@@ -86,6 +86,16 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
   let mirror: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
   let scheduledBlockId: string | null = null
+  /**
+   * What scheduled the current preview. A caret event must not cancel a preview
+   * the pointer is owed: a programmatic caret restore (`setCaret` defers to an
+   * animation frame) dispatches its `select` event as a separate task that can
+   * land *after* a pointermove has already scheduled the hover preview, and a
+   * caret with no token under it would otherwise tear that preview down with no
+   * further pointermove ever arriving to reschedule it. The pointer's own leave,
+   * scroll, blur and reset paths still close unconditionally.
+   */
+  let previewSource: 'pointer' | 'caret' | 'keyboard' | null = null
   let rawPasteNext = false
   let suppressPasteInput = false
   let nativePasteInputSeen = false
@@ -102,12 +112,14 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
     clearTimer()
     scheduledBlockId = null
     snappedCaretPreview = null
+    previewSource = null
     setPreview(null)
   }
-  const schedulePreview = (block: PasteBlock) => {
+  const schedulePreview = (block: PasteBlock, source: 'pointer' | 'caret') => {
     if (scheduledBlockId === block.id) return
     clearTimer()
     scheduledBlockId = block.id
+    previewSource = source
     setPreview(null)
     previewTimer = setTimeout(() => {
       previewTimer = undefined
@@ -189,15 +201,17 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
     const caret = field.selectionStart
     const range = ranges().find((candidate) => caret > candidate.start && caret < candidate.end)
     if (range) {
-      schedulePreview(range.block)
+      schedulePreview(range.block, 'caret')
       return
     }
     const snappedRange =
       snappedCaretPreview?.position === caret
         ? ranges().find((candidate) => candidate.block.id === snappedCaretPreview?.blockId)
         : undefined
-    if (snappedRange) schedulePreview(snappedRange.block)
-    else closePreview()
+    if (snappedRange) schedulePreview(snappedRange.block, 'caret')
+    // A caret with no token under it dismisses a caret-sourced preview, but a
+    // pointer-scheduled preview outlives it: the pointer has not moved.
+    else if (previewSource !== 'pointer') closePreview()
   }
 
   const openKeyboardPreview = (): boolean => {
@@ -212,6 +226,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
     if (!range) return false
     clearTimer()
     scheduledBlockId = range.block.id
+    previewSource = 'keyboard'
     setPreview(range.block)
     return true
   }
@@ -231,7 +246,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
       ) {
         const sequence = Number(span.dataset.pasteSeq)
         const range = ranges().find((candidate) => candidate.block.seq === sequence)
-        if (range) schedulePreview(range.block)
+        if (range) schedulePreview(range.block, 'pointer')
         else closePreview()
         return
       }
