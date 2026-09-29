@@ -11,6 +11,7 @@ const componentEntries = readdirSync(resolve(import.meta.dirname, 'src/component
   .filter((file) => file.endsWith('/index.ts'))
 const entries = Object.fromEntries([
   ['index', resolve(import.meta.dirname, 'src/index.ts')],
+  ['lint', resolve(import.meta.dirname, 'src/lint/index.ts')],
   ...componentEntries.map((file) => [
     `components/${file.slice(0, -'.ts'.length)}`,
     resolve(import.meta.dirname, 'src/components', file),
