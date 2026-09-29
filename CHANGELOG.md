@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.0](https://github.com/adea-ai/ui/compare/v0.73.0...v0.74.0) (2026-09-29)
+
+
+### Features
+
+* workshop theme toolbar with full-chrome theming ([#107](https://github.com/adea-ai/ui/issues/107)) ([e3e0fa0](https://github.com/adea-ai/ui/commit/e3e0fa05e74049a5261803206ed9831d72ca6d2f))
+
 ## [0.73.0](https://github.com/adea-ai/ui/compare/v0.72.5...v0.73.0) (2026-09-28)
 
 
