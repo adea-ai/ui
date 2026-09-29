@@ -93,7 +93,9 @@ export function AccentChoices(props: AppearanceEditorProps) {
       disabled={props.saving}
       orientation="horizontal"
       aria-label="Accent"
-      class="flex flex-wrap items-center gap-2"
+      /* Narrow hosts wrap the swatches into a three-column grid so the row
+         control stays beside its label; wide hosts keep one inline row. */
+      class="grid grid-cols-3 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end"
       onChange={(accent) =>
         props.onChange({
           accent: accent === 'custom' ? (props.customAccentValue ?? '') : accent,
@@ -106,31 +108,33 @@ export function AccentChoices(props: AppearanceEditorProps) {
           Theme default
         </Radio.ItemLabel>
       </Radio.Item>
-      <For each={props.accentOptions}>
-        {(option) => (
-          <Radio.Item
-            value={option.id}
-            class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
-          >
-            <Radio.ItemInput />
-            <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-              <span
-                class="block size-full rounded-full"
-                aria-hidden="true"
-                style={{
-                  'background-color':
-                    (props.draft.mode === 'system'
-                      ? props.resolvedAppearance
-                      : props.draft.mode) === 'light'
-                      ? option.light
-                      : option.dark,
-                }}
-              />
-              <span class="sr-only">{option.label}</span>
-            </Radio.ItemLabel>
-          </Radio.Item>
-        )}
-      </For>
+      <div class="col-span-3 grid grid-cols-3 gap-2 sm:col-span-1 sm:flex sm:gap-2">
+        <For each={props.accentOptions}>
+          {(option) => (
+            <Radio.Item
+              value={option.id}
+              class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
+            >
+              <Radio.ItemInput />
+              <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                <span
+                  class="block size-full rounded-full"
+                  aria-hidden="true"
+                  style={{
+                    'background-color':
+                      (props.draft.mode === 'system'
+                        ? props.resolvedAppearance
+                        : props.draft.mode) === 'light'
+                        ? option.light
+                        : option.dark,
+                  }}
+                />
+                <span class="sr-only">{option.label}</span>
+              </Radio.ItemLabel>
+            </Radio.Item>
+          )}
+        </For>
+      </div>
       <Radio.Item value="custom">
         <Radio.ItemInput />
         <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
