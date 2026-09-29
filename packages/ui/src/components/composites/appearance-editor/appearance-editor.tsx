@@ -99,12 +99,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
           disabled={props.saving}
           onSelect={(darkThemeId) => props.onChange({ darkThemeId })}
         />
-        <SettingsRow
-          stacked
-          title="Accent"
-          icon={<SlidersHorizontal />}
-          description={accentDescription()}
-        >
+        <SettingsRow title="Accent" icon={<SlidersHorizontal />} description={accentDescription()}>
           <AccentChoices {...props} />
         </SettingsRow>
         <Show when={custom()}>
@@ -172,7 +167,10 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
           {props.saveDisabledReason}
         </p>
       </Show>
-      <div class="flex flex-wrap items-center gap-2 px-4 py-4">
+      {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
+          editor scrolls with its host panel, and actions parked at the bottom
+          of a long form were unreachable without scrolling past every row. */}
+      <div class="sticky bottom-0 z-10 -mx-5 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-5 py-3">
         <Button
           type="button"
           size="sm"
