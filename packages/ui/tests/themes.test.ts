@@ -95,7 +95,6 @@ describe('theme registry', () => {
       'Catppuccin',
       'Dracula',
       'Everforest',
-      'GitHub',
       'Gruvbox',
       'Kanagawa',
       'Monokai',

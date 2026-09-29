@@ -50,63 +50,63 @@
 :root {
   /* @generated theme:root — run `bun run theme:build` after changing the catalogue */
   /* The canvas and its text */
-  --background: oklch(0.933 0.016 261.79);
-  --foreground: oklch(0.3697 0.0285 266.52);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2542 0.0111 254.04);
 
   /* Raised surfaces */
-  --card: oklch(0.898 0.0108 261.79);
-  --card-foreground: oklch(0.3697 0.0285 266.52);
-  --popover: oklch(0.868 0.0151 261.79);
-  --popover-foreground: oklch(0.3697 0.0285 266.52);
-  --surface-hover: oklch(0.833 0.0209 261.79);
-  --surface-active: oklch(0.783 0.0144 261.79);
+  --card: oklch(0.965 0 0);
+  --card-foreground: oklch(0.2542 0.0111 254.04);
+  --popover: oklch(0.935 0 0);
+  --popover-foreground: oklch(0.2542 0.0111 254.04);
+  --surface-hover: oklch(0.9 0 0);
+  --surface-active: oklch(0.85 0 0);
 
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
 
   /* The interactive colour */
-  --primary: oklch(0.4513 0.1518 253.31);
-  --primary-foreground: oklch(0.9513 0.0074 260.73);
-  --ring: oklch(0.4513 0.1518 253.31);
-  --accent: oklch(0.833 0.0209 261.79);
-  --accent-foreground: oklch(0.3697 0.0285 266.52);
+  --primary: oklch(0.5143 0.1668 301.69);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.5143 0.1668 301.69);
+  --accent: oklch(0.9 0 0);
+  --accent-foreground: oklch(0.2542 0.0111 254.04);
 
   /* Neutral fills and secondary text */
-  --secondary: oklch(0.898 0.0108 261.79);
-  --secondary-foreground: oklch(0.3697 0.0285 266.52);
-  --muted: oklch(0.898 0.0108 261.79);
-  --muted-foreground: oklch(0.474 0.0245 265.01);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.2542 0.0111 254.04);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.4929 0.0076 254.04);
 
   /* Status fills; solid labels and subtle surfaces come from the catalogue. */
-  --destructive: oklch(0.4705 0.1626 25.78);
-  --destructive-foreground: oklch(0.933 0.016 261.79);
-  --destructive-action: oklch(0.4705 0.1626 25.78);
-  --destructive-action-foreground: oklch(0.933 0.016 261.79);
-  --success: oklch(0.4311 0.1809 145.62);
-  --success-foreground: oklch(0.933 0.016 261.79);
-  --warning: oklch(0.4556 0.1401 79.91);
-  --warning-foreground: oklch(0.933 0.016 261.79);
-  --info: oklch(0.4915 0.1155 202.14);
-  --info-foreground: oklch(0.933 0.016 261.79);
-  --destructive-subtle: oklch(0.8683 0.0365 279.15);
-  --success-subtle: oklch(0.8627 0.0391 245.53);
-  --warning-subtle: oklch(0.8662 0.0334 286.73);
-  --info-subtle: oklch(0.8712 0.0299 253.44);
+  --destructive: oklch(0.5165 0.1626 25.78);
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-action: oklch(0.5165 0.1626 25.78);
+  --destructive-action-foreground: oklch(1 0 0);
+  --success: oklch(0.4771 0.1809 145.62);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.5016 0.1401 79.91);
+  --warning-foreground: oklch(1 0 0);
+  --info: oklch(0.5375 0.1155 202.14);
+  --info-foreground: oklch(1 0 0);
+  --destructive-subtle: oklch(0.9323 0.0228 25.78);
+  --success-subtle: oklch(0.9268 0.0253 145.62);
+  --warning-subtle: oklch(0.9302 0.0196 79.91);
+  --info-subtle: oklch(0.9353 0.0162 202.14);
 
   /* Lines */
-  --border: oklch(0.783 0.0144 261.79);
-  --input: oklch(0.783 0.0144 261.79);
+  --border: oklch(0.85 0 0);
+  --input: oklch(0.85 0 0);
 
   /* The primary, so a focus ring is the interactive colour. */
   --ring: var(--primary);
 
   /* The sidebar */
-  --sidebar: oklch(0.898 0.0108 261.79);
-  --sidebar-foreground: oklch(0.3697 0.0285 266.52);
-  --sidebar-accent: oklch(0.833 0.0209 261.79);
-  --sidebar-border: oklch(0.783 0.0144 261.79);
-  --sidebar-muted-foreground: oklch(0.474 0.0245 265.01);
+  --sidebar: oklch(0.965 0 0);
+  --sidebar-foreground: oklch(0.2542 0.0111 254.04);
+  --sidebar-accent: oklch(0.9 0 0);
+  --sidebar-border: oklch(0.85 0 0);
+  --sidebar-muted-foreground: oklch(0.4929 0.0076 254.04);
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -114,12 +114,12 @@
   --sidebar-ring: var(--ring);
 
   /* Charts */
-  --chart-1: oklch(0.4513 0.1518 253.31);
-  --chart-2: oklch(0.4683 0.1668 301.69);
-  --chart-3: oklch(0.4915 0.1155 202.14);
-  --chart-4: oklch(0.4311 0.1809 145.62);
-  --chart-5: oklch(0.4556 0.1401 79.91);
-  --chart-6: oklch(0.4705 0.1626 25.78);
+  --chart-1: oklch(0.4973 0.1518 253.31);
+  --chart-2: oklch(0.5143 0.1668 301.69);
+  --chart-3: oklch(0.5375 0.1155 202.14);
+  --chart-4: oklch(0.4771 0.1809 145.62);
+  --chart-5: oklch(0.5016 0.1401 79.91);
+  --chart-6: oklch(0.5165 0.1626 25.78);
 
   /* Diff surfaces, over the status roles. */
   --diff-add: color-mix(in oklch, var(--success) 18%, transparent);
@@ -151,7 +151,7 @@
    * Both values come from @adea-ai/themes, so the accent blocks below are the same
    * rule rather than a matching one — which is what they were not, before.
    */
-  --primary-hover: oklch(0.4013 0.1518 253.31);
+  --primary-hover: oklch(0.4643 0.1668 301.69);
   --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
@@ -166,7 +166,7 @@
    * light one, but a sunken one is *always* darker, because the metaphor is a
    * well cut into the page rather than a panel laid on it.
    */
-  --surface-sunken: oklch(0.913 0.008 261.79);
+  --surface-sunken: oklch(0.98 0 0);
   --chrome-alpha: 0.9;
 
   color-scheme: light;
@@ -187,63 +187,63 @@
 .dark {
   /* @generated theme:dark — run `bun run theme:build` after changing the catalogue */
   /* The canvas and its text */
-  --background: oklch(0.1918 0.0238 265.37);
-  --foreground: oklch(0.7933 0.0217 261.76);
+  --background: oklch(0.1756 0.0063 300.91);
+  --foreground: oklch(0.942 0.0054 297.72);
 
   /* Raised surfaces */
-  --card: oklch(0.2268 0.0288 265.37);
-  --card-foreground: oklch(0.7933 0.0217 261.76);
-  --popover: oklch(0.2568 0.033 265.37);
-  --popover-foreground: oklch(0.7933 0.0217 261.76);
-  --surface-hover: oklch(0.2918 0.038 265.37);
-  --surface-active: oklch(0.3418 0.0214 265.37);
+  --card: oklch(0.2106 0.0076 300.91);
+  --card-foreground: oklch(0.942 0.0054 297.72);
+  --popover: oklch(0.2406 0.0088 300.91);
+  --popover-foreground: oklch(0.942 0.0054 297.72);
+  --surface-hover: oklch(0.2756 0.0101 300.91);
+  --surface-active: oklch(0.3256 0.0057 300.91);
 
   --surface: var(--background);
   --surface-raised: var(--card);
   --surface-overlay: var(--popover);
 
   /* The interactive colour */
-  --primary: oklch(0.7153 0.1518 253.31);
-  --primary-foreground: oklch(0.1918 0.0238 265.37);
-  --ring: oklch(0.7153 0.1518 253.31);
-  --accent: oklch(0.2918 0.038 265.37);
-  --accent-foreground: oklch(0.7933 0.0217 261.76);
+  --primary: oklch(0.7323 0.1668 301.69);
+  --primary-foreground: oklch(0.1756 0.0063 300.91);
+  --ring: oklch(0.7323 0.1668 301.69);
+  --accent: oklch(0.2756 0.0101 300.91);
+  --accent-foreground: oklch(0.942 0.0054 297.72);
 
   /* Neutral fills and secondary text */
-  --secondary: oklch(0.2268 0.0288 265.37);
-  --secondary-foreground: oklch(0.7933 0.0217 261.76);
-  --muted: oklch(0.2268 0.0288 265.37);
-  --muted-foreground: oklch(0.6308 0.0224 262.91);
+  --secondary: oklch(0.2106 0.0076 300.91);
+  --secondary-foreground: oklch(0.942 0.0054 297.72);
+  --muted: oklch(0.2106 0.0076 300.91);
+  --muted-foreground: oklch(0.6967 0.0057 298.74);
 
   /* Status fills; solid labels and subtle surfaces come from the catalogue. */
   --destructive: oklch(0.7345 0.1626 25.78);
-  --destructive-foreground: oklch(0.1918 0.0238 265.37);
+  --destructive-foreground: oklch(0.1756 0.0063 300.91);
   --destructive-action: oklch(0.7345 0.1626 25.78);
-  --destructive-action-foreground: oklch(0.1918 0.0238 265.37);
+  --destructive-action-foreground: oklch(0.1756 0.0063 300.91);
   --success: oklch(0.6951 0.1809 145.62);
-  --success-foreground: oklch(0.1918 0.0238 265.37);
+  --success-foreground: oklch(0.1756 0.0063 300.91);
   --warning: oklch(0.7196 0.1401 79.91);
-  --warning-foreground: oklch(0.1918 0.0238 265.37);
+  --warning-foreground: oklch(0.1756 0.0063 300.91);
   --info: oklch(0.7555 0.1155 202.14);
-  --info-foreground: oklch(0.1918 0.0238 265.37);
-  --destructive-subtle: oklch(0.2678 0.0432 282.23);
-  --success-subtle: oklch(0.2623 0.0458 248.61);
-  --warning-subtle: oklch(0.2657 0.0401 289.81);
-  --info-subtle: oklch(0.2707 0.0366 256.52);
+  --info-foreground: oklch(0.1756 0.0063 300.91);
+  --destructive-subtle: oklch(0.2538 0.0282 312.79);
+  --success-subtle: oklch(0.2483 0.0307 279.17);
+  --warning-subtle: oklch(0.2518 0.025 320.37);
+  --info-subtle: oklch(0.2568 0.0216 287.08);
 
   /* Lines */
-  --border: oklch(0.3418 0.0214 265.37);
-  --input: oklch(0.3418 0.0214 265.37);
+  --border: oklch(0.3256 0.0057 300.91);
+  --input: oklch(0.3256 0.0057 300.91);
 
   /* The primary, so a focus ring is the interactive colour. */
   --ring: var(--primary);
 
   /* The sidebar */
-  --sidebar: oklch(0.2268 0.0288 265.37);
-  --sidebar-foreground: oklch(0.7933 0.0217 261.76);
-  --sidebar-accent: oklch(0.2918 0.038 265.37);
-  --sidebar-border: oklch(0.3418 0.0214 265.37);
-  --sidebar-muted-foreground: oklch(0.6308 0.0224 262.91);
+  --sidebar: oklch(0.2106 0.0076 300.91);
+  --sidebar-foreground: oklch(0.942 0.0054 297.72);
+  --sidebar-accent: oklch(0.2756 0.0101 300.91);
+  --sidebar-border: oklch(0.3256 0.0057 300.91);
+  --sidebar-muted-foreground: oklch(0.6967 0.0057 298.74);
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -279,7 +279,7 @@
    * Both values come from @adea-ai/themes, so the accent blocks below are the same
    * rule rather than a matching one — which is what they were not, before.
    */
-  --primary-hover: oklch(0.7653 0.1518 253.31);
+  --primary-hover: oklch(0.7823 0.1668 301.69);
   --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
@@ -294,7 +294,7 @@
    * light one, but a sunken one is *always* darker, because the metaphor is a
    * well cut into the page rather than a panel laid on it.
    */
-  --surface-sunken: oklch(0.1718 0.0199 265.37);
+  --surface-sunken: oklch(0.1556 0.0049 300.91);
   --chrome-alpha: 0.9;
 
   color-scheme: dark;

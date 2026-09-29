@@ -23,6 +23,38 @@ import { BrushIcon, PaletteIcon, SunMoonIcon, TypeIcon } from './toolbar-icons'
 const TOOL_ID = 'workshop/theme-toolbar'
 
 /**
+ * The value of the divider option that separates the managed Adea family from the
+ * imported themes. Filtered out of `onSelect`, so it cannot be chosen; it exists
+ * to be looked at.
+ */
+const THEME_DIVIDER = 'workshop/theme-divider'
+
+/**
+ * The theme options for one appearance: the managed Adea variants pinned first —
+ * the catalogue's own sort — then a divider, then the imported themes. The divider
+ * renders through the option's `children`, which the Select mounts verbatim.
+ */
+const themeOptions = (appearance: ThemeAppearance) => {
+  const themes = themesForAppearance(appearance)
+  const managed = themes.filter((theme) => theme.family === 'adea')
+  const imported = themes.filter((theme) => theme.family !== 'adea')
+  const option = (theme: (typeof themes)[number]) => ({
+    title: `${theme.familyLabel} ${theme.label}`,
+    description: theme.description,
+    value: theme.id,
+  })
+  return [
+    ...managed.map(option),
+    {
+      title: '',
+      value: THEME_DIVIDER,
+      children: <div role="presentation" className="workshop-theme-divider" />,
+    },
+    ...imported.map(option),
+  ]
+}
+
+/**
  * The workshop's theme toolbar: one group, flanked by dividers.
  *
  *   - the sun-moon toggle flips the appearance;
@@ -82,12 +114,10 @@ const ThemeToolbar = () => {
         ariaLabel="Theme"
         tooltip="Theme"
         defaultOptions={themeId}
-        options={themesForAppearance(appearance).map((theme) => ({
-          title: `${theme.familyLabel} ${theme.label}`,
-          description: theme.description,
-          value: theme.id,
-        }))}
-        onSelect={(id) => updateGlobals({ theme: id })}
+        options={themeOptions(appearance)}
+        onSelect={(id) => {
+          if (id !== THEME_DIVIDER) updateGlobals({ theme: id })
+        }}
       >
         Theme
       </Select>
