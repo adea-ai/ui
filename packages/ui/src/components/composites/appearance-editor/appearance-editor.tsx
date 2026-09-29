@@ -169,9 +169,8 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
       </Show>
       {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
           editor scrolls with its host panel, and actions parked at the bottom
-          of a long form were unreachable without scrolling past every row.
-          Hosts may bleed it across their own padding via the footer class. */}
-      <div class="appearance-editor-footer sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
+          of a long form were unreachable without scrolling past every row. */}
+      <div class="sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
         <Button
           type="button"
           size="sm"
