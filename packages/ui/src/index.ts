@@ -98,6 +98,7 @@ export * from './components/theme'
 /* --- Composites ---------------------------------------------------------- */
 export * from './components/composites/account-menu'
 export * from './components/composites/action-button'
+export * from './components/composites/catalog-browser'
 export * from './components/composites/list-row'
 export * from './components/composites/settings'
 export * from './components/composites/stat'
