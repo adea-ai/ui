@@ -152,6 +152,67 @@ test('host heading hierarchy and disclosure semantics survive shared composition
   ).toEqual([])
 })
 
+test('controlled sections preserve independent saved state and disclosure trigger contracts', async ({
+  page,
+}) => {
+  const projects = page.getByRole('button', { name: 'Projects', exact: true })
+  const agents = page.getByRole('button', { name: 'Agents', exact: true })
+  const cancelable = page.getByRole('button', { name: 'Cancelable', exact: true })
+
+  await expect(projects).toHaveAttribute('id', 'projects-section-disclosure')
+  await expect(projects).toHaveAttribute(
+    'aria-description',
+    'Press Alt with Arrow Up or Arrow Down to reorder Projects.'
+  )
+  await expect(projects).toHaveAttribute('draggable', 'true')
+  await expect(projects).toHaveAttribute('data-ref-confirmed', 'true')
+  await expect(projects).toHaveAttribute('aria-expanded', 'true')
+  await expect(agents).toHaveAttribute('aria-expanded', 'false')
+
+  await projects.press('Alt+ArrowDown')
+  await expect(page.getByLabel('Section reorder direction', { exact: true })).toHaveText('down')
+  await projects.dispatchEvent('dragstart')
+  await expect(page.getByLabel('Section drag started', { exact: true })).toHaveText('true')
+
+  await projects.click()
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByLabel('Saved projects disclosure', { exact: true })).toHaveText('false')
+  await agents.click()
+  await expect(agents).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByLabel('Saved agents disclosure', { exact: true })).toHaveText('true')
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+
+  await page.getByRole('button', { name: 'Show matching sections' }).click()
+  await expect(
+    projects.locator('xpath=../../..').getByRole('button', { name: 'Product' })
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Research Agent', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Clear section filter' }).click()
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+  await expect(agents).toHaveAttribute('aria-expanded', 'true')
+
+  await cancelable.click()
+  await expect(page.getByLabel('Canceled disclosure clicks', { exact: true })).toHaveText('1')
+  await expect(cancelable).toHaveAttribute('aria-expanded', 'false')
+  await cancelable.press('Alt+ArrowDown')
+  await expect(page.getByLabel('Section reorder direction', { exact: true })).toHaveText('down')
+  await expect(page.getByLabel('Canceled disclosure reorder', { exact: true })).toHaveText('false')
+
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.evaluate(() => {
+    document.documentElement.style.zoom = '200%'
+  })
+  await expect(projects).toBeVisible()
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+
+  const results = await new AxeBuilder({ page }).analyze()
+  expect(
+    results.violations.filter((violation) =>
+      ['serious', 'critical'].includes(violation.impact ?? '')
+    )
+  ).toEqual([])
+})
+
 test.describe('touch navigation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 

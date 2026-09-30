@@ -85,6 +85,12 @@ updates, navigation, and other effects remain host callbacks.
 
 `SidebarNavTitle` accepts polymorphic `as` for a host's title heading.
 Use `SidebarNavSection.headingAs` (h1 through h6) for section headings.
+Sections may be uncontrolled with `defaultOpen` or controlled with `open` and
+`onOpenChange`. Put disclosure-button attributes and host-owned row interactions
+in `triggerProps`; its `onClick` and `onKeyDown` run before shared behavior, and
+`preventDefault()` cancels the corresponding toggle or Alt+Arrow reorder callback.
+`triggerProps.onReorder` receives `up` or `down`; the host remains responsible for
+updating its hierarchy and preserving stable row identity.
 Disclosure buttons stay inside their heading and trailing actions stay outside
 it, preserving hierarchy and independent keyboard actions.
 
