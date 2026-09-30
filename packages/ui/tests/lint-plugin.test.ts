@@ -83,8 +83,40 @@ function writeConfigWithOverride(
 
 function lint(config: string, name: string, body: string): string {
   writeFileSync(join(dir, name), body)
-  const run = spawnSync(OXLINT, ['-c', config, name], { cwd: dir, encoding: 'utf8' })
-  return run.stdout + run.stderr
+  const run = spawnSync(OXLINT, ['--format=json', '-c', config, name], {
+    cwd: dir,
+    encoding: 'utf8',
+  })
+  const output = run.stdout + run.stderr
+  if (run.error) throw new Error(`oxlint could not start: ${run.error.message}\n${output}`)
+  if (run.signal) throw new Error(`oxlint terminated with signal ${run.signal}\n${output}`)
+  if (run.status !== 0 && run.status !== 1)
+    throw new Error(`oxlint exited unexpectedly with status ${run.status}\n${output}`)
+  let result: {
+    diagnostics?: { severity?: string }[]
+    number_of_files?: number
+    number_of_rules?: number
+  }
+  try {
+    result = JSON.parse(output)
+  } catch {
+    throw new Error(`oxlint output is missing its JSON findings summary\n${output}`)
+  }
+  if (
+    !Array.isArray(result.diagnostics) ||
+    result.number_of_files !== 1 ||
+    typeof result.number_of_rules !== 'number'
+  )
+    throw new Error(`oxlint output is missing its JSON findings summary\n${output}`)
+  const hasErrors = result.diagnostics.some((diagnostic) => diagnostic.severity === 'error')
+  if ((run.status === 0 && hasErrors) || (run.status === 1 && !hasErrors))
+    throw new Error(`oxlint exit status does not match its findings summary\n${output}`)
+  return output
+}
+
+function expectNoLintFindings(output: string): void {
+  const result = JSON.parse(output) as { diagnostics: unknown[] }
+  expect(result.diagnostics).toHaveLength(0)
 }
 
 describe('the design system lint plugin', () => {
@@ -116,6 +148,7 @@ describe('the design system lint plugin', () => {
       `export function Fine() {\n\treturn <div class="ok">text and <span>markup</span></div>\n}\n`
     )
     expect(output).not.toContain('no-raw-interactive-elements')
+    expectNoLintFindings(output)
   })
 
   test('every JSX style attribute is rejected, including geometry and theme variables', () => {
@@ -163,6 +196,7 @@ export function Examples() {
     )
     expect(output).not.toContain('no-inline-styles')
     expect(output).not.toContain('no-class-list')
+    expectNoLintFindings(output)
   })
 
   test('style elements are rejected at their opening element', () => {
@@ -206,6 +240,7 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
     )
     expect(output).not.toContain('no-inline-styles')
     expect(output).not.toContain('no-class-list')
+    expectNoLintFindings(output)
   })
 
   test('a path-scoped implementation exemption does not exempt sibling consumers', () => {
@@ -218,6 +253,7 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
     const libraryOutput = lint(config, 'library-component.tsx', source)
     const consumerOutput = lint(config, 'consumer-component.tsx', source)
     expect(libraryOutput).not.toContain('no-inline-styles')
+    expectNoLintFindings(libraryOutput)
     expect(consumerOutput).toContain('no-inline-styles')
   })
 
@@ -230,7 +266,9 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
         overrides: [
           {
             files: ['allow-case.tsx'],
-            rules: [['adea/no-raw-interactive-elements', 'error', { allow: ['button'] }]],
+            rules: {
+              'adea/no-raw-interactive-elements': ['error', { allow: ['button'] }],
+            },
           },
         ],
       })
@@ -387,7 +425,9 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
         overrides: [
           {
             files: ['wrap-allow.tsx'],
-            rules: [['adea/no-interactive-wrappers', 'error', { allow: ['div'] }]],
+            rules: {
+              'adea/no-interactive-wrappers': ['error', { allow: ['div'] }],
+            },
           },
         ],
       })
@@ -398,6 +438,7 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
       `export function Exempt() {\n\treturn <div onClick={() => {}}>exempt</div>\n}\n`
     )
     expect(output).not.toContain('no-interactive-wrappers')
+    expectNoLintFindings(output)
   })
 
   test('a design-system component composing a role is not reported', () => {
