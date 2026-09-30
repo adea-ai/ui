@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.0](https://github.com/adea-ai/ui/compare/v0.82.2...v0.83.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add shared geometry layout primitives ([#144](https://github.com/adea-ai/ui/issues/144)) ([7943e46](https://github.com/adea-ai/ui/commit/7943e460dba13deb29dc37deaca68000050a445a))
+
 ## [0.82.2](https://github.com/adea-ai/ui/compare/v0.82.1...v0.82.2) (2026-09-30)
 
 
