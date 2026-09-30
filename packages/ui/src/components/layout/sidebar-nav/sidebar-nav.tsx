@@ -5,6 +5,15 @@ import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
 import { Show, createSignal, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 
+function invokeEventHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    ;(handler as (event: Event) => void)(event)
+  }
+}
+
 /**
  * SidebarNav.
  *
@@ -96,36 +105,69 @@ export function SidebarNavFooter(props: ComponentProps<'div'>) {
   )
 }
 
+/** Props forwarded to a collapsible section's disclosure button. */
+export type SidebarNavSectionTriggerProps = Omit<
+  ComponentProps<'button'>,
+  'type' | 'aria-expanded' | 'onClick' | 'onKeyDown' | 'children' | 'class' | 'style'
+> & {
+  /** Called for Alt+ArrowUp/Down; the host owns ordering and row identity. */
+  onReorder?: (direction: 'up' | 'down') => void
+  /** Runs before the section toggle and may cancel it with `preventDefault()`. */
+  onClick?: ComponentProps<'button'>['onClick']
+  /** Runs before shared Alt+Arrow handling and may cancel it with `preventDefault()`. */
+  onKeyDown?: ComponentProps<'button'>['onKeyDown']
+}
+
 /**
  * A titled, collapsible group. Collapsible because a list of projects
  * inevitably outgrows the column, and the user needs to put the ones they are
  * not using away *without* them disappearing into a menu.
  */
-export function SidebarNavSection(
-  props: ComponentProps<'div'> & {
-    label: string
-    /** Render a disclosure control instead of a plain heading. */
-    collapsible?: boolean
-    defaultOpen?: boolean
-    /** Count shown beside the label. */
-    count?: number
-    /** A control at the trailing edge of the heading row. */
-    action?: JSX.Element
-    /** Semantic heading element for a host's section hierarchy. */
-    headingAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-  }
-) {
+export type SidebarNavSectionProps = ComponentProps<'div'> & {
+  label: string
+  /** Render a disclosure control instead of a plain heading. */
+  collapsible?: boolean
+  defaultOpen?: boolean
+  /** Controlled disclosure state. When supplied, the host owns changes. */
+  open?: boolean
+  /** Called for user-initiated disclosure changes. */
+  onOpenChange?: (open: boolean) => void
+  /** Native props and reorder callbacks for the disclosure control. */
+  triggerProps?: SidebarNavSectionTriggerProps
+  /** Count shown beside the label. */
+  count?: number
+  /** A control at the trailing edge of the heading row. */
+  action?: JSX.Element
+  /** Semantic heading element for a host's section hierarchy. */
+  headingAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+}
+
+export function SidebarNavSection(props: SidebarNavSectionProps) {
   const [local, rest] = splitProps(props, [
     'class',
     'label',
     'collapsible',
     'defaultOpen',
+    'open',
+    'onOpenChange',
+    'triggerProps',
     'count',
     'action',
     'headingAs',
     'children',
   ])
-  const [open, setOpen] = createSignal(local.defaultOpen ?? true)
+  const [uncontrolledOpen, setUncontrolledOpen] = createSignal(local.defaultOpen ?? true)
+  const open = () => local.open ?? uncontrolledOpen()
+  const setOpen = (next: boolean) => {
+    if (local.open === undefined) setUncontrolledOpen(next)
+    local.onOpenChange?.(next)
+  }
+
+  const [trigger, triggerRest] = splitProps(local.triggerProps ?? {}, [
+    'onClick',
+    'onKeyDown',
+    'onReorder',
+  ])
 
   const heading = (
     <>
@@ -154,9 +196,22 @@ export function SidebarNavSection(
         >
           <Show when={local.collapsible} fallback={heading}>
             <button
+              {...(triggerRest as ComponentProps<'button'>)}
               type="button"
               aria-expanded={open()}
-              onClick={() => setOpen((value) => !value)}
+              onClick={(event) => {
+                invokeEventHandler(trigger.onClick, event)
+                if (event.defaultPrevented) return
+                setOpen(!open())
+              }}
+              onKeyDown={(event) => {
+                invokeEventHandler(trigger.onKeyDown, event)
+                if (event.defaultPrevented || !event.altKey) return
+                if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+                event.preventDefault()
+                event.stopPropagation()
+                trigger.onReorder?.(event.key === 'ArrowUp' ? 'up' : 'down')
+              }}
               class="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
             >
               {heading}
