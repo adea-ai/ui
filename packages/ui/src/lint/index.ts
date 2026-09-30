@@ -51,8 +51,8 @@ interface LintContext {
 }
 
 /** Reads a static object-property key without evaluating a computed expression. */
-const staticPropertyKey = (node: any): string | null => {
-  if (node?.type === 'Identifier') return node.name
+const staticPropertyKey = (node: any, computed: boolean): string | null => {
+  if (!computed && node?.type === 'Identifier') return node.name
   if (node?.type === 'Literal' && typeof node.value === 'string') return node.value
   if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
     return node.quasis[0].value.cooked ?? node.quasis[0].value.raw
@@ -71,7 +71,8 @@ const objectHasStaticProperty = (node: any, name: string, seen = new Set<unknown
     return objectHasStaticProperty(node.expression, name, seen)
   if (node.type !== 'ObjectExpression') return false
   return node.properties.some((property: any) => {
-    if (property.type === 'Property') return staticPropertyKey(property.key) === name
+    if (property.type === 'Property')
+      return staticPropertyKey(property.key, property.computed === true) === name
     if (property.type === 'SpreadElement')
       return objectHasStaticProperty(property.argument, name, seen)
     return false

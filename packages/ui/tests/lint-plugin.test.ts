@@ -141,14 +141,28 @@ export function Examples({ x, style }: { x: number; style: object }) {
       'spread-props.tsx',
       `import { Button } from '@adea-ai/ui/components/ui/button'
 export function Examples() {
-  return <><section {...{ style: { left: 1 } }} /><Button {...{ style: { '--button-background': 'var(--color-danger)' } }} /><div {...{ classList: { active: true } }} /></>
+  return <><section {...{ style: { left: 1 } }} /><Button {...{ style: { '--button-background': 'var(--color-danger)' } }} /><aside {...{ ['style']: { left: 2 } }} /><footer {...{ [\`classList\`]: { active: true } }} /><div {...{ classList: { active: true } }} /></>
 }
 `
     )
     expect(output).toContain('no-inline-styles')
     expect(output).toContain('no-class-list')
-    expect(output.match(/no-inline-styles/g)).toHaveLength(2)
-    expect(output.match(/no-class-list/g)).toHaveLength(1)
+    expect(output.match(/no-inline-styles/g)).toHaveLength(3)
+    expect(output.match(/no-class-list/g)).toHaveLength(2)
+  })
+
+  test('computed identifier keys in object spreads remain an unresolved review boundary', () => {
+    const config = writeConfig({ 'no-inline-styles': 'error', 'no-class-list': 'error' })
+    const output = lint(
+      config,
+      'computed-spread-props.tsx',
+      `export function Example({ styleKey, classListKey, value }: { styleKey: string; classListKey: string; value: unknown }) {
+  return <div {...{ [styleKey]: value, [classListKey]: value }} />
+}
+`
+    )
+    expect(output).not.toContain('no-inline-styles')
+    expect(output).not.toContain('no-class-list')
   })
 
   test('style elements are rejected at their opening element', () => {
