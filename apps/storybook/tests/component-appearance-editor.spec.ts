@@ -5,6 +5,38 @@ import { buildAppearanceBrowser, renderAppearanceServer } from './appearance-ass
 let script: string
 let css: string
 
+for (const fontSize of ['100%', '200%']) {
+  test(`appearance labels and swatches reflow inside the popup with ${fontSize} text`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 844 })
+    await page.evaluate((value) => {
+      document.documentElement.style.fontSize = value
+    }, fontSize)
+    const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+    const section = dialog
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Accent', exact: true }) })
+    const description = section.getByText("Theme default · Uses the palette's intended color.", {
+      exact: true,
+    })
+    const metrics = await description.evaluate((element) => ({
+      width: element.getBoundingClientRect().width,
+      rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+    }))
+    expect(metrics.width).toBeGreaterThanOrEqual(10 * metrics.rem)
+    const choices = section.getByRole('radiogroup', { name: 'Accent', exact: true })
+    for (const option of await choices.locator('label').all()) {
+      const box = await option.boundingBox()
+      const panel = await dialog.boundingBox()
+      expect(box!.x).toBeGreaterThanOrEqual(panel!.x)
+      expect(box!.x + box!.width).toBeLessThanOrEqual(panel!.x + panel!.width + 1)
+    }
+    await choices.getByText('Custom', { exact: true }).click()
+    await expect(dialog.getByRole('textbox', { name: 'Custom accent' })).toBeVisible()
+  })
+}
+
 test('the composed editor server-renders without a browser or application globals', async () => {
   const html = await renderAppearanceServer()
   expect(html).toContain('data-appearance-editor')

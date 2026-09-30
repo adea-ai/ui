@@ -60,9 +60,15 @@ export function SettingsRow(props: {
 }) {
   return (
     <section
-      class={cn('flex flex-col gap-3 px-4 py-4', { 'sm:flex-row sm:items-center': !props.stacked })}
+      class={cn('flex gap-3 px-4 py-4', {
+        'flex-col': props.stacked,
+        'flex-wrap items-center': !props.stacked,
+      })}
     >
-      <div class="flex min-w-0 flex-1 items-center gap-3">
+      {/* Reserve readable copy before choosing a side-by-side control row.
+          Wrapping follows the actual host width and enlarged text, rather
+          than a viewport breakpoint that also matches a narrow popover. */}
+      <div class={cn('flex min-w-0 flex-1 items-center gap-3', { 'basis-48': !props.stacked })}>
         <span
           class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-foreground/5 text-muted-foreground [&_svg]:size-4"
           aria-hidden="true"
@@ -76,7 +82,7 @@ export function SettingsRow(props: {
           </Show>
         </div>
       </div>
-      <div class="min-w-0 shrink-0">{props.children}</div>
+      <div class="min-w-0 max-w-full shrink-0">{props.children}</div>
     </section>
   )
 }
