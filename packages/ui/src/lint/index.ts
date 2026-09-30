@@ -453,7 +453,14 @@ const noInteractiveWrappers: RuleModule = {
 
 const BUTTON_MODULE = '@adea-ai/ui/components/ui/button'
 const ACTION_BUTTON_MODULE = '@adea-ai/ui/components/composites/action-button'
-const ICON_BUTTON_SIZES: ReadonlySet<string> = new Set(['icon-xs', 'icon-sm', 'icon-md', 'icon-lg'])
+const ICON_BUTTON_SIZES: ReadonlySet<string> = new Set([
+  'icon-2xs',
+  'icon-xs',
+  'icon-sm',
+  'icon-md',
+  'icon-lg',
+  'icon-xl',
+])
 
 const staticJsxValues = (value: any): any[] =>
   value?.type === 'JSXExpressionContainer' ? [value.expression] : value ? [value] : []
@@ -462,9 +469,11 @@ const attributeValues = (node: any, name: string): any[] => {
   const values: any[] = []
   for (const attribute of node.attributes ?? []) {
     if (attribute.type === 'JSXAttribute' && attribute.name?.name === name)
-      values.push(...staticJsxValues(attribute.value))
-    if (attribute.type === 'JSXSpreadAttribute')
-      values.push(...staticObjectPropertyValues(attribute.argument, name))
+      values.splice(0, values.length, ...staticJsxValues(attribute.value))
+    if (attribute.type === 'JSXSpreadAttribute') {
+      const spreadValues = staticObjectPropertyValues(attribute.argument, name)
+      if (spreadValues.length > 0) values.splice(0, values.length, spreadValues.at(-1))
+    }
   }
   return values
 }

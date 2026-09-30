@@ -78,7 +78,7 @@ may disable these consumer rules only through its exact path-scoped configuratio
 override; consumer files must not use inline suppressions or broad path patterns.
 
 The opt-in `adea/require-action-button-tooltip` rule covers shared `Button`
-variants with `size="icon-xs"`, `"icon-sm"`, `"icon-md"`, or `"icon-lg"`, including polymorphic triggers
+variants with `size="icon-2xs"`, `"icon-xs"`, `"icon-sm"`, `"icon-md"`, `"icon-lg"`, or `"icon-xl"`, including polymorphic triggers
 whose `as` prop names the shared `Button`. Use the shared `ActionButton` with a
 supplied nonblank `tooltip`; keep an `aria-label` on the control because the
 tooltip explains the action rather than naming it. The rule tracks named import

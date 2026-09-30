@@ -499,6 +499,18 @@ export function Examples() {
     expect(output.match(/require-action-button-tooltip/g)).toHaveLength(2)
   })
 
+  test('all exported icon sizes require the shared tooltip contract', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'all-icon-sizes.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
+export function Examples() { return <><Button size="icon-2xs" aria-label="Close" /><Button size="icon-xl" aria-label="Open" /><ActionButton size="icon-2xs" aria-label="Save" /><ActionButton size="icon-xl" aria-label="Delete" /></> }`
+    )
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(4)
+  })
+
   test('icon-size ActionButton requires a supplied nonblank tooltip', () => {
     const config = writeConfig({ 'require-action-button-tooltip': 'error' })
     const output = lint(
@@ -541,6 +553,17 @@ export function Examples() { return <><Button size="md">Save changes</Button><Ac
 `
     )
     expectNoLintFindings(output)
+  })
+
+  test('later literal props and spreads determine the effective tooltip', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'overridden-tooltip.tsx',
+      `import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
+export function Examples() { return <><ActionButton size="icon-sm" tooltip="Save" {...{ tooltip: ' ' }} /><ActionButton size="icon-sm" {...{ tooltip: 'Save' }} tooltip="" /><ActionButton size="icon-sm" tooltip="" {...{ tooltip: 'Save' }} /></> }`
+    )
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(2)
   })
 
   test('dynamic icon-size or tooltip values remain a documented review boundary', () => {
