@@ -164,7 +164,7 @@ export function SidebarNavSection(
           </Show>
         </Polymorphic>
         <Show when={local.action}>
-          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100">
+          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
             {local.action}
           </span>
         </Show>

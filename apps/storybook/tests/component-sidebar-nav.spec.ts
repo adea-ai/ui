@@ -39,7 +39,7 @@ test.beforeAll(async () => {
 
 test.beforeEach(async ({ page }) => {
   await page.setContent(
-    '<!doctype html><html lang="en"><head><title>Sidebar fixture</title></head><body></body></html>'
+    '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sidebar fixture</title></head><body></body></html>'
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
@@ -69,4 +69,19 @@ test('host heading hierarchy and disclosure semantics survive shared composition
       ['serious', 'critical'].includes(violation.impact ?? '')
     )
   ).toEqual([])
+})
+
+test.describe('touch navigation', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test('section creation actions remain discoverable without hover', async ({ page }) => {
+    expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
+    for (const name of ['New Room', 'New conversation']) {
+      const action = page.getByRole('button', { name, exact: true })
+      await expect(action).toBeInViewport()
+      await expect(action.locator('..')).toHaveCSS('opacity', '1')
+      await action.tap()
+    }
+    await expect(page.getByLabel('Created sections')).toHaveText('2')
+  })
 })
