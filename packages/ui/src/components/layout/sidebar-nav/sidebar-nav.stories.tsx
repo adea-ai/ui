@@ -51,13 +51,13 @@ export const Default: Story = {
       <div class="flex h-screen bg-background">
         <SidebarNav aria-label="Projects">
           <SidebarNavHeader>
-            <SidebarNavTitle>Projects</SidebarNavTitle>
+            <SidebarNavTitle as="h1">Projects</SidebarNavTitle>
             <Button size="icon-sm" variant="ghost" aria-label="New project">
               <Plus />
             </Button>
           </SidebarNavHeader>
           <SidebarNavContent>
-            <SidebarNavSection label="Recent" count={projects.length}>
+            <SidebarNavSection label="Recent" headingAs="h2" count={projects.length}>
               {projects.map((project) => (
                 <SidebarNavItem
                   as="button"
@@ -108,10 +108,10 @@ export const CollapsibleSections: Story = {
     <div class="flex h-screen bg-background">
       <SidebarNav aria-label="Workspace">
         <SidebarNavHeader>
-          <SidebarNavTitle>Workspace</SidebarNavTitle>
+          <SidebarNavTitle as="h1">Workspace</SidebarNavTitle>
         </SidebarNavHeader>
         <SidebarNavContent>
-          <SidebarNavSection label="Pinned" collapsible defaultOpen count={2}>
+          <SidebarNavSection label="Pinned" headingAs="h2" collapsible defaultOpen count={2}>
             <SidebarNavItem as="button" type="button" active>
               <CircleDot />
               adea
@@ -123,6 +123,7 @@ export const CollapsibleSections: Story = {
           </SidebarNavSection>
           <SidebarNavSection
             label="Archived"
+            headingAs="h2"
             collapsible
             count={3}
             action={

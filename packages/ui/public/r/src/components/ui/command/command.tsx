@@ -16,6 +16,12 @@ import { createEffect, createSignal, splitProps } from 'solid-js'
 import { menuItem } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 
+// cmdk emits data-disabled="false" on enabled items; Kobalte omits it.
+// Presence selectors would dim and disable every command in an app palette.
+const commandItem = menuItem
+  .replace('data-[disabled]:pointer-events-none', '')
+  .replace('data-[disabled]:opacity-50', '')
+
 /**
  * Command.
  *
@@ -181,8 +187,9 @@ export function CommandItem(props: ComponentProps<typeof CmdkItem>) {
   return (
     <CmdkItem
       class={cn(
-        menuItem,
-        'data-[selected=true]:bg-surface-hover data-[selected=true]:text-foreground',
+        commandItem,
+        'data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
+        'text-popover-foreground data-[selected=true]:bg-surface-hover data-[selected=true]:text-popover-foreground',
         local.class
       )}
       {...rest}
@@ -205,14 +212,18 @@ export function CommandLoading(props: ComponentProps<typeof CmdkLoading>) {
   )
 }
 
-/** The keyboard hint a palette item usually carries. */
+/**
+ * The keyboard hint a palette item usually carries.
+ * Muted canvas text can fail contrast on a raised or selected command row;
+ * hierarchy comes from its size and monospace face, with the row's readable ink.
+ */
 export function CommandShortcut(props: {
   class?: string
   children?: ComponentProps<'span'>['children']
 }) {
   return (
     <span
-      class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', props.class)}
+      class={cn('text-popover-foreground ms-auto font-mono text-2xs tracking-widest', props.class)}
     >
       {props.children}
     </span>

@@ -327,10 +327,15 @@ export const SurfaceFollowing: Story = {
 /** The thread panel, with its root message repeated above the replies. */
 export const Thread: Story = {
   render: () => (
-    <div class="flex h-96 w-[44rem] flex-col overflow-hidden rounded-xl border border-border">
+    <div class="flex h-96 w-96 max-w-full flex-col overflow-hidden rounded-xl border border-border">
       <ThreadPanel
         label="Ada Lovelace"
         count={2}
+        headerActions={
+          <Button variant="ghost" size="sm" onClick={() => undefined}>
+            Mark unread
+          </Button>
+        }
         onClose={() => undefined}
         root={
           <MessageRow senderKind="user" senderName="You" time="09:14">

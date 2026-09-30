@@ -250,42 +250,47 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
     expect(output).not.toContain('no-primitive-library-imports')
   })
 
-  test('primitive re-exports and dynamic imports cannot bypass the shared boundary', () => {
-    const config = writeConfig({ 'no-primitive-library-imports': 'error' })
-    for (const [name, source] of Object.entries({
-      named: "export { TextField } from '@kobalte/core/text-field'",
-      star: "export * from '@corvu/drawer'",
-      dynamic: "export const load = () => import('cmdk-solid')",
-      require: "export const primitive = require('@base-ui/react/dialog')",
-    })) {
+  // Each case starts a real oxlint process. Keep one process per test so the
+  // normal test deadline measures a case, rather than several CLI startups.
+  for (const [name, source] of Object.entries({
+    named: "export { TextField } from '@kobalte/core/text-field'",
+    star: "export * from '@corvu/drawer'",
+    dynamic: "export const load = () => import('cmdk-solid')",
+    require: "export const primitive = require('@base-ui/react/dialog')",
+  })) {
+    test(`primitive ${name} cannot bypass the shared boundary`, () => {
+      const config = writeConfig({ 'no-primitive-library-imports': 'error' })
       expect(lint(config, `${name}.ts`, source)).toContain('no-primitive-library-imports')
-    }
+    })
+  }
+  test('a shared re-export remains permitted', () => {
+    const config = writeConfig({ 'no-primitive-library-imports': 'error' })
     expect(
       lint(config, 'shared-export.ts', "export * from '@adea-ai/ui/components/ui/dialog'")
     ).not.toContain('no-primitive-library-imports')
   })
 
-  test('expression roles and Solid native click listeners are controls too', () => {
-    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
-    for (const [name, attributes] of Object.entries({
-      expression: 'role={"button"}',
-      conditional: 'role={true ? "switch" : "checkbox"}',
-      native: 'on:click={() => {}}',
-      bound: 'onClick={[() => {}, "data"]}',
-      pointer: 'onPointerUp={() => {}}',
-    })) {
+  for (const [name, attributes] of Object.entries({
+    expression: 'role={"button"}',
+    conditional: 'role={true ? "switch" : "checkbox"}',
+    native: 'on:click={() => {}}',
+    bound: 'onClick={[() => {}, "data"]}',
+    pointer: 'onPointerUp={() => {}}',
+  })) {
+    test(`${name} wrapper interaction is reported`, () => {
+      const config = writeConfig({ 'no-interactive-wrappers': 'error' })
       expect(
         lint(config, `${name}.tsx`, `export const Control = () => <div ${attributes}>Go</div>`)
       ).toContain('no-interactive-wrappers')
-    }
-  })
+    })
+  }
 
-  test('negative tabindex permits programmatic focus without adding a tab stop', () => {
-    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
-    for (const [name, attribute] of Object.entries({
-      expression: 'tabIndex={-1}',
-      literal: 'tabindex="-1"',
-    })) {
+  for (const [name, attribute] of Object.entries({
+    expression: 'tabIndex={-1}',
+    literal: 'tabindex="-1"',
+  })) {
+    test(`negative ${name} tabindex permits programmatic focus without a tab stop`, () => {
+      const config = writeConfig({ 'no-interactive-wrappers': 'error' })
       expect(
         lint(
           config,
@@ -293,7 +298,10 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
           `export const Main = () => <main ${attribute}>Page</main>`
         )
       ).not.toContain('no-interactive-wrappers')
-    }
+    })
+  }
+  test('negative tabindex does not permit a hand-built control', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
     expect(
       lint(
         config,

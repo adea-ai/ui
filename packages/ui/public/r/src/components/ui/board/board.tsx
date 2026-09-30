@@ -1,4 +1,13 @@
-import { createMemo, createSignal, For, Show, splitProps, type JSX } from 'solid-js'
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+  splitProps,
+  type JSX,
+} from 'solid-js'
 import { cva, type VariantProps } from '../../../lib/variants'
 import { cn } from '../../../lib/utils'
 
@@ -88,6 +97,50 @@ export function Board<T>(props: BoardProps<T>) {
   const [dragging, setDragging] = createSignal<T | null>(null)
   const [overColumn, setOverColumn] = createSignal<string | null>(null)
   const [announcement, setAnnouncement] = createSignal('')
+  const cardElements = new Map<string, HTMLElement>()
+  const [pendingFocus, setPendingFocus] = createSignal<{
+    itemId: string
+    columnId: string
+    source: HTMLElement
+  } | null>(null)
+  const cancelOnPointer = () => setPendingFocus(null)
+
+  // A controlled move can settle after a server response. Restore only the
+  // focus that belonged to the moved card; another focus action cancels it.
+  createEffect(() => {
+    const pending = pendingFocus()
+    if (!pending) return
+    const document = pending.source.ownerDocument
+    const cancelOnFocus = (event: FocusEvent) => {
+      if (!pending.source.contains(event.target as Node)) setPendingFocus(null)
+    }
+    document.addEventListener('focusin', cancelOnFocus)
+    document.addEventListener('pointerdown', cancelOnPointer)
+    onCleanup(() => {
+      document.removeEventListener('focusin', cancelOnFocus)
+      document.removeEventListener('pointerdown', cancelOnPointer)
+    })
+  })
+
+  createEffect(() => {
+    const pending = pendingFocus()
+    if (!pending) return
+    const moved = local.items.find((item) => local.itemId(item) === pending.itemId)
+    if (!moved || local.itemColumn(moved) !== pending.columnId) return
+    queueMicrotask(() => {
+      if (pendingFocus() !== pending) return
+      const target = cardElements.get(pending.itemId)
+      setPendingFocus(null)
+      if (target?.isConnected) target.focus()
+    })
+  })
+
+  const prepareFocus = (item: T, columnId: string, source?: HTMLElement) => {
+    const card = source ?? cardElements.get(local.itemId(item))
+    if (card?.contains(card.ownerDocument.activeElement)) {
+      setPendingFocus({ itemId: local.itemId(item), columnId, source: card })
+    }
+  }
 
   const byColumn = createMemo(() => {
     const grouped = new Map<string, T[]>()
@@ -106,9 +159,11 @@ export function Board<T>(props: BoardProps<T>) {
   const drop = (column: BoardColumn) => {
     const item = dragging()
     const from = item ? local.itemColumn(item) : null
+    const accepted = accepts(column)
     setDragging(null)
     setOverColumn(null)
-    if (!item || !from || from === column.id || !accepts(column)) return
+    if (!item || !from || from === column.id || !accepted) return
+    prepareFocus(item, column.id)
     local.onMove({ itemId: local.itemId(item), from, to: column.id })
   }
 
@@ -117,11 +172,12 @@ export function Board<T>(props: BoardProps<T>) {
    * thing within its container" that does not collide with scrolling or with the
    * text caret, and it is the same chord a browser tab or a spreadsheet uses.
    */
-  const moveByKeyboard = (item: T, direction: -1 | 1) => {
+  const moveByKeyboard = (item: T, direction: -1 | 1, source: HTMLElement) => {
     const from = local.itemColumn(item)
     const index = local.columns.findIndex((column) => column.id === from)
-    const candidates = local.columns.slice(index + direction)
-    const ordered = direction === 1 ? candidates : candidates.toReversed()
+    if (index < 0) return
+    const ordered =
+      direction === 1 ? local.columns.slice(index + 1) : local.columns.slice(0, index).toReversed()
     const target = ordered.find(
       (column) => !column.disabled && local.canDrop(item, from, column.id)
     )
@@ -129,6 +185,7 @@ export function Board<T>(props: BoardProps<T>) {
       setAnnouncement(`No column after ${from} accepts this item`)
       return
     }
+    prepareFocus(item, target.id, source)
     local.onMove({ itemId: local.itemId(item), from, to: target.id })
     setAnnouncement(`Moved to ${target.label}`)
   }
@@ -185,6 +242,13 @@ export function Board<T>(props: BoardProps<T>) {
                     }
                     return (
                       <article
+                        ref={(element) => {
+                          const id = local.itemId(item)
+                          cardElements.set(id, element)
+                          onCleanup(() => {
+                            if (cardElements.get(id) === element) cardElements.delete(id)
+                          })
+                        }}
                         class={cn(
                           'rounded-md border border-border bg-card text-sm shadow-xs',
                           cardDragState[isDragging() ? 'dragging' : 'idle']
@@ -203,7 +267,11 @@ export function Board<T>(props: BoardProps<T>) {
                           if (!(event.ctrlKey || event.metaKey)) return
                           if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
                           event.preventDefault()
-                          moveByKeyboard(item, event.key === 'ArrowRight' ? 1 : -1)
+                          moveByKeyboard(
+                            item,
+                            event.key === 'ArrowRight' ? 1 : -1,
+                            event.currentTarget
+                          )
                         }}
                       >
                         {local.children(item, { dragging: isDragging() })}

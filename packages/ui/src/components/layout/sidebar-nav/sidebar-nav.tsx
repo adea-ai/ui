@@ -56,13 +56,19 @@ export function SidebarNavHeader(props: ComponentProps<'div'>) {
   )
 }
 
-export function SidebarNavTitle(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+export type SidebarNavTitleProps<T extends ValidComponent = 'div'> = PolymorphicProps<
+  T,
+  { class?: string }
+>
+
+export function SidebarNavTitle<T extends ValidComponent = 'div'>(props: SidebarNavTitleProps<T>) {
+  const [local, rest] = splitProps(props as SidebarNavTitleProps, ['class'])
   return (
-    <div
+    <Polymorphic
+      as="div"
       data-slot="sidebar-nav-title"
       class={cn('truncate text-sm font-semibold tracking-tight', local.class)}
-      {...rest}
+      {...(rest as ComponentProps<'div'>)}
     />
   )
 }
@@ -105,6 +111,8 @@ export function SidebarNavSection(
     count?: number
     /** A control at the trailing edge of the heading row. */
     action?: JSX.Element
+    /** Semantic heading element for a host's section hierarchy. */
+    headingAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
   }
 ) {
   const [local, rest] = splitProps(props, [
@@ -114,6 +122,7 @@ export function SidebarNavSection(
     'defaultOpen',
     'count',
     'action',
+    'headingAs',
     'children',
   ])
   const [open, setOpen] = createSignal(local.defaultOpen ?? true)
@@ -138,25 +147,24 @@ export function SidebarNavSection(
   return (
     <div data-slot="sidebar-nav-section" class={cn('flex flex-col gap-0.5', local.class)} {...rest}>
       <div class="group/section-header flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-sidebar-accent/60">
-        <Show
-          when={local.collapsible}
-          fallback={
-            <div class="flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase">
-              {heading}
-            </div>
-          }
+        <Polymorphic
+          as={local.headingAs ?? 'div'}
+          aria-label={local.headingAs ? local.label : undefined}
+          class="flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase"
         >
-          <button
-            type="button"
-            aria-expanded={open()}
-            onClick={() => setOpen((value) => !value)}
-            class="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
-          >
-            {heading}
-          </button>
-        </Show>
+          <Show when={local.collapsible} fallback={heading}>
+            <button
+              type="button"
+              aria-expanded={open()}
+              onClick={() => setOpen((value) => !value)}
+              class="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
+            >
+              {heading}
+            </button>
+          </Show>
+        </Polymorphic>
         <Show when={local.action}>
-          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100">
+          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
             {local.action}
           </span>
         </Show>
