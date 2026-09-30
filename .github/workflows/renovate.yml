@@ -15,12 +15,7 @@ name: Renovate
 on:
   schedule:
     - cron: '30 */2 * * *'
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Log what Renovate would do without writing'
-        type: boolean
-        default: false
+  workflow_dispatch: {}
 
 permissions: {}
 
@@ -34,6 +29,8 @@ jobs:
     permissions:
       contents: read
     steps:
+      # The runner config and Renovate's own file reads live in this checkout;
+      # without it the action fails with ENOENT on the configuration file.
       - name: Checkout runner configuration
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -44,7 +41,6 @@ jobs:
         env:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_GIT_AUTHOR: 'A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>'
-          RENOVATE_DRY_RUN: ${{ inputs.dry_run && 'strict' || 'full' }}
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
           configurationFile: .github/renovate-runner.json
