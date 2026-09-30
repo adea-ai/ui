@@ -13,6 +13,16 @@ bar is or where the content begins.
 
 <Canvas of={AppShellStories.FullShell} />
 
+## Keyboard entry
+
+Place `SkipLink` first inside `AppShell`, before the rail or other navigation.
+Its default target is `#main-content`; give `AppShellMain` that `id` and
+`tabIndex={-1}` so keyboard activation moves focus into the page. The link moves
+into view when focused and keeps its text available to assistive technology while
+it is offscreen.
+
+<Canvas of={AppShellStories.SkipLinkKeyboardNavigation} />
+
 ## The regions
 
 ```
@@ -71,6 +81,7 @@ import {
   AppShell,
   AppShellBody,
   AppShellMain,
+  SkipLink,
   SideRail,
   SideRailContent,
   SideRailFooter,
@@ -95,6 +106,7 @@ import {
 } from '@adea-ai/ui'
 
 ;<AppShell>
+  <SkipLink />
   <SideRail collapsed={collapsed()}>
     <SideRailHeader>…</SideRailHeader>
     <SideRailContent>
@@ -116,7 +128,7 @@ import {
 
     <AppShellContent>
       <SidebarNav>…</SidebarNav>
-      <AppShellMain>
+      <AppShellMain id="main-content" tabIndex={-1}>
         <Panel>
           <PanelHeader>
             <PanelTitle>Content</PanelTitle>
