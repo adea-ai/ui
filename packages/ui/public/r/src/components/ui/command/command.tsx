@@ -182,7 +182,7 @@ export function CommandItem(props: ComponentProps<typeof CmdkItem>) {
     <CmdkItem
       class={cn(
         menuItem,
-        'data-[selected=true]:bg-surface-hover data-[selected=true]:text-foreground',
+        'group/command-item data-[selected=true]:bg-card data-[selected=true]:text-foreground',
         local.class
       )}
       {...rest}
@@ -212,7 +212,10 @@ export function CommandShortcut(props: {
 }) {
   return (
     <span
-      class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', props.class)}
+      class={cn(
+        'text-muted-foreground ms-auto font-mono text-2xs tracking-widest group-data-[selected=true]/command-item:text-foreground',
+        props.class
+      )}
     >
       {props.children}
     </span>
