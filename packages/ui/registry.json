@@ -1456,6 +1456,33 @@
       ]
     },
     {
+      "name": "floating-preview",
+      "type": "registry:ui",
+      "title": "Floating Preview",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/button"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/floating-preview/floating-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/floating-preview.tsx"
+        },
+        {
+          "path": "src/components/layout/floating-preview/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/index.ts"
+        },
+        {
+          "path": "src/components/layout/floating-preview/model.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/model.ts"
+        }
+      ]
+    },
+    {
       "name": "page",
       "type": "registry:ui",
       "title": "Page",

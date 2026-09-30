@@ -390,3 +390,37 @@ Redux and Framer Motion ownership. Relevant test contracts come from
 `website/src/test/rowDisclosure.test.tsx`; compiled and Solid packed consumers are
 exercised in headless Chromium, WebKit and native Node SSR. Full runtime projection,
 durable application storage and production Chat adoption remain host-owned gates.
+
+## Floating preview geometry translated from t3code
+
+`packages/ui/src/components/layout/floating-preview/model.ts` translates the
+host-independent fitting, clamping, obstacle-avoidance and aspect-preserving
+resize behavior from `apps/web/src/components/preview/previewMiniPlayerLayout.ts`
+and its tests in t3code, issue #422, pinned at revision
+`77bca8b2d76a1f42552e5eee7d277fcb1160347a`.
+
+    MIT License
+
+    Copyright (c) 2026 T3 Tools Inc.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+The shared component owns reusable geometry and pointer/keyboard controls only.
+T3 runtime state, streaming, Electron services, native picture-in-picture,
+notifications and content rendering are not included.
