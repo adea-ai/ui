@@ -41,6 +41,9 @@ jobs:
         env:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_GIT_AUTHOR: 'A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>'
+          # Set the repository variable to debug when a run needs its GraphQL
+          # errors spelled out (e.g. per-repo token-scope failures).
+          LOG_LEVEL: ${{ vars.RENOVATE_LOG_LEVEL || 'info' }}
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
           configurationFile: .github/renovate-runner.json
