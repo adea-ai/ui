@@ -13,3 +13,7 @@ export {
   type SidebarNavProps,
   type SidebarNavTitleProps,
 } from './sidebar-nav'
+export {
+  SidebarNavResizeHandle,
+  type SidebarNavResizeHandleProps,
+} from './sidebar-nav-resize-handle'

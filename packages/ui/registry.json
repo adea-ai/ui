@@ -1588,6 +1588,7 @@
       "title": "Sidebar Nav",
       "description": "",
       "dependencies": [
+        "@corvu/resizable@^0.2.5",
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
@@ -1599,6 +1600,11 @@
           "path": "src/components/layout/sidebar-nav/index.ts",
           "type": "registry:ui",
           "target": "components/layout/sidebar-nav/index.ts"
+        },
+        {
+          "path": "src/components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx"
         },
         {
           "path": "src/components/layout/sidebar-nav/sidebar-nav.tsx",
@@ -1813,6 +1819,53 @@
           "path": "src/components/composites/appearance-editor/theme-preview.tsx",
           "type": "registry:ui",
           "target": "components/composites/appearance-editor/theme-preview.tsx"
+        }
+      ]
+    },
+    {
+      "name": "catalog-browser",
+      "type": "registry:ui",
+      "title": "Catalog Browser",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/card",
+        "@adea-ai/ui/empty",
+        "@adea-ai/ui/input-group",
+        "@adea-ai/ui/scroll-area",
+        "@adea-ai/ui/skeleton",
+        "@adea-ai/ui/tabs",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/catalog-browser/catalog-browser-group.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-browser-group.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-browser.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-browser.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-detail.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-detail.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-types.ts",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-types.ts"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/index.ts"
         }
       ]
     },
