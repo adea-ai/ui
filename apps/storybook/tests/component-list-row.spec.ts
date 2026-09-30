@@ -1,0 +1,89 @@
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test } from '@playwright/test'
+import { resolve } from 'node:path'
+import { build } from 'vite'
+import solid from 'vite-plugin-solid'
+import tailwindcss from '@tailwindcss/vite'
+
+let script: string
+let css: string
+
+test.beforeAll(async () => {
+  const result = await build({
+    root: resolve(import.meta.dirname, '../../../packages/ui'),
+    configFile: false,
+    logLevel: 'error',
+    plugins: [solid(), tailwindcss()],
+    build: {
+      write: false,
+      minify: false,
+      lib: {
+        entry: resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/list-row.tsx'),
+        formats: ['iife'],
+        name: 'ListRowFixture',
+      },
+    },
+  })
+  const outputs = Array.isArray(result) ? result : [result]
+  const assets = outputs.flatMap((output) => ('output' in output ? output.output : []))
+  script = assets
+    .filter((asset) => asset.type === 'chunk')
+    .map((asset) => asset.code)
+    .join('\n')
+  css = assets
+    .flatMap((asset) =>
+      asset.type === 'asset' && asset.fileName.endsWith('.css') ? [String(asset.source)] : []
+    )
+    .join('\n')
+})
+
+test.beforeEach(async ({ page }) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>ListRow</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+})
+
+test('preserves native button and link semantics, refs, events, and keyboard tooltips', async ({
+  page,
+}) => {
+  const button = page.getByRole('button', { name: 'Open report' })
+  const link = page.getByRole('link', { name: 'Details' })
+  const defaultAction = page.getByRole('button', { name: 'Run action' })
+
+  await expect(button).toHaveAttribute('type', 'button')
+  await expect(link).toHaveAttribute('href', '#details')
+  await expect(defaultAction).toHaveAttribute('type', 'button')
+  await expect(page.getByLabel('Forwarded ref')).toHaveText('BUTTON')
+
+  await button.focus()
+  await expect(page.getByRole('tooltip', { name: 'Open the report' })).toHaveText('Open the report')
+  await expect(button).toHaveAttribute('aria-describedby', /.+/)
+  await button.press('Enter')
+  await button.press('Space')
+  await expect(page.getByLabel('Activations')).toHaveText('2')
+  await expect(page.getByLabel('Submissions')).toHaveText('0')
+
+  await link.focus()
+  await expect(link).toBeFocused()
+  await expect(page.getByRole('tooltip', { name: 'Read report details' })).toHaveText(
+    'Read report details'
+  )
+  await expect(link).toHaveAttribute('aria-describedby', /.+/)
+
+  await defaultAction.click()
+  await expect(page.getByLabel('Activations')).toHaveText('3')
+  await expect(page.getByLabel('Submissions')).toHaveText('0')
+})
+
+test('interactive row composition has no serious or critical accessibility violations', async ({
+  page,
+}) => {
+  const results = await new AxeBuilder({ page }).analyze()
+  expect(
+    results.violations.filter((violation) =>
+      ['serious', 'critical'].includes(violation.impact ?? '')
+    )
+  ).toEqual([])
+})

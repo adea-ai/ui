@@ -27,7 +27,7 @@ export function InputGroup(props: ComponentProps<'div'>) {
         'transition-[color,box-shadow,border-color] ease-out',
         'focus-within:border-ring focus-within:ring-3 focus-within:ring-primary-subtle',
         'has-[[aria-invalid=true]]:border-destructive has-[[aria-invalid=true]]:ring-3 has-[[aria-invalid=true]]:ring-destructive-subtle',
-        'has-[input:disabled]:pointer-events-none has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50',
+        'has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50',
         local.class
       )}
       {...rest}

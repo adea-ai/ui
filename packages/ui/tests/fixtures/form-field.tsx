@@ -10,7 +10,7 @@ import {
   ComboboxInput,
   ComboboxItem,
 } from '../../src/components/ui/combobox/combobox'
-import { FormField } from '../../src/components/ui/field/field'
+import { FieldGroup, FormField } from '../../src/components/ui/field/field'
 import { NumberField } from '../../src/components/ui/field/number-field'
 import { Input } from '../../src/components/ui/input/input'
 import { ValueCombobox } from '../../src/components/ui/combobox/value-combobox'
@@ -90,10 +90,13 @@ export function FormFieldFixture() {
           </Show>
         </FormField>
         <Button onClick={() => setAlternate((value) => !value)}>Change dynamic control</Button>
-        <FormField label="Permissions" group hint="These permissions apply to each source.">
-          <Checkbox label="Read sources" />
-          <Checkbox label="Read documents" />
-        </FormField>
+        <FieldGroup>
+          <FormField label="Permissions" group hint="These permissions apply to each source.">
+            <Checkbox label="Read sources" />
+            <Checkbox label="Read documents" />
+          </FormField>
+          <Checkbox label="Keep permissions enabled" />
+        </FieldGroup>
         <SettingsRow label="Row control" description="A row description.">
           <Switch />
         </SettingsRow>

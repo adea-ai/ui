@@ -2,6 +2,7 @@ import type { PolymorphicProps } from '@kobalte/core/polymorphic'
 import { Polymorphic } from '@kobalte/core/polymorphic'
 import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 import { cn } from '#lib/utils'
 
 /**
@@ -18,9 +19,8 @@ import { cn } from '#lib/utils'
  * arithmetic.
  *
  * A row is only interactive when it is given an `as` that can be activated
- * (an anchor, a button) or an `onClick`. Without either it renders as a
- * `div` with no hover treatment, because a hover state on something that does
- * nothing is a lie.
+ * (an anchor, a button) or an `onClick`. Click handlers default to a native
+ * button; a row without either remains a `div` with no hover treatment.
  */
 export type ListRowProps<T extends ValidComponent = 'div'> = PolymorphicProps<
   T,
@@ -36,23 +36,36 @@ export type ListRowProps<T extends ValidComponent = 'div'> = PolymorphicProps<
     trailing?: JSX.Element
     /** A dimmed second line under the main content. */
     description?: string
+    /** A short explanation shown on pointer hover and keyboard focus. */
+    tooltip?: string
+    /** Native button type; defaults to `button` for button rows. */
+    type?: ComponentProps<'button'>['type']
   }
 >
 
-export function ListRow<T extends ValidComponent = 'div'>(props: ListRowProps<T>) {
+type ListRowBaseProps<T extends ValidComponent = 'div'> = ListRowProps<T> & {
+  as?: T
+  type?: ComponentProps<'button'>['type']
+}
+
+function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T>) {
   const [local, rest] = splitProps(props as ListRowProps, [
+    'as',
     'class',
     'selected',
     'dense',
     'leading',
     'trailing',
     'description',
+    'tooltip',
+    'type',
     'children',
   ])
 
   return (
     <Polymorphic
-      as="div"
+      as={(local.as ?? 'div') as T}
+      type={local.as === 'button' ? (local.type ?? 'button') : local.type}
       aria-current={local.selected ? 'true' : undefined}
       data-selected={local.selected ? '' : undefined}
       class={cn(
@@ -76,15 +89,68 @@ export function ListRow<T extends ValidComponent = 'div'>(props: ListRowProps<T>
       <span class="flex min-w-0 flex-1 flex-col">
         <span class="truncate">{local.children}</span>
         <Show when={local.description}>
-          <span class="text-muted-foreground truncate text-xs">{local.description}</span>
+          <span
+            data-slot="list-row-description"
+            class={cn(
+              'truncate text-xs',
+              local.selected ? 'text-foreground' : 'text-muted-foreground'
+            )}
+          >
+            {local.description}
+          </span>
         </Show>
       </span>
       <Show when={local.trailing}>
-        <span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+        <span
+          data-slot="list-row-trailing"
+          class={cn(
+            'ms-auto flex shrink-0 items-center gap-1',
+            local.selected ? 'text-foreground' : 'text-muted-foreground'
+          )}
+        >
           {local.trailing}
         </span>
       </Show>
     </Polymorphic>
+  )
+}
+
+type ListRowTooltipTargetProps<T extends ValidComponent = 'div'> = Omit<
+  ListRowBaseProps<T>,
+  'as'
+> & { rowAs?: T }
+
+/** Adapts TooltipTrigger's polymorphic target to ListRow's semantic element. */
+function ListRowTooltipTarget<T extends ValidComponent = 'div'>(
+  props: ListRowTooltipTargetProps<T>
+) {
+  const [local, rest] = splitProps(props as ListRowTooltipTargetProps, ['rowAs'])
+  return <ListRowBase as={local.rowAs} {...(rest as ListRowBaseProps<T>)} />
+}
+
+export function ListRow<T extends ValidComponent = 'div'>(props: ListRowProps<T>) {
+  const [local, rest] = splitProps(props as ListRowProps, ['as', 'tooltip'])
+  const hasClickHandler = () => Boolean(rest.onClick || rest['on:click'])
+  const rowAs = () => (local.as ?? (hasClickHandler() ? 'button' : 'div')) as T
+  const rowType = () => (rowAs() === 'button' ? (rest.type ?? 'button') : rest.type)
+
+  return (
+    <Show
+      when={local.tooltip}
+      fallback={<ListRowBase as={rowAs()} type={rowType()} {...(rest as ListRowBaseProps<T>)} />}
+    >
+      <Tooltip>
+        <TooltipTrigger
+          as={ListRowTooltipTarget}
+          rowAs={rowAs()}
+          type={rowType()}
+          {...(rest as ListRowTooltipTargetProps<T>)}
+        >
+          {rest.children}
+        </TooltipTrigger>
+        <TooltipContent>{local.tooltip}</TooltipContent>
+      </Tooltip>
+    </Show>
   )
 }
 

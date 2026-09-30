@@ -46,7 +46,7 @@ export function SecretInputGroup(props: SecretInputGroupProps) {
         size="xs"
         class="-me-1 h-6 min-w-0 shrink-0 px-2"
         disabled={local.disabled}
-        tooltip="Clear API key"
+        tooltip={local.disabled ? 'This API key is managed by policy' : 'Clear API key'}
         tooltipSide="top"
         aria-label="Clear API key"
         onClick={() => local.onClear?.()}

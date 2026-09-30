@@ -187,6 +187,12 @@ export function FieldSet(props: ComponentProps<'fieldset'>) {
   return <fieldset class={cn('flex flex-col gap-4', local.class)} {...rest} />
 }
 
+/** A visual stack for related controls that does not imply fieldset semantics. */
+export function FieldGroup(props: ComponentProps<'div'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return <div data-slot="field-group" class={cn('flex flex-col gap-4', local.class)} {...rest} />
+}
+
 export function FieldLegend(props: ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {
   const [local, rest] = splitProps(props, ['class', 'variant'])
   return (

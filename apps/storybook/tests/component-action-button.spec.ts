@@ -154,3 +154,26 @@ test('disabled actions expose tooltip explanations without becoming activatable'
   await captureButton.evaluate((element: HTMLButtonElement) => element.click())
   await expect(page.getByLabel('Activations')).toHaveText('0')
 })
+
+test('tooltip actions stay in sequential keyboard order and open disabled explanations', async ({
+  page,
+}) => {
+  const start = page.getByRole('textbox', { name: 'Start tooltip button focus order' })
+  const available = page.getByRole('button', { name: 'Available action', exact: true })
+  const unavailable = page.getByRole('button', { name: 'Unavailable action', exact: true })
+  const programmaticOnly = page.getByRole('button', {
+    name: 'Programmatic-only action',
+    exact: true,
+  })
+
+  await expect(available).toHaveAttribute('tabindex', '0')
+  await expect(unavailable).toHaveAttribute('tabindex', '0')
+  await expect(programmaticOnly).toHaveAttribute('tabindex', '-1')
+  await start.focus()
+  await page.keyboard.press('Tab')
+  await expect(available).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(unavailable).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Unavailable action help')
+  await expect(unavailable).toHaveAttribute('aria-describedby', /.+/)
+})

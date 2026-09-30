@@ -111,7 +111,11 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
       .join(' '),
     disabled: disabled() && !local.tooltip,
     'aria-disabled': disabled() ? true : rest['aria-disabled'],
-    tabIndex: local.as === 'a' && disabled() ? (local.tooltip ? 0 : -1) : rest.tabIndex,
+    // Make tooltip-bearing native controls explicit tab stops in WebKit configurations that
+    // otherwise skip implicit button stops. A caller's tabIndex remains authoritative.
+    tabIndex:
+      rest.tabIndex ??
+      (local.as === 'a' && disabled() ? (local.tooltip ? 0 : -1) : local.tooltip ? 0 : undefined),
     role: local.as === 'a' && disabled() ? 'link' : rest.role,
     href: local.as === 'a' && disabled() ? undefined : (rest as { href?: string }).href,
     'aria-busy': busy() || local['aria-busy'],

@@ -3,6 +3,7 @@ export {
   FormField,
   FieldDescription,
   FieldError,
+  FieldGroup,
   FieldInput,
   FieldLabel,
   FieldLegend,
