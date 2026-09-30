@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.89.1](https://github.com/adea-ai/ui/compare/v0.89.0...v0.89.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **ui:** keep toolbar actions reachable at narrow widths ([#162](https://github.com/adea-ai/ui/issues/162)) ([87a8679](https://github.com/adea-ai/ui/commit/87a8679c04b96d1f597653f067ebe1d65fd45f79))
+
+
+### CI
+
+* fix the Renovate runner — checkout the repo, drop the inverted dry-run ([#166](https://github.com/adea-ai/ui/issues/166)) ([73b9024](https://github.com/adea-ai/ui/commit/73b90241d67967dc40049c0751246b9da179f569))
+
 ## [0.89.0](https://github.com/adea-ai/ui/compare/v0.88.0...v0.89.0) (2026-09-30)
 
 
