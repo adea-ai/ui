@@ -83,8 +83,8 @@ test('a delayed controlled move restores card focus until another action takes f
 }) => {
   await page.getByRole('button', { name: 'Defer moves' }).click()
   const card = page.getByRole('article')
-  await card.focus()
-  await card.press('Control+ArrowRight')
+  await card.getByRole('button', { name: 'Synthetic card' }).focus()
+  await page.keyboard.press('Control+ArrowRight')
   await expect(
     page.getByRole('region', { name: 'Done', exact: true }).getByRole('article')
   ).toBeVisible()

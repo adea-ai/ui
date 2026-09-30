@@ -83,6 +83,11 @@ finished closing. The latter receives the connected trigger button for dialog
 focus restoration and is cancelled if the menu unmounts. Authentication,
 updates, navigation, and other effects remain host callbacks.
 
+`SidebarNavTitle` accepts polymorphic `as` for a host's title heading.
+Use `SidebarNavSection.headingAs` (h1 through h6) for section headings.
+Disclosure buttons stay inside their heading and trailing actions stay outside
+it, preserving hierarchy and independent keyboard actions.
+
 `Board` checks the caller's legal-move predicate before settling a pointer drop.
 Ctrl/Cmd + arrow moves skip disabled columns without wrapping at the edges.
 After a controlled move settles, focus follows the moved card only when the
