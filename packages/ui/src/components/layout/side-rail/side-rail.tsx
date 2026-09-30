@@ -329,9 +329,13 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
 
 /** A non-navigating rail control: a collapse toggle, a "new" action. */
 export function SideRailButton(
-  props: Omit<ComponentProps<'button'>, 'type'> & { label: string; shortcut?: string }
+  props: Omit<ComponentProps<'button'>, 'type'> & {
+    label: string
+    shortcut?: string
+    active?: boolean
+  }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'label', 'shortcut', 'children'])
+  const [local, rest] = splitProps(props, ['class', 'label', 'shortcut', 'children', 'active'])
   const [row, setRow] = createSignal<HTMLElement>()
   const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
 
@@ -351,13 +355,14 @@ export function SideRailButton(
         type="button"
         ref={setRow}
         aria-label={local.label}
+        data-active={local.active ? 'true' : undefined}
         onPointerEnter={showTip}
         onPointerLeave={() => setTip(null)}
         onFocus={showTip}
         onBlur={() => setTip(null)}
         class={cn(
           sideRailItemClass,
-          sideRailItemStateClass.idle,
+          local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,
           'disabled:pointer-events-none disabled:opacity-50',
           local.class
         )}
