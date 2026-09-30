@@ -111,11 +111,14 @@ interface PrimitiveImportOptions {
 
 const DEFAULT_PRIMITIVE_PACKAGES = Object.freeze([
   '@kobalte/core',
+  '@corvu',
+  'cmdk-solid',
   '@ark-ui',
   '@zag-js',
   '@radix-ui',
   'radix-ui',
   '@base-ui-components',
+  '@base-ui',
 ])
 
 /**
@@ -166,7 +169,20 @@ const GENERIC_ELEMENTS: ReadonlySet<string> = new Set([
   'svg',
 ])
 
-const CLICK_HANDLERS: ReadonlySet<string> = new Set(['onClick', 'onDoubleClick'])
+const CLICK_HANDLERS: ReadonlySet<string> = new Set([
+  'onClick',
+  'onDoubleClick',
+  'onPointerDown',
+  'onPointerUp',
+  'onMouseDown',
+  'onMouseUp',
+  'on:click',
+  'on:dblclick',
+  'on:pointerdown',
+  'on:pointerup',
+  'on:mousedown',
+  'on:mouseup',
+])
 
 interface InteractiveWrapperOptions {
   /** Element names this rule should not report (rare; prefer fixing the file). */
@@ -175,13 +191,25 @@ interface InteractiveWrapperOptions {
   message?: string
 }
 
-/** Reads a static `role` value; a dynamic role is undecidable statically, so it is left to review. */
+/** Only statically knowable branches; unresolved roles remain a review boundary. */
+const staticStrings = (node: any): string[] => {
+  if (node?.type === 'Literal' && typeof node.value === 'string') return [node.value]
+  if (node?.type === 'JSXExpressionContainer') return staticStrings(node.expression)
+  if (node?.type === 'ConditionalExpression')
+    return [...staticStrings(node.consequent), ...staticStrings(node.alternate)]
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
+    return [node.quasis[0].value.cooked ?? node.quasis[0].value.raw]
+  return []
+}
+
 const roleOf = (node: any): string | null => {
   for (const attribute of node.attributes ?? []) {
     if (attribute.type !== 'JSXAttribute' || attribute.name?.name !== 'role') continue
-    if (attribute.value?.type === 'Literal' && typeof attribute.value.value === 'string')
-      return attribute.value.value
-    return null
+    return (
+      staticStrings(attribute.value)
+        .flatMap((role) => role.split(/\s+/))
+        .find((role) => role in ROLE_PRIMITIVES) ?? null
+    )
   }
   return null
 }
@@ -189,8 +217,33 @@ const roleOf = (node: any): string | null => {
 /** Whether the element carries the attribute, by name. */
 const has = (node: any, name: string): boolean =>
   (node.attributes ?? []).some(
-    (attribute: any) => attribute.type === 'JSXAttribute' && attribute.name?.name === name
+    (attribute: any) =>
+      attribute.type === 'JSXAttribute' &&
+      (attribute.name?.type === 'JSXNamespacedName'
+        ? `${attribute.name.namespace.name}:${attribute.name.name.name}`
+        : attribute.name?.name) === name
   )
+
+const hasTabStop = (node: any): boolean =>
+  (node.attributes ?? []).some((attribute: any) => {
+    if (
+      attribute.type !== 'JSXAttribute' ||
+      !['tabIndex', 'tabindex'].includes(attribute.name?.name)
+    )
+      return false
+    const value =
+      attribute.value?.type === 'JSXExpressionContainer'
+        ? attribute.value.expression
+        : attribute.value
+    if (value?.type === 'Literal') return !(Number(value.value) < 0)
+    if (
+      value?.type === 'UnaryExpression' &&
+      value.operator === '-' &&
+      value.argument?.type === 'Literal'
+    )
+      return !(Number(value.argument.value) > 0)
+    return true
+  })
 
 const noInteractiveWrappers: RuleModule = {
   meta: {
@@ -255,7 +308,7 @@ const noInteractiveWrappers: RuleModule = {
             })
             return
           }
-          if (has(node, 'tabIndex') || has(node, 'tabindex')) {
+          if (hasTabStop(node)) {
             context.report({
               node,
               messageId: 'tabindexWrapper',
@@ -314,6 +367,17 @@ const noPrimitiveLibraryImports: RuleModule = {
       ImportExpression(node: any) {
         if (typeof node.source?.value === 'string' && offender(node.source.value))
           report(node, node.source.value)
+      },
+      ExportNamedDeclaration(node: any) {
+        if (offender(node.source?.value)) report(node, node.source.value)
+      },
+      ExportAllDeclaration(node: any) {
+        if (offender(node.source?.value)) report(node, node.source.value)
+      },
+      CallExpression(node: any) {
+        if (node.callee?.type !== 'Identifier' || node.callee.name !== 'require') return
+        const source = node.arguments?.[0]?.value
+        if (typeof source === 'string' && offender(source)) report(node, source)
       },
     }
   },

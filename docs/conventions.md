@@ -78,6 +78,19 @@ Where a primitive lacks coverage, the component implements it, and its doc comme
 says so and explains what was done instead. That is the only case where a
 hand-rolled control is correct, and the comment is what makes it reviewable.
 
+Consumers enable all three `@adea-ai/ui/lint` rules as errors. Raw controls,
+interactive layout elements, and direct primitive access belong in shared UI.
+The primitive boundary covers imports, re-exports, dynamic imports, and literal
+`require` calls, including Kobalte, corvu, and cmdk-solid. Forwarding a primitive
+through an application barrel does not make it a shared component.
+
+The wrapper rule recognizes expression roles and Solid's `on:click` listeners
+as well as click, mouse, and pointer activation. A negative tabindex alone is
+allowed for programmatic focus, such as a skip-link destination; it does not
+exempt an interactive role or activation handler. Dynamic roles and spread
+attributes still require review because their behavior cannot be inferred
+statically. Do not disable the rules in migrated consumer files.
+
 ```tsx
 /**
  * SideRailItem.
