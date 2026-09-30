@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "autodiscover": true,
+  "autodiscoverFilter": ["adea-ai/ui", "adea-ai/themes", "adea-ai/adea", "adea-ai/cortana"],
+  "platform": "github",
+  "endpoint": "https://api.github.com/",
+  "onboarding": false,
+  "requireConfig": "optional",
+  "prCreation": "immediate",
+  "pruneStaleBranches": true
+}

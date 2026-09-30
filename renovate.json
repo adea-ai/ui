@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits", ":semanticPrefixFixDepsChoreOthers"],
+  "timezone": "America/New_York",
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "rebaseWhen": "behind-base-branch",
+  "pruneStaleBranches": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 10am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  },
+  "osvVulnerabilities": {
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "description": "This repository is the source of the @adea-ai/* packages: never self-update an internal package, and bump external dependencies as one grouped branch when the gates allow it.",
+      "matchPackagePatterns": ["^@adea-ai/"],
+      "enabled": false
+    },
+    {
+      "description": "Non-major external dependency updates ride one branch and automerge once the design-system gates pass — the gates are the review for these.",
+      "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
+      "groupName": "external non-major dependencies",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "schedule": ["after 8am and before 8pm every weekday"]
+    },
+    {
+      "description": "Major bumps of external dependencies get a reviewed PR, one per package.",
+      "matchUpdateTypes": ["major"],
+      "labels": ["dependencies", "major"]
+    }
+  ]
+}
