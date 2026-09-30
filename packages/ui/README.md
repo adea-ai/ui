@@ -74,6 +74,11 @@ The library owns the datalist and unique association; a suggestion does not
 restrict the submitted value. Native `required`, `pattern`, form, event, and
 ref props still apply to the input.
 
+`ModalDialog` defaults to a compact surface for short tasks. Use
+`size="settings"` with `SettingsPage` for a wider,
+viewport-bounded settings surface; the shared layout keeps its panel content
+scrollable while the dialog title remains visible.
+
 `ThreadPanel.headerActions` accepts shared controls for host actions such as
 marking a thread unread. Closing the thread remains a separate labelled,
 tooltip-backed control. Hosts retain read-marker and message authority.

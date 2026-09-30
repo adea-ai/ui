@@ -35,12 +35,15 @@ import {
  *      cannot be inferred from the focused element.
  *
  * Use `Dialog` directly when you need its composition; use this when you want a
- * dialog that is correct by default.
+ * dialog that is correct by default. `size="settings"` supplies a wide, bounded
+ * shell for a shared settings layout; ordinary dialogs keep their compact default.
  */
 export type ModalDialogProps = Omit<
   ComponentProps<typeof DialogContent>,
-  'children' | 'aria-label' | 'aria-labelledby'
+  'children' | 'aria-label' | 'aria-labelledby' | 'positioner'
 > & {
+  /** Selects the bounded, scrollable shell used for grouped workspace settings. */
+  size?: 'default' | 'settings'
   open: boolean
   onClose: () => void
   title: string
@@ -70,6 +73,7 @@ export function ModalDialog(props: ModalDialogProps) {
     'onClose',
     'title',
     'modal',
+    'size',
     'description',
     'headerLeading',
     'class',
@@ -114,7 +118,13 @@ export function ModalDialog(props: ModalDialogProps) {
       <Dialog open modal={local.modal ?? true} onOpenChange={(next) => !next && local.onClose()}>
         <DialogContent
           ref={setContent}
-          class={cn('gap-4', local.class)}
+          positioner={local.size === 'settings' ? 'inset' : 'default'}
+          class={cn(
+            'gap-4',
+            local.size === 'settings' &&
+              'flex h-208 max-h-full min-h-0 max-w-6xl flex-col gap-0 overflow-hidden p-0',
+            local.class
+          )}
           aria-label={local['aria-label'] ?? local.title}
           aria-labelledby={
             local['aria-labelledby'] ?? (local['aria-label'] !== undefined ? '' : undefined)
@@ -123,7 +133,13 @@ export function ModalDialog(props: ModalDialogProps) {
           onOpenAutoFocus={focusRestoration.onOpenAutoFocus}
           onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
         >
-          <DialogHeader>
+          <DialogHeader
+            class={
+              local.size === 'settings'
+                ? 'shrink-0 gap-1 border-b border-border px-5 pt-4 pb-3 pe-14'
+                : undefined
+            }
+          >
             <DialogTitle class="flex items-center gap-2">
               <Show when={local.headerLeading}>{local.headerLeading}</Show>
               {local.title}
