@@ -1348,6 +1348,28 @@
       ]
     },
     {
+      "name": "text-link",
+      "type": "registry:ui",
+      "title": "Text Link",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/text-link/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/text-link/index.ts"
+        },
+        {
+          "path": "src/components/ui/text-link/text-link.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-link/text-link.tsx"
+        }
+      ]
+    },
+    {
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
@@ -1486,6 +1508,11 @@
           "path": "src/components/layout/app-shell/index.ts",
           "type": "registry:ui",
           "target": "components/layout/app-shell/index.ts"
+        },
+        {
+          "path": "src/components/layout/app-shell/skip-link.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/app-shell/skip-link.tsx"
         }
       ]
     },
@@ -2268,6 +2295,11 @@
           "path": "src/lib/clipboard.ts",
           "type": "registry:lib",
           "target": "lib/clipboard.ts"
+        },
+        {
+          "path": "src/lib/download.ts",
+          "type": "registry:lib",
+          "target": "lib/download.ts"
         },
         {
           "path": "src/lib/form-field.ts",

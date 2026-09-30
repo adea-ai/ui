@@ -17,6 +17,11 @@
       "path": "src/components/layout/app-shell/index.ts",
       "type": "registry:ui",
       "target": "components/layout/app-shell/index.ts"
+    },
+    {
+      "path": "src/components/layout/app-shell/skip-link.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/app-shell/skip-link.tsx"
     }
   ]
 }

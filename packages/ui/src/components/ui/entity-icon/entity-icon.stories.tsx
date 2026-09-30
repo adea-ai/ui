@@ -86,6 +86,17 @@ export const WithGlyphs: Story = {
   ),
 }
 
+/** The named entity stays accessible while its contained logo remains decorative. */
+export const WithLogo: Story = {
+  args: {
+    name: 'Adea workspace',
+    size: 'xl',
+    src: `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path fill="currentColor" d="M32 8 58 56H6z"/></svg>'
+    )}`,
+  },
+}
+
 /** A badge in the corner: an unread count, a status dot, an installed tick. */
 export const WithBadge: Story = {
   render: () => (

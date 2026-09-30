@@ -16,6 +16,11 @@
       "target": "lib/clipboard.ts"
     },
     {
+      "path": "src/lib/download.ts",
+      "type": "registry:lib",
+      "target": "lib/download.ts"
+    },
+    {
       "path": "src/lib/form-field.ts",
       "type": "registry:lib",
       "target": "lib/form-field.ts"

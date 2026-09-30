@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-solid'
 import { AppShell, AppShellBody, AppShellMain } from '../app-shell/app-shell'
+import { SkipLink } from '../app-shell/skip-link'
 import { Button } from '../../ui/button/button'
 import { Panel, PanelBody, PanelHeader, PanelTitle } from '../panel/panel'
 import {
@@ -191,6 +192,20 @@ export const FullShell: Story = {
       </AppShell>
     )
   },
+}
+
+/** A visually hidden keyboard link that moves focus to the main region. */
+export const SkipLinkKeyboardNavigation: Story = {
+  render: () => (
+    <AppShell>
+      <SkipLink />
+      <AppShellBody>
+        <AppShellMain id="main-content" tabIndex={-1} aria-label="Main content">
+          <h1 class="p-6 text-xl font-semibold">Workspace</h1>
+        </AppShellMain>
+      </AppShellBody>
+    </AppShell>
+  ),
 }
 
 /** The rail collapsed: the same shell at its most compact, 58px instead of 236px. */
