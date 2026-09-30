@@ -2,6 +2,7 @@ import { RadioGroup as KobalteRadioGroup } from '@kobalte/core/radio-group'
 import { Circle } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -17,8 +18,35 @@ import { cn } from '../../../lib/utils'
  * tokens so either choice sits correctly next to the other.
  */
 export function RadioGroup(props: ComponentProps<typeof KobalteRadioGroup>) {
-  const [local, rest] = splitProps(props, ['class'])
-  return <KobalteRadioGroup class={cn('grid gap-2', local.class)} {...rest} />
+  const [local, rest] = splitProps(props, [
+    'class',
+    'id',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('group', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
+  return (
+    <KobalteRadioGroup
+      id={field?.id ?? local.id}
+      aria-label={local['aria-label']}
+      aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+      aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+      aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+      aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
+      class={cn('grid gap-2', local.class)}
+      {...rest}
+    />
+  )
 }
 
 export type RadioGroupItemProps = ComponentProps<typeof KobalteRadioGroup.Item> & {

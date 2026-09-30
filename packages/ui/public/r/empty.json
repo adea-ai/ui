@@ -3,11 +3,20 @@
   "type": "registry:ui",
   "title": "Empty",
   "description": "",
-  "dependencies": [],
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
   "registryDependencies": [
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/spinner",
     "lib"
   ],
   "files": [
+    {
+      "path": "src/components/ui/empty/empty-state.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/empty/empty-state.tsx"
+    },
     {
       "path": "src/components/ui/empty/empty.tsx",
       "type": "registry:ui",

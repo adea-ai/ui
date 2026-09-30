@@ -1,5 +1,6 @@
 import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -26,7 +27,7 @@ export function InputGroup(props: ComponentProps<'div'>) {
         'transition-[color,box-shadow,border-color] ease-out',
         'focus-within:border-ring focus-within:ring-3 focus-within:ring-primary-subtle',
         'has-[[aria-invalid=true]]:border-destructive has-[[aria-invalid=true]]:ring-3 has-[[aria-invalid=true]]:ring-destructive-subtle',
-        'has-[input:disabled]:pointer-events-none has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50',
+        'has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50',
         local.class
       )}
       {...rest}
@@ -35,11 +36,33 @@ export function InputGroup(props: ComponentProps<'div'>) {
 }
 
 export function InputGroupInput(props: ComponentProps<'input'>) {
-  const [local, rest] = splitProps(props, ['class'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'id',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('control', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
 
   return (
     <input
       data-slot="input-group-input"
+      id={field?.id ?? local.id}
+      aria-label={local['aria-label']}
+      aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+      aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+      aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+      aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
       class={cn(
         'h-full min-w-0 flex-1 bg-transparent text-sm outline-none',
         'placeholder:text-muted-foreground',

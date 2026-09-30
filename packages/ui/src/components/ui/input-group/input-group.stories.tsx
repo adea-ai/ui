@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { AtSign, Eye, Search, X } from 'lucide-solid'
+import { createSignal } from 'solid-js'
 import {
   InputGroup,
   InputGroupAddon,
@@ -7,6 +8,7 @@ import {
   InputGroupInput,
   InputGroupText,
 } from './input-group'
+import { SecretInputGroup } from './secret-input-group'
 
 /**
  * InputGroup.
@@ -104,4 +106,20 @@ export const Disabled: Story = {
       <InputGroupInput value="Managed by your organisation" disabled aria-label="Search" />
     </InputGroup>
   ),
+}
+
+/** A secret input whose optional clear action also exposes a focus tooltip. */
+export const SecretWithClear: Story = {
+  render: () => {
+    const [value, setValue] = createSignal('sk-example')
+    return (
+      <SecretInputGroup
+        class="w-80"
+        value={value()}
+        disabled={false}
+        onChange={(event) => setValue(event.currentTarget.value)}
+        onClear={() => setValue('')}
+      />
+    )
+  },
 }

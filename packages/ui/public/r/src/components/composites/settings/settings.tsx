@@ -1,5 +1,6 @@
 import type { ComponentProps, JSX } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import { createUniqueId, Show, splitProps } from 'solid-js'
+import { createFormFieldContext, FormFieldContext } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -10,13 +11,10 @@ import { cn } from '../../../lib/utils'
  * placement all wander unless something fixes them.
  *
  * The row is a two-column layout at a fixed label width, so controls line up
- * down the page regardless of how long the labels are. That alignment is the
- * difference between a settings page that reads as designed and one that reads
- * as a form.
- *
- * `SettingsRow` puts the control on the trailing side and the label leading;
- * `SettingsField` stacks them for a control too wide for a row (a textarea, a
- * list). Both share the same label and description treatment.
+ * down the page regardless of how long the labels are. `SettingsRow` also
+ * exposes its label and description through the shared form-field context to
+ * the first control inside it. `SettingsField` is the visual stacked layout;
+ * use `FormField` when the control needs label, help, or validation wiring.
  */
 export function SettingsSection(
   props: ComponentProps<'section'> & {
@@ -24,9 +22,18 @@ export function SettingsSection(
     description?: string
     /** A control for the section as a whole, e.g. a master toggle. */
     action?: JSX.Element
+    /** Use a spaced content stack for fields, alerts, and cards instead of divided rows. */
+    bodyLayout?: 'rows' | 'content'
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'title', 'description', 'action', 'children'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'title',
+    'description',
+    'action',
+    'bodyLayout',
+    'children',
+  ])
 
   return (
     <section
@@ -45,7 +52,16 @@ export function SettingsSection(
           <div class="flex shrink-0 items-center gap-2">{local.action}</div>
         </Show>
       </div>
-      <div class="divide-y divide-border rounded-xl border border-border">{local.children}</div>
+      <div
+        data-slot="settings-section-body"
+        class={cn(
+          local.bodyLayout === 'content'
+            ? 'flex flex-col gap-4'
+            : 'divide-y divide-border rounded-xl border border-border'
+        )}
+      >
+        {local.children}
+      </div>
     </section>
   )
 }
@@ -54,10 +70,9 @@ export function SettingsSection(
  * One setting: a label and description on the leading side, a control on the
  * trailing side.
  *
- * `label` is wired to the control through `aria-labelledby` when the control is
- * not already labelled, so a caller can pass a bare `Switch` and still get an
- * accessible name. The row does not invent an id per render — it derives one
- * from the label, which is stable across renders and readable in a snapshot.
+ * The label and description are linked to a shared control through field
+ * context. An explicit `aria-label` or `aria-labelledby` on the control keeps
+ * precedence; otherwise the visible row label names it.
  */
 export function SettingsRow(
   props: ComponentProps<'div'> & {
@@ -77,34 +92,49 @@ export function SettingsRow(
     'bare',
     'children',
   ])
+  const rowId = createUniqueId()
+  const labelId = `${rowId}-label`
+  const descriptionId = `${rowId}-description`
+  const field = createFormFieldContext({
+    defaultControlId: rowId,
+    labelId,
+    descriptionId,
+    hint: () => local.description,
+    error: () => undefined,
+    group: () => false,
+  })
 
   return (
-    <div
-      data-slot="settings-row"
-      class={cn(
-        'flex gap-4 p-4',
-        local.orientation === 'vertical'
-          ? 'flex-col'
-          : 'flex-col sm:flex-row sm:items-center sm:justify-between',
-        local.class
-      )}
-      {...rest}
-    >
-      <div class="flex min-w-0 flex-col gap-0.5">
-        <div data-slot="settings-row-label" class="text-sm font-medium">
-          {local.label}
-        </div>
-        <Show when={local.description}>
-          <p class="max-w-prose text-sm text-muted-foreground text-pretty">{local.description}</p>
-        </Show>
-      </div>
+    <FormFieldContext.Provider value={field}>
       <div
-        data-slot="settings-row-control"
-        class={cn('shrink-0', local.orientation === 'vertical' && 'w-full')}
+        data-slot="settings-row"
+        class={cn(
+          'flex gap-4 p-4',
+          local.orientation === 'vertical'
+            ? 'flex-col'
+            : 'flex-col sm:flex-row sm:items-center sm:justify-between',
+          local.class
+        )}
+        {...rest}
       >
-        {local.children}
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <div id={labelId} data-slot="settings-row-label" class="text-sm font-medium">
+            {local.label}
+          </div>
+          <Show when={local.description}>
+            <p id={descriptionId} class="max-w-prose text-sm text-muted-foreground text-pretty">
+              {local.description}
+            </p>
+          </Show>
+        </div>
+        <div
+          data-slot="settings-row-control"
+          class={cn('shrink-0', local.orientation === 'vertical' && 'w-full')}
+        >
+          {local.children}
+        </div>
       </div>
-    </div>
+    </FormFieldContext.Provider>
   )
 }
 

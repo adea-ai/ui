@@ -1,6 +1,8 @@
 import { TextField as KobalteTextField } from '@kobalte/core/text-field'
-import type { ComponentProps } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
+import { createUniqueId, Show, splitProps } from 'solid-js'
+import { Label } from '../label/label'
+import { createFormFieldContext, FormFieldContext } from '#lib/form-field'
 import { cn } from '#lib/utils'
 
 /**
@@ -9,19 +11,108 @@ import { cn } from '#lib/utils'
  * The wrapper that makes a form control describable and validatable: a label,
  * a description, an error message, and the ARIA relationships between them.
  *
+ * This Kobalte TextField composition is for its own `FieldLabel`, `FieldInput`
+ * and `FieldTextArea` parts. Use `FormField` to wire the standalone shared
+ * controls, including checkboxes, switches and comboboxes.
+ *
  * It is built on Kobalte's TextField specifically so `aria-describedby`,
  * `aria-invalid` and `aria-errormessage` are wired by construction. Those three
  * attributes are the difference between "this field is required and empty" and
  * a red border that only a sighted user can perceive — and they are also the
  * first thing a hand-rolled form drops.
  *
- * `Field` owns the description and the error slot, so a form's controls line up
- * and its messages land in the same place regardless of which control is used.
- * Compose it with any control: `Field` wraps, `Label`/`Input`/`Select` fill it.
+ * `Field` owns the description and the error slot, so its controls line up and
+ * its messages land in the same place regardless of which TextField part is used.
  */
 export function Field(props: ComponentProps<typeof KobalteTextField>) {
   const [local, rest] = splitProps(props, ['class'])
   return <KobalteTextField class={cn('flex flex-col gap-1.5', local.class)} {...rest} />
+}
+
+export type FormFieldProps = Omit<ComponentProps<'div'>, 'children' | 'ref'> & {
+  label: string
+  hint?: string
+  error?: string
+  controlId?: string
+  group?: boolean
+  children: JSX.Element
+}
+
+/**
+ * FormField.
+ *
+ * A shared label, help and validation wrapper for any one shared control. Its
+ * context is consumed by Input, Textarea, NativeSelect, Checkbox, Switch,
+ * RadioGroup and ComboboxInput, so the actual focusable element receives the
+ * generated ID and description relationships. Set `group` when the label names
+ * a set of controls; the wrapper then uses fieldset and legend semantics.
+ */
+export function FormField(props: FormFieldProps) {
+  const [local, rest] = splitProps(props, [
+    'class',
+    'label',
+    'hint',
+    'error',
+    'controlId',
+    'group',
+    'children',
+  ])
+  const fieldId = createUniqueId()
+  const labelId = `${fieldId}-label`
+  const descriptionId = `${fieldId}-description`
+  const errorId = `${fieldId}-error`
+  const field = createFormFieldContext({
+    controlId: local.controlId,
+    defaultControlId: fieldId,
+    labelId,
+    descriptionId,
+    errorId,
+    hint: () => local.hint,
+    error: () => local.error,
+    group: () => local.group ?? false,
+  })
+  const help = () => (
+    <>
+      <Show when={local.hint}>
+        <p id={descriptionId} class="text-muted-foreground text-sm">
+          {local.hint}
+        </p>
+      </Show>
+      <Show when={local.error}>
+        <p id={errorId} role="alert" class="text-foreground text-sm">
+          {local.error}
+        </p>
+      </Show>
+    </>
+  )
+
+  return (
+    <FormFieldContext.Provider value={field}>
+      <div class={cn('flex flex-col gap-1.5', local.class)} {...rest}>
+        {local.group ? (
+          <FieldSet
+            class="flex flex-col gap-1.5"
+            aria-describedby={field.describedBy()}
+            aria-invalid={field.invalid() || undefined}
+          >
+            <FieldLegend id={labelId} variant="label">
+              {local.label}
+            </FieldLegend>
+            {local.children}
+            {help()}
+          </FieldSet>
+        ) : (
+          <>
+            <Label id={labelId} for={field.controlId()}>
+              {local.label}
+            </Label>
+            {local.children}
+            {help()}
+          </>
+        )}
+      </div>
+    </FormFieldContext.Provider>
+  )
 }
 
 export function FieldLabel(props: ComponentProps<typeof KobalteTextField.Label>) {
@@ -94,6 +185,12 @@ export function FieldTextArea(props: ComponentProps<typeof KobalteTextField.Text
 export function FieldSet(props: ComponentProps<'fieldset'>) {
   const [local, rest] = splitProps(props, ['class'])
   return <fieldset class={cn('flex flex-col gap-4', local.class)} {...rest} />
+}
+
+/** A visual stack for related controls that does not imply fieldset semantics. */
+export function FieldGroup(props: ComponentProps<'div'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return <div data-slot="field-group" class={cn('flex flex-col gap-4', local.class)} {...rest} />
 }
 
 export function FieldLegend(props: ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {

@@ -84,6 +84,14 @@ export const WithDescription: Story = {
   render: () => (
     <div class="w-96 rounded-xl border border-border p-2">
       <ListRow
+        selected
+        leading={<FileText />}
+        description="Evidence from source documents"
+        trailing={<time dateTime="2026-09-30">Sep 30</time>}
+      >
+        Workspace evidence
+      </ListRow>
+      <ListRow
         leading={
           <Avatar size="sm">
             <AvatarFallback name="Ada Lovelace" />
@@ -102,6 +110,20 @@ export const WithDescription: Story = {
         description="Runs the soak lane"
       >
         Alan Turing
+      </ListRow>
+    </div>
+  ),
+}
+
+/** Interactive rows use native buttons or links and expose a keyboard tooltip. */
+export const Interactive: Story = {
+  render: () => (
+    <div class="w-96 rounded-xl border border-border p-2">
+      <ListRow as="button" tooltip="Open the selected workspace" leading={<CircleDot />}>
+        Open workspace
+      </ListRow>
+      <ListRow as="a" href="#details" tooltip="Read the workspace details" leading={<FileText />}>
+        Workspace details
       </ListRow>
     </div>
   ),
