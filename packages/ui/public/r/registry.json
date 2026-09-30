@@ -442,10 +442,12 @@
       "title": "Command",
       "description": "",
       "dependencies": [
+        "@kobalte/core@^0.13.14",
         "cmdk-solid@^1.2.0",
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/dialog",
         "lib"
       ],
       "files": [

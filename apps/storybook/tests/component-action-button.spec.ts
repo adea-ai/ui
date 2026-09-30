@@ -80,6 +80,34 @@ test('tooltip listens on the polymorphic link and opens from keyboard focus', as
   await expect(page.getByRole('tooltip')).toHaveText('Open details')
 })
 
+test('tooltip dismisses on pointer activation and stays closed over the opened popover', async ({
+  page,
+}) => {
+  const button = page.getByRole('button', { name: 'Open system status' })
+  await button.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('View the current system status')
+
+  await button.click()
+  await expect(page.getByRole('dialog', { name: 'System status' })).toBeVisible()
+  await expect(page.getByRole('tooltip')).toBeHidden()
+  await page.waitForTimeout(1200)
+  await expect(page.getByRole('tooltip')).toBeHidden()
+})
+
+test('tooltip dismisses on keyboard activation and stays closed while focus remains', async ({
+  page,
+}) => {
+  const button = page.getByRole('button', { name: 'Open system status' })
+  await button.focus()
+  await expect(page.getByRole('tooltip')).toHaveText('View the current system status')
+
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'System status' })).toBeVisible()
+  await expect(page.getByRole('tooltip')).toBeHidden()
+  await page.waitForTimeout(1200)
+  await expect(page.getByRole('tooltip')).toBeHidden()
+})
+
 test('busy polymorphic links are inert and keep their caller handler from running', async ({
   page,
 }) => {

@@ -254,6 +254,9 @@ export const WithControls: Story = {
           <SideRailButton label="New session">
             <Sparkles />
           </SideRailButton>
+          <SideRailButton label="Utilities" active>
+            <Settings />
+          </SideRailButton>
           {items.slice(0, 3).map((item, index) => (
             <SideRailItem
               as="button"

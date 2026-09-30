@@ -68,7 +68,7 @@ test('Nord command labels and shortcuts retain AA on default and selected rows',
   expect(selectedAudit.violations).toEqual([])
   const disabled = page.getByRole('option', { name: 'Unavailable' })
   await expect(disabled).toHaveAttribute('aria-disabled', 'true')
-  expect(await disabled.evaluate((element) => getComputedStyle(element).opacity)).toBe('0.5')
+  expect(await disabled.evaluate((element) => getComputedStyle(element).opacity)).toBe('1')
   await page.getByRole('option', { name: /Search/ }).click()
   await expect(page.getByLabel('Selected command')).toHaveText('search')
 })

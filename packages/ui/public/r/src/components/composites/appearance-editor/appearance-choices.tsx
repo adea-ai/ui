@@ -93,9 +93,7 @@ export function AccentChoices(props: AppearanceEditorProps) {
       disabled={props.saving}
       orientation="horizontal"
       aria-label="Accent"
-      /* Narrow hosts wrap the swatches into a three-column grid so the row
-         control stays beside its label; wide hosts keep one inline row. */
-      class="grid grid-cols-3 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end"
+      class="flex flex-wrap items-center gap-2"
       onChange={(accent) =>
         props.onChange({
           accent: accent === 'custom' ? (props.customAccentValue ?? '') : accent,
@@ -104,11 +102,11 @@ export function AccentChoices(props: AppearanceEditorProps) {
     >
       <Radio.Item value="theme">
         <Radio.ItemInput />
-        <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+        <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
           Theme default
         </Radio.ItemLabel>
       </Radio.Item>
-      <div class="col-span-3 grid grid-cols-3 gap-2 sm:col-span-1 sm:flex sm:gap-2">
+      <div class="flex max-w-full flex-wrap gap-2">
         <For each={props.accentOptions}>
           {(option) => (
             <Radio.Item
