@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.0](https://github.com/adea-ai/ui/compare/v0.79.0...v0.80.0) (2026-09-30)
+
+
+### Features
+
+* **native-select:** render choices from data via an options prop ([#129](https://github.com/adea-ai/ui/issues/129)) ([bbe4510](https://github.com/adea-ai/ui/commit/bbe4510494069b1e01d25ea8c7a9b1ceff70777a))
+
 ## [0.79.0](https://github.com/adea-ai/ui/compare/v0.78.2...v0.79.0) (2026-09-30)
 
 
