@@ -137,6 +137,7 @@ export {
   type ThemeVariant,
 } from './lib/themes'
 export { keyedRows, type KeyedRow } from './lib/keyed-rows'
+export { writeClipboardText } from './lib/clipboard'
 export { formatBytes, formatReleaseDate, plainTextFromMarkdown } from './lib/version-notes'
 export {
   accentPresets,

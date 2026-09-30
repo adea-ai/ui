@@ -58,7 +58,7 @@ export function EmptyState(props: EmptyStateProps) {
       <Show when={local.action}>
         <EmptyContent>
           <ActionButton
-            tooltip={local.actionTooltip}
+            tooltip={local.actionTooltip ?? local.actionLabel ?? 'Try again'}
             aria-label={local.actionLabel ?? 'Try again'}
             onClick={local.action}
           >
