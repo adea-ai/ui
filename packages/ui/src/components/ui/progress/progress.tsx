@@ -40,14 +40,18 @@ export function Progress(props: ProgressProps) {
 
   return (
     <KobalteProgress class={cn('flex w-full flex-col gap-1.5', local.class)} {...rest}>
-      <div class="flex items-center justify-between gap-3">
-        <KobalteProgress.Label class="text-muted-foreground text-sm">
-          {local.label}
-        </KobalteProgress.Label>
-        <Show when={!local.hideValue}>
-          <KobalteProgress.ValueLabel class="text-muted-foreground text-sm tabular-nums" />
-        </Show>
-      </div>
+      <Show when={local.label || !local.hideValue}>
+        <div class="flex items-center justify-between gap-3">
+          <Show when={local.label}>
+            <KobalteProgress.Label class="text-muted-foreground text-sm">
+              {local.label}
+            </KobalteProgress.Label>
+          </Show>
+          <Show when={!local.hideValue}>
+            <KobalteProgress.ValueLabel class="text-muted-foreground text-sm tabular-nums" />
+          </Show>
+        </div>
+      </Show>
       <KobalteProgress.Track
         class={cn('bg-input relative h-1.5 w-full overflow-hidden rounded-full', local.trackClass)}
       >

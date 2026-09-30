@@ -76,6 +76,20 @@ function Fixture() {
         Finish save
       </button>
       <output aria-label="Activations">{activations()}</output>
+      <input aria-label="Start tooltip button focus order" />
+      <ActionButton aria-label="Available action" tooltip="Available action help">
+        Available action
+      </ActionButton>
+      <ActionButton aria-label="Unavailable action" disabled tooltip="Unavailable action help">
+        Unavailable action
+      </ActionButton>
+      <ActionButton
+        aria-label="Programmatic-only action"
+        tabIndex={-1}
+        tooltip="Programmatic-only action help"
+      >
+        Programmatic-only action
+      </ActionButton>
     </main>
   )
 }

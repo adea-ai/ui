@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { Search } from 'lucide-solid'
 import { Label } from '../label/label'
+import { InputControl } from './input-control'
 import { Input } from './input'
 
 /**
@@ -33,6 +34,11 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
+
+/** The styled native control without the optional datalist behavior. */
+export const PlainControl: Story = {
+  render: () => <InputControl type="search" aria-label="Search apps" placeholder="Search apps" />,
+}
 
 /** Labelled, described and invalid: what a real field looks like. */
 export const States: Story = {

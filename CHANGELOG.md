@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.87.0](https://github.com/adea-ai/ui/compare/v0.86.0...v0.87.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** share navigation, downloads, and entity icons ([#153](https://github.com/adea-ai/ui/issues/153)) ([62f2239](https://github.com/adea-ai/ui/commit/62f223987915cac7403003c31486761e739e47fd))
+
+## [0.86.0](https://github.com/adea-ai/ui/compare/v0.85.0...v0.86.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add shared floating preview ([#150](https://github.com/adea-ai/ui/issues/150)) ([b1cab89](https://github.com/adea-ai/ui/commit/b1cab898d86e50a6e93afa654202b712af145255))
+* **ui:** add shared settings form composites ([#142](https://github.com/adea-ai/ui/issues/142)) ([23b1dde](https://github.com/adea-ai/ui/commit/23b1dde2b1727d7135cd5f93230bf95f673c90cc))
+* **ui:** isolate plain inputs from optional suggestions ([#157](https://github.com/adea-ai/ui/issues/157)) ([af49276](https://github.com/adea-ai/ui/commit/af49276c651e6632036e705bd05fe2933142c13e))
+* **ui:** share controlled appearance mode selector ([#156](https://github.com/adea-ai/ui/issues/156)) ([ab13946](https://github.com/adea-ai/ui/commit/ab139461224b66d57e4bccf7dead71759c78e400))
+
+
+### Bug Fixes
+
+* preserve transcript reading position across channel resets ([#154](https://github.com/adea-ai/ui/issues/154)) ([9355ea0](https://github.com/adea-ai/ui/commit/9355ea0bb6107d9da0f01eab7ea3e338cb8c5fd8))
+
 ## [0.85.0](https://github.com/adea-ai/ui/compare/v0.84.0...v0.85.0) (2026-09-30)
 
 

@@ -20,6 +20,11 @@
       "path": "src/components/ui/combobox/index.ts",
       "type": "registry:ui",
       "target": "components/ui/combobox/index.ts"
+    },
+    {
+      "path": "src/components/ui/combobox/value-combobox.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/combobox/value-combobox.tsx"
     }
   ]
 }

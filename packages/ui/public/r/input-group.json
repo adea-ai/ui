@@ -5,6 +5,7 @@
   "description": "",
   "dependencies": [],
   "registryDependencies": [
+    "@adea-ai/ui/action-button",
     "lib"
   ],
   "files": [
@@ -17,6 +18,11 @@
       "path": "src/components/ui/input-group/input-group.tsx",
       "type": "registry:ui",
       "target": "components/ui/input-group/input-group.tsx"
+    },
+    {
+      "path": "src/components/ui/input-group/secret-input-group.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/input-group/secret-input-group.tsx"
     }
   ]
 }

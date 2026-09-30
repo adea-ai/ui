@@ -66,3 +66,16 @@ test('native suggestions preserve arbitrary text, form validation, and independe
     await input.evaluate((element) => (element as HTMLInputElement).validity.patternMismatch)
   ).toBe(true)
 })
+
+test('InputControl forwards native search props, updates its value, and can receive focus', async ({
+  page,
+}) => {
+  const input = page.getByRole('searchbox', { name: 'Search apps' })
+  await expect(input).toHaveAttribute('name', 'search')
+  await expect(input).toHaveAttribute('data-test', 'native-props-forwarded')
+  await expect(input).not.toHaveAttribute('list')
+  await input.fill('agents')
+  await expect(page.getByLabel('Search value')).toHaveText('agents')
+  await page.getByRole('button', { name: 'Focus search' }).click()
+  await expect(input).toBeFocused()
+})

@@ -109,6 +109,21 @@ describe('registry', () => {
     expect(targets).toContain('components/composites/settings/settings-navigation.tsx')
   })
 
+  test('publishes SkipLink from the app-shell subpath, root barrel and registry', () => {
+    const rootExports = readFileSync(resolve(import.meta.dir, '../src/index.ts'), 'utf8')
+    const appShellExports = readFileSync(
+      resolve(import.meta.dir, '../src/components/layout/app-shell/index.ts'),
+      'utf8'
+    )
+    const appShell = registryItems.find((item) => item.name === 'app-shell')
+
+    expect(appShellExports).toContain("export { SkipLink } from './skip-link'")
+    expect(rootExports).toContain("export * from './components/layout/app-shell'")
+    expect(appShell?.files.map((file) => file.target)).toContain(
+      'components/layout/app-shell/skip-link.tsx'
+    )
+  })
+
   test('ships no stories or documentation as consumer source', () => {
     const offenders = registryItems.flatMap((item) =>
       item.files

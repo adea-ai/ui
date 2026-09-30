@@ -7,6 +7,7 @@ import {
   ComboboxItem,
   ComboboxTrigger,
 } from './combobox'
+import { ValueCombobox } from './value-combobox'
 
 /**
  * Combobox.
@@ -113,5 +114,22 @@ export const NoResults: Story = {
         <p role="status">No matching providers. Try another search.</p>
       </ComboboxContent>
     </Combobox>
+  ),
+}
+
+/** A controlled string value mapped to separately labelled choices. */
+export const ValueChoices: Story = {
+  render: () => (
+    <ValueCombobox
+      class="w-72"
+      aria-label="Model"
+      placeholder="Choose a model"
+      value="small"
+      choices={[
+        { value: 'small', label: 'Adea Small' },
+        { value: 'large', label: 'Adea Large' },
+      ]}
+      onValueChange={() => {}}
+    />
   ),
 }

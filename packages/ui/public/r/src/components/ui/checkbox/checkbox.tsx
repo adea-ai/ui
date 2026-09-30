@@ -2,6 +2,7 @@ import { Checkbox as KobalteCheckbox } from '@kobalte/core/checkbox'
 import { Check, Minus } from 'lucide-solid'
 import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -18,6 +19,8 @@ import { cn } from '../../../lib/utils'
  * the ring lives on the control and reads the input's focus state.
  */
 export type CheckboxProps = Omit<ComponentProps<typeof KobalteCheckbox>, 'children'> & {
+  /** ID for the hidden native checkbox input; useful with an external label. */
+  inputId?: string
   controlClass?: string
   labelClass?: string
   descriptionClass?: string
@@ -44,12 +47,24 @@ export function Checkbox(props: CheckboxProps) {
     'aria-labelledby',
     'aria-describedby',
     'aria-invalid',
+    'aria-errormessage',
     'aria-busy',
+    'id',
+    'inputId',
     'title',
   ])
+  const field = useFormFieldControl('control', {
+    id: local.inputId ?? local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
 
   return (
     <KobalteCheckbox
+      id={field ? undefined : local.id}
       title={local.title}
       class={cn('group/checkbox flex items-start gap-2.5', local.class)}
       {...rest}
@@ -60,10 +75,12 @@ export function Checkbox(props: CheckboxProps) {
        * box would announce its state with no subject.
        */}
       <KobalteCheckbox.Input
+        id={field?.id ?? local.inputId}
         aria-label={local['aria-label']}
-        aria-labelledby={local['aria-labelledby']}
-        aria-describedby={local['aria-describedby']}
-        aria-invalid={local['aria-invalid']}
+        aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+        aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+        aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+        aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
         aria-busy={local['aria-busy']}
         title={local.title}
       />

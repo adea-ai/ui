@@ -34,6 +34,18 @@ const coreSamples: PackedSample[] = [
     source: 'ui/button',
   },
   {
+    name: 'input-control-root',
+    imports: "import { InputControl } from '@adea-ai/ui';",
+    jsx: '<InputControl aria-label="Search apps" type="search" />',
+    source: 'ui/input',
+  },
+  {
+    name: 'input-control-subpath',
+    imports: "import { InputControl } from '@adea-ai/ui/components/ui/input';",
+    jsx: '<InputControl aria-label="Search apps" type="search" />',
+    source: 'ui/input',
+  },
+  {
     name: 'native-select-root',
     imports: "import { NativeSelect } from '@adea-ai/ui'",
     jsx: '<NativeSelect aria-label="Relationship kind" defaultValue="all"><option value="all">All</option></NativeSelect>',
@@ -274,6 +286,15 @@ try {
             )
           )
             throw new Error(`Packed ${condition} consumer did not include UpdateDialog`)
+          if (sample.name.startsWith('input-control-')) {
+            if (
+              uiModules.some((id) => id.includes('/components/ui/input/input.tsx')) ||
+              js.some((chunk) => /<datalist|input-suggestions|createUniqueId/.test(chunk.code))
+            )
+              throw new Error(
+                `Packed ${condition}/${sample.name} retained Input suggestions implementation`
+              )
+          }
           if (uiModules.some((id) => id.includes(condition === 'compiled' ? '/src/' : '/dist/')))
             throw new Error('Mixed UI export conditions')
           const forbidden = modules.filter((id) => {

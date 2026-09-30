@@ -242,3 +242,64 @@ test('packed destructive actions and semantic notices compose across the catalog
     expect(item.alertIcon, `${item.id} Alert icon lost its canonical error hue`).toEqual(item.error)
   }
 })
+
+test('selected list-row secondary text retains AA contrast across the theme catalogue', async ({
+  page,
+}) => {
+  const rows = page.locator('[data-selected-list-row]')
+  const themeCount = await page.locator('[data-theme-id]').count()
+  await expect(rows).toHaveCount(themeCount)
+
+  const measurements = await rows.evaluateAll((elements) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) throw new Error('Canvas is unavailable for ListRow contrast measurement')
+    const colorPixels = (value: string, underlay?: string): number[] => {
+      context.clearRect(0, 0, 1, 1)
+      if (underlay) {
+        context.fillStyle = underlay
+        context.fillRect(0, 0, 1, 1)
+      }
+      context.fillStyle = value
+      context.fillRect(0, 0, 1, 1)
+      return Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3))
+    }
+
+    return elements.map((element) => {
+      const row = element as HTMLElement
+      const theme = row.closest<HTMLElement>('[data-theme-id]')
+      const description = row.querySelector<HTMLElement>('[data-slot="list-row-description"]')
+      const trailing = row.querySelector<HTMLElement>('[data-slot="list-row-trailing"]')
+      if (!theme || !description || !trailing) {
+        throw new Error('Selected ListRow fixture lost its theme, description, or trailing slot')
+      }
+
+      return {
+        theme: theme.dataset['themeId'],
+        backgroundCss: getComputedStyle(row).backgroundColor,
+        surfaceCss: getComputedStyle(row.parentElement!).backgroundColor,
+        descriptionCss: getComputedStyle(description).color,
+        trailingCss: getComputedStyle(trailing).color,
+        background: colorPixels(
+          getComputedStyle(row).backgroundColor,
+          getComputedStyle(row.parentElement!).backgroundColor
+        ),
+        description: colorPixels(getComputedStyle(description).color),
+        trailing: colorPixels(getComputedStyle(trailing).color),
+      }
+    })
+  })
+
+  for (const item of measurements) {
+    expect(
+      contrast(item.description, item.background),
+      `${item.theme} selected-row description text is below AA (${item.descriptionCss} on ${item.backgroundCss})`
+    ).toBeGreaterThanOrEqual(4.5)
+    expect(
+      contrast(item.trailing, item.background),
+      `${item.theme} selected-row trailing text is below AA (${item.trailingCss} on ${item.backgroundCss})`
+    ).toBeGreaterThanOrEqual(4.5)
+  }
+})

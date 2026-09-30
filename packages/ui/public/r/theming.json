@@ -10,6 +10,7 @@
     "@adea-ai/ui/button",
     "@adea-ai/ui/radio-group",
     "@adea-ai/ui/toggle-group",
+    "@adea-ai/ui/tooltip",
     "lib"
   ],
   "files": [
@@ -22,6 +23,11 @@
       "path": "src/components/theme/index.ts",
       "type": "registry:ui",
       "target": "components/theming/index.ts"
+    },
+    {
+      "path": "src/components/theme/theme-mode-toggle.tsx",
+      "type": "registry:ui",
+      "target": "components/theming/theme-mode-toggle.tsx"
     },
     {
       "path": "src/components/theme/theme-picker.tsx",

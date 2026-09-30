@@ -67,7 +67,9 @@ through. Use `value` with `onChange` for a controlled selection, or `defaultValu
 to initialize an uncontrolled one. Use `Select` for searchable, runtime, or
 longer lists that need a custom popover.
 
-For free-form text with native suggestions, pass `suggestions` to `Input`.
+`InputControl` is the styled native input without suggestion-list behavior. Use
+`Input` when a form should offer native datalist suggestions; custom values
+remain valid and submit unchanged.
 The library owns the datalist and unique association; a suggestion does not
 restrict the submitted value. Native `required`, `pattern`, form, event, and
 ref props still apply to the input.
@@ -714,3 +716,11 @@ keyboard disclosure, visible actions and automated accessibility. This is shared
 composition evidence; bounded runtime projection, storage and production chat
 integration remain application acceptance gates. Attribution for the selected
 KiroCrew source contracts is recorded in the issue-specific `NOTICE` entry.
+
+### Controlled appearance mode
+
+`ThemeModeToggle` provides the shared light/dark/system selector for hosts that
+own their preference provider and storage. Pass `mode` and `onModeChange`; the
+control owns roving keyboard focus, pressed state and explanatory tooltips. It
+does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
+existing provider-bound API.

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
 import { Bell, Database, Settings, ShieldCheck, UserRound } from 'lucide-solid'
+import { expect, within } from 'storybook/test'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
 import { Switch } from '../../ui/switch/switch'
@@ -100,6 +101,58 @@ export const StackedFields: Story = {
       </SettingsSection>
     </SettingsPage>
   ),
+}
+
+/** Content sections space fields and cards without enclosing them in a row border. */
+export const ContentBody: Story = {
+  render: () => (
+    <SettingsPage class="h-screen">
+      <SettingsSection title="Memory" bodyLayout="content">
+        <SettingsField label="Retention" description="Controls how long memories remain.">
+          <Input value="90 days" aria-label="Retention" />
+        </SettingsField>
+        <div class="rounded-xl border border-border bg-card p-4">A separately bordered card</div>
+      </SettingsSection>
+    </SettingsPage>
+  ),
+}
+
+/** SettingsRow names an otherwise bare shared control and describes it. */
+export const AccessibleRows: Story = {
+  render: () => (
+    <SettingsSection title="General">
+      <SettingsRow label="Workspace name" description="Shown to anyone you invite.">
+        <Input value="Adea" />
+      </SettingsRow>
+      <SettingsRow label="Auto-update" description="Installs signed updates when idle.">
+        <Switch defaultChecked />
+      </SettingsRow>
+      <SettingsRow label="Delete workspace" description="This action cannot be undone.">
+        <Button variant="destructive" size="sm">
+          Delete
+        </Button>
+      </SettingsRow>
+    </SettingsSection>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const nameInput = canvas.getByRole('textbox', { name: 'Workspace name' })
+    expect(nameInput.id).not.toBe('')
+    const nameDescriptionId = nameInput.getAttribute('aria-describedby')!
+    expect(canvasElement.querySelector(`#${CSS.escape(nameDescriptionId)}`)?.textContent).toContain(
+      'Shown to anyone you invite.'
+    )
+
+    const autoUpdate = canvas.getByRole('switch', { name: 'Auto-update' })
+    expect(autoUpdate.id).not.toBe('')
+    const switchDescriptionId = autoUpdate.getAttribute('aria-describedby')!
+    expect(
+      canvasElement.querySelector(`#${CSS.escape(switchDescriptionId)}`)?.textContent
+    ).toContain('Installs signed updates when idle.')
+    expect(
+      canvas.getByRole('button', { name: 'Delete' }).getAttribute('aria-labelledby')
+    ).toBeNull()
+  },
 }
 
 /** A section with a master control, for a group that can be switched off whole. */
