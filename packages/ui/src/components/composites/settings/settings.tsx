@@ -22,9 +22,18 @@ export function SettingsSection(
     description?: string
     /** A control for the section as a whole, e.g. a master toggle. */
     action?: JSX.Element
+    /** Use a spaced content stack for fields, alerts, and cards instead of divided rows. */
+    bodyLayout?: 'rows' | 'content'
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'title', 'description', 'action', 'children'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'title',
+    'description',
+    'action',
+    'bodyLayout',
+    'children',
+  ])
 
   return (
     <section
@@ -43,7 +52,16 @@ export function SettingsSection(
           <div class="flex shrink-0 items-center gap-2">{local.action}</div>
         </Show>
       </div>
-      <div class="divide-y divide-border rounded-xl border border-border">{local.children}</div>
+      <div
+        data-slot="settings-section-body"
+        class={cn(
+          local.bodyLayout === 'content'
+            ? 'flex flex-col gap-4'
+            : 'divide-y divide-border rounded-xl border border-border'
+        )}
+      >
+        {local.children}
+      </div>
     </section>
   )
 }

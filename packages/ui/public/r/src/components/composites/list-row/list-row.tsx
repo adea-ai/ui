@@ -59,6 +59,7 @@ function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T
     'description',
     'tooltip',
     'type',
+    'tabIndex',
     'children',
   ])
 
@@ -66,13 +67,19 @@ function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T
     <Polymorphic
       as={(local.as ?? 'div') as T}
       type={local.as === 'button' ? (local.type ?? 'button') : local.type}
+      tabIndex={local.tabIndex ?? (local.as === 'button' || local.as === 'a' ? 0 : undefined)}
       aria-current={local.selected ? 'true' : undefined}
       data-selected={local.selected ? '' : undefined}
       class={cn(
         'group/row flex min-w-0 items-center gap-2.5 rounded-md px-2 text-sm',
         'transition-colors ease-out outline-none',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
-        { 'h-row-sm': local.dense, 'h-row-md': !local.dense },
+        {
+          'h-row-sm': local.dense && !local.description,
+          'h-row-md': !local.dense && !local.description,
+          'min-h-row-sm py-1': local.dense && local.description,
+          'min-h-row-md py-1.5': !local.dense && local.description,
+        },
         {
           'bg-primary-subtle text-foreground': local.selected,
           'hover:bg-surface-hover': !local.selected,

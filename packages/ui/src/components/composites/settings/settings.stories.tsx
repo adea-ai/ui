@@ -98,6 +98,20 @@ export const StackedFields: Story = {
   ),
 }
 
+/** Content sections space fields and cards without enclosing them in a row border. */
+export const ContentBody: Story = {
+  render: () => (
+    <SettingsPage class="h-screen">
+      <SettingsSection title="Memory" bodyLayout="content">
+        <SettingsField label="Retention" description="Controls how long memories remain.">
+          <Input value="90 days" aria-label="Retention" />
+        </SettingsField>
+        <div class="rounded-xl border border-border bg-card p-4">A separately bordered card</div>
+      </SettingsSection>
+    </SettingsPage>
+  ),
+}
+
 /** SettingsRow names an otherwise bare shared control and describes it. */
 export const AccessibleRows: Story = {
   render: () => (
