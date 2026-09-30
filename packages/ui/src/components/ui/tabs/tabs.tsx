@@ -59,7 +59,7 @@ export function TabsTrigger(props: TabsTriggerProps) {
         'transition-colors ease-out outline-none select-none',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
         'disabled:pointer-events-none disabled:opacity-50',
-        'text-muted-foreground hover:text-foreground data-[selected]:text-foreground',
+        'text-foreground',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4',
         local.appearance === 'segmented'
           ? 'h-control-sm rounded-md px-control-sm data-[selected]:bg-card data-[selected]:shadow-xs'
