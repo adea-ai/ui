@@ -28,6 +28,16 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = { args: { label: 'Ready', tone: 'success' } }
 
+/** Compact keeps the label available to assistive technology while showing only its tone dot. */
+export const Compact: Story = {
+  render: () => (
+    <div class="flex items-center gap-4">
+      <StatusChip tone="success" label="Source healthy" compact />
+      <span class="text-sm text-muted-foreground">Source tree</span>
+    </div>
+  ),
+}
+
 export const Tones: Story = {
   render: () => (
     <div class="grid gap-3">

@@ -5,7 +5,7 @@ import { badgeVariants } from '../src/components/ui/badge/badge'
 import { buttonVariants } from '../src/components/ui/button/button'
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
 import { builtinThemes, themeCssVariables } from '../src/lib/themes'
-import { destructiveMenuItem } from '../src/lib/overlay'
+import { destructiveMenuItem, menuItem } from '../src/lib/overlay'
 import { declarations, declaredNames, valueOf, type Scope } from './helpers/theme-css'
 
 /* ---------------------------------------------------------------------------
@@ -181,6 +181,36 @@ describe('contrast', () => {
       }
     })
   }
+
+  test('disabled menu labels and selected command shortcuts retain readable contrast across the catalogue', () => {
+    expect(menuItem).toContain('data-[disabled]:text-muted-foreground')
+    expect(menuItem).not.toContain('data-[disabled]:opacity-50')
+
+    for (const theme of builtinThemes) {
+      const variables = themeCssVariables(theme)
+      const mutedForeground = parseCatalogueColor(variables['--muted-foreground'] ?? '')
+      const popover = parseCatalogueColor(variables['--popover'] ?? '')
+      const foreground = parseCatalogueColor(variables['--foreground'] ?? '')
+      const selectedSurface = parseCatalogueColor(variables['--card'] ?? '')
+
+      expect(mutedForeground, `${theme.id} has no readable muted foreground`).toBeDefined()
+      expect(popover, `${theme.id} has no readable popover surface`).toBeDefined()
+      expect(foreground, `${theme.id} has no readable foreground`).toBeDefined()
+      expect(selectedSurface, `${theme.id} has no readable selected surface`).toBeDefined()
+
+      const disabledLabel = contrastRatio(mutedForeground!, popover!)
+      expect(
+        disabledLabel,
+        `${theme.id} disabled menu text on popover is ${disabledLabel.toFixed(2)}:1`
+      ).toBeGreaterThanOrEqual(4.5)
+
+      const selectedShortcut = contrastRatio(foreground!, selectedSurface!)
+      expect(
+        selectedShortcut,
+        `${theme.id} selected command shortcut on card surface is ${selectedShortcut.toFixed(2)}:1`
+      ).toBeGreaterThanOrEqual(4.5)
+    }
+  })
 
   test('a focus ring is distinguishable from its surface', () => {
     for (const theme of themes) {

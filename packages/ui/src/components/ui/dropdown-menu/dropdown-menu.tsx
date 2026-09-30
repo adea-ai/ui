@@ -25,13 +25,17 @@ import { cn } from '#lib/utils'
  * Kobalte supplies the full menu contract — arrow keys, typeahead, the roving
  * highlight, Escape to close and return focus — which is exactly what a
  * hand-rolled `div` with click handlers gets wrong.
+ * Menus are nonmodal by default so their generated focus guards do not become
+ * invalid direct children of the ARIA menu. Set `modal` explicitly when the
+ * surrounding interaction needs modal containment.
  *
  * The `destructive` variant marks the row with a status-coloured edge and
  * highlighted tint while keeping its label on the body foreground. Pairing it
  * with an AlertDialog is the caller's job.
  */
 export function DropdownMenu(props: ComponentProps<typeof KobalteDropdownMenu>) {
-  return <KobalteDropdownMenu {...props} />
+  const [local, rest] = splitProps(props, ['modal'])
+  return <KobalteDropdownMenu modal={local.modal ?? false} {...rest} />
 }
 
 export function DropdownMenuTrigger(props: ComponentProps<typeof KobalteDropdownMenu.Trigger>) {

@@ -59,6 +59,8 @@ export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' |
 export type StatusChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   tone?: StatusTone
   label: string
+  /** Visually hide the text while preserving it for assistive technology. */
+  compact?: boolean
   /** Why the status is what it is. Shown in a tooltip; omit for a self-evident label. */
   detail?: string
   /** A trailing slot: a timestamp, a retry affordance, a count. */
@@ -66,7 +68,14 @@ export type StatusChipProps = Omit<ComponentProps<'span'>, 'children'> & {
 }
 
 export function StatusChip(props: StatusChipProps) {
-  const [local, rest] = splitProps(props, ['tone', 'label', 'detail', 'trailing', 'class'])
+  const [local, rest] = splitProps(props, [
+    'tone',
+    'label',
+    'compact',
+    'detail',
+    'trailing',
+    'class',
+  ])
 
   const chip = (
     <span
@@ -78,7 +87,7 @@ export function StatusChip(props: StatusChipProps) {
       {...rest}
     >
       <span class={statusDotVariants({ tone: local.tone })} aria-hidden="true" />
-      {local.label}
+      <span class={cn(local.compact && 'sr-only')}>{local.label}</span>
       {local.trailing}
     </span>
   )

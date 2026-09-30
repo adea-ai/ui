@@ -1,10 +1,17 @@
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { ActionButton } from '../../src/components/composites/action-button/action-button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverTitle,
+} from '../../src/components/ui/popover/popover'
 import '../../src/styles/globals.css'
 
 function Fixture() {
   const [busy, setBusy] = createSignal(true)
+  const [statusOpen, setStatusOpen] = createSignal(false)
   const [activations, setActivations] = createSignal(0)
   const captureClickProps = {
     'oncapture:click': () => setActivations((count) => count + 1),
@@ -50,6 +57,21 @@ function Fixture() {
       >
         Archive
       </ActionButton>
+      <Popover open={statusOpen()} onOpenChange={setStatusOpen}>
+        <PopoverTrigger
+          as={ActionButton}
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Open system status"
+          tooltip="View the current system status"
+        >
+          System status
+        </PopoverTrigger>
+        <PopoverContent aria-label="System status">
+          <PopoverTitle>System status</PopoverTitle>
+          <p>All systems operational.</p>
+        </PopoverContent>
+      </Popover>
       <button type="button" onClick={() => setBusy(false)}>
         Finish save
       </button>

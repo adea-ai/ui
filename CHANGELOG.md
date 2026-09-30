@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.1](https://github.com/adea-ai/ui/compare/v0.82.0...v0.82.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **lint:** reject consumer JSX styles and classList ([#139](https://github.com/adea-ai/ui/issues/139)) ([77ce37d](https://github.com/adea-ai/ui/commit/77ce37da11d98bb1ce3001aeadfb46e759e5ffd4))
+
 ## [0.82.0](https://github.com/adea-ai/ui/compare/v0.81.1...v0.82.0) (2026-09-30)
 
 
