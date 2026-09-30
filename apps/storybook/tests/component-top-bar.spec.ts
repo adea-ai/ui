@@ -146,10 +146,40 @@ test('toolbar actions remain reachable without document overflow at narrow width
           visibility.visible,
           `${width}px at ${factor}x text: ${await button.getAttribute('aria-label')} should be within its scroll container (${JSON.stringify(visibility)})`
         ).toBe(true)
+        if (
+          width <= 390 &&
+          factor === 2 &&
+          (await button.getAttribute('aria-label')) === 'Agents'
+        ) {
+          const tooltip = page.getByRole('tooltip')
+          await page.mouse.move(0, 0)
+          await button.hover()
+          await expect(button).toBeFocused()
+          await expect(tooltip).toBeVisible()
+          const tooltipBounds = await tooltip.boundingBox()
+          expect(tooltipBounds, 'focused action tooltip should have visible bounds').not.toBeNull()
+          expect(tooltipBounds!.x).toBeGreaterThanOrEqual(0)
+          expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThanOrEqual(width)
+          const tooltipId = await tooltip.getAttribute('id')
+          expect(tooltipId).toBeTruthy()
+          expect((await button.getAttribute('aria-describedby'))?.split(/\s+/)).toContain(tooltipId)
+          expect(
+            (
+              await new AxeBuilder({ page })
+                .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+                .analyze()
+            ).violations
+          ).toEqual([])
+        }
         await page.keyboard.press('Enter')
         await expect(page.locator('output')).toHaveText((await button.getAttribute('aria-label'))!)
         if (index < (await buttons.count()) - 1) await page.keyboard.press(tabKey)
       }
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+      })
+      await page.mouse.move(0, 0)
+      await expect(page.getByRole('tooltip')).toBeHidden()
     }
   }
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
