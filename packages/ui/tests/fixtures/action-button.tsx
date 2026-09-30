@@ -6,6 +6,9 @@ import '../../src/styles/globals.css'
 function Fixture() {
   const [busy, setBusy] = createSignal(true)
   const [activations, setActivations] = createSignal(0)
+  const captureClickProps = {
+    'oncapture:click': () => setActivations((count) => count + 1),
+  }
 
   return (
     <main>
@@ -36,9 +39,16 @@ function Fixture() {
         disabled
         tooltip="Ask a workspace owner to restore access before deleting"
         on:click={() => setActivations((count) => count + 1)}
-        oncapture:click={() => setActivations((count) => count + 1)}
       >
         Delete
+      </ActionButton>
+      <ActionButton
+        aria-label="Archive workspace"
+        disabled
+        tooltip="Ask a workspace owner to restore access before archiving"
+        {...(captureClickProps as {})}
+      >
+        Archive
       </ActionButton>
       <button type="button" onClick={() => setBusy(false)}>
         Finish save

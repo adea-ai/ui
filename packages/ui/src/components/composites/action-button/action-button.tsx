@@ -73,6 +73,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
   const busy = () => local.busy ?? false
   const disabled = () => busy() || !!local.disabled
   const busyStatus = () => local.busyLabel ?? 'Working'
+  const onClickCapture = (rest as { onClickCapture?: unknown }).onClickCapture
   const PolymorphicButton = Button as (buttonProps: ButtonProps<T>) => JSX.Element
   const PolymorphicButtonTarget = ButtonTarget as (targetProps: ButtonTargetProps<T>) => JSX.Element
 
@@ -90,7 +91,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     href: local.as === 'a' && disabled() ? undefined : (rest as { href?: string }).href,
     'aria-busy': busy() || local['aria-busy'],
     onClick: guardedClick(rest.onClick, disabled),
-    onClickCapture: guardedClick((rest as { onClickCapture?: unknown }).onClickCapture, disabled),
+    onClickCapture: onClickCapture ? guardedClick(onClickCapture, disabled) : undefined,
     'on:click': guardedClick((rest as Record<string, unknown>)['on:click'], disabled),
     'oncapture:click': guardedClick((rest as Record<string, unknown>)['oncapture:click'], disabled),
   })

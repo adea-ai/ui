@@ -121,4 +121,9 @@ test('disabled actions expose tooltip explanations without becoming activatable'
   )
   await button.evaluate((element: HTMLButtonElement) => element.click())
   await expect(page.getByLabel('Activations')).toHaveText('0')
+
+  const captureButton = page.getByRole('button', { name: 'Archive workspace' })
+  await expect(captureButton).toHaveAttribute('aria-disabled', 'true')
+  await captureButton.evaluate((element: HTMLButtonElement) => element.click())
+  await expect(page.getByLabel('Activations')).toHaveText('0')
 })
