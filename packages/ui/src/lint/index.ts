@@ -50,6 +50,98 @@ interface LintContext {
   }) => void
 }
 
+/** Reads a static object-property key without evaluating a computed expression. */
+const staticPropertyKey = (node: any): string | null => {
+  if (node?.type === 'Identifier') return node.name
+  if (node?.type === 'Literal' && typeof node.value === 'string') return node.value
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
+    return node.quasis[0].value.cooked ?? node.quasis[0].value.raw
+  return null
+}
+
+/** Detects named props in a literal JSX spread, including nested literal spreads. */
+const objectHasStaticProperty = (node: any, name: string, seen = new Set<unknown>()): boolean => {
+  if (!node || seen.has(node)) return false
+  seen.add(node)
+  if (
+    node.type === 'TSAsExpression' ||
+    node.type === 'TSSatisfiesExpression' ||
+    node.type === 'TSNonNullExpression'
+  )
+    return objectHasStaticProperty(node.expression, name, seen)
+  if (node.type !== 'ObjectExpression') return false
+  return node.properties.some((property: any) => {
+    if (property.type === 'Property') return staticPropertyKey(property.key) === name
+    if (property.type === 'SpreadElement')
+      return objectHasStaticProperty(property.argument, name, seen)
+    return false
+  })
+}
+
+const noInlineStyles: RuleModule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Consumer components cannot set appearance or layout with JSX style props; use shared variants and token-backed classes.',
+    },
+    schema: [],
+    messages: {
+      inlineStyle:
+        'JSX style attributes are not permitted, including layout values and CSS custom properties. Use shared variants and token-backed classes.',
+      inlineStyleElement:
+        'A JSX style element bypasses the shared design system. Use shared variants and token-backed classes.',
+      inlineStyleSpread:
+        'A JSX spread contains a style prop. Pass named shared component props instead of hiding inline styles in a spread.',
+    },
+  },
+  create(context) {
+    return {
+      JSXAttribute(node: any) {
+        if (node.name?.type === 'JSXIdentifier' && node.name.name === 'style')
+          context.report({ node, messageId: 'inlineStyle' })
+      },
+      JSXOpeningElement(node: any) {
+        if (node.name?.type === 'JSXIdentifier' && node.name.name === 'style')
+          context.report({ node, messageId: 'inlineStyleElement' })
+      },
+      JSXSpreadAttribute(node: any) {
+        if (objectHasStaticProperty(node.argument, 'style'))
+          context.report({ node, messageId: 'inlineStyleSpread' })
+      },
+    }
+  },
+}
+
+const noClassList: RuleModule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Solid classList props hide conditional classes from static design-system lint; use cn() with its object-key form.',
+    },
+    schema: [],
+    messages: {
+      classList:
+        'classList hides classes from design-system lint. Use cn() with its object-key form and statically readable class names.',
+      classListSpread:
+        'A JSX spread contains classList. Use cn() with its object-key form instead of hiding classes in a spread.',
+    },
+  },
+  create(context) {
+    return {
+      JSXAttribute(node: any) {
+        if (node.name?.type === 'JSXIdentifier' && node.name.name === 'classList')
+          context.report({ node, messageId: 'classList' })
+      },
+      JSXSpreadAttribute(node: any) {
+        if (objectHasStaticProperty(node.argument, 'classList'))
+          context.report({ node, messageId: 'classListSpread' })
+      },
+    }
+  },
+}
+
 interface RawElementOptions {
   /** Element names this rule should not report (rare; prefer fixing the file). */
   allow?: string[]
@@ -386,6 +478,8 @@ const noPrimitiveLibraryImports: RuleModule = {
 const plugin = {
   meta: { name: 'adea' },
   rules: {
+    'no-inline-styles': noInlineStyles,
+    'no-class-list': noClassList,
     'no-raw-interactive-elements': noRawInteractiveElements,
     'no-primitive-library-imports': noPrimitiveLibraryImports,
     'no-interactive-wrappers': noInteractiveWrappers,

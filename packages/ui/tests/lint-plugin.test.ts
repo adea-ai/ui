@@ -54,6 +54,33 @@ function writeConfig(rules: Record<string, string>): string {
   return target
 }
 
+/** A consumer config with one path-scoped rule override. */
+function writeConfigWithOverride(
+  rules: Record<string, string>,
+  files: string[],
+  overrideRules: Record<string, string>
+): string {
+  const target = join(dir, `.oxlintrc-${Math.random().toString(36).slice(2)}.json`)
+  writeFileSync(
+    target,
+    JSON.stringify({
+      jsPlugins: [pluginPath],
+      rules: Object.fromEntries(
+        Object.entries(rules).map(([rule, level]) => [`adea/${rule}`, level])
+      ),
+      overrides: [
+        {
+          files,
+          rules: Object.fromEntries(
+            Object.entries(overrideRules).map(([rule, level]) => [`adea/${rule}`, level])
+          ),
+        },
+      ],
+    })
+  )
+  return target
+}
+
 function lint(config: string, name: string, body: string): string {
   writeFileSync(join(dir, name), body)
   const run = spawnSync(OXLINT, ['-c', config, name], { cwd: dir, encoding: 'utf8' })
@@ -89,6 +116,95 @@ describe('the design system lint plugin', () => {
       `export function Fine() {\n\treturn <div class="ok">text and <span>markup</span></div>\n}\n`
     )
     expect(output).not.toContain('no-raw-interactive-elements')
+  })
+
+  test('every JSX style attribute is rejected, including geometry and theme variables', () => {
+    const config = writeConfig({ 'no-inline-styles': 'error' })
+    const output = lint(
+      config,
+      'inline-style.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+export function Examples({ x, style }: { x: number; style: object }) {
+  return <><section style={{ position: 'absolute', left: x }} /><Button style={{ '--button-background': 'var(--color-danger)' }} /><div style={style} /></>
+}
+`
+    )
+    expect(output).toContain('no-inline-styles')
+    expect(output).toContain('style attributes are not permitted')
+    expect(output.match(/no-inline-styles/g)).toHaveLength(3)
+  })
+
+  test('static object spreads carrying style or classList are rejected', () => {
+    const config = writeConfig({ 'no-inline-styles': 'error', 'no-class-list': 'error' })
+    const output = lint(
+      config,
+      'spread-props.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+export function Examples() {
+  return <><section {...{ style: { left: 1 } }} /><Button {...{ style: { '--button-background': 'var(--color-danger)' } }} /><div {...{ classList: { active: true } }} /></>
+}
+`
+    )
+    expect(output).toContain('no-inline-styles')
+    expect(output).toContain('no-class-list')
+    expect(output.match(/no-inline-styles/g)).toHaveLength(2)
+    expect(output.match(/no-class-list/g)).toHaveLength(1)
+  })
+
+  test('style elements are rejected at their opening element', () => {
+    const config = writeConfig({ 'no-inline-styles': 'error' })
+    const output = lint(
+      config,
+      'style-element.tsx',
+      `export function Example() { return <style>{'.preview { left: 2px; }'}</style> }\n`
+    )
+    expect(output).toContain('no-inline-styles')
+    expect(output).toContain('A JSX style element bypasses the shared design system')
+  })
+
+  test('classList is rejected on intrinsic and shared JSX components', () => {
+    const config = writeConfig({ 'no-class-list': 'error' })
+    const output = lint(
+      config,
+      'class-list.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+export function Examples({ active }: { active: boolean }) {
+  return <><div classList={{ active }} /><Button classList={{ 'bg-destructive': active }} /></>
+}
+`
+    )
+    expect(output).toContain('no-class-list')
+    expect(output).toContain('Use cn() with its object-key form')
+    expect(output.match(/no-class-list/g)).toHaveLength(2)
+  })
+
+  test('static classes, cn object-key conditions, and non-style props remain valid', () => {
+    const config = writeConfig({ 'no-inline-styles': 'error', 'no-class-list': 'error' })
+    const output = lint(
+      config,
+      'static-classes.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+import { cn } from '@adea-ai/ui/lib/utils'
+export function Examples({ active, state }: { active: boolean; state: string }) {
+  return <><Button class={cn('w-full', { 'md:ml-2': active })} data-state={state} data-style="compact">Save</Button><div class="domain-layout">Content</div></>
+}
+`
+    )
+    expect(output).not.toContain('no-inline-styles')
+    expect(output).not.toContain('no-class-list')
+  })
+
+  test('a path-scoped implementation exemption does not exempt sibling consumers', () => {
+    const config = writeConfigWithOverride(
+      { 'no-inline-styles': 'error' },
+      ['library-component.tsx'],
+      { 'no-inline-styles': 'off' }
+    )
+    const source = `export function Example() { return <div style={{ color: 'red' }} /> }\n`
+    const libraryOutput = lint(config, 'library-component.tsx', source)
+    const consumerOutput = lint(config, 'consumer-component.tsx', source)
+    expect(libraryOutput).not.toContain('no-inline-styles')
+    expect(consumerOutput).toContain('no-inline-styles')
   })
 
   test('an allowed element is exempt through the rule option', () => {

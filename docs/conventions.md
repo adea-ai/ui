@@ -40,13 +40,15 @@ inline.
 
 No literal value appears in a component. The rule set:
 
-| Rule                     | Catches                                                        |
-| ------------------------ | -------------------------------------------------------------- |
-| `no-raw-colors`          | `bg-red-500`, `text-emerald-700`, and undeclared tokens        |
-| `no-arbitrary-values`    | `p-[13px]`, `w-[37%]`                                          |
-| `no-inline-styles`       | `style={{}}` and `<style>` elements                            |
-| `no-unknown-classes`     | `rounded-huge`, `hovr:flex` — a class Tailwind cannot generate |
-| `require-static-classes` | `` `bg-${color}` `` — a class the linter cannot read           |
+| Rule                      | Catches                                                          |
+| ------------------------- | ---------------------------------------------------------------- |
+| `no-raw-colors`           | `bg-red-500`, `text-emerald-700`, and undeclared tokens          |
+| `no-arbitrary-values`     | `p-[13px]`, `w-[37%]`                                            |
+| `shadcn/no-inline-styles` | Inline styles and `<style>` elements in shared implementation    |
+| `adea/no-inline-styles`   | Every consumer JSX `style` prop, including CSS custom properties |
+| `adea/no-class-list`      | Solid `classList` props that hide classes from static checks     |
+| `no-unknown-classes`      | `rounded-huge`, `hovr:flex` — a class Tailwind cannot generate   |
+| `require-static-classes`  | `` `bg-${color}` `` — a class the linter cannot read             |
 
 `require-static-classes` is the one that surprises people. The linter has to be able
 to read a class to check it against the theme, so a template literal is not a style
@@ -65,6 +67,16 @@ before use. Even `white` and `black` go through the scrim tokens
 (`bg-scrim/*`, `text-scrim-foreground`, `border-scrim-edge`), which are
 theme-invariant on purpose rather than free-form.
 
+Consumer JSX has two additional hard boundaries: `adea/no-inline-styles` rejects
+every `style` prop, including geometry values and CSS custom properties, and
+`adea/no-class-list` rejects Solid's `classList` prop. Use shared component
+variants for appearance, layout utilities for placement, and `cn()`'s object-key
+form for conditional classes. Literal object props in JSX spreads are checked for
+`style` and `classList`; identifier or function spreads cannot be resolved by the
+rule and remain a review boundary. The shared component implementation directory
+may disable these consumer rules only through its exact path-scoped configuration
+override; consumer files must not use inline suppressions or broad path patterns.
+
 ---
 
 ## 3. Behaviour comes from a primitive
@@ -78,11 +90,12 @@ Where a primitive lacks coverage, the component implements it, and its doc comme
 says so and explains what was done instead. That is the only case where a
 hand-rolled control is correct, and the comment is what makes it reviewable.
 
-Consumers enable all three `@adea-ai/ui/lint` rules as errors. Raw controls,
-interactive layout elements, and direct primitive access belong in shared UI.
-The primitive boundary covers imports, re-exports, dynamic imports, and literal
-`require` calls, including Kobalte, corvu, and cmdk-solid. Forwarding a primitive
-through an application barrel does not make it a shared component.
+Consumers enable all five `@adea-ai/ui/lint` rules as errors. Raw controls,
+interactive layout elements, direct primitive access, inline styles and dynamic
+class maps belong in shared UI. The primitive boundary covers imports,
+re-exports, dynamic imports, and literal `require` calls, including Kobalte,
+corvu, and cmdk-solid. Forwarding a primitive through an application barrel does
+not make it a shared component.
 
 The wrapper rule recognizes expression roles and Solid's `on:click` listeners
 as well as click, mouse, and pointer activation. A negative tabindex alone is
