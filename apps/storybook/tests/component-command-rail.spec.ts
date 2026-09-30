@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
 import { build } from 'vite'
@@ -43,6 +44,51 @@ test.beforeEach(async ({ page }) => {
   await page.setContent('<!doctype html><html lang="en"><body></body></html>')
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
+})
+
+test('CommandDialog forwards custom close autofocus after Escape', async ({ page }) => {
+  const opener = page.getByRole('button', { name: 'Open command dialog with custom focus' })
+  await opener.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Custom command dialog focus test' })
+  await expect(dialog).toBeVisible()
+  await dialog.locator('input').focus()
+  await page.keyboard.press('Escape')
+
+  await expect(dialog).not.toBeVisible()
+  await expect(opener).toBeFocused()
+})
+
+test('CommandDialog restores a keyboard-focused opener after Escape', async ({ page }) => {
+  const opener = page.getByRole('button', { name: 'Open command dialog with default focus' })
+  await opener.focus()
+  await opener.press('Enter')
+
+  const dialog = page.getByRole('dialog', { name: 'Default command dialog focus test' })
+  await expect(dialog).toBeVisible()
+  await dialog.locator('input').focus()
+  await page.keyboard.press('Escape')
+
+  await expect(dialog).not.toBeVisible()
+  await expect(opener).toBeFocused()
+})
+
+test('DropdownMenu stays nonmodal and keyboard navigation remains usable', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open accessible menu' })
+  await trigger.focus()
+  await trigger.press('ArrowDown')
+
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'First action' })).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(menu.getByRole('menuitem', { name: 'Second action' })).toBeFocused()
+  const audit = await new AxeBuilder({ page }).withRules(['aria-required-children']).analyze()
+  expect(audit.violations).toEqual([])
+
+  await page.keyboard.press('Enter')
+  await expect(menu).not.toBeVisible()
+  await expect(page.getByLabel('Menu selection')).toHaveText('Second action')
 })
 
 test('disabled menu text stays legible and selected shortcuts follow their row in Nord', async ({

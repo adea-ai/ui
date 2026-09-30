@@ -10,9 +10,11 @@ import {
   CommandSeparator as CmdkSeparator,
   useCommandState,
 } from 'cmdk-solid'
+import { Dialog as KobalteDialog } from '@kobalte/core/dialog'
 import { Search } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { createEffect, createSignal, splitProps } from 'solid-js'
+import { createDialogFocusRestoration } from '../dialog/dialog'
 import { menuItem } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 
@@ -53,26 +55,76 @@ export function Command(props: ComponentProps<typeof CmdkRoot>) {
   )
 }
 
-export function CommandDialog(props: ComponentProps<typeof CmdkDialog>) {
-  // cmdk's Dialog splits `contentClassName` onto the role="dialog" content
-  // element and routes every other prop (including `class`) to the inner
-  // Command. The surface must live on the content: a `class` here styles the
-  // Command (fixed, so visible) while the dialog element itself renders as an
-  // unstyled zero-height wrapper at the end of body — invisible to role
-  // queries and axe.
-  const [local, rest] = splitProps(props, ['class'])
+type CommandDialogProps = ComponentProps<typeof CmdkDialog> &
+  Pick<ComponentProps<typeof KobalteDialog.Content>, 'onCloseAutoFocus' | 'onOpenAutoFocus'>
+
+export function CommandDialog(props: CommandDialogProps) {
+  // cmdk-solid's Dialog does not forward Content autofocus props: unknown
+  // props fall through to its Command root. Compose Kobalte's dialog surface
+  // here so Escape and other close paths can restore focus to the real opener.
+  // Preserve the shared wrapper's `class` contract on the dialog surface;
+  // `contentClassName` adds to it, while the nested Command keeps its own API.
+  const [local, dialogProps, commandProps] = splitProps(
+    props,
+    [
+      'class',
+      'contentClassName',
+      'overlayClassName',
+      'container',
+      'onCloseAutoFocus',
+      'onOpenAutoFocus',
+    ],
+    [
+      'open',
+      'defaultOpen',
+      'onOpenChange',
+      'id',
+      'modal',
+      'preventScroll',
+      'forceMount',
+      'translations',
+    ]
+  )
+  const [isOpen, setIsOpen] = createSignal(dialogProps.open ?? dialogProps.defaultOpen ?? false)
+
+  createEffect(() => {
+    if (dialogProps.open !== undefined) setIsOpen(dialogProps.open)
+  })
+
+  const focus = createDialogFocusRestoration({
+    open: isOpen,
+    onCloseAutoFocus: local.onCloseAutoFocus,
+    onOpenAutoFocus: local.onOpenAutoFocus,
+  })
 
   return (
-    <CmdkDialog
-      contentClassName={cn(
-        'bg-popover text-popover-foreground fixed top-1/3 left-1/2 z-(--z-dialog) w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-        'overflow-hidden rounded-xl border border-border shadow-xl',
-        'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
-        'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-        local.class
-      )}
-      {...rest}
-    />
+    <KobalteDialog
+      {...dialogProps}
+      onOpenChange={(open) => {
+        setIsOpen(open)
+        dialogProps.onOpenChange?.(open)
+      }}
+    >
+      <KobalteDialog.Portal mount={local.container}>
+        <KobalteDialog.Overlay cmdk-overlay="" class={local.overlayClassName} />
+        <KobalteDialog.Content
+          aria-label={commandProps.label}
+          cmdk-dialog=""
+          class={cn(
+            'bg-popover text-popover-foreground fixed top-1/3 left-1/2 z-(--z-dialog) w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
+            'overflow-hidden rounded-xl border border-border shadow-xl',
+            'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
+            'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+            local.class,
+            local.contentClassName
+          )}
+          onOpenAutoFocus={focus.onOpenAutoFocus}
+          onCloseAutoFocus={focus.onCloseAutoFocus}
+        >
+          <Command {...commandProps} />
+        </KobalteDialog.Content>
+      </KobalteDialog.Portal>
+    </KobalteDialog>
   )
 }
 
