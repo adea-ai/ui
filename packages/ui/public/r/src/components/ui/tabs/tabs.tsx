@@ -2,7 +2,7 @@ import { Tabs as KobalteTabs } from '@kobalte/core/tabs'
 import type { Accessor, ComponentProps } from 'solid-js'
 import {
   createContext,
-  createEffect,
+  createRenderEffect,
   createSignal,
   createUniqueId,
   onCleanup,
@@ -102,7 +102,8 @@ export function TabsTrigger(props: TabsTriggerProps) {
   const tabs = useTabsId()
   const triggerId = () => local.id ?? `${tabs.id()}-trigger-${rest.value}`
 
-  createEffect(() => {
+  // Register before panels render, including SSR where createEffect is skipped.
+  createRenderEffect(() => {
     const value = rest.value
     const id = triggerId()
     tabs.registerTriggerId(value, id)

@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { checkTabsSsr } from './check-tabs-ssr'
 
 const root = resolve(import.meta.dir, '../../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-settings-navigation-'))
@@ -43,6 +44,8 @@ try {
     stdio: 'inherit',
     timeout: 120_000,
   })
+
+  await checkTabsSsr(consumer, '@adea-ai/ui/components/ui/tabs')
 
   const fixture = readFileSync(
     join(root, 'packages/ui/tests/fixtures/settings-navigation.tsx'),

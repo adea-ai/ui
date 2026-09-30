@@ -247,6 +247,9 @@ groups, and matching `TabsContent` panels. The host owns URL or preference updat
 and panel content; the layout contracts its rail at narrow widths, reports repeated
 activation through `onReselect`, and reveals the selected row by default. Use
 `SettingsNavigation` directly when you already own the surrounding tabs composition.
+Shared tabs associate panels with custom trigger IDs in browser and server renders;
+an explicit panel `aria-labelledby` takes precedence. Independent tab roots keep
+their associations separate.
 
 ### Avoiding the flash
 
