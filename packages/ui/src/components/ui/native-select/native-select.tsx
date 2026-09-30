@@ -1,9 +1,11 @@
 import { ChevronDownIcon } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
-import { createEffect, onMount, splitProps } from 'solid-js'
+import { createEffect, For, onMount, Show, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 
 export type NativeSelectProps = ComponentProps<'select'> & {
+  /** Render the choices from data instead of raw option children. */
+  options?: readonly NativeSelectOption[]
   /** Initialize an uncontrolled selection after its native options mount. */
   defaultValue?: ComponentProps<'select'>['value']
 }
@@ -50,8 +52,14 @@ function initializeDefaultSelection(
  * Translated from shadcn/ui's MIT-licensed NativeSelect wrapper to SolidJS and
  * the Adea token system; see the root NOTICE for source and attribution.
  */
+export type NativeSelectOption = Readonly<{
+  value: string
+  label: string
+  disabled?: boolean
+}>
+
 export function NativeSelect(props: NativeSelectProps) {
-  const [local, rest] = splitProps(props, ['class', 'children', 'defaultValue'])
+  const [local, rest] = splitProps(props, ['class', 'children', 'defaultValue', 'options'])
   let select: HTMLSelectElement | undefined
 
   // Set selection after native options exist; setting select.value before its
@@ -83,7 +91,17 @@ export function NativeSelect(props: NativeSelectProps) {
         )}
         {...rest}
       >
-        {local.children}
+        <Show when={local.options} fallback={local.children}>
+          {(options) => (
+            <For each={options()}>
+              {(option) => (
+                <option value={option.value} disabled={option.disabled}>
+                  {option.label}
+                </option>
+              )}
+            </For>
+          )}
+        </Show>
       </select>
       <ChevronDownIcon
         data-slot="native-select-icon"
