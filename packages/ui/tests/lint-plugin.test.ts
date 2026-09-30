@@ -133,4 +133,92 @@ describe('the design system lint plugin', () => {
     )
     expect(output).not.toContain('no-primitive-library-imports')
   })
+
+  test('a div wearing role="button" is reported as a Button re-implementation', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'role-wrapper.tsx',
+      `export function Wrapper() {\n\treturn <div role="button" tabIndex={0} class="px-3 py-2">Save</div>\n}\n`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output).toContain('use Button from @adea-ai/ui/components/ui/button')
+  })
+
+  test('a click handler on a generic element is reported', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'click-wrapper.tsx',
+      `export function Row() {\n\treturn <span class="cursor-pointer" onClick={() => {}}>pick me</span>\n}\n`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output).toContain('composes Button by hand')
+  })
+
+  test('a tabindex alone makes a generic element a finding', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'tabindex-wrapper.tsx',
+      `export function Cell() {\n\treturn <td tabIndex={0}>cell</td>\n}\n`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output).toContain('tabindex on td')
+  })
+
+  test('non-generic elements without roles pass, and anchors stay native', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'legit.tsx',
+      `export function Legit() {\n\treturn <a href="/docs">Docs</a>\n}\n`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+  })
+
+  test('native interactive elements belong to the sibling rule, not this one', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'native.tsx',
+      `export function Native() {\n\treturn <button type="button">Save</button>\n}\n`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+  })
+
+  test('the allow option exempts a wrapper element', () => {
+    const config = join(dir, `wrap-allow-${Math.random().toString(36).slice(2)}.json`)
+    writeFileSync(
+      config,
+      JSON.stringify({
+        jsPlugins: [pluginPath],
+        overrides: [
+          {
+            files: ['wrap-allow.tsx'],
+            rules: [['adea/no-interactive-wrappers', 'error', { allow: ['div'] }]],
+          },
+        ],
+      })
+    )
+    const output = lint(
+      config,
+      'wrap-allow.tsx',
+      `export function Exempt() {\n\treturn <div onClick={() => {}}>exempt</div>\n}\n`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+  })
+
+  test('a design-system component composing a role is not reported', () => {
+    // A Button carrying role="option" inside a custom listbox is composition —
+    // the element is already the design system's own primitive with its
+    // keyboard story intact. The rule polices raw markup, not the library.
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'composed.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'\nexport function Option({ label }: { label: string }) {\n\treturn <Button role="option">{label}</Button>\n}\n`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+  })
 })
