@@ -83,6 +83,11 @@ finished closing. The latter receives the connected trigger button for dialog
 focus restoration and is cancelled if the menu unmounts. Authentication,
 updates, navigation, and other effects remain host callbacks.
 
+`Board` checks the caller's legal-move predicate before settling a pointer drop.
+Ctrl/Cmd + arrow moves skip disabled columns without wrapping at the edges.
+After a controlled move settles, focus follows the moved card only when the
+source card owned focus; another focus or pointer action cancels restoration.
+
 Tailwind ignores dependency directories by default. Register the component
 directories your application uses in its stylesheet, relative to that stylesheet:
 
