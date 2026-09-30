@@ -33,6 +33,10 @@ function Fixture() {
         <ListRow tooltip="Run this action" onClick={() => setActivations((count) => count + 1)}>
           Run action
         </ListRow>
+        <ListRow as="button" tabIndex={-1} aria-label="Skip tab order">
+          Skip tab order
+        </ListRow>
+        <ListRow aria-label="Static row">Static row</ListRow>
       </form>
       <output aria-label="Activations">{activations()}</output>
       <output aria-label="Submissions">{submissions()}</output>

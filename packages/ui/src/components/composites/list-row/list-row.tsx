@@ -59,6 +59,7 @@ function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T
     'description',
     'tooltip',
     'type',
+    'tabIndex',
     'children',
   ])
 
@@ -66,6 +67,7 @@ function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T
     <Polymorphic
       as={(local.as ?? 'div') as T}
       type={local.as === 'button' ? (local.type ?? 'button') : local.type}
+      tabIndex={local.tabIndex ?? (local.as === 'button' || local.as === 'a' ? 0 : undefined)}
       aria-current={local.selected ? 'true' : undefined}
       data-selected={local.selected ? '' : undefined}
       class={cn(

@@ -51,6 +51,14 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   const button = page.getByRole('button', { name: 'Open report' })
   const link = page.getByRole('link', { name: 'Details' })
   const defaultAction = page.getByRole('button', { name: 'Run action' })
+  const explicitNegative = page.getByRole('button', { name: 'Skip tab order' })
+  const staticRow = page.getByText('Static row')
+
+  await expect(button).toHaveAttribute('tabindex', '0')
+  await expect(link).toHaveAttribute('tabindex', '0')
+  await expect(defaultAction).toHaveAttribute('tabindex', '0')
+  await expect(explicitNegative).toHaveAttribute('tabindex', '-1')
+  await expect(staticRow).not.toHaveAttribute('tabindex')
 
   await expect(button).toHaveAttribute('type', 'button')
   await expect(link).toHaveAttribute('href', '#details')
@@ -75,6 +83,19 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   await defaultAction.click()
   await expect(page.getByLabel('Activations')).toHaveText('3')
   await expect(page.getByLabel('Submissions')).toHaveText('0')
+})
+
+test('interactive native rows participate in sequential Tab navigation', async ({ page }) => {
+  const button = page.getByRole('button', { name: 'Open report' })
+  const link = page.getByRole('link', { name: 'Details' })
+  const defaultAction = page.getByRole('button', { name: 'Run action' })
+
+  await page.keyboard.press('Tab')
+  await expect(button).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(link).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(defaultAction).toBeFocused()
 })
 
 test('interactive row composition has no serious or critical accessibility violations', async ({
