@@ -35,7 +35,7 @@ function Fixture() {
         aria-label="Delete workspace"
         disabled
         tooltip="Ask a workspace owner to restore access before deleting"
-        onClick={() => setActivations((count) => count + 1)}
+        on:click={() => setActivations((count) => count + 1)}
       >
         Delete
       </ActionButton>

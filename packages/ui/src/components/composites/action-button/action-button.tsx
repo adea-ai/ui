@@ -91,6 +91,8 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     'aria-busy': busy() || local['aria-busy'],
     onClick: guardedClick(rest.onClick, disabled),
     onClickCapture: guardedClick((rest as { onClickCapture?: unknown }).onClickCapture, disabled),
+    'on:click': guardedClick((rest as Record<string, unknown>)['on:click'], disabled),
+    'oncapture:click': guardedClick((rest as Record<string, unknown>)['oncapture:click'], disabled),
   })
 
   const contents = () => (
