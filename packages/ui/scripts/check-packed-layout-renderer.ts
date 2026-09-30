@@ -65,6 +65,11 @@ const replaceImports = (source: string) =>
       '@adea-ai/ui/components/layout/sidebar-nav'
     )
     .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/layout/top-bar', '@adea-ai/ui/components/layout/top-bar')
+    .replaceAll(
+      '../../src/components/composites/action-button',
+      '@adea-ai/ui/components/composites/action-button'
+    )
     .replaceAll('../../src/styles/globals.css', './style.css')
 try {
   const sharedArchive = sharedPackedUiArchive()
@@ -85,12 +90,14 @@ try {
   writeFileSync(
     join(consumer, 'package.json'),
     JSON.stringify({
+      name: 'adea-packed-layout-consumer',
       private: true,
       type: 'module',
       dependencies: {
         '@adea-ai/ui': `file:${archivePath}`,
         'solid-js': solidVersion,
         tailwindcss: tailwindVersion,
+        'lucide-solid': manifest.dependencies['lucide-solid'],
       },
     })
   )
@@ -122,12 +129,17 @@ try {
     ['main.tsx', 'split-layout.tsx'],
     ['server.tsx', 'split-layout-ssr.tsx'],
     ['sidebar.tsx', 'sidebar-nav.tsx'],
+    ['topbar.tsx', 'top-bar.tsx'],
   ] as const)
     writeFileSync(
       join(consumer, name),
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8')).replaceAll(
         './style.css',
-        name === 'sidebar.tsx' ? './sidebar-style.css' : './style.css'
+        name === 'sidebar.tsx'
+          ? './sidebar-style.css'
+          : name === 'topbar.tsx'
+            ? './topbar-style.css'
+            : './style.css'
       )
     )
   // The renderer's only shared Button is ghost/icon-xs. Discover its complete
@@ -147,6 +159,11 @@ try {
       true
     )
   ) as string
+  writeFileSync(
+    join(consumer, 'topbar-style.css'),
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
+      "@source './topbar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/top-bar';\n@source './node_modules/@adea-ai/ui/src/components/composites/action-button';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n"
+  )
   writeFileSync(
     join(consumer, 'style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
@@ -182,6 +199,18 @@ try {
       join(root, 'apps/storybook'),
       { ADEA_SIDEBAR_PACKED_ROOT: consumer, ADEA_SIDEBAR_PACKED_CONDITION: condition }
     )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-top-bar.spec.ts',
+        '--output',
+        `test-results/packed-topbar-${condition}`,
+      ],
+      join(root, 'apps/storybook'),
+      { ADEA_TOPBAR_PACKED_ROOT: consumer, ADEA_TOPBAR_PACKED_CONDITION: condition }
+    )
   }
   console.log(
     JSON.stringify({
@@ -191,6 +220,7 @@ try {
       browserEngines: ['chromium', 'webkit'],
       checks: 76,
       sidebarBrowserCases: 16,
+      topbarBrowserCases: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',
