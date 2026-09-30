@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.83.1](https://github.com/adea-ai/ui/compare/v0.83.0...v0.83.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* dismiss ActionButton tooltip after activation ([#145](https://github.com/adea-ai/ui/issues/145)) ([d62d378](https://github.com/adea-ai/ui/commit/d62d378ff6b90b84cec9b1f98304d5922692d542))
+
+## [0.83.0](https://github.com/adea-ai/ui/compare/v0.82.2...v0.83.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add shared geometry layout primitives ([#144](https://github.com/adea-ai/ui/issues/144)) ([7943e46](https://github.com/adea-ai/ui/commit/7943e460dba13deb29dc37deaca68000050a445a))
+
 ## [0.82.2](https://github.com/adea-ai/ui/compare/v0.82.1...v0.82.2) (2026-09-30)
 
 
