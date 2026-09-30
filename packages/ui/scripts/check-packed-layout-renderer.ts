@@ -125,7 +125,10 @@ try {
   ] as const)
     writeFileSync(
       join(consumer, name),
-      replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
+      replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8')).replaceAll(
+        './style.css',
+        name === 'sidebar.tsx' ? './sidebar-style.css' : './style.css'
+      )
     )
   // The renderer's only shared Button is ghost/icon-xs. Discover its complete
   // class contract from the actual installed public helper, including base and
@@ -147,8 +150,12 @@ try {
   writeFileSync(
     join(consumer, 'style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
-      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n" +
       `@source inline(${JSON.stringify(closeButtonClasses)});\n`
+  )
+  writeFileSync(
+    join(consumer, 'sidebar-style.css'),
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
+      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n"
   )
   for (const condition of ['compiled', 'solid']) {
     await run(

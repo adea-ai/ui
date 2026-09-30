@@ -49,6 +49,7 @@ test.beforeAll(async () => {
           : resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/sidebar-nav.tsx'),
         formats: ['iife'],
         name: 'SidebarFixture',
+        cssFileName: 'sidebar-fixture',
       },
     },
   })
