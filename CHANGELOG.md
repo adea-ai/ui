@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.1](https://github.com/adea-ai/ui/compare/v0.81.0...v0.81.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **lint:** close primitive and interaction enforcement gaps ([#133](https://github.com/adea-ai/ui/issues/133)) ([d2f9826](https://github.com/adea-ai/ui/commit/d2f9826790af513a00f80c0d2ab73a0a983abd50))
+
 ## [0.81.0](https://github.com/adea-ai/ui/compare/v0.80.0...v0.81.0) (2026-09-30)
 
 
