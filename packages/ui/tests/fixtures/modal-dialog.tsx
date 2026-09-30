@@ -13,6 +13,7 @@ declare global {
 function Fixture() {
   const [open, setOpen] = createSignal(false)
   const [showDialogOwner, setShowDialogOwner] = createSignal(false)
+  const [settingsSize, setSettingsSize] = createSignal(false)
   const [modal, setModal] = createSignal(true)
   const [customLabel, setCustomLabel] = createSignal(false)
   const [externalLabel, setExternalLabel] = createSignal(false)
@@ -74,6 +75,16 @@ function Fixture() {
         >
           Open workspace details
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSettingsSize(true)
+            setShowDialogOwner(true)
+            setOpen(true)
+          }}
+        >
+          Open workspace settings
+        </button>
         <button id="custom-close-focus-target" type="button">
           Follow-up action
         </button>
@@ -85,7 +96,8 @@ function Fixture() {
           open={open()}
           onClose={() => setClosing(true)}
           modal={modal()}
-          title="Workspace details"
+          title={settingsSize() ? 'Workspace settings' : 'Workspace details'}
+          size={settingsSize() ? 'settings' : 'default'}
           aria-label={
             externalLabel()
               ? 'Fallback custom workspace label'
@@ -101,7 +113,20 @@ function Fixture() {
             document.getElementById('custom-close-focus-target')?.focus()
           }}
         >
-          <button type="button">Dialog action</button>
+          {settingsSize() ? (
+            <div data-testid="settings-scroll-region" class="min-h-0 flex-1 overflow-y-auto">
+              <div class="flex flex-col gap-2 p-4">
+                <button type="button">First settings action</button>
+                {Array.from({ length: 40 }, (_, index) => (
+                  <p>
+                    Preference section {index + 1}: keep this workspace available to its members.
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <button type="button">Dialog action</button>
+          )}
         </ModalDialog>
       </Show>
     </>

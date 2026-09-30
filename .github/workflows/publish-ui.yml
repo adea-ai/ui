@@ -252,7 +252,7 @@ jobs:
 
       - name: Verify packed pane model and renderer
         working-directory: packages/ui
-        run: bun run check:packed-layout && bun run check:packed-layout-renderer
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation
 
   packed-appearance:
     name: Packed appearance
@@ -297,7 +297,7 @@ jobs:
 
       - name: Verify packed appearance interactions and SSR
         working-directory: packages/ui
-        run: bun run check:packed-appearance
+        run: bun run check:packed-appearance && bun run check:packed-modal-dialog
 
   packed-native-select:
     name: Packed native select

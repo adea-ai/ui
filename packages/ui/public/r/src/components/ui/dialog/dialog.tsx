@@ -257,15 +257,17 @@ export type DialogContentProps = ComponentProps<typeof KobalteDialogContent> & {
    * user can escape from needs the button.
    */
   closeButton?: JSX.Element | false
+  /** Use a 1rem inset as the positioner bounds for tall, viewport-filling surfaces. */
+  positioner?: 'default' | 'inset'
 }
 
 export function DialogContent(props: DialogContentProps) {
-  const [local, rest] = splitProps(props, ['class', 'children', 'closeButton'])
+  const [local, rest] = splitProps(props, ['class', 'children', 'closeButton', 'positioner'])
 
   return (
     <KobalteDialog.Portal>
       <DialogOverlay />
-      <div class={overlayPositioner}>
+      <div class={cn(overlayPositioner, local.positioner === 'inset' && 'inset-4 grid-rows-1 p-0')}>
         <KobalteDialogContent
           class={cn(
             overlaySurface,
