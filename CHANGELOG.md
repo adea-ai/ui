@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.80.0](https://github.com/adea-ai/ui/compare/v0.79.0...v0.80.0) (2026-09-30)
+
+
+### Features
+
+* **native-select:** render choices from data via an options prop ([#129](https://github.com/adea-ai/ui/issues/129)) ([bbe4510](https://github.com/adea-ai/ui/commit/bbe4510494069b1e01d25ea8c7a9b1ceff70777a))
+
+## [0.79.0](https://github.com/adea-ai/ui/compare/v0.78.2...v0.79.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** no-interactive-wrappers — the rule keyed on the wrapper pattern ([#127](https://github.com/adea-ai/ui/issues/127)) ([00cd6e1](https://github.com/adea-ai/ui/commit/00cd6e15889711c8748cbef97cda6d165582abd7))
+
+## [0.78.2](https://github.com/adea-ai/ui/compare/v0.78.1...v0.78.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* **status-chip:** declare the tooltip content slot so host styles apply ([#124](https://github.com/adea-ai/ui/issues/124)) ([aa44b8e](https://github.com/adea-ai/ui/commit/aa44b8ec0aec211881bc0436d453f508256a7df6))
+
 ## [0.78.1](https://github.com/adea-ai/ui/compare/v0.78.0...v0.78.1) (2026-09-29)
 
 
