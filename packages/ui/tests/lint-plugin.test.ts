@@ -134,6 +134,59 @@ describe('the design system lint plugin', () => {
     expect(output).not.toContain('no-primitive-library-imports')
   })
 
+  test('primitive re-exports and dynamic imports cannot bypass the shared boundary', () => {
+    const config = writeConfig({ 'no-primitive-library-imports': 'error' })
+    for (const [name, source] of Object.entries({
+      named: "export { TextField } from '@kobalte/core/text-field'",
+      star: "export * from '@corvu/drawer'",
+      dynamic: "export const load = () => import('cmdk-solid')",
+      require: "export const primitive = require('@base-ui/react/dialog')",
+    })) {
+      expect(lint(config, `${name}.ts`, source)).toContain('no-primitive-library-imports')
+    }
+    expect(
+      lint(config, 'shared-export.ts', "export * from '@adea-ai/ui/components/ui/dialog'")
+    ).not.toContain('no-primitive-library-imports')
+  })
+
+  test('expression roles and Solid native click listeners are controls too', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    for (const [name, attributes] of Object.entries({
+      expression: 'role={"button"}',
+      conditional: 'role={true ? "switch" : "checkbox"}',
+      native: 'on:click={() => {}}',
+      bound: 'onClick={[() => {}, "data"]}',
+      pointer: 'onPointerUp={() => {}}',
+    })) {
+      expect(
+        lint(config, `${name}.tsx`, `export const Control = () => <div ${attributes}>Go</div>`)
+      ).toContain('no-interactive-wrappers')
+    }
+  })
+
+  test('negative tabindex permits programmatic focus without adding a tab stop', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    for (const [name, attribute] of Object.entries({
+      expression: 'tabIndex={-1}',
+      literal: 'tabindex="-1"',
+    })) {
+      expect(
+        lint(
+          config,
+          `focus-${name}.tsx`,
+          `export const Main = () => <main ${attribute}>Page</main>`
+        )
+      ).not.toContain('no-interactive-wrappers')
+    }
+    expect(
+      lint(
+        config,
+        'focus-control.tsx',
+        'export const Bad = () => <div tabIndex={-1} role="button">Go</div>'
+      )
+    ).toContain('no-interactive-wrappers')
+  })
+
   test('a div wearing role="button" is reported as a Button re-implementation', () => {
     const config = writeConfig({ 'no-interactive-wrappers': 'error' })
     const output = lint(
