@@ -709,3 +709,11 @@ keyboard disclosure, visible actions and automated accessibility. This is shared
 composition evidence; bounded runtime projection, storage and production chat
 integration remain application acceptance gates. Attribution for the selected
 KiroCrew source contracts is recorded in the issue-specific `NOTICE` entry.
+
+### Controlled appearance mode
+
+`ThemeModeToggle` provides the shared light/dark/system selector for hosts that
+own their preference provider and storage. Pass `mode` and `onModeChange`; the
+control owns roving keyboard focus, pressed state and explanatory tooltips. It
+does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
+existing provider-bound API.
