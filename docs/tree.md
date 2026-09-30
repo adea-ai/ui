@@ -19,7 +19,11 @@ becomes the roving stop and the host is notified. When a
 keyboard move targets a row outside the window, `onRequestReveal` asks the host
 to pin or scroll that row into the mounted range; `Tree` focuses it when its
 `TreeRow` registers. The host should keep the active row mounted while the tree
-owns focus.
+owns focus. `Tree` reports each mounted row's measured border-box block size in
+CSS pixels through `onRowSizeChange`, including its initial observation and
+later size changes. The host can use these measurements for variable row-height
+range calculations; it still owns scroll position, range selection, pinning,
+and reveal behavior.
 
 Up and Down wrap through the complete visible projection. Right expands a
 collapsed parent and, when it is already open, moves to its first visible child.

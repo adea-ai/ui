@@ -69,6 +69,8 @@ try {
     'dist/components/composites/tree/index.d.ts',
     'dist/components/composites/tree/tree.js',
     'dist/components/composites/tree/tree.d.ts',
+    'dist/components/layout/virtual-window/index.js',
+    'dist/components/layout/virtual-window/index.d.ts',
     'src/components/composites/tree/index.ts',
     'src/components/composites/tree/tree.tsx',
   ]) {
@@ -79,23 +81,25 @@ try {
     join(consumer, 'type-probe.tsx'),
     `import { Tree as RootTree } from '@adea-ai/ui'
 import { Tree, TreeRow, type TreeItemDescriptor } from '@adea-ai/ui/components/composites/tree'
+import { VirtualWindow } from '@adea-ai/ui/components/layout/virtual-window'
 
 const item: TreeItemDescriptor = {
   id: 'root', parentId: null, level: 1, expandable: false, expanded: false,
 }
 const rows: readonly TreeItemDescriptor[] = [item]
 const onActiveIdChange = (id: string) => id
+const onRowSizeChange = (id: string, blockSize: number) => id + ':' + blockSize
 
 export function PackedTreeConsumer() {
   return (
-    <Tree aria-label="Packed tree" visibleItems={rows} activeId="root" onActiveIdChange={onActiveIdChange}>
+    <Tree aria-label="Packed tree" visibleItems={rows} activeId="root" onActiveIdChange={onActiveIdChange} onRowSizeChange={onRowSizeChange}>
       <TreeRow item={item}>Workspace</TreeRow>
     </Tree>
   )
 }
 
 export function RootExportConsumer() {
-  return <RootTree aria-label="Root export" visibleItems={rows} activeId="root" onActiveIdChange={onActiveIdChange} />
+  return <VirtualWindow totalSize={0}><RootTree aria-label="Root export" visibleItems={rows} activeId="root" onActiveIdChange={onActiveIdChange} /></VirtualWindow>
 }
 `
   )
@@ -129,6 +133,10 @@ export function RootExportConsumer() {
   const fixture = readFileSync(join(uiRoot, 'tests/fixtures/tree.tsx'), 'utf8')
     .replace('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
     .replace('../../src/components/composites/tree', '@adea-ai/ui/components/composites/tree')
+    .replace(
+      '../../src/components/layout/virtual-window',
+      '@adea-ai/ui/components/layout/virtual-window'
+    )
     .replace('../../src/styles/globals.css', './style.css')
 
   for (const condition of ['compiled', 'solid'] as const) {
@@ -148,6 +156,7 @@ export function RootExportConsumer() {
         "@import '@adea-ai/ui/base.css';",
         "@source './main.tsx';",
         "@source '../node_modules/@adea-ai/ui/src/components/composites/tree';",
+        "@source '../node_modules/@adea-ai/ui/src/components/layout/virtual-window';",
         "@source '../node_modules/@adea-ai/ui/src/components/ui/button';",
       ].join('\n')
     )
@@ -234,21 +243,29 @@ export function RootExportConsumer() {
         await expect(root).toHaveAttribute('aria-expanded', 'true')
         await expect(page.getByRole('treeitem')).toHaveCount(6)
         await expect(tree.locator('[role="treeitem"][tabindex="0"]')).toHaveCount(1)
+        await expect(page.getByLabel('Full projection count')).toHaveText('100001')
 
         const firstFile = page.getByRole('treeitem', { name: 'file 0' })
         await root.press('ArrowRight')
         await expect(firstFile).toBeFocused()
         await expect(firstFile).toHaveAttribute('aria-posinset', '1')
-        await expect(firstFile).toHaveAttribute('aria-setsize', '60')
+        await expect(firstFile).toHaveAttribute('aria-setsize', '100000')
         await expect(root).toHaveAttribute('data-consumer-ref', 'attached')
         await firstFile.press('ArrowUp')
         await expect(root).toBeFocused()
         await root.press('ArrowUp')
-        const lastFile = page.getByRole('treeitem', { name: 'file 59' })
+        const lastFile = page.getByRole('treeitem', { name: 'file 99999' })
         await expect(lastFile).toBeFocused()
-        await expect(lastFile).toHaveAttribute('aria-posinset', '60')
+        await expect(lastFile).toHaveAttribute('aria-posinset', '100000')
+        await expect(lastFile).toHaveAttribute('aria-setsize', '100000')
         await expect(page.getByRole('treeitem')).toHaveCount(6)
         await expect(tree.locator('[role="treeitem"][tabindex="0"]')).toHaveCount(1)
+        await lastFile.press('ArrowDown')
+        await expect(root).toBeFocused()
+        await root.press('End')
+        await expect(lastFile).toBeFocused()
+        await expect(lastFile).toHaveAttribute('aria-posinset', '100000')
+        await expect(page.getByRole('treeitem')).toHaveCount(6)
         await lastFile.press('ArrowDown')
         await expect(root).toBeFocused()
 
@@ -299,32 +316,6 @@ export function RootExportConsumer() {
         )
           throw new Error(`${engine}/${condition}: tree overflowed the 320px CSS viewport bounds`)
 
-        await page.setViewportSize({ width: 640, height: 720 })
-        await page.evaluate(() => {
-          document.documentElement.style.fontSize = '200%'
-        })
-        const fontMetrics = await tree.evaluate((element) => {
-          const row = element.querySelector('[role="treeitem"]')
-          const label = row?.querySelector(':scope > span.min-w-0.flex-1.truncate')
-          if (!row || !label) return null
-          return {
-            rowHeight: row.getBoundingClientRect().height,
-            labelHeight: label.getBoundingClientRect().height,
-            fontSize: Number.parseFloat(getComputedStyle(label).fontSize),
-            scrollHeight: label.scrollHeight,
-            clientHeight: label.clientHeight,
-          }
-        })
-        if (
-          !fontMetrics ||
-          fontMetrics.rowHeight < fontMetrics.fontSize ||
-          fontMetrics.labelHeight < fontMetrics.fontSize ||
-          fontMetrics.scrollHeight > fontMetrics.clientHeight
-        )
-          throw new Error(
-            `${engine}/${condition}: tree row text does not fit at 200% root font size`
-          )
-
         const violations = await new AxeBuilder({ page }).analyze()
         if (violations.violations.length)
           throw new Error(
@@ -338,25 +329,25 @@ export function RootExportConsumer() {
             condition,
             engine,
             mountedTreeItems: 6,
-            fullProjectionItems: 61,
+            fullProjectionItems: 100001,
             checks: [
               'up-down-wrap',
               'right-expand-and-first-child',
               'left-collapse-and-parent',
               'single-roving-tab-stop',
               'focus-reveals-unmounted-row',
+              '100k-logical-projection-with-bounded-mounted-window',
               'mounted-window-stays-bounded',
               'sibling-position-from-full-projection',
               'row-action-keyboard-reachable',
               '320px-css-viewport-overflow-bounds',
-              '200-percent-root-font-row-text-fit',
               'axe',
             ],
             narrowViewport: bounds,
-            rootFontStress: fontMetrics,
           })
         )
 
+        await page.close()
         const fallbackPage = await context.newPage()
         const fallbackErrors: string[] = []
         fallbackPage.on('pageerror', (error) => fallbackErrors.push(error.message))
@@ -387,8 +378,89 @@ export function RootExportConsumer() {
         await beforeTree.press('Tab')
         await expect(fallbackRoot).toBeFocused()
 
+        await fallbackPage.evaluate(() => {
+          document.documentElement.style.fontSize = '200%'
+        })
+        await expect(fallbackPage.getByLabel('Measured row height')).toHaveText('56')
+        await expect(fallbackPage.getByLabel('Viewport height')).toHaveText('256')
+        await expect(fallbackPage.getByLabel('Observed row count')).toHaveText('6')
+        await expect(fallbackPage.getByLabel('Virtual scroll height')).toHaveText('5600056')
+        const fontMetrics = await fallbackTree.evaluate((element) => {
+          const row = element.querySelector('[role="treeitem"]')
+          const label = row?.querySelector(':scope > span.min-w-0.flex-1.truncate')
+          if (!row || !label) return null
+          return {
+            rowHeight: row.getBoundingClientRect().height,
+            labelHeight: label.getBoundingClientRect().height,
+            fontSize: Number.parseFloat(getComputedStyle(label).fontSize),
+            scrollHeight: label.scrollHeight,
+            clientHeight: label.clientHeight,
+          }
+        })
+        if (
+          !fontMetrics ||
+          fontMetrics.rowHeight < fontMetrics.fontSize ||
+          fontMetrics.labelHeight < fontMetrics.fontSize ||
+          fontMetrics.scrollHeight > fontMetrics.clientHeight
+        )
+          throw new Error(
+            `${engine}/${condition}: tree row text does not fit at 200% root font size`
+          )
+
+        await fallbackRoot.press('End')
+        const lastRow = fallbackPage.getByRole('treeitem', { name: 'file 99999' })
+        await expect(lastRow).toBeFocused()
+        await expect(lastRow).toHaveAttribute('aria-posinset', '100000')
+        await expect(lastRow).toHaveAttribute('aria-setsize', '100000')
+        await lastRow.press('Space')
+        await expect(fallbackPage.getByLabel('Selected row')).toHaveText('file-99999')
+        const endGeometry = await fallbackPage.evaluate(() => {
+          const viewport = document.querySelector('.tree-test-viewport')
+          const rows = [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')]
+          const last = rows.find((row) => row.dataset.treeId === 'file-99999')
+          if (!viewport || !last) return null
+          const viewportBounds = viewport.getBoundingClientRect()
+          const lastBounds = last.getBoundingClientRect()
+          const sortedRows = rows
+            .map((row) => row.getBoundingClientRect())
+            .sort((left, right) => left.top - right.top)
+          const overlap = sortedRows
+            .slice(1)
+            .reduce(
+              (largest, row, index) => Math.max(largest, sortedRows[index]!.bottom - row.top),
+              0
+            )
+          return {
+            scrollTop: viewport.scrollTop,
+            maxScrollTop: viewport.scrollHeight - viewport.clientHeight,
+            lastTop: lastBounds.top,
+            lastBottom: lastBounds.bottom,
+            viewportTop: viewportBounds.top,
+            viewportBottom: viewportBounds.bottom,
+            rowHeight: lastBounds.height,
+            overlap,
+            mountedRows: rows.length,
+          }
+        })
+        if (
+          !endGeometry ||
+          Math.abs(endGeometry.scrollTop - endGeometry.maxScrollTop) > 1 ||
+          endGeometry.lastTop < endGeometry.viewportTop - 1 ||
+          endGeometry.lastBottom > endGeometry.viewportBottom + 1 ||
+          endGeometry.rowHeight !== 56 ||
+          endGeometry.overlap > 0.5 ||
+          endGeometry.mountedRows !== 6
+        )
+          throw new Error(
+            `${engine}/${condition}: enlarged end row did not fit the measured virtual window`
+          )
+        await lastRow.press('ArrowDown')
+        await expect(fallbackRoot).toBeFocused()
+        await expect(fallbackPage.getByLabel('Scroll top')).toHaveText('0')
+        await expect(fallbackPage.getByRole('treeitem')).toHaveCount(6)
+
         await fallbackPage.getByRole('button', { name: 'Set last active id' }).click()
-        const lastFilteredRow = fallbackPage.getByRole('treeitem', { name: 'file 59' })
+        const lastFilteredRow = fallbackPage.getByRole('treeitem', { name: 'file 99999' })
         await expect(lastFilteredRow).toBeVisible()
         await lastFilteredRow.focus()
         await fallbackPage.evaluate(() => {
@@ -408,9 +480,14 @@ export function RootExportConsumer() {
             checks: [
               'tab-enters-after-null-and-stale-active-fallback',
               'focus-reveals-row-outside-initial-window',
+              '200-percent-root-font-row-size-reported-to-host',
+              'scroll-to-offscreen-100k-end-row-with-no-overlap',
+              'end-to-first-wrap-preserves-scroll-boundaries',
               'focused-row-removal-reveals-and-focuses-fallback',
               'one-roving-tab-stop',
             ],
+            rootFontStress: fontMetrics,
+            virtualEndGeometry: endGeometry,
           })
         )
       } finally {

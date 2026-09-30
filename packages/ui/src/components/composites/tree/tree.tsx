@@ -60,6 +60,8 @@ export type TreeProps = Omit<
     onSelectItem?: (id: string, event: Event) => void
     /** Ask the host window to mount/reveal an item before focus moves to it. */
     onRequestReveal?: (id: string) => void
+    /** Report a mounted row's border-box block size in CSS pixels for host range math. */
+    onRowSizeChange?: (id: string, blockSize: number) => void
     /** Declares a multi-select tree to assistive technology. */
     selectionMode?: 'single' | 'multiple'
     children?: JSX.Element
@@ -87,6 +89,7 @@ export function Tree(props: TreeProps) {
     'onActivate',
     'onSelectItem',
     'onRequestReveal',
+    'onRowSizeChange',
     'selectionMode',
     'children',
   ])
@@ -99,13 +102,28 @@ export function Tree(props: TreeProps) {
   })
   const idPrefix = `tree-${createUniqueId()}`
   const rows = new Map<string, HTMLDivElement>()
+  const rowIdsByElement = new WeakMap<HTMLDivElement, string>()
   let pendingFocusId: string | null = null
   let requestedRevealId: string | null = null
   let focusedId: string | null = null
   let disposed = false
+  const rowSizeObserver =
+    typeof ResizeObserver === 'undefined'
+      ? undefined
+      : new ResizeObserver((entries) => {
+          if (disposed) return
+          for (const entry of entries) {
+            const id = rowIdsByElement.get(entry.target as HTMLDivElement)
+            const blockSize =
+              entry.borderBoxSize[0]?.blockSize ?? (entry.target as HTMLElement).offsetHeight
+            if (id !== undefined && Number.isFinite(blockSize) && blockSize > 0)
+              local.onRowSizeChange?.(id, blockSize)
+          }
+        })
 
   onCleanup(() => {
     disposed = true
+    rowSizeObserver?.disconnect()
   })
 
   const requestReveal = (id: string) => {
@@ -138,6 +156,8 @@ export function Tree(props: TreeProps) {
     index,
     register: (id, element) => {
       rows.set(id, element)
+      rowIdsByElement.set(element, id)
+      rowSizeObserver?.observe(element)
       if (requestedRevealId === id) requestedRevealId = null
       if (pendingFocusId === id) focusWhenMounted(id)
     },
@@ -149,6 +169,10 @@ export function Tree(props: TreeProps) {
           element && typeof document !== 'undefined' && element.contains(document.activeElement)
         )
       rows.delete(id)
+      if (element) {
+        rowIdsByElement.delete(element)
+        rowSizeObserver?.unobserve(element)
+      }
       if (requestedRevealId === id) requestedRevealId = null
       if (focusWasInside) {
         queueMicrotask(() => {
