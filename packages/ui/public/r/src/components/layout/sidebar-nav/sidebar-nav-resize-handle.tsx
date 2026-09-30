@@ -51,7 +51,7 @@ export function SidebarNavResizeHandle(props: SidebarNavResizeHandleProps) {
         onKeyUp={(event) => {
           if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) commit()
         }}
-        class="pointer-events-auto relative z-(--z-docked) w-px shrink-0 bg-transparent after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 hover:bg-primary focus-visible:bg-primary focus-visible:ring-3 focus-visible:ring-primary-subtle focus-visible:outline-none"
+        class="pointer-events-auto relative z-(--z-docked) w-px -translate-x-full shrink-0 bg-transparent after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 hover:bg-primary focus-visible:bg-primary focus-visible:ring-3 focus-visible:ring-primary-subtle focus-visible:outline-none"
       />
       <Resizable.Panel minSize={0} aria-hidden="true" />
     </Resizable>

@@ -43,15 +43,8 @@ export const ResizableNavigation: Story = {
     const [saved, setSaved] = createSignal(272)
     return (
       <main class="flex h-screen">
-        <div
-          class="relative w-(--preview-sidebar-width)"
-          style={{ '--preview-sidebar-width': `${width()}px` }}
-        >
-          <SidebarNav
-            id="resizable-navigation"
-            class="w-full"
-            aria-label="Resizable project navigation"
-          >
+        <div class="relative w-sidebar" style={{ '--sidebar-width': `${width()}px` }}>
+          <SidebarNav id="resizable-navigation" aria-label="Resizable project navigation">
             <SidebarNavHeader>
               <SidebarNavTitle as="h1">Projects</SidebarNavTitle>
             </SidebarNavHeader>

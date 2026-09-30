@@ -43,20 +43,24 @@ render(() => {
         </SidebarNavContent>
       </SidebarNav>
       <output aria-label="Created sections">{created()}</output>
-      <div
-        id="resize-pane"
-        class="relative h-80 w-(--fixture-width) overflow-hidden"
-        style={{ '--fixture-width': `${width()}px` }}
-      >
-        <SidebarNavResizeHandle
-          value={width()}
-          minimum={208}
-          maximum={448}
-          controls="resize-pane"
-          label="Resize workspace navigation"
-          onChange={setWidth}
-          onCommit={setCommitted}
-        />
+      <div class="h-80">
+        <SidebarNav
+          id="resize-pane"
+          as="aside"
+          aria-label="Resizable navigation"
+          class="relative overflow-hidden"
+          style={{ '--sidebar-width': `${width()}px` }}
+        >
+          <SidebarNavResizeHandle
+            value={width()}
+            minimum={208}
+            maximum={448}
+            controls="resize-pane"
+            label="Resize workspace navigation"
+            onChange={setWidth}
+            onCommit={setCommitted}
+          />
+        </SidebarNav>
       </div>
       <output aria-label="Navigation width">{width()}</output>
       <output aria-label="Committed navigation width">{committed()}</output>
