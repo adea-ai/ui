@@ -14,6 +14,7 @@ import {
   MAX_ATOMIC_INCREMENT_GZIP_BYTES,
 } from './conversation-packed-budget'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { waitForFiniteAnimations } from './finite-animations'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -898,11 +899,7 @@ try {
             await page.getByRole('button', { name: 'Send options' }).click()
             const queueOption = page.getByRole('menuitemradio', { name: /Queue/ })
             await expect(queueOption).toBeVisible()
-            await page.getByRole('menu').evaluate(async (menuElement) => {
-              await Promise.all(
-                menuElement.getAnimations({ subtree: true }).map((animation) => animation.finished)
-              )
-            })
+            await page.getByRole('menu').evaluate(waitForFiniteAnimations)
             await queueOption.click()
             await expect(page.getByLabel('Sent')).toHaveText('1')
             await field.fill('Queue this')
