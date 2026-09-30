@@ -108,6 +108,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Verify packed browser runtime policy
+        run: bun test ./.github/scripts/check-playwright-runtime.test.ts
+
       # The tarball must contain dist/: exports serve ./dist/index.js and
       # ./dist/index.d.ts to registry consumers, and dist/ is gitignored.
       - name: Build the library
@@ -165,8 +168,11 @@ jobs:
     name: Packed conversation
     needs: prepare
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 15
     env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
       ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
     steps:
@@ -174,6 +180,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -193,8 +202,8 @@ jobs:
         run: |
           printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed conversation composition
         working-directory: packages/ui
@@ -204,8 +213,11 @@ jobs:
     name: Packed layout
     needs: prepare
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
     env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
       ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
     steps:
@@ -213,6 +225,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -232,8 +247,8 @@ jobs:
         run: |
           printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed pane model and renderer
         working-directory: packages/ui
@@ -243,8 +258,11 @@ jobs:
     name: Packed appearance
     needs: prepare
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
     env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
       ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
     steps:
@@ -252,6 +270,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -271,8 +292,8 @@ jobs:
         run: |
           printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed appearance interactions and SSR
         working-directory: packages/ui
@@ -282,8 +303,11 @@ jobs:
     name: Packed native select
     needs: prepare
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 15
     env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
       ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
     steps:
@@ -291,6 +315,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -310,8 +337,8 @@ jobs:
         run: |
           printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify native select from the packed artifact
         working-directory: packages/ui

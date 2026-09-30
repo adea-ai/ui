@@ -1,15 +1,16 @@
 import type { ComponentProps } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
+import { Search } from 'lucide-solid'
 import { cn } from '#lib/utils'
 
 /**
  * TopBar.
  *
  * The window's title row and primary toolbar. Three tracks: a leading group, a
- * centred search, and a trailing group. The search is a fixed function of the
- * window width and the two side groups are equal remainders, which is what
- * makes the search *exactly* window-centred by construction — no measurement,
- * no observer, no absolutely-positioned overlay to keep clear of.
+ * centred search, and a trailing group. On wide screens the search is a fixed
+ * function of the window width and the side groups are equal remainders. On
+ * narrow screens the middle track yields space to the controls, and each side
+ * group scrolls when necessary so keyboard focus can reveal every action.
  *
  * On a frameless desktop window this row is also the drag region, so it carries
  * `window-drag` and the controls inside it opt back out. `macos-inset` and
@@ -41,7 +42,7 @@ export function TopBar(props: TopBarProps) {
     <header
       data-slot="top-bar"
       class={cn(
-        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-card text-card-foreground px-3 md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
+        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-card text-card-foreground px-3 md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
         local.glass && 'glass-panel',
         local.draggable && 'window-drag',
         local.macosInset && 'window-inset-macos',
@@ -53,25 +54,46 @@ export function TopBar(props: TopBarProps) {
   )
 }
 
-/** A side group. Both sides are equal remainders, which centres the search. */
+function invokeFocusHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
+}
+
+/** A scrollable side group; equal wide-screen tracks centre the search. */
 export function TopBarSection(props: ComponentProps<'div'> & { align?: 'start' | 'end' }) {
-  const [local, rest] = splitProps(props, ['class', 'align'])
+  const [local, rest] = splitProps(props, ['class', 'align', 'onFocusIn'])
 
   return (
     <div
       data-slot="top-bar-section"
       class={cn(
         'window-no-drag flex min-w-0 items-center gap-2 overflow-x-auto overflow-y-hidden',
-        local.align === 'end' && 'justify-end',
+        local.align === 'end' && 'md:justify-end',
         local.align !== 'end' && 'justify-start',
         local.class
       )}
+      onFocusIn={(event) => {
+        if (event.target instanceof HTMLElement) {
+          event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+        }
+        invokeFocusHandler(local.onFocusIn, event)
+      }}
       {...rest}
     />
   )
 }
 
-export function TopBarTitle(props: ComponentProps<'div'> & { align?: 'start' | 'center' }) {
+export function TopBarTitle(
+  props: ComponentProps<'div'> & {
+    /** Aligns text within this slot; it does not position the slot. */
+    align?: 'start' | 'center'
+  }
+) {
   const [local, rest] = splitProps(props, ['class', 'align'])
   return (
     <div
@@ -122,7 +144,7 @@ export function TopBarSearch(props: TopBarSearchProps) {
       type="button"
       data-slot="top-bar-search"
       class={cn(
-        'text-muted-foreground flex h-control-md w-full items-center gap-2 rounded-md border border-input px-3 text-sm',
+        'text-muted-foreground flex h-control-md w-full min-w-(--control-height-md) items-center justify-center gap-2 rounded-md border border-input px-3 text-sm sm:justify-start',
         'transition-colors ease-out outline-none',
         'hover:bg-surface-hover hover:text-foreground',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
@@ -131,7 +153,8 @@ export function TopBarSearch(props: TopBarSearchProps) {
       )}
       {...rest}
     >
-      <span class="truncate">{local.placeholder ?? 'Search'}</span>
+      <Search aria-hidden="true" class="size-4 shrink-0 sm:hidden" />
+      <span class="sr-only sm:not-sr-only sm:truncate">{local.placeholder ?? 'Search'}</span>
       <Show when={local.shortcut}>
         <kbd class="bg-muted ms-auto hidden h-5 shrink-0 items-center rounded-sm border border-border px-1.5 font-mono text-2xs sm:flex">
           {local.shortcut}

@@ -53,7 +53,7 @@ jobs:
         with:
           bun-version: 1.4.0
       - name: Verify change classification, Pages sourcing and component shards
-        run: bun test ./.github/scripts/design-system-changes.test.ts ./.github/scripts/registry-pages.test.ts ./.github/scripts/component-shards.test.ts
+        run: bun test ./.github/scripts/design-system-changes.test.ts ./.github/scripts/check-playwright-runtime.test.ts ./.github/scripts/registry-pages.test.ts ./.github/scripts/component-shards.test.ts
       - name: Select needed gates
         id: scope
         run: bun .github/scripts/design-system-changes.mjs
@@ -125,13 +125,20 @@ jobs:
     needs: [changes, registry-core]
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 15
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -147,8 +154,8 @@ jobs:
           name: ui-dist-registry
           path: packages/ui/dist/
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed conversation composition
         run: bun run check:packed-conversation
@@ -158,13 +165,20 @@ jobs:
     needs: [changes, registry-core]
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -180,8 +194,8 @@ jobs:
           name: ui-dist-registry
           path: packages/ui/dist/
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed pane model and renderer
         run: bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation
@@ -191,13 +205,20 @@ jobs:
     needs: [changes, registry-core]
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -213,8 +234,8 @@ jobs:
           name: ui-dist-registry
           path: packages/ui/dist/
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify packed appearance interactions and SSR
         run: bun run check:packed-appearance && bun run check:packed-modal-dialog
@@ -224,13 +245,20 @@ jobs:
     needs: [changes, registry-core]
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 15
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -246,8 +274,8 @@ jobs:
           name: ui-dist-registry
           path: packages/ui/dist/
 
-      - name: Install headless engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Verify native select from the packed artifact
         run: bun run check:packed-native-select
