@@ -1,4 +1,11 @@
-import { Show, splitProps, type ComponentProps, type JSX, type ValidComponent } from 'solid-js'
+import {
+  Show,
+  createSignal,
+  splitProps,
+  type ComponentProps,
+  type JSX,
+  type ValidComponent,
+} from 'solid-js'
 import { Button, type ButtonProps } from '../../ui/button'
 import { Spinner } from '../../ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
@@ -27,7 +34,28 @@ export type ActionButtonProps<T extends ValidComponent = 'button'> = ButtonProps
   busyLabel?: string
 }
 
-function guardedClick(handler: unknown, disabled: () => boolean) {
+function invokeHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
+}
+
+function chainedHandler(handler: unknown, before: (event: Event) => void) {
+  return (event: Event) => {
+    before(event)
+    invokeHandler(handler, event)
+  }
+}
+
+function guardedClick(
+  handler: unknown,
+  disabled: () => boolean,
+  onActivate: (event: MouseEvent) => void = () => {}
+) {
   return (event: MouseEvent) => {
     if (disabled()) {
       event.preventDefault()
@@ -35,13 +63,8 @@ function guardedClick(handler: unknown, disabled: () => boolean) {
       return
     }
 
-    if (Array.isArray(handler)) {
-      const [callback, data] = handler as [(data: unknown, event: MouseEvent) => void, unknown]
-      callback(data, event)
-    } else if (typeof handler === 'function') {
-      const callback = handler as (event: MouseEvent) => void
-      callback(event)
-    }
+    onActivate(event)
+    invokeHandler(handler, event)
   }
 }
 
@@ -73,6 +96,8 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
   const busy = () => local.busy ?? false
   const disabled = () => busy() || !!local.disabled
   const busyStatus = () => local.busyLabel ?? 'Working'
+  const [tooltipOpen, setTooltipOpen] = createSignal(false)
+  const [tooltipSuppression, setTooltipSuppression] = createSignal<'pointer' | 'focus' | null>(null)
   const onClickCapture = (rest as { onClickCapture?: unknown }).onClickCapture
   const PolymorphicButton = Button as (buttonProps: ButtonProps<T>) => JSX.Element
   const PolymorphicButtonTarget = ButtonTarget as (targetProps: ButtonTargetProps<T>) => JSX.Element
@@ -90,7 +115,17 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     role: local.as === 'a' && disabled() ? 'link' : rest.role,
     href: local.as === 'a' && disabled() ? undefined : (rest as { href?: string }).href,
     'aria-busy': busy() || local['aria-busy'],
-    onClick: guardedClick(rest.onClick, disabled),
+    onClick: guardedClick(rest.onClick, disabled, (event) => {
+      if (!local.tooltip) return
+      setTooltipSuppression(event.detail > 0 ? 'pointer' : 'focus')
+      setTooltipOpen(false)
+    }),
+    onPointerLeave: chainedHandler(rest.onPointerLeave, () => {
+      if (tooltipSuppression() === 'pointer') setTooltipSuppression(null)
+    }),
+    onBlur: chainedHandler(rest.onBlur, () => {
+      if (tooltipSuppression() === 'focus') setTooltipSuppression(null)
+    }),
     onClickCapture: onClickCapture ? guardedClick(onClickCapture, disabled) : undefined,
     'on:click': guardedClick((rest as Record<string, unknown>)['on:click'], disabled),
     'oncapture:click': guardedClick((rest as Record<string, unknown>)['oncapture:click'], disabled),
@@ -118,7 +153,13 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
           </PolymorphicButton>
         }
       >
-        <Tooltip>
+        <Tooltip
+          open={tooltipOpen()}
+          onOpenChange={(open) => {
+            if (open && tooltipSuppression()) return
+            setTooltipOpen(open)
+          }}
+        >
           <TooltipTrigger
             as={PolymorphicButtonTarget}
             {...(buttonProps() as unknown as ComponentProps<typeof PolymorphicButtonTarget>)}
