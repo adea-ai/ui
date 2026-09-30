@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.89.0](https://github.com/adea-ai/ui/compare/v0.88.0...v0.89.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add shared settings navigation and layout ([#159](https://github.com/adea-ai/ui/issues/159)) ([9346632](https://github.com/adea-ai/ui/commit/9346632b5bf6b5a286897a37fbe78776f547ee35))
+
+
+### CI
+
+* widen the Renovate runner to every adea-ai repository ([#163](https://github.com/adea-ai/ui/issues/163)) ([100f483](https://github.com/adea-ai/ui/commit/100f483ebb3e1c6a35e382c41f2c60fa6aef4840))
+
 ## [0.88.0](https://github.com/adea-ai/ui/compare/v0.87.0...v0.88.0) (2026-09-30)
 
 

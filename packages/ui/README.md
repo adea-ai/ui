@@ -247,6 +247,16 @@ setSelection({ accent: 'amber' })
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
 
+`SettingsLayout` composes a controlled vertical tab root, grouped `SettingsNavigation`,
+and a scrollable panel viewport. Supply the selected `value`, `onChange`, navigation
+groups, and matching `TabsContent` panels. The host owns URL or preference updates
+and panel content; the layout contracts its rail at narrow widths, reports repeated
+activation through `onReselect`, and reveals the selected row by default. Use
+`SettingsNavigation` directly when you already own the surrounding tabs composition.
+Shared tabs associate panels with custom trigger IDs in browser and server renders;
+an explicit panel `aria-labelledby` takes precedence. Independent tab roots keep
+their associations separate.
+
 ### Avoiding the flash
 
 A themed app has to know the appearance before the first paint, or it paints
@@ -720,8 +730,8 @@ On narrow screens, the shared `TopBar` keeps a usable middle Search target while
 side groups scroll horizontally when their actions do not fit. Keyboard focus
 reveals each action. Groups opt out of native window dragging.
 Use `TopBarTitle align="center"` to center text within its slot; the host controls
-slot placement. Use layout-only visibility
-classes when a title should yield space to essential controls.
+slot placement. Use layout-only visibility classes when a title should yield
+space to essential controls.
 
 ### Controlled appearance mode
 

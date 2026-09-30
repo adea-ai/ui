@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { createSignal } from 'solid-js'
+import { Bell, Database, Settings, ShieldCheck, UserRound } from 'lucide-solid'
 import { expect, within } from 'storybook/test'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
 import { Switch } from '../../ui/switch/switch'
+import { TabsContent } from '../../ui/tabs/tabs'
 import { SettingsField, SettingsPage, SettingsRow, SettingsSection } from './settings'
+import { SettingsLayout } from './settings-layout'
+import type { SettingsNavigationGroup } from './settings-navigation'
 
 /**
  * SettingsSection and SettingsRow.
@@ -168,4 +173,62 @@ export const WithSectionAction: Story = {
       </SettingsSection>
     </SettingsPage>
   ),
+}
+
+/** Grouped vertical settings tabs whose routes and controlled selection belong to the host. */
+export const GroupedNavigation: Story = {
+  render: () => {
+    const [value, setValue] = createSignal('account')
+    const [reselected, setReselected] = createSignal('none')
+    const groups: readonly SettingsNavigationGroup[] = [
+      {
+        label: 'Workspace',
+        items: [
+          { value: 'account', label: 'Account', icon: <UserRound aria-hidden="true" /> },
+          { value: 'preferences', label: 'Preferences', icon: <Settings aria-hidden="true" /> },
+          { value: 'notifications', label: 'Notifications', icon: <Bell aria-hidden="true" /> },
+        ],
+      },
+      {
+        label: 'Privacy',
+        items: [
+          { value: 'data', label: 'Data controls', icon: <Database aria-hidden="true" /> },
+          { value: 'access', label: 'Access', icon: <ShieldCheck aria-hidden="true" /> },
+        ],
+      },
+    ]
+
+    return (
+      <div class="flex h-screen flex-col">
+        <SettingsLayout
+          id="settings-navigation-story"
+          value={value()}
+          onChange={(next) => setValue(next)}
+          aria-label="Settings sections"
+          groups={groups}
+          class="min-h-0 min-w-0 flex-1"
+          onReselect={setReselected}
+        >
+          <TabsContent value="account">
+            <SettingsSection title="Account" description="Session and product information." />
+          </TabsContent>
+          <TabsContent value="preferences">
+            <SettingsSection title="Preferences" description="Workspace defaults." />
+          </TabsContent>
+          <TabsContent value="notifications">
+            <SettingsSection title="Notifications" description="Where updates are delivered." />
+          </TabsContent>
+          <TabsContent value="data">
+            <SettingsSection title="Data controls" description="Retention and private content." />
+          </TabsContent>
+          <TabsContent value="access">
+            <SettingsSection title="Access" description="Permissions for this workspace." />
+          </TabsContent>
+        </SettingsLayout>
+        <output class="sr-only" aria-label="Reselected settings section">
+          {reselected()}
+        </output>
+      </div>
+    )
+  },
 }

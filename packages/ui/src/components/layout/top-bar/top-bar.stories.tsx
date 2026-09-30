@@ -40,7 +40,7 @@ export const Default: Story = {
     <div class="h-40 bg-background">
       <TopBar>
         <TopBarSection>
-          <TopBarTitle>adea</TopBarTitle>
+          <TopBarTitle align="center">adea</TopBarTitle>
         </TopBarSection>
         <TopBarSearch placeholder="Search projects, files and sessions" shortcut="⌘K" />
         <TopBarSection align="end">
