@@ -118,6 +118,153 @@ const DEFAULT_PRIMITIVE_PACKAGES = Object.freeze([
   '@base-ui-components',
 ])
 
+/**
+ * The interactive ARIA roles an application can dress a generic element in, and
+ * the primitive that owns each role. `link` is deliberately absent: an `<a>` is
+ * natively interactive and Button itself supports `as="a"` for the link-styled
+ * case.
+ */
+const ROLE_PRIMITIVES: Readonly<Record<string, { primitive: string; path: string }>> =
+  Object.freeze({
+    button: { primitive: 'Button', path: '@adea-ai/ui/components/ui/button' },
+    checkbox: { primitive: 'Checkbox', path: '@adea-ai/ui/components/ui/checkbox' },
+    radio: { primitive: 'RadioGroup', path: '@adea-ai/ui/components/ui/radio-group' },
+    switch: { primitive: 'Switch', path: '@adea-ai/ui/components/ui/switch' },
+    tab: { primitive: 'Tabs', path: '@adea-ai/ui/components/ui/tabs' },
+    option: { primitive: 'Select', path: '@adea-ai/ui/components/ui/select' },
+    menuitem: { primitive: 'DropdownMenu', path: '@adea-ai/ui/components/ui/dropdown-menu' },
+    textbox: { primitive: 'Input', path: '@adea-ai/ui/components/ui/input' },
+  })
+
+/**
+ * The elements whose only job is layout or text. A click handler or a tabindex on
+ * one of these is a control being hand-built out of a non-control.
+ */
+const GENERIC_ELEMENTS: ReadonlySet<string> = new Set([
+  'div',
+  'span',
+  'li',
+  'ul',
+  'ol',
+  'td',
+  'th',
+  'p',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'section',
+  'article',
+  'aside',
+  'header',
+  'footer',
+  'nav',
+  'main',
+  'img',
+  'svg',
+])
+
+const CLICK_HANDLERS: ReadonlySet<string> = new Set(['onClick', 'onDoubleClick'])
+
+interface InteractiveWrapperOptions {
+  /** Element names this rule should not report (rare; prefer fixing the file). */
+  allow?: string[]
+  /** Replaces the default report message. */
+  message?: string
+}
+
+/** Reads a static `role` value; a dynamic role is undecidable statically, so it is left to review. */
+const roleOf = (node: any): string | null => {
+  for (const attribute of node.attributes ?? []) {
+    if (attribute.type !== 'JSXAttribute' || attribute.name?.name !== 'role') continue
+    if (attribute.value?.type === 'Literal' && typeof attribute.value.value === 'string')
+      return attribute.value.value
+    return null
+  }
+  return null
+}
+
+/** Whether the element carries the attribute, by name. */
+const has = (node: any, name: string): boolean =>
+  (node.attributes ?? []).some(
+    (attribute: any) => attribute.type === 'JSXAttribute' && attribute.name?.name === name
+  )
+
+const noInteractiveWrappers: RuleModule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Generic elements dressed as interactive controls — an interactive role, a click handler or a tabindex on a layout element — re-implement a primitive by hand. Compose the real component.',
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allow: { type: 'array', items: { type: 'string' } },
+          message: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      roleWrapper:
+        'A {{element}} with role="{{role}}" hand-builds {{primitive}}: use {{primitive}} from {{path}}. The primitive brings keyboard activation, focus behaviour and ARIA wiring; the wrapper re-implements them badly.',
+      clickWrapper:
+        'A click handler on {{element}} composes {{primitive}} by hand: use {{primitive}} from {{path}}. A div that reacts to clicks is a button that cannot be reached by keyboard.',
+      tabindexWrapper:
+        'A tabindex on {{element}} makes a layout element focusable, which is focus management the primitives already own: compose the real component instead.',
+    },
+  },
+  create(context) {
+    const options = (context.options?.[0] ?? {}) as InteractiveWrapperOptions
+    const allowed = new Set(options.allow ?? [])
+    return {
+      JSXOpeningElement(node: any) {
+        if (node.name?.type !== 'JSXIdentifier') return
+        const element = node.name.name
+        if (allowed.has(element) || element in ELEMENT_PRIMITIVES) return
+
+        const role = roleOf(node)
+        if (role && role in ROLE_PRIMITIVES) {
+          const target = ROLE_PRIMITIVES[role]!
+          context.report({
+            node,
+            messageId: 'roleWrapper',
+            data: { element, role, primitive: target.primitive, path: target.path },
+            ...(options.message ? { message: options.message } : {}),
+          })
+          return
+        }
+
+        if (GENERIC_ELEMENTS.has(element)) {
+          const click = [...CLICK_HANDLERS].find((handler) => has(node, handler))
+          if (click) {
+            const target = ROLE_PRIMITIVES.button!
+            context.report({
+              node,
+              messageId: 'clickWrapper',
+              data: { element, primitive: target.primitive, path: target.path },
+              ...(options.message ? { message: options.message } : {}),
+            })
+            return
+          }
+          if (has(node, 'tabIndex') || has(node, 'tabindex')) {
+            context.report({
+              node,
+              messageId: 'tabindexWrapper',
+              data: { element },
+              ...(options.message ? { message: options.message } : {}),
+            })
+          }
+        }
+      },
+    }
+  },
+}
+
 const noPrimitiveLibraryImports: RuleModule = {
   meta: {
     type: 'problem',
@@ -173,6 +320,7 @@ const plugin = {
   rules: {
     'no-raw-interactive-elements': noRawInteractiveElements,
     'no-primitive-library-imports': noPrimitiveLibraryImports,
+    'no-interactive-wrappers': noInteractiveWrappers,
   },
 }
 

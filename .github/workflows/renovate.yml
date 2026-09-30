@@ -1,0 +1,43 @@
+name: Renovate
+
+# Self-hosted Renovate for the whole adea-ai org, run from this repository so the
+# design system also owns the automation that keeps consumers on it.
+#
+# The token must belong to an account whose commits pass the branch rulesets —
+# commits authored off-account need an extra approval that admin cannot bypass,
+# and a blocked update PR is exactly the chore Renovate exists to remove. Set
+# RENOVATE_TOKEN to a fine-grained PAT with Contents + Pull requests (read/write)
+# on the adea-ai repositories; rotate it like any credential.
+#
+# Without the secret this workflow fails fast; nothing else in the org depends on
+# it, and each repository's own validation gates decide what actually merges.
+
+on:
+  schedule:
+    - cron: '30 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log what Renovate would do without writing'
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Renovate
+        uses: renovatebot/github-action@12f8ed8e6a936a00dc66b628d224488ac406b5e8 # v42.0.5
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_GIT_AUTHOR: 'A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>'
+          RENOVATE_DRY_RUN: ${{ inputs.dry_run && 'strict' || 'full' }}
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          configurationFile: .github/renovate-runner.json
