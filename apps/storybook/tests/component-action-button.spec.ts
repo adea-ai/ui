@@ -50,14 +50,18 @@ test('busy state preserves the button name, disables repeat activation and annou
   const button = page.getByRole('button', { name: 'Save workspace' })
   await expect(button).toBeDisabled()
   await expect(button).toHaveAttribute('aria-busy', 'true')
-  await expect(page.locator('span[role="status"].visually-hidden')).toHaveText('Saving workspace')
+  await expect(
+    page.locator('span[role="status"].visually-hidden').filter({ hasText: 'Saving workspace' })
+  ).toHaveText('Saving workspace')
   await button.evaluate((element: HTMLButtonElement) => element.click())
   await expect(page.getByLabel('Activations')).toHaveText('0')
 
   await page.getByRole('button', { name: 'Finish save' }).click()
   await expect(button).toBeEnabled()
   await expect(button).not.toHaveAttribute('aria-busy')
-  await expect(page.locator('span[role="status"].visually-hidden')).toHaveCount(0)
+  await expect(
+    page.locator('span[role="status"].visually-hidden').filter({ hasText: 'Saving workspace' })
+  ).toHaveCount(0)
   await button.click()
   await expect(page.getByLabel('Activations')).toHaveText('1')
 })
@@ -76,4 +80,25 @@ test('tooltip listens on the polymorphic link and opens from keyboard focus', as
   await expect(link).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('Open details')
   await expect(link).toHaveAttribute('aria-describedby', /.+/)
+})
+
+test('busy polymorphic links are inert and keep their caller handler from running', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>ActionButton</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+
+  const link = page.getByRole('link', { name: 'Export report' })
+  await expect(link).toHaveAttribute('aria-disabled', 'true')
+  await expect(link).toHaveAttribute('tabindex', '-1')
+  await expect(link).not.toHaveAttribute('href')
+  await expect(page.getByRole('status').filter({ hasText: 'Exporting report' })).toBeVisible()
+  await link.evaluate((element) =>
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  )
+  await expect(page.getByLabel('Activations')).toHaveText('0')
+  await expect(page).not.toHaveURL(/busy-link-navigation/)
 })

@@ -25,6 +25,24 @@ export type ActionButtonProps<T extends ValidComponent = 'button'> = ButtonProps
   busyLabel?: string
 }
 
+function guardedClick(handler: unknown, disabled: () => boolean) {
+  return (event: MouseEvent) => {
+    if (disabled()) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      return
+    }
+
+    if (Array.isArray(handler)) {
+      const [callback, data] = handler as [(data: unknown, event: MouseEvent) => void, unknown]
+      callback(data, event)
+    } else if (typeof handler === 'function') {
+      const callback = handler as (event: MouseEvent) => void
+      callback(event)
+    }
+  }
+}
+
 type ButtonTargetProps<T extends ValidComponent = 'button'> = Omit<ButtonProps<T>, 'as'> & {
   actionAs?: T
 }
@@ -51,7 +69,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     'busyLabel',
   ])
   const busy = () => local.busy ?? false
-  const disabled = () => busy() || local.disabled
+  const disabled = () => busy() || !!local.disabled
   const busyStatus = () => local.busyLabel ?? 'Working'
   const PolymorphicButton = Button as (buttonProps: ButtonProps<T>) => JSX.Element
   const PolymorphicButtonTarget = ButtonTarget as (targetProps: ButtonTargetProps<T>) => JSX.Element
@@ -62,7 +80,13 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     size: local.size,
     class: local.class,
     disabled: disabled(),
+    'aria-disabled': local.as === 'a' && disabled() ? true : rest['aria-disabled'],
+    tabIndex: local.as === 'a' && disabled() ? -1 : rest.tabIndex,
+    role: local.as === 'a' && disabled() ? 'link' : rest.role,
+    href: local.as === 'a' && disabled() ? undefined : (rest as { href?: string }).href,
     'aria-busy': busy() || local['aria-busy'],
+    onClick: guardedClick(rest.onClick, disabled),
+    onClickCapture: guardedClick((rest as { onClickCapture?: unknown }).onClickCapture, disabled),
   })
 
   const contents = () => (

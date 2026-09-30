@@ -20,6 +20,16 @@ function Fixture() {
       <ActionButton as="a" href="#target" tooltip="Open details" variant="outline">
         Details
       </ActionButton>
+      <ActionButton
+        as="a"
+        aria-label="Export report"
+        href="#busy-link-navigation"
+        busy
+        busyLabel="Exporting report"
+        onClick={() => setActivations((count) => count + 1)}
+      >
+        Export
+      </ActionButton>
       <button type="button" onClick={() => setBusy(false)}>
         Finish save
       </button>

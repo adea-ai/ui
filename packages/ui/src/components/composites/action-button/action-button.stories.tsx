@@ -53,3 +53,19 @@ export const AsLink: Story = {
     </ActionButton>
   ),
 }
+
+/** Busy links keep their name, expose their disabled state, and cannot navigate. */
+export const BusyLink: Story = {
+  render: () => (
+    <ActionButton
+      as="a"
+      href="#busy-action-button"
+      aria-label="Export report"
+      busy
+      busyLabel="Exporting report"
+      variant="outline"
+    >
+      Export
+    </ActionButton>
+  ),
+}
