@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.0](https://github.com/adea-ai/ui/compare/v0.81.1...v0.82.0) (2026-09-30)
+
+
+### Features
+
+* complete shared interaction contracts for app adoption ([#135](https://github.com/adea-ai/ui/issues/135)) ([ebe1362](https://github.com/adea-ai/ui/commit/ebe13627c7383c84b2f8c40b830292e3034a3b13))
+* **ui:** add shared ActionButton composite ([#136](https://github.com/adea-ai/ui/issues/136)) ([8b99d44](https://github.com/adea-ai/ui/commit/8b99d443f86314f109924e384cbe3599368f4d0b))
+
 ## [0.81.1](https://github.com/adea-ai/ui/compare/v0.81.0...v0.81.1) (2026-09-30)
 
 
