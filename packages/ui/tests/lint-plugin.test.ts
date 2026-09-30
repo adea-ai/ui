@@ -208,4 +208,17 @@ describe('the design system lint plugin', () => {
     )
     expect(output).not.toContain('no-interactive-wrappers')
   })
+
+  test('a design-system component composing a role is not reported', () => {
+    // A Button carrying role="option" inside a custom listbox is composition —
+    // the element is already the design system's own primitive with its
+    // keyboard story intact. The rule polices raw markup, not the library.
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'composed.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'\nexport function Option({ label }: { label: string }) {\n\treturn <Button role="option">{label}</Button>\n}\n`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+  })
 })

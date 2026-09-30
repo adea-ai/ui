@@ -226,6 +226,10 @@ const noInteractiveWrappers: RuleModule = {
         if (node.name?.type !== 'JSXIdentifier') return
         const element = node.name.name
         if (allowed.has(element) || element in ELEMENT_PRIMITIVES) return
+        // A capitalized element is a component — often a design-system primitive
+        // composing a role deliberately (a Button carrying role="option" inside a
+        // custom listbox, for example). That is composition, not impersonation.
+        if (element[0] === element[0]?.toUpperCase()) return
 
         const role = roleOf(node)
         if (role && role in ROLE_PRIMITIVES) {
