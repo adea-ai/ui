@@ -184,7 +184,9 @@ test('reader input cancels a pending restore without rearming follow on streamed
   await expect(transcript.locator('[data-channel-row]')).toHaveCount(60)
   await transcript.hover()
   await page.mouse.wheel(0, 160)
-  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  // WebKit delivers wheel scrolling over multiple frames. Capture the completed
+  // reader movement, not an intermediate offset before deferred callbacks run.
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBe(160)
   const readerOffset = await transcript.evaluate((element) => element.scrollTop)
   await page.evaluate(() => {
     const target = window as typeof window & {
