@@ -1,4 +1,11 @@
-import { Show, splitProps, type Component, type ComponentProps, type JSX } from 'solid-js'
+import {
+  createSignal,
+  Show,
+  splitProps,
+  type Component,
+  type ComponentProps,
+  type JSX,
+} from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { cva, type VariantProps } from '#lib/variants'
 import { cn } from '#lib/utils'
@@ -16,7 +23,8 @@ import { cn } from '#lib/utils'
  *
  * 1. **A glyph is always present.** A brand with no logo gets a monogram, not an
  *    empty box. `fallback` takes the name and returns the glyph, so a caller can
- *    choose initials, a domain letter, or a kind icon.
+ *    choose initials, a domain letter, or a kind icon. When `src` is supplied,
+ *    its contained image overlays that glyph and failure reveals the glyph below.
  * 2. **The tile owns its own contrast.** `tone` tints the background while
  *    monogram text keeps the body foreground; vector glyphs retain the status
  *    colour. A caller never picks a colour pair or ships a glyph that disappears.
@@ -67,6 +75,8 @@ export type EntityIconProps = Omit<ComponentProps<'span'>, 'children'> &
   EntityIconVariantProps & {
     /** The entity's name. Used for the accessible label and, via `fallback`, the monogram. */
     name: string
+    /** Optional image URL. The image is decorative; `name` remains the accessible label. */
+    src?: string
     /**
      * A logo or icon — a Lucide icon reference (`icon={Wrench}`) or an element
      * (`icon={<Wrench />}`). Both are accepted because both are what a caller
@@ -108,9 +118,27 @@ function Glyph(props: { glyph: Glyph }) {
   )
 }
 
+function EntityIconImage(props: { src: string }) {
+  const [failed, setFailed] = createSignal(false)
+
+  return (
+    <Show when={!failed()}>
+      <img
+        data-slot="entity-icon-image"
+        src={props.src}
+        alt=""
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 size-full object-contain"
+        onError={() => setFailed(true)}
+      />
+    </Show>
+  )
+}
+
 export function EntityIcon(props: EntityIconProps) {
   const [local, rest] = splitProps(props, [
     'name',
+    'src',
     'icon',
     'fallback',
     'badge',
@@ -145,6 +173,9 @@ export function EntityIcon(props: EntityIconProps) {
         fallback={local.fallback ? local.fallback(local.name) : monogram(local.name)}
       >
         {(value) => <Glyph glyph={value()} />}
+      </Show>
+      <Show when={local.src} keyed>
+        {(src) => <EntityIconImage src={src} />}
       </Show>
       <Show when={local.badge}>
         <span class="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4">{local.badge}</span>
