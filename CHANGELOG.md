@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.2](https://github.com/adea-ai/ui/compare/v0.82.1...v0.82.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* improve shared palette and status states ([#138](https://github.com/adea-ai/ui/issues/138)) ([1f9efbc](https://github.com/adea-ai/ui/commit/1f9efbcd7d687809cd861d28264953b3b00ea006))
+* reflow shared appearance rows for constrained hosts ([#141](https://github.com/adea-ai/ui/issues/141)) ([477793b](https://github.com/adea-ai/ui/commit/477793b3876104b6ce17a6e19e806b0f16ba7040))
+
 ## [0.82.1](https://github.com/adea-ai/ui/compare/v0.82.0...v0.82.1) (2026-09-30)
 
 
