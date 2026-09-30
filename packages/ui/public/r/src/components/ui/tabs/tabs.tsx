@@ -1,7 +1,30 @@
 import { Tabs as KobalteTabs } from '@kobalte/core/tabs'
-import type { ComponentProps } from 'solid-js'
-import { splitProps } from 'solid-js'
+import type { Accessor, ComponentProps } from 'solid-js'
+import {
+  createContext,
+  createRenderEffect,
+  createSignal,
+  createUniqueId,
+  onCleanup,
+  splitProps,
+  useContext,
+} from 'solid-js'
 import { cn } from '../../../lib/utils'
+
+type TabsIdContextValue = {
+  id: Accessor<string>
+  triggerIds: Accessor<ReadonlyMap<string, string>>
+  registerTriggerId: (value: string, id: string) => void
+  unregisterTriggerId: (value: string, id: string) => void
+}
+
+const TabsIdContext = createContext<TabsIdContextValue>()
+
+function useTabsId() {
+  const tabs = useContext(TabsIdContext)
+  if (!tabs) throw new Error('[adea-ui]: Tabs parts must be used within Tabs.')
+  return tabs
+}
 
 /**
  * Tabs.
@@ -14,12 +37,37 @@ import { cn } from '../../../lib/utils'
  * where a full-width underline would collide with the panel's own header rule.
  */
 export function Tabs(props: ComponentProps<typeof KobalteTabs>) {
-  const [local, rest] = splitProps(props, ['class'])
+  const [local, rest] = splitProps(props, ['class', 'id'])
+  const generatedId = `tabs-${createUniqueId()}`
+  const id = () => local.id ?? generatedId
+  const [triggerIds, setTriggerIds] = createSignal<ReadonlyMap<string, string>>(new Map())
+  const tabs: TabsIdContextValue = {
+    id,
+    triggerIds,
+    registerTriggerId: (value, triggerId) => {
+      setTriggerIds((current) => new Map(current).set(value, triggerId))
+    },
+    unregisterTriggerId: (value, triggerId) => {
+      setTriggerIds((current) => {
+        if (current.get(value) !== triggerId) return current
+        const next = new Map(current)
+        next.delete(value)
+        return next
+      })
+    },
+  }
+
   return (
-    <KobalteTabs
-      class={cn('flex flex-col gap-2 data-[orientation=vertical]:flex-row', local.class)}
-      {...rest}
-    />
+    <TabsIdContext.Provider value={tabs}>
+      <KobalteTabs
+        id={id()}
+        class={cn(
+          'flex min-h-0 min-w-0 flex-col gap-2 data-[orientation=vertical]:flex-row',
+          local.class
+        )}
+        {...rest}
+      />
+    </TabsIdContext.Provider>
   )
 }
 
@@ -50,10 +98,21 @@ export type TabsTriggerProps = ComponentProps<typeof KobalteTabs.Trigger> & {
 }
 
 export function TabsTrigger(props: TabsTriggerProps) {
-  const [local, rest] = splitProps(props, ['class', 'appearance'])
+  const [local, rest] = splitProps(props, ['class', 'appearance', 'id'])
+  const tabs = useTabsId()
+  const triggerId = () => local.id ?? `${tabs.id()}-trigger-${rest.value}`
+
+  // Register before panels render, including SSR where createEffect is skipped.
+  createRenderEffect(() => {
+    const value = rest.value
+    const id = triggerId()
+    tabs.registerTriggerId(value, id)
+    onCleanup(() => tabs.unregisterTriggerId(value, id))
+  })
 
   return (
     <KobalteTabs.Trigger
+      id={triggerId()}
       class={cn(
         'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium',
         'transition-colors ease-out outline-none select-none',
@@ -72,6 +131,17 @@ export function TabsTrigger(props: TabsTriggerProps) {
 }
 
 export function TabsContent(props: ComponentProps<typeof KobalteTabs.Content>) {
-  const [local, rest] = splitProps(props, ['class'])
-  return <KobalteTabs.Content class={cn('flex-1 outline-none', local.class)} {...rest} />
+  const [local, rest] = splitProps(props, ['class', 'aria-labelledby'])
+  const tabs = useTabsId()
+  return (
+    <KobalteTabs.Content
+      aria-labelledby={
+        local['aria-labelledby'] ??
+        tabs.triggerIds().get(rest.value) ??
+        `${tabs.id()}-trigger-${rest.value}`
+      }
+      class={cn('min-h-0 min-w-0 flex-1 outline-none', local.class)}
+      {...rest}
+    />
+  )
 }

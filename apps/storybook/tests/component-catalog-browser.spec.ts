@@ -148,6 +148,12 @@ test('catalog and detail remain accessible in light and dark themes', async ({ p
     await page.evaluate((value) => {
       document.documentElement.classList.toggle('dark', value === 'dark')
     }, theme)
+    await page.evaluate(async () => {
+      const transitions = document.body
+        .getAnimations()
+        .filter((animation): animation is CSSTransition => animation instanceof CSSTransition)
+      await Promise.all(transitions.map((transition) => transition.finished))
+    })
     const catalog = await new AxeBuilder({ page }).include('main').analyze()
     expect(catalog.violations, `${theme} catalog violations`).toEqual([])
 

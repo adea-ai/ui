@@ -896,7 +896,14 @@ try {
             await expect(page.getByLabel('Sent')).toHaveText('1')
             await page.getByRole('button', { name: 'Run busy' }).click()
             await page.getByRole('button', { name: 'Send options' }).click()
-            await page.getByRole('menuitemradio', { name: /Queue/ }).click()
+            const queueOption = page.getByRole('menuitemradio', { name: /Queue/ })
+            await expect(queueOption).toBeVisible()
+            await page.getByRole('menu').evaluate(async (menuElement) => {
+              await Promise.all(
+                menuElement.getAnimations({ subtree: true }).map((animation) => animation.finished)
+              )
+            })
+            await queueOption.click()
             await expect(page.getByLabel('Sent')).toHaveText('1')
             await field.fill('Queue this')
             await field.press('Enter')

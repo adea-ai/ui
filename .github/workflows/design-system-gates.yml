@@ -184,7 +184,7 @@ jobs:
         run: bunx playwright install --with-deps chromium webkit
 
       - name: Verify packed pane model and renderer
-        run: bun run check:packed-layout && bun run check:packed-layout-renderer
+        run: bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation
 
   packed-appearance:
     name: Packed appearance
