@@ -3,6 +3,7 @@ import type { ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button } from '../ui/button/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip/tooltip'
 
 /**
  * ThreadPanel.
@@ -26,6 +27,8 @@ export type ThreadPanelProps = ComponentProps<'aside'> & {
   root?: JSX.Element
   /** The composer for a reply. */
   composer?: JSX.Element
+  /** Host actions, such as marking the thread unread, before the close control. */
+  headerActions?: JSX.Element
   onClose?: () => void
 }
 
@@ -36,6 +39,7 @@ export function ThreadPanel(props: ThreadPanelProps) {
     'count',
     'root',
     'composer',
+    'headerActions',
     'onClose',
     'children',
   ])
@@ -45,7 +49,7 @@ export function ThreadPanel(props: ThreadPanelProps) {
       data-slot="thread-panel"
       aria-label={`Thread: ${local.label}`}
       class={cn(
-        'bg-surface flex h-full w-96 shrink-0 flex-col border-s border-border',
+        'bg-surface flex h-full w-96 max-w-full shrink-0 flex-col border-s border-border',
         local.class
       )}
       {...rest}
@@ -59,17 +63,23 @@ export function ThreadPanel(props: ThreadPanelProps) {
             </span>
           </Show>
         </div>
-        <Show when={local.onClose}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Close thread"
-            class="ms-auto text-muted-foreground"
-            onClick={() => local.onClose?.()}
-          >
-            <X />
-          </Button>
-        </Show>
+        <div class="ms-auto flex shrink-0 items-center gap-1">
+          {local.headerActions}
+          <Show when={local.onClose}>
+            <Tooltip>
+              <TooltipTrigger
+                as={Button}
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close thread"
+                onClick={() => local.onClose?.()}
+              >
+                <X />
+              </TooltipTrigger>
+              <TooltipContent>Close thread</TooltipContent>
+            </Tooltip>
+          </Show>
+        </div>
       </header>
 
       <Show when={local.root}>

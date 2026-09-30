@@ -16,6 +16,13 @@ import { createEffect, createSignal, splitProps } from 'solid-js'
 import { menuItem } from '#lib/overlay'
 import { cn } from '#lib/utils'
 
+// cmdk emits data-disabled="false" on enabled items, unlike the presence-only
+// attributes Kobalte menu rows use. Apply those shared disabled styles only when
+// cmdk's value is true.
+const commandItem = menuItem
+  .replace('data-[disabled]:pointer-events-none', '')
+  .replace('data-[disabled]:text-muted-foreground', '')
+
 /**
  * Command.
  *
@@ -181,8 +188,9 @@ export function CommandItem(props: ComponentProps<typeof CmdkItem>) {
   return (
     <CmdkItem
       class={cn(
-        menuItem,
-        'group/command-item data-[selected=true]:bg-card data-[selected=true]:text-foreground',
+        commandItem,
+        'data-[disabled=true]:pointer-events-none data-[disabled=true]:text-muted-foreground',
+        'group/command-item text-popover-foreground data-[selected=true]:bg-card data-[selected=true]:text-popover-foreground',
         local.class
       )}
       {...rest}
