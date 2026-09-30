@@ -363,6 +363,35 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
     ).toContain('no-interactive-wrappers')
   })
 
+  test('literal spread props preserve role, activation, and tab-stop wrapper checks', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'spread-wrappers.tsx',
+      `const roleKey = 'role'
+export function Examples({ activate, handleKey, props }: { activate: () => void; handleKey: () => void; props: object }) {
+  return <><section {...{ role: 'switch' }} /><span {...{ ['on:click']: activate }} /><td {...{ [\`tabIndex\`]: 0 }} /><nav {...{ ...{ ['role']: 'checkbox' } }} /><header {...({ onClick: activate } as const)} /><aside {...({ ['role']: 'radio' } as const)} /><div {...{ [roleKey]: 'button' }} /><main {...{ tabIndex: -1, onKeyDown: handleKey }} /><article {...{ tabIndex: 0, onKeyDown: handleKey }} /><footer {...props} /></>
+}
+`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output.match(/no-interactive-wrappers/g)).toHaveLength(7)
+  })
+
+  test('unknown spread expressions and computed key variables remain unresolved', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'unresolved-wrappers.tsx',
+      `export function Examples({ roleKey, props }: { roleKey: string; props: object }) {
+  return <><div {...{ [roleKey]: 'button' }} /><span {...props} /><main {...{ tabIndex: -1, onKeyDown: () => {} }} /></>
+}
+`
+    )
+    expect(output).not.toContain('no-interactive-wrappers')
+    expectNoLintFindings(output)
+  })
+
   test('a div wearing role="button" is reported as a Button re-implementation', () => {
     const config = writeConfig({ 'no-interactive-wrappers': 'error' })
     const output = lint(
@@ -452,5 +481,77 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
       `import { Button } from '@adea-ai/ui/components/ui/button'\nexport function Option({ label }: { label: string }) {\n\treturn <Button role="option">{label}</Button>\n}\n`
     )
     expect(output).not.toContain('no-interactive-wrappers')
+  })
+
+  test('icon-size shared Button actions require ActionButton', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'bare-icon-buttons.tsx',
+      `import { Button as SharedButton } from '@adea-ai/ui/components/ui/button'
+import { TooltipTrigger } from '@adea-ai/ui/components/ui/tooltip'
+export function Examples() {
+  return <><SharedButton size="icon-sm" aria-label="Close" /><TooltipTrigger as={SharedButton} size="icon-xs" aria-label="Open"><span /></TooltipTrigger></>
+}
+`
+    )
+    expect(output).toContain('require-action-button-tooltip')
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(2)
+  })
+
+  test('icon-size ActionButton requires a supplied nonblank tooltip', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'missing-action-tooltips.tsx',
+      `import { ActionButton as SharedAction } from '@adea-ai/ui/components/composites/action-button'
+export function Examples() {
+  return <><SharedAction size="icon-md" aria-label="Save" /><SharedAction size="icon-lg" tooltip="  " aria-label="Delete" /></>
+}
+`
+    )
+    expect(output).toContain('require-action-button-tooltip')
+    expect(output).toContain('needs a supplied nonblank tooltip')
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(2)
+  })
+
+  test('named ActionButton aliases and polymorphic ActionButton triggers accept nonblank tooltips', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'action-button-tooltips.tsx',
+      `import { ActionButton as SharedAction } from '@adea-ai/ui/components/composites/action-button'
+import { TooltipTrigger as Trigger } from '@adea-ai/ui/components/ui/tooltip'
+export function Examples() {
+  return <><SharedAction size="icon-sm" tooltip="Save" aria-label="Save" /><Trigger as={SharedAction} size="icon-xs" tooltip="Close panel" aria-label="Close"><span /></Trigger></>
+}
+`
+    )
+    expectNoLintFindings(output)
+  })
+
+  test('labelled shared Buttons and ActionButtons are not required to have tooltips', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'labelled-buttons.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
+export function Examples() { return <><Button size="md">Save changes</Button><ActionButton size="sm">Delete project</ActionButton></> }
+`
+    )
+    expectNoLintFindings(output)
+  })
+
+  test('dynamic icon-size or tooltip values remain a documented review boundary', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'dynamic-action-values.tsx',
+      `import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
+export function Example({ size, tooltip }: { size: string; tooltip: string }) { return <ActionButton size={size} tooltip={tooltip}><span /></ActionButton> }
+`
+    )
+    expectNoLintFindings(output)
   })
 })

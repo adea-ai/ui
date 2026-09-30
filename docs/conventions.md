@@ -77,6 +77,15 @@ rule and remain a review boundary. The shared component implementation directory
 may disable these consumer rules only through its exact path-scoped configuration
 override; consumer files must not use inline suppressions or broad path patterns.
 
+The opt-in `adea/require-action-button-tooltip` rule covers shared `Button`
+variants with `size="icon-xs"`, `"icon-sm"`, `"icon-md"`, or `"icon-lg"`, including polymorphic triggers
+whose `as` prop names the shared `Button`. Use the shared `ActionButton` with a
+supplied nonblank `tooltip`; keep an `aria-label` on the control because the
+tooltip explains the action rather than naming it. The rule tracks named import
+aliases from the shared Button and ActionButton modules and reads literal object
+spreads. Dynamic size or tooltip values remain a review boundary because their
+runtime values cannot be established statically.
+
 ---
 
 ## 3. Behaviour comes from a primitive
@@ -90,7 +99,8 @@ Where a primitive lacks coverage, the component implements it, and its doc comme
 says so and explains what was done instead. That is the only case where a
 hand-rolled control is correct, and the comment is what makes it reviewable.
 
-Consumers enable all five `@adea-ai/ui/lint` rules as errors. Raw controls,
+Consumers enable the five baseline `@adea-ai/ui/lint` rules as errors. The
+icon-action tooltip rule is separately opt-in until a consumer enables it. Raw controls,
 interactive layout elements, direct primitive access, inline styles and dynamic
 class maps belong in shared UI. The primitive boundary covers imports,
 re-exports, dynamic imports, and literal `require` calls, including Kobalte,
@@ -100,9 +110,11 @@ not make it a shared component.
 The wrapper rule recognizes expression roles and Solid's `on:click` listeners
 as well as click, mouse, and pointer activation. A negative tabindex alone is
 allowed for programmatic focus, such as a skip-link destination; it does not
-exempt an interactive role or activation handler. Dynamic roles and spread
-attributes still require review because their behavior cannot be inferred
-statically. Do not disable the rules in migrated consumer files.
+exempt an interactive role or activation handler. Static roles, activation
+handlers, and tab stops inside literal object spreads are checked; dynamic role
+values and unresolved identifier or function spreads still require review
+because their behavior cannot be inferred statically. Do not disable the rules in
+migrated consumer files.
 
 ```tsx
 /**
