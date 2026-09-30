@@ -122,6 +122,87 @@ test('restores a parked reader across remount without streamed output rearming f
   expect(await restored.evaluate((element) => element.scrollTop)).toBe(100)
 })
 
+test('restores a cached channel offset after a short transcript has replaced the long one', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.dispatchEvent(new Event('adea-open-cached-channel-fixture')))
+  const transcript = page.getByRole('region', { name: 'Cached channel transcript' })
+  const switchChannel = page.getByRole('button', { name: 'Switch channel' })
+  await expect
+    .poll(() => transcript.evaluate((element) => element.scrollHeight))
+    .toBeGreaterThan(800)
+  await transcript.evaluate((element) => {
+    element.scrollTop = 420
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBe(420)
+
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(3)
+  await expect.poll(() => transcript.evaluate((element) => element.scrollHeight)).toBeLessThan(500)
+
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(60)
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBe(420)
+})
+
+test('reader input cancels a pending restore without rearming follow on streamed rows', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.dispatchEvent(new Event('adea-open-cached-channel-fixture')))
+  const transcript = page.getByRole('region', { name: 'Cached channel transcript' })
+  const switchChannel = page.getByRole('button', { name: 'Switch channel' })
+  await expect
+    .poll(() => transcript.evaluate((element) => element.scrollHeight))
+    .toBeGreaterThan(800)
+  await transcript.evaluate((element) => {
+    element.scrollTop = 420
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(3)
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(60)
+
+  await page.evaluate(() => {
+    const target = window as typeof window & {
+      testRestoreFrames: FrameRequestCallback[]
+      testRestoreNativeRaf: typeof window.requestAnimationFrame
+    }
+    target.testRestoreFrames = []
+    target.testRestoreNativeRaf = window.requestAnimationFrame.bind(window)
+    window.requestAnimationFrame = (callback) => {
+      target.testRestoreFrames.push(callback)
+      return target.testRestoreFrames.length
+    }
+  })
+  // Re-enter a reset with the long transcript parked, then hold the deferred
+  // callback so a user scroll can race it deterministically.
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(3)
+  await switchChannel.click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(60)
+  await transcript.hover()
+  await page.mouse.wheel(0, 160)
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  const readerOffset = await transcript.evaluate((element) => element.scrollTop)
+  await page.evaluate(() => {
+    const target = window as typeof window & {
+      testRestoreFrames: FrameRequestCallback[]
+      testRestoreNativeRaf: typeof window.requestAnimationFrame
+    }
+    const frames = target.testRestoreFrames
+    window.requestAnimationFrame = target.testRestoreNativeRaf
+    target.testRestoreFrames = []
+    target.testRestoreNativeRaf = window.requestAnimationFrame
+    for (const frame of frames) frame(performance.now())
+  })
+
+  await page.getByRole('button', { name: 'Grow cached channel' }).click()
+  await expect(transcript.locator('[data-channel-row]')).toHaveCount(70)
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBe(readerOffset)
+})
+
 test('preserves released follow intent inside the jump threshold and explicit jump resumes it', async ({
   page,
 }) => {
