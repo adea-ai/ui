@@ -135,6 +135,15 @@ suite runs in four Playwright shards across Chromium and WebKit. The required
 `Workshop` context succeeds only when the build, every story shard and every
 component shard succeed.
 
+Packed PR and release contracts run in the same digest-pinned Playwright image.
+Its browser engines and OS dependencies are installed ahead of the job, so those
+contracts do not spend their deadlines downloading the browser dependency stack.
+The runtime guard requires the installed Playwright version to match the image
+tag and verifies both Chromium and WebKit executables. Update the image tag and
+digest in both workflows with a Playwright dependency update; a mismatch fails
+before the packed tests. Existing deadlines and required contract commands stay
+unchanged.
+
 The explicit accessibility sweep sets Storybook's supported `a11y.manual` global
 for its own navigation so each story is analyzed once by Playwright. It still
 checks every story across the two default and five sampled themes with the same

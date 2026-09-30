@@ -625,7 +625,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     expect(checkout?.with?.['persist-credentials']).toBe(false)
     expect(lane.steps.some((step) => step.run === 'bun install --frozen-lockfile')).toBe(true)
     expect(
-      lane.steps.some((step) => step.run === 'bunx playwright install --with-deps chromium webkit')
+      lane.steps.some((step) => step.run === 'node .github/scripts/check-playwright-runtime.mjs')
     ).toBe(true)
 
     const download = lane.steps.find((step) => step.name === 'Download the built UI package')
