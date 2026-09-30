@@ -14,11 +14,11 @@ name: Renovate
 
 on:
   schedule:
-    - cron: "30 */2 * * *"
+    - cron: '30 */2 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Log what Renovate would do without writing"
+        description: 'Log what Renovate would do without writing'
         type: boolean
         default: false
 
@@ -36,7 +36,7 @@ jobs:
         uses: renovatebot/github-action@12f8ed8e6a936a00dc66b628d224488ac406b5e8 # v42.0.5
         env:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
-          RENOVATE_GIT_AUTHOR: "A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>"
+          RENOVATE_GIT_AUTHOR: 'A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>'
           RENOVATE_DRY_RUN: ${{ inputs.dry_run && 'strict' || 'full' }}
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
