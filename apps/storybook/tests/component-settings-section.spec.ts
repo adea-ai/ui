@@ -56,11 +56,13 @@ test('content body spaces controls and cards without adding an enclosing row bor
   )
   const card = page.getByTestId('settings-card')
 
-  await expect(rowsBody).toHaveCSS('border-top-width', '1px')
-  await expect(contentBody).toHaveCSS('border-top-width', '0px')
+  expect(await rowsBody.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe('1px')
+  expect(await contentBody.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
+    '0px'
+  )
   await expect(contentBody).toHaveCSS('gap', '16px')
   await expect(contentBody).toHaveCSS('display', 'flex')
-  await expect(card).toHaveCSS('border-top-width', '1px')
+  expect(await card.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe('1px')
   await expect(page.getByTestId('field-content')).toBeVisible()
   await expect(page.getByText('Settings card')).toBeVisible()
 })
