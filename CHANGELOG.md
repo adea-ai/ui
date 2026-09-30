@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.87.0](https://github.com/adea-ai/ui/compare/v0.86.0...v0.87.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** share navigation, downloads, and entity icons ([#153](https://github.com/adea-ai/ui/issues/153)) ([62f2239](https://github.com/adea-ai/ui/commit/62f223987915cac7403003c31486761e739e47fd))
+
 ## [0.86.0](https://github.com/adea-ai/ui/compare/v0.85.0...v0.86.0) (2026-09-30)
 
 
