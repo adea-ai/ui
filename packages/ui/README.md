@@ -709,3 +709,9 @@ keyboard disclosure, visible actions and automated accessibility. This is shared
 composition evidence; bounded runtime projection, storage and production chat
 integration remain application acceptance gates. Attribution for the selected
 KiroCrew source contracts is recorded in the issue-specific `NOTICE` entry.
+
+The shared `TopBar` contracts its middle track on narrow screens. Its side groups
+scroll horizontally when enlarged text makes all controls wider than the viewport;
+keyboard focus reveals each action. Groups opt out of native window dragging.
+Use `TopBarTitle align="center"` for a centered title and layout-only visibility
+classes when a title should yield space to essential controls.

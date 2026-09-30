@@ -41,7 +41,7 @@ export function TopBar(props: TopBarProps) {
     <header
       data-slot="top-bar"
       class={cn(
-        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)] items-center gap-3 border-b border-border px-3',
+        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-card text-card-foreground px-3 md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
         local.glass && 'glass-panel',
         local.draggable && 'window-drag',
         local.macosInset && 'window-inset-macos',
@@ -61,7 +61,7 @@ export function TopBarSection(props: ComponentProps<'div'> & { align?: 'start' |
     <div
       data-slot="top-bar-section"
       class={cn(
-        'flex min-w-0 items-center gap-2 overflow-hidden',
+        'window-no-drag flex min-w-0 items-center gap-2 overflow-x-auto overflow-y-hidden',
         local.align === 'end' && 'justify-end',
         local.align !== 'end' && 'justify-start',
         local.class
@@ -71,12 +71,16 @@ export function TopBarSection(props: ComponentProps<'div'> & { align?: 'start' |
   )
 }
 
-export function TopBarTitle(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+export function TopBarTitle(props: ComponentProps<'div'> & { align?: 'start' | 'center' }) {
+  const [local, rest] = splitProps(props, ['class', 'align'])
   return (
     <div
       data-slot="top-bar-title"
-      class={cn('truncate text-sm font-medium', local.class)}
+      class={cn(
+        'truncate text-sm font-medium',
+        local.align === 'center' && 'text-center',
+        local.class
+      )}
       {...rest}
     />
   )
