@@ -1,0 +1,22 @@
+{
+  "name": "virtual-window",
+  "type": "registry:ui",
+  "title": "Virtual Window",
+  "description": "Geometry wrappers for a virtual list; scrolling and range ownership stay with the caller.",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/virtual-window/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/virtual-window/index.ts"
+    },
+    {
+      "path": "src/components/layout/virtual-window/virtual-window.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/virtual-window/virtual-window.tsx"
+    }
+  ]
+}

@@ -110,6 +110,7 @@ export function CommandDialog(props: CommandDialogProps) {
         <KobalteDialog.Content
           aria-label={commandProps.label}
           cmdk-dialog=""
+          role="dialog"
           class={cn(
             'bg-popover text-popover-foreground fixed top-1/3 left-1/2 z-(--z-dialog) w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
             'overflow-hidden rounded-xl border border-border shadow-xl',
