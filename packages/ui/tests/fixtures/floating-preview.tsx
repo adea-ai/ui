@@ -5,7 +5,7 @@ import '../../src/styles/globals.css'
 
 render(
   () => (
-    <main style={{ position: 'relative', width: 'min(640px, 100vw)', height: 'min(480px, 100vh)' }}>
+    <main class="relative h-screen w-screen">
       <h1 class="sr-only">Preview fixture</h1>
       <FloatingPreview
         label="Preview window"
