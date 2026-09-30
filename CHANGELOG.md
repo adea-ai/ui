@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.0](https://github.com/adea-ai/ui/compare/v0.80.0...v0.81.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** no-interactive-wrappers — the rule keyed on the wrapper pattern ([#130](https://github.com/adea-ai/ui/issues/130)) ([6fb702e](https://github.com/adea-ai/ui/commit/6fb702e71fd0f00038588e97c1a11028dc4c3db6))
+
 ## [0.80.0](https://github.com/adea-ai/ui/compare/v0.79.0...v0.80.0) (2026-09-30)
 
 
