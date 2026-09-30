@@ -1463,6 +1463,36 @@
       ]
     },
     {
+      "name": "floating-preview",
+      "type": "registry:ui",
+      "title": "Floating Preview",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/scroll-area"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/floating-preview/floating-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/floating-preview.tsx"
+        },
+        {
+          "path": "src/components/layout/floating-preview/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/index.ts"
+        },
+        {
+          "path": "src/components/layout/floating-preview/model.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/model.ts"
+        }
+      ]
+    },
+    {
       "name": "orbit-layout",
       "type": "registry:ui",
       "title": "Orbit Layout",
