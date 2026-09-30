@@ -390,3 +390,29 @@ Redux and Framer Motion ownership. Relevant test contracts come from
 `website/src/test/rowDisclosure.test.tsx`; compiled and Solid packed consumers are
 exercised in headless Chromium, WebKit and native Node SSR. Full runtime projection,
 durable application storage and production Chat adoption remain host-owned gates.
+
+## Catalog browser translated from KiroCrew (issue #425 selected unit)
+
+`packages/ui/src/components/composites/catalog-browser/` translates the
+category, search, discover/installed, result-detail and focus-return composition
+from `website/src/pages/apps/DiscoverPage.tsx` and
+`website/src/components/appstore/CategoryRail.tsx`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+The translated presentation keeps stable host-ordered categories, discover and
+installed views, bounded category expansion, native search, item details, and
+focus return to the selected result. `CatalogDetail` supplies a shared summary,
+action and section frame; hosts own verified records, filtering, installed
+truth, permissions, recovery, install effects and detail copy. The nearest
+donor behavior tests are `website/playwright/apps.spec.ts` and
+`website/src/test/appstoreCategories.test.ts`.
+
+KiroCrew's React/runtime, catalog transport, account and entitlement state,
+installation/execution authority, provider data and app-specific services are
+excluded. Its distinct `/apps/library` core-app launchpad is also excluded:
+this selected unit is the external verified plugin marketplace adapter, while
+Adea's #757 App Library remains a separate core-view and rail-management flow.
