@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.84.0](https://github.com/adea-ai/ui/compare/v0.83.1...v0.84.0) (2026-09-30)
+
+
+### Features
+
+* **lint:** enforce shared icon actions and literal interaction props ([#149](https://github.com/adea-ai/ui/issues/149)) ([c1bb854](https://github.com/adea-ai/ui/commit/c1bb8544b32fd8c22c54f74233f93bd0b0372e57))
+* share accessible contextual sidebar resizing ([#146](https://github.com/adea-ai/ui/issues/146)) ([4b27124](https://github.com/adea-ai/ui/commit/4b2712476ab52601da69f4447d3cd066436151e1))
+
 ## [0.83.1](https://github.com/adea-ai/ui/compare/v0.83.0...v0.83.1) (2026-09-30)
 
 
