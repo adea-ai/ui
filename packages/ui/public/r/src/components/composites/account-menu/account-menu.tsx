@@ -9,10 +9,10 @@ import {
   Smartphone,
   UserRound,
 } from 'lucide-solid'
-import type { JSX } from 'solid-js'
-import { For, Show, splitProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
+import { For, Show, createSignal, onCleanup, splitProps } from 'solid-js'
 import { cn } from '../../../lib/utils'
-import { Button } from '../../ui/button/button'
+import { Button, type ButtonProps } from '../../ui/button/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip/tooltip'
 
 /**
  * AccountMenu.
@@ -49,10 +50,14 @@ export type AccountMenuItem = {
   /** Render only on this platform. Omit to always render. */
   platform?: 'desktop' | 'web'
   onSelect?: () => void
+  /** Run after the menu's close-focus cycle, with its trigger as a stable opener. */
+  onSelectAfterClose?: (trigger: HTMLButtonElement | undefined) => void
 }
 
 export type AccountMenuProps = {
   class?: string
+  /** The trigger size. Icon-only menus default to the standard icon size. */
+  size?: ButtonProps['size']
   /** The entries above the separator. */
   items: readonly AccountMenuItem[]
   /** Which platform this is rendered on, for items that declare one. */
@@ -81,6 +86,7 @@ const FALLBACK_ICONS: Record<string, typeof Settings2> = {
 export function AccountMenu(props: AccountMenuProps) {
   const [local, rest] = splitProps(props, [
     'class',
+    'size',
     'items',
     'platform',
     'authenticated',
@@ -91,53 +97,96 @@ export function AccountMenu(props: AccountMenuProps) {
     'onIntent',
   ])
 
+  let trigger: HTMLButtonElement | undefined
+  let pendingAfterClose:
+    | { callback: NonNullable<AccountMenuItem['onSelectAfterClose']> }
+    | undefined
+  let scheduledAfterClose:
+    | { callback: NonNullable<AccountMenuItem['onSelectAfterClose']> }
+    | undefined
+  const [menuOpen, setMenuOpen] = createSignal(false)
+
+  onCleanup(() => {
+    pendingAfterClose = undefined
+    scheduledAfterClose = undefined
+  })
+
   const visible = () =>
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger
-        as={Button}
-        variant="ghost"
-        size="icon-md"
-        class={cn('text-muted-foreground', local.class)}
-        aria-label={local.label ?? 'Account and settings'}
-        onFocus={() => local.onIntent?.()}
-        onPointerEnter={() => local.onIntent?.()}
-        {...rest}
-      >
-        <UserRound aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" class="min-w-56">
-        <DropdownMenuGroup>
-          <For each={visible()}>
-            {(item) => (
-              <DropdownMenuItem
-                disabled={item.disabled}
-                onSelect={() => item.onSelect?.()}
-                shortcut={item.shortcut}
-              >
-                {item.icon ?? renderFallbackIcon(item.id)}
-                <span>{item.label}</span>
-              </DropdownMenuItem>
-            )}
-          </For>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            disabled={local.busy}
-            onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
-          >
-            <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
-              <LogOut aria-hidden="true" />
-            </Show>
-            <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Tooltip disabled={menuOpen()}>
+      <DropdownMenu modal={false} onOpenChange={setMenuOpen}>
+        <TooltipTrigger
+          as={AccountMenuButton}
+          ref={(element: HTMLButtonElement) => (trigger = element)}
+          variant="ghost"
+          size={local.size ?? 'icon-md'}
+          class={cn('text-muted-foreground', local.class)}
+          aria-label={local.label ?? 'Account and settings'}
+          onFocus={() => local.onIntent?.()}
+          onPointerEnter={() => local.onIntent?.()}
+          {...rest}
+        >
+          <UserRound aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
+        <DropdownMenuContent
+          placement="top-start"
+          class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
+          onCloseAutoFocus={(event) => {
+            const selection = pendingAfterClose
+            pendingAfterClose = undefined
+            if (!selection) return
+
+            event.preventDefault()
+            scheduledAfterClose = selection
+            queueMicrotask(() => {
+              if (scheduledAfterClose !== selection) return
+              scheduledAfterClose = undefined
+              selection.callback(trigger)
+            })
+          }}
+        >
+          <DropdownMenuGroup>
+            <For each={visible()}>
+              {(item) => (
+                <DropdownMenuItem
+                  disabled={item.disabled}
+                  onSelect={() => {
+                    pendingAfterClose = item.onSelectAfterClose
+                      ? { callback: item.onSelectAfterClose }
+                      : undefined
+                    item.onSelect?.()
+                  }}
+                  shortcut={item.shortcut}
+                >
+                  {item.icon ?? renderFallbackIcon(item.id)}
+                  <span>{item.label}</span>
+                </DropdownMenuItem>
+              )}
+            </For>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={local.busy}
+              onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
+            >
+              <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
+                <LogOut aria-hidden="true" />
+              </Show>
+              <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Tooltip>
   )
+}
+
+function AccountMenuButton(props: ComponentProps<typeof Button>) {
+  return <DropdownMenuTrigger as={Button} {...props} />
 }
 
 /**

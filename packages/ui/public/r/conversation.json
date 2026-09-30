@@ -15,6 +15,7 @@
     "@adea-ai/ui/kbd",
     "@adea-ai/ui/spinner",
     "@adea-ai/ui/textarea",
+    "@adea-ai/ui/tooltip",
     "lib"
   ],
   "files": [

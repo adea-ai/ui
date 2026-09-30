@@ -1649,6 +1649,7 @@
       "registryDependencies": [
         "@adea-ai/ui/button",
         "@adea-ai/ui/dropdown-menu",
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -1853,6 +1854,7 @@
         "@adea-ai/ui/kbd",
         "@adea-ai/ui/spinner",
         "@adea-ai/ui/textarea",
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [

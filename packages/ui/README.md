@@ -47,18 +47,41 @@ keyboard, form submission, option, and label behavior:
 
 ```tsx
 import { NativeSelect } from '@adea-ai/ui/components/ui/native-select'
+import { Label } from '@adea-ai/ui/components/ui/label'
 
-<label for="relationship-kind">Relationship kind</label>
-<NativeSelect id="relationship-kind" name="relationshipKind" value={kind()} onChange={handleChange}>
-  <option value="all">All relationships</option>
-  <option value="derived">Derived</option>
-</NativeSelect>
+<Label for="relationship-kind">Relationship kind</Label>
+<NativeSelect
+  id="relationship-kind"
+  name="relationshipKind"
+  value={kind()}
+  onChange={handleChange}
+  options={[
+    { value: 'all', label: 'All relationships' },
+    { value: 'derived', label: 'Derived' },
+  ]}
+/>
 ```
 
 `NativeSelect` renders a real `<select>` and passes native props and children
 through. Use `value` with `onChange` for a controlled selection, or `defaultValue`
 to initialize an uncontrolled one. Use `Select` for searchable, runtime, or
 longer lists that need a custom popover.
+
+For free-form text with native suggestions, pass `suggestions` to `Input`.
+The library owns the datalist and unique association; a suggestion does not
+restrict the submitted value. Native `required`, `pattern`, form, event, and
+ref props still apply to the input.
+
+`ThreadPanel.headerActions` accepts shared controls for host actions such as
+marking a thread unread. Closing the thread remains a separate labelled,
+tooltip-backed control. Hosts retain read-marker and message authority.
+
+`AccountMenu` owns the trigger tooltip, menu keyboard behavior, and session row.
+Pass `size` to match its host control size. Use an item's `onSelect` for an
+immediate action, or `onSelectAfterClose` to open a dialog after the menu has
+finished closing. The latter receives the connected trigger button for dialog
+focus restoration and is cancelled if the menu unmounts. Authentication,
+updates, navigation, and other effects remain host callbacks.
 
 Tailwind ignores dependency directories by default. Register the component
 directories your application uses in its stylesheet, relative to that stylesheet:
@@ -95,7 +118,7 @@ notes through the breaking Conventional Commit, rather than a silent patch.
 
 ## Theming
 
-The catalogue is 27 themes across two appearances, grouped into families. The
+The catalogue is 34 themes across two appearances, grouped into families. The
 provider takes an initial selection and every axis is a plain value:
 
 ```tsx
@@ -113,7 +136,7 @@ provider takes an initial selection and every axis is a plain value:
 | Axis       | Values                                             | How it is applied                                              |
 | ---------- | -------------------------------------------------- | -------------------------------------------------------------- |
 | Appearance | `light`, `dark`, `system`                          | a `dark` class plus `color-scheme` on `<html>`                 |
-| Theme      | any of the 27 catalogue ids                        | the variant's tokens, written as custom properties on `<html>` |
+| Theme      | any of the 34 catalogue ids                        | the variant's tokens, written as custom properties on `<html>` |
 | Accent     | `theme` (follow the variant) or one of six presets | a `data-accent` attribute on `<html>`                          |
 | Typeface   | five options                                       | a `data-font` attribute on `<html>`                            |
 
