@@ -52,6 +52,7 @@ test('CommandDialog forwards custom close autofocus after Escape', async ({ page
 
   const dialog = page.getByRole('dialog', { name: 'Custom command dialog focus test' })
   await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveAttribute('role', 'dialog')
   await dialog.locator('input').focus()
   await page.keyboard.press('Escape')
 

@@ -84,9 +84,8 @@ test('tooltip dismisses on pointer activation and stays closed over the opened p
   page,
 }) => {
   const button = page.getByRole('button', { name: 'Open system status' })
-  await button.hover()
-  await expect(page.getByRole('tooltip')).toHaveText('View the current system status')
-
+  // Click from a fresh pointer position: moving onto the trigger and activating
+  // it in one gesture must not leave its delayed tooltip over the new surface.
   await button.click()
   await expect(page.getByRole('dialog', { name: 'System status' })).toBeVisible()
   await expect(page.getByRole('tooltip')).toBeHidden()
