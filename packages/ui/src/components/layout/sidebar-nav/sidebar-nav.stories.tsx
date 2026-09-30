@@ -185,6 +185,68 @@ export const CollapsibleSections: Story = {
   ),
 }
 
+/** Controlled disclosures let the host temporarily reveal filtered matches without changing saved collapse state. */
+export const ControlledSections: Story = {
+  render: () => {
+    const [projectsOpen, setProjectsOpen] = createSignal(true)
+    const [agentsOpen, setAgentsOpen] = createSignal(false)
+    const [filtering, setFiltering] = createSignal(false)
+    const [reorderDirection, setReorderDirection] = createSignal('none')
+
+    return (
+      <div class="flex min-h-screen bg-background">
+        <SidebarNav aria-label="Controlled workspace sections">
+          <SidebarNavHeader>
+            <SidebarNavTitle as="h1">Workspace</SidebarNavTitle>
+          </SidebarNavHeader>
+          <SidebarNavContent>
+            <SidebarNavSection
+              label="Projects"
+              collapsible
+              open={filtering() || projectsOpen()}
+              onOpenChange={setProjectsOpen}
+              triggerProps={{
+                id: 'projects-disclosure',
+                'aria-description': 'Press Alt with Arrow Up or Arrow Down to reorder Projects.',
+                onReorder: setReorderDirection,
+              }}
+            >
+              <SidebarNavItem as="button" type="button">
+                Product
+              </SidebarNavItem>
+            </SidebarNavSection>
+            <SidebarNavSection
+              label="Agents"
+              collapsible
+              open={filtering() || agentsOpen()}
+              onOpenChange={setAgentsOpen}
+              triggerProps={{
+                id: 'agents-disclosure',
+                'aria-description': 'Press Alt with Arrow Up or Arrow Down to reorder Agents.',
+              }}
+            >
+              <SidebarNavItem as="button" type="button">
+                Research Agent
+              </SidebarNavItem>
+            </SidebarNavSection>
+          </SidebarNavContent>
+        </SidebarNav>
+        <div class="flex flex-col gap-3 p-4">
+          <p>Filtering reveals both sections temporarily; clearing it restores each saved state.</p>
+          <Button size="sm" onClick={() => setFiltering((active) => !active)}>
+            {filtering() ? 'Clear filter' : 'Show matching sections'}
+          </Button>
+          <output>
+            Saved: Projects {projectsOpen() ? 'open' : 'closed'}, Agents{' '}
+            {agentsOpen() ? 'open' : 'closed'}
+          </output>
+          <output>Last reorder direction: {reorderDirection()}</output>
+        </div>
+      </div>
+    )
+  },
+}
+
 /**
  * A two-level list: a branch nested under its worktree.
  *

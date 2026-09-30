@@ -11,6 +11,8 @@ export {
   sidebarNavItemStateClass,
   type SidebarNavItemProps,
   type SidebarNavProps,
+  type SidebarNavSectionProps,
+  type SidebarNavSectionTriggerProps,
   type SidebarNavTitleProps,
 } from './sidebar-nav'
 export {
