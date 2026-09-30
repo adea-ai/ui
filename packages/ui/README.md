@@ -67,7 +67,9 @@ through. Use `value` with `onChange` for a controlled selection, or `defaultValu
 to initialize an uncontrolled one. Use `Select` for searchable, runtime, or
 longer lists that need a custom popover.
 
-For free-form text with native suggestions, pass `suggestions` to `Input`.
+`InputControl` is the styled native input without suggestion-list behavior. Use
+`Input` when a form should offer native datalist suggestions; custom values
+remain valid and submit unchanged.
 The library owns the datalist and unique association; a suggestion does not
 restrict the submitted value. Native `required`, `pattern`, form, event, and
 ref props still apply to the input.
