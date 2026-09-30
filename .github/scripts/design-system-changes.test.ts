@@ -625,7 +625,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     expect(checkout?.with?.['persist-credentials']).toBe(false)
     expect(lane.steps.some((step) => step.run === 'bun install --frozen-lockfile')).toBe(true)
     expect(
-      lane.steps.some((step) => step.run === 'bunx playwright install --with-deps chromium webkit')
+      lane.steps.some((step) => step.run === 'node .github/scripts/check-playwright-runtime.mjs')
     ).toBe(true)
 
     const download = lane.steps.find((step) => step.name === 'Download the built UI package')
@@ -707,4 +707,29 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     })
   ).toBe(false)
   expect(passes({ REGISTRY_NEEDED: '' })).toBe(false)
+})
+
+test('Renovate checks out its runner configuration with read-only checkout credentials', () => {
+  const workflow = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/renovate.yml', import.meta.url), 'utf8')
+  ) as {
+    permissions: Record<string, string>
+    jobs: {
+      renovate: {
+        permissions?: Record<string, string>
+        steps: { uses?: string; with?: Record<string, unknown> }[]
+      }
+    }
+  }
+  const job = workflow.jobs.renovate
+  const renovateIndex = job.steps.findIndex((step) => step.uses?.startsWith('renovatebot/'))
+  const checkoutIndex = job.steps.findIndex((step) => step.uses?.startsWith('actions/checkout@'))
+  expect(checkoutIndex).toBeGreaterThanOrEqual(0)
+  expect(checkoutIndex).toBeLessThan(renovateIndex)
+  expect(job.permissions).toEqual({ contents: 'read' })
+  expect(workflow.permissions).toEqual({})
+  expect(job.steps[checkoutIndex]?.with?.['persist-credentials']).toBe(false)
+  const configuration = job.steps[renovateIndex]?.with?.configurationFile
+  expect(configuration).toBe('.github/renovate-runner.json')
+  expect(() => JSON.parse(readFileSync(configuration as string, 'utf8'))).not.toThrow()
 })

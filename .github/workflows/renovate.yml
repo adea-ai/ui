@@ -26,11 +26,13 @@ concurrency:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       # The runner config and Renovate's own file reads live in this checkout;
       # without it the action fails with ENOENT on the configuration file.
-      - name: Checkout
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v4
+      - name: Checkout runner configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -39,6 +41,9 @@ jobs:
         env:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_GIT_AUTHOR: 'A. Mahoney-Fernandes <83057795+0xPlayerOne@users.noreply.github.com>'
+          # Set the repository variable to debug when a run needs its GraphQL
+          # errors spelled out (e.g. per-repo token-scope failures).
+          LOG_LEVEL: ${{ vars.RENOVATE_LOG_LEVEL || 'info' }}
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
           configurationFile: .github/renovate-runner.json
