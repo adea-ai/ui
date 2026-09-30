@@ -15,10 +15,9 @@ import {
  * TopBar.
  *
  * The window's title row and primary toolbar. Three tracks: a leading group, a
- * centred search, and a trailing group. The search is a fixed function of the
- * window width and the two side groups are equal remainders, which is what makes
- * the search *exactly* window-centred by construction — no measurement, no
- * observer, no absolutely-positioned overlay to keep clear of.
+ * centered search, and a trailing group. On wide screens the search occupies a
+ * fixed center track between equal side tracks; on narrow screens it keeps a
+ * usable target while each side group can scroll to reveal focused actions.
  *
  * On a frameless desktop window this row is also the drag region, so it carries
  * `window-drag` and the controls inside it opt back out with `window-no-drag`.
@@ -35,13 +34,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The default arrangement: title leading, search centred, actions trailing. */
+/** The default arrangement: title leading, search centered on wide screens, actions trailing. */
 export const Default: Story = {
   render: () => (
     <div class="h-40 bg-background">
       <TopBar>
         <TopBarSection>
-          <TopBarTitle align="center">adea</TopBarTitle>
+          <TopBarTitle>adea</TopBarTitle>
         </TopBarSection>
         <TopBarSearch placeholder="Search projects, files and sessions" shortcut="⌘K" />
         <TopBarSection align="end">
@@ -55,9 +54,9 @@ export const Default: Story = {
       </TopBar>
       <div class="p-4">
         <p class="max-w-prose text-sm text-muted-foreground">
-          Resize the window and the search stays centred. The side tracks are pure remainder, so
-          content never pushes the search out of existence — which is what happens when a search is
-          placed in a flex row between two auto-width groups.
+          On wide screens the search stays centered between equal side tracks. On narrow screens it
+          becomes an icon control with a usable target, while the side groups scroll to reveal each
+          focused action without widening the page.
         </p>
       </div>
     </div>
@@ -103,9 +102,8 @@ export const WithBreadcrumb: Story = {
 /**
  * A navigation history pair and a status readout in the trailing group.
  *
- * These are the elements that drop first when the window narrows: the arrows are
- * redundant with the keyboard shortcuts and the readouts are ambient, so they yield
- * before the search or the title does.
+ * These controls stay available when the window narrows; their side groups scroll
+ * horizontally as needed while the Search target remains usable.
  */
 export const WithHistoryAndReadouts: Story = {
   render: () => (

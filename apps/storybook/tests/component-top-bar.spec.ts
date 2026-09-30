@@ -81,7 +81,12 @@ test('toolbar actions remain reachable without document overflow at narrow width
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
-  const toolbar = page.getByRole('banner', { name: 'Workspace toolbar' })
+  const toolbar = page.locator('[data-slot="top-bar"][aria-label="Workspace toolbar"]')
+  const titleOnlyToolbar = page.locator('[data-slot="top-bar"][aria-label="Title-only toolbar"]')
+  const search = toolbar.getByRole('button', { name: 'Search workspace', exact: true })
+  const tabKey =
+    test.info().project.name === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+  await expect(titleOnlyToolbar).toBeVisible()
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 844 })
     for (const factor of [1, 2]) {
@@ -91,19 +96,59 @@ test('toolbar actions remain reachable without document overflow at narrow width
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
       ).toBe(true)
+      if (width < 768) {
+        const middleTrack = await titleOnlyToolbar.evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element).gridTemplateColumns.split(' ')[1]!)
+        )
+        expect(
+          middleTrack,
+          `${width}px title-only middle track should collapse`
+        ).toBeLessThanOrEqual(1)
+      }
+      const searchBounds = await search.evaluate((element) => {
+        const rect = element.getBoundingClientRect()
+        const controlHeight = Number.parseFloat(getComputedStyle(element).height)
+        const parent = element.closest('[data-slot="top-bar"]')!.getBoundingClientRect()
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          controlHeight,
+          parentLeft: parent.left,
+          parentRight: parent.right,
+        }
+      })
+      expect(searchBounds.left).toBeGreaterThanOrEqual(searchBounds.parentLeft - 1)
+      expect(searchBounds.right).toBeLessThanOrEqual(searchBounds.parentRight + 1)
+      expect(searchBounds.width).toBeGreaterThanOrEqual(searchBounds.controlHeight - 1)
       const buttons = toolbar.getByRole('button')
+      await buttons.first().focus()
       for (let index = 0; index < (await buttons.count()); index++) {
         const button = buttons.nth(index)
-        await button.focus()
-        const visible = await button.evaluate((element) => {
-          const parent = element.closest('[data-slot="top-bar-section"]')!
+        await expect(button).toBeFocused()
+        const visibility = await button.evaluate((element) => {
+          const parent =
+            element.closest('[data-slot="top-bar-section"]') ??
+            element.closest('[data-slot="top-bar"]')!
           const control = element.getBoundingClientRect()
           const viewport = parent.getBoundingClientRect()
-          return control.left >= viewport.left - 1 && control.right <= viewport.right + 1
+          return {
+            visible: control.left >= viewport.left - 1 && control.right <= viewport.right + 1,
+            controlLeft: control.left,
+            controlRight: control.right,
+            viewportLeft: viewport.left,
+            viewportRight: viewport.right,
+            scrollLeft: (parent as HTMLElement).scrollLeft,
+            scrollWidth: (parent as HTMLElement).scrollWidth,
+          }
         })
-        expect(visible).toBe(true)
+        expect(
+          visibility.visible,
+          `${width}px at ${factor}x text: ${await button.getAttribute('aria-label')} should be within its scroll container (${JSON.stringify(visibility)})`
+        ).toBe(true)
         await page.keyboard.press('Enter')
         await expect(page.locator('output')).toHaveText((await button.getAttribute('aria-label'))!)
+        if (index < (await buttons.count()) - 1) await page.keyboard.press(tabKey)
       }
     }
   }

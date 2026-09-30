@@ -1740,7 +1740,9 @@
       "type": "registry:ui",
       "title": "Top Bar",
       "description": "",
-      "dependencies": [],
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
       "registryDependencies": [
         "lib"
       ],
