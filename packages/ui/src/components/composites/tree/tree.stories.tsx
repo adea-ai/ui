@@ -26,6 +26,12 @@ type Story = StoryObj<typeof meta>
 
 /** Donor-shaped file rows with host-owned expansion and selection state. */
 export const FileHierarchy: Story = {
+  args: {
+    'aria-label': 'Workspace files',
+    visibleItems: [],
+    activeId: null,
+    onActiveIdChange: () => undefined,
+  },
   render: () => {
     const [activeId, setActiveId] = createSignal<string | null>('src')
     const [selectedId, setSelectedId] = createSignal('files')

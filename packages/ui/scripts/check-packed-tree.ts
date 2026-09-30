@@ -1,6 +1,6 @@
 /** Actual npm-tarball, typed-consumer, windowed keyboard, bounds and Axe contract for Tree. */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -27,6 +27,7 @@ try {
     })
   ) as [{ filename: string }]
   const packageManifest = JSON.parse(readFileSync(join(uiRoot, 'package.json'), 'utf8')) as {
+    dependencies: Record<string, string>
     peerDependencies: Record<string, string>
   }
   const solidVersion = JSON.parse(
@@ -44,6 +45,7 @@ try {
       type: 'module',
       dependencies: {
         '@adea-ai/ui': `file:${join(consumer, archive.filename)}`,
+        'lucide-solid': packageManifest.dependencies['lucide-solid'],
         'solid-js': packageManifest.peerDependencies['solid-js'] ?? solidVersion.version,
         tailwindcss: tailwindVersion.version,
       },
@@ -415,21 +417,19 @@ export function RootExportConsumer() {
         await lastRow.press('Space')
         await expect(fallbackPage.getByLabel('Selected row')).toHaveText('file-99999')
         const endGeometry = await fallbackPage.evaluate(() => {
-          const viewport = document.querySelector('.tree-test-viewport')
+          const viewport = document.querySelector<HTMLElement>('[data-testid="tree-test-viewport"]')
           const rows = [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')]
           const last = rows.find((row) => row.dataset.treeId === 'file-99999')
           if (!viewport || !last) return null
           const viewportBounds = viewport.getBoundingClientRect()
           const lastBounds = last.getBoundingClientRect()
-          const sortedRows = rows
-            .map((row) => row.getBoundingClientRect())
-            .sort((left, right) => left.top - right.top)
-          const overlap = sortedRows
-            .slice(1)
-            .reduce(
-              (largest, row, index) => Math.max(largest, sortedRows[index]!.bottom - row.top),
-              0
-            )
+          let previousBottom: number | undefined
+          let overlap = 0
+          for (const row of rows) {
+            const rect = row.getBoundingClientRect()
+            if (previousBottom !== undefined) overlap = Math.max(overlap, previousBottom - rect.top)
+            previousBottom = rect.bottom
+          }
           return {
             scrollTop: viewport.scrollTop,
             maxScrollTop: viewport.scrollHeight - viewport.clientHeight,

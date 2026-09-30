@@ -336,8 +336,8 @@ export function TreeRow(props: TreeRowProps) {
       id={rest.id ?? `${tree.idPrefix}-item-${encodeURIComponent(id())}`}
       role="treeitem"
       aria-level={local.item.level}
-      aria-expanded={local.item.expandable ? String(local.item.expanded) : undefined}
-      aria-selected={local.selected === undefined ? undefined : String(local.selected)}
+      aria-expanded={local.item.expandable ? (local.item.expanded ? 'true' : 'false') : undefined}
+      aria-selected={local.selected === undefined ? undefined : local.selected ? 'true' : 'false'}
       aria-posinset={position()?.position}
       aria-setsize={position()?.setSize}
       tabIndex={tree.activeId() === id() ? 0 : -1}

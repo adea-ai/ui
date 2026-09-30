@@ -11,6 +11,12 @@ const fileCount = 100_000
 const mountedRowCount = 6
 const estimatedRowHeight = 28
 
+function indexForId(id: string): number {
+  if (id === 'root') return 0
+  const match = /^file-(\d+)$/.exec(id)
+  return match ? Number(match[1]) + 1 : -1
+}
+
 function WindowedTreeFixture() {
   const initialActiveId = document.documentElement.dataset.treeFixtureActive
   const initialWindowStart = Number(document.documentElement.dataset.treeFixtureWindow ?? 0)
@@ -52,12 +58,6 @@ function WindowedTreeFixture() {
   const mountedItems = createMemo(() =>
     allItems().slice(windowStart(), windowStart() + mountedRowCount)
   )
-
-  function indexForId(id: string): number {
-    if (id === 'root') return 0
-    const match = /^file-(\d+)$/.exec(id)
-    return match ? Number(match[1]) + 1 : -1
-  }
 
   function setWindowForScroll(position: number): void {
     const total = allItems().length
@@ -122,7 +122,8 @@ function WindowedTreeFixture() {
       </Button>
       <div
         ref={setViewport}
-        class="tree-test-viewport h-32 w-full overflow-auto"
+        data-testid="tree-test-viewport"
+        class="h-32 w-full overflow-auto"
         onScroll={(event) => {
           const nextTop = event.currentTarget.scrollTop
           setScrollTop(nextTop)
