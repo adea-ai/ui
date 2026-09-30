@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.90.0](https://github.com/adea-ai/ui/compare/v0.89.2...v0.90.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add bounded shared settings dialogs ([#172](https://github.com/adea-ai/ui/issues/172)) ([12929c9](https://github.com/adea-ai/ui/commit/12929c9985e477fa1f7d9a46dd13fbfa19474cdd))
+
+
+### Bug Fixes
+
+* **ci:** handle cancelled menu transitions in packed checks ([#171](https://github.com/adea-ai/ui/issues/171)) ([7fa1e44](https://github.com/adea-ai/ui/commit/7fa1e44d5c1302c1c5aa2ee34e0b75a50067edf1))
+* **ci:** use pinned browser runtimes for packed contracts ([#177](https://github.com/adea-ai/ui/issues/177)) ([2178ae6](https://github.com/adea-ai/ui/commit/2178ae65314d0f0aedab47c68ac41d3da29c20f6))
+* **top-bar:** keep search usable at narrow widths ([#174](https://github.com/adea-ai/ui/issues/174)) ([615e9d9](https://github.com/adea-ai/ui/commit/615e9d96c90903e501563aa693666d13f85c68bb))
+
+
+### CI
+
+* make the Renovate log level a repository variable ([#178](https://github.com/adea-ai/ui/issues/178)) ([3b5913b](https://github.com/adea-ai/ui/commit/3b5913b467b1c487a690751a6f07f367f16d7932))
+
 ## [0.89.2](https://github.com/adea-ai/ui/compare/v0.89.1...v0.89.2) (2026-09-30)
 
 
