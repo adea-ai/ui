@@ -1,0 +1,24 @@
+{
+  "name": "action-button",
+  "type": "registry:ui",
+  "title": "Action Button",
+  "description": "A shared Button with optional tooltip and busy-state feedback.",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/spinner",
+    "@adea-ai/ui/tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/action-button/action-button.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/action-button/action-button.tsx"
+    },
+    {
+      "path": "src/components/composites/action-button/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/action-button/index.ts"
+    }
+  ]
+}
