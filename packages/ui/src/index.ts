@@ -69,6 +69,7 @@ export * from './components/ui/switch'
 export * from './components/ui/table'
 export * from './components/ui/tabs'
 export * from './components/ui/textarea'
+export * from './components/ui/text-link'
 export * from './components/ui/toast'
 export * from './components/ui/toggle'
 export * from './components/ui/toggle-group'
@@ -79,6 +80,7 @@ export * from './components/motion'
 
 /* --- Layout -------------------------------------------------------------- */
 export * from './components/layout/split-layout'
+export * from './components/layout/floating-preview'
 export * from './components/layout/orbit-layout'
 export * from './components/layout/virtual-window'
 export * from './components/layout/app-shell'
@@ -138,6 +140,7 @@ export {
   type ThemeVariant,
 } from './lib/themes'
 export { keyedRows, type KeyedRow } from './lib/keyed-rows'
+export { writeClipboardText } from './lib/clipboard'
 export { formatBytes, formatReleaseDate, plainTextFromMarkdown } from './lib/version-notes'
 export {
   accentPresets,

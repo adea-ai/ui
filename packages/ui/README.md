@@ -715,3 +715,11 @@ scroll horizontally when enlarged text makes all controls wider than the viewpor
 keyboard focus reveals each action. Groups opt out of native window dragging.
 Use `TopBarTitle align="center"` for a centered title and layout-only visibility
 classes when a title should yield space to essential controls.
+
+### Controlled appearance mode
+
+`ThemeModeToggle` provides the shared light/dark/system selector for hosts that
+own their preference provider and storage. Pass `mode` and `onModeChange`; the
+control owns roving keyboard focus, pressed state and explanatory tooltips. It
+does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
+existing provider-bound API.

@@ -48,7 +48,7 @@ function checkServedImports(
 ): void {
   const source = readFileSync(servedFile, 'utf8')
 
-  for (const match of source.matchAll(/(['"])#([\w/.-]+)\1/g)) {
+  for (const match of source.matchAll(/\b(?:from|import)\s*(['"])#([\w/.-]+)\1/g)) {
     findings.push(
       `${itemName}: served "${path}" imports "${match[2]}" through the #lib map, which only resolves inside this package.`
     )

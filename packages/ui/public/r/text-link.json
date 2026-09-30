@@ -1,0 +1,22 @@
+{
+  "name": "text-link",
+  "type": "registry:ui",
+  "title": "Text Link",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/text-link/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/text-link/index.ts"
+    },
+    {
+      "path": "src/components/ui/text-link/text-link.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/text-link/text-link.tsx"
+    }
+  ]
+}

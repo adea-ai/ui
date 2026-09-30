@@ -40,6 +40,15 @@ export const WithoutValueLabel: Story = {
   ),
 }
 
+/** A compact bar with its number and visible label supplied by surrounding UI. */
+export const BarOnly: Story = {
+  render: () => (
+    <div class="w-96">
+      <Progress value={64} aria-label="Refreshing session" hideValue />
+    </div>
+  ),
+}
+
 /** Every meaningful stage, so the bar's range is legible at a glance. */
 export const Range: Story = {
   render: () => (

@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'solid-js'
 import { createUniqueId, For, Show, splitProps } from 'solid-js'
+import { useFormFieldControl } from '#lib/form-field'
 import { InputControl } from './input-control'
 
 /**
@@ -20,13 +21,43 @@ export type InputProps = ComponentProps<'input'> & {
 }
 
 export function Input(props: InputProps) {
-  const [local, rest] = splitProps(props, ['list', 'suggestions'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'type',
+    'id',
+    'list',
+    'suggestions',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('control', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
   const suggestionsId = createUniqueId()
   const listId = () => local.list ?? `input-suggestions-${suggestionsId}`
 
   return (
     <>
-      <InputControl {...rest} list={local.suggestions ? listId() : local.list} />
+      <InputControl
+        {...rest}
+        class={local.class}
+        type={local.type}
+        id={field?.id ?? local.id}
+        list={local.suggestions ? listId() : local.list}
+        aria-label={local['aria-label']}
+        aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+        aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+        aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+        aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
+      />
       <Show when={local.suggestions}>
         {(suggestions) => (
           <datalist id={listId()}>

@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../src/components/ui/ale
 import { Badge } from '../../src/components/ui/badge/badge'
 import { ThemePreview, ThemeSwatch } from '../../src/components/theme/theme-picker'
 import { Button } from '../../src/components/ui/button/button'
+import { ListRow } from '../../src/components/composites/list-row/list-row'
 import { builtinThemes, themeCssVariables } from '../../src/lib/themes'
 import '../../src/styles/globals.css'
 
@@ -58,6 +59,16 @@ function Fixture() {
                 <AlertTitle>Could not delete</AlertTitle>
                 <AlertDescription>The item is still in use.</AlertDescription>
               </Alert>
+            </div>
+            <div class="bg-background p-2">
+              <ListRow
+                selected
+                data-selected-list-row
+                description="Evidence from source documents"
+                trailing={<time dateTime="2026-09-30">Sep 30</time>}
+              >
+                Workspace evidence
+              </ListRow>
             </div>
           </section>
         )}

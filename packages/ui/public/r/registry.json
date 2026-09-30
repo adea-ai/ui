@@ -433,6 +433,11 @@
           "path": "src/components/ui/combobox/index.ts",
           "type": "registry:ui",
           "target": "components/ui/combobox/index.ts"
+        },
+        {
+          "path": "src/components/ui/combobox/value-combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combobox/value-combobox.tsx"
         }
       ]
     },
@@ -614,11 +619,20 @@
       "type": "registry:ui",
       "title": "Empty",
       "description": "",
-      "dependencies": [],
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
       "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/spinner",
         "lib"
       ],
       "files": [
+        {
+          "path": "src/components/ui/empty/empty-state.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/empty/empty-state.tsx"
+        },
         {
           "path": "src/components/ui/empty/empty.tsx",
           "type": "registry:ui",
@@ -662,6 +676,8 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/input",
+        "@adea-ai/ui/label",
         "lib"
       ],
       "files": [
@@ -674,6 +690,11 @@
           "path": "src/components/ui/field/index.ts",
           "type": "registry:ui",
           "target": "components/ui/field/index.ts"
+        },
+        {
+          "path": "src/components/ui/field/number-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/field/number-field.tsx"
         }
       ]
     },
@@ -735,6 +756,7 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
+        "@adea-ai/ui/action-button",
         "lib"
       ],
       "files": [
@@ -747,6 +769,11 @@
           "path": "src/components/ui/input-group/input-group.tsx",
           "type": "registry:ui",
           "target": "components/ui/input-group/input-group.tsx"
+        },
+        {
+          "path": "src/components/ui/input-group/secret-input-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-group/secret-input-group.tsx"
         }
       ]
     },
@@ -1321,6 +1348,28 @@
       ]
     },
     {
+      "name": "text-link",
+      "type": "registry:ui",
+      "title": "Text Link",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/text-link/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/text-link/index.ts"
+        },
+        {
+          "path": "src/components/ui/text-link/text-link.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-link/text-link.tsx"
+        }
+      ]
+    },
+    {
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
@@ -1459,6 +1508,41 @@
           "path": "src/components/layout/app-shell/index.ts",
           "type": "registry:ui",
           "target": "components/layout/app-shell/index.ts"
+        },
+        {
+          "path": "src/components/layout/app-shell/skip-link.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/app-shell/skip-link.tsx"
+        }
+      ]
+    },
+    {
+      "name": "floating-preview",
+      "type": "registry:ui",
+      "title": "Floating Preview",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/scroll-area"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/floating-preview/floating-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/floating-preview.tsx"
+        },
+        {
+          "path": "src/components/layout/floating-preview/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/index.ts"
+        },
+        {
+          "path": "src/components/layout/floating-preview/model.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/model.ts"
         }
       ]
     },
@@ -1853,6 +1937,7 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -2100,6 +2185,7 @@
         "@adea-ai/ui/button",
         "@adea-ai/ui/radio-group",
         "@adea-ai/ui/toggle-group",
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -2112,6 +2198,11 @@
           "path": "src/components/theme/index.ts",
           "type": "registry:ui",
           "target": "components/theming/index.ts"
+        },
+        {
+          "path": "src/components/theme/theme-mode-toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-mode-toggle.tsx"
         },
         {
           "path": "src/components/theme/theme-picker.tsx",
@@ -2200,6 +2291,21 @@
       ],
       "registryDependencies": [],
       "files": [
+        {
+          "path": "src/lib/clipboard.ts",
+          "type": "registry:lib",
+          "target": "lib/clipboard.ts"
+        },
+        {
+          "path": "src/lib/download.ts",
+          "type": "registry:lib",
+          "target": "lib/download.ts"
+        },
+        {
+          "path": "src/lib/form-field.ts",
+          "type": "registry:lib",
+          "target": "lib/form-field.ts"
+        },
         {
           "path": "src/lib/keyed-rows.ts",
           "type": "registry:lib",
