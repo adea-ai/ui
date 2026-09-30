@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.2](https://github.com/adea-ai/ui/compare/v0.78.1...v0.78.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* **status-chip:** declare the tooltip content slot so host styles apply ([#124](https://github.com/adea-ai/ui/issues/124)) ([aa44b8e](https://github.com/adea-ai/ui/commit/aa44b8ec0aec211881bc0436d453f508256a7df6))
+
 ## [0.78.1](https://github.com/adea-ai/ui/compare/v0.78.0...v0.78.1) (2026-09-29)
 
 
