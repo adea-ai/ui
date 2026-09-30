@@ -13,7 +13,7 @@ export function TextLink(props: ComponentProps<'a'>) {
 
   return (
     <a
-      data-slot="text-link"
+      data-slot="textlink"
       class={cn(
         'rounded-sm text-foreground underline decoration-primary underline-offset-4',
         'transition-colors ease-out hover:decoration-foreground outline-none',

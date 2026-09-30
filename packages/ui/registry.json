@@ -2176,6 +2176,11 @@
       "registryDependencies": [],
       "files": [
         {
+          "path": "src/lib/download.ts",
+          "type": "registry:lib",
+          "target": "lib/download.ts"
+        },
+        {
           "path": "src/lib/keyed-rows.ts",
           "type": "registry:lib",
           "target": "lib/keyed-rows.ts"
