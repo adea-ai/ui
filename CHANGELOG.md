@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.89.2](https://github.com/adea-ai/ui/compare/v0.89.1...v0.89.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* **ci:** check out Renovate runner configuration ([#167](https://github.com/adea-ai/ui/issues/167)) ([80e24fd](https://github.com/adea-ai/ui/commit/80e24fd552ce675f0f6025d706aee58bfb573cb5))
+* **ui:** give menuitemradio rows the shared pointer cursor ([#175](https://github.com/adea-ai/ui/issues/175)) ([58f3e23](https://github.com/adea-ai/ui/commit/58f3e23f03b4d3ef9cee99e479efe6185352b38e))
+
 ## [0.89.1](https://github.com/adea-ai/ui/compare/v0.89.0...v0.89.1) (2026-09-30)
 
 
