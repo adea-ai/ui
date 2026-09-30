@@ -38,6 +38,7 @@ function Fixture() {
             Open settings
             <CommandShortcut>⌘,</CommandShortcut>
           </CommandItem>
+          <CommandItem value="switch-project">Switch project</CommandItem>
           <CommandItem value="restricted-action" disabled>
             Restricted action
           </CommandItem>

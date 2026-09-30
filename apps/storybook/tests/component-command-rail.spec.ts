@@ -50,6 +50,7 @@ test('disabled menu text stays legible and selected shortcuts follow their row i
 }) => {
   const input = page.getByRole('combobox', { name: 'Filter commands' })
   await input.focus()
+  await input.fill('Open settings')
   await input.press('ArrowDown')
 
   const item = page.locator('[cmdk-item][data-selected="true"]')
@@ -80,6 +81,30 @@ test('disabled menu text stays legible and selected shortcuts follow their row i
   expect(selected.shortcut).toBe(selected.row)
   expect(selected.row).toBe(selected.expectedRow)
   expect(selected.fill).toBe(selected.expectedFill)
+
+  await input.fill('Switch project')
+  const enabled = page.getByRole('option', { name: 'Switch project' })
+  const enabledStyle = await enabled.evaluate((element) => {
+    const style = getComputedStyle(element)
+    const theme = element.closest<HTMLElement>('[data-theme-id]')
+    if (!theme) throw new Error('The command item lost its theme scope')
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) throw new Error('Canvas is unavailable for token comparison')
+    const color = (value: string) => {
+      context.clearRect(0, 0, 1, 1)
+      context.fillStyle = value
+      context.fillRect(0, 0, 1, 1)
+      return context.getImageData(0, 0, 1, 1).data.slice(0, 3).join(',')
+    }
+    return {
+      opacity: style.opacity,
+      color: color(style.color),
+      expected: color(getComputedStyle(theme).getPropertyValue('--popover-foreground').trim()),
+    }
+  })
+  expect(enabledStyle.opacity).toBe('1')
+  expect(enabledStyle.color).toBe(enabledStyle.expected)
 
   const disabled = page.getByRole('option', { name: 'Restricted action' })
   await expect(disabled).toHaveAttribute('data-disabled')
