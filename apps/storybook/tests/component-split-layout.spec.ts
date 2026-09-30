@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { buildLayoutBrowser, renderLayoutServer } from './layout-assets'
+import { buildFloatingPreviewBrowser } from './floating-preview-assets'
 let script: string
 let css: string
+let floatingScript: string
+let floatingCss: string
 test.beforeAll(async () => {
   ;({ script, css } = await buildLayoutBrowser())
+  ;({ script: floatingScript, css: floatingCss } = await buildFloatingPreviewBrowser())
 })
 test.beforeEach(async ({ page }) => {
   await page.setContent(
@@ -215,6 +219,116 @@ test('unmount cancels pending focus work and disposes every removed leaf owner',
   await expect(page.getByLabel('Unmounts')).toHaveText('2')
   await expect(page.getByRole('textbox', { name: 'Other editor' })).toBeFocused()
   expect(errors).toEqual([])
+})
+
+test('floating preview pointer and keyboard controls stay within their host bounds', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.body.replaceChildren())
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.addStyleTag({ content: floatingCss })
+  await page.addScriptTag({ content: floatingScript })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
+  const move = page.getByRole('button', { name: 'Move Preview window' })
+  const startBox = (await move.boundingBox())!
+  const box = (await frame.boundingBox())!
+  await page.mouse.move(startBox.x + startBox.width / 2, startBox.y + startBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    startBox.x + startBox.width / 2 - 50,
+    startBox.y + startBox.height / 2 + 40,
+    { steps: 3 }
+  )
+  await page.mouse.up()
+  const moved = (await frame.boundingBox())!
+  expect(moved.x).toBeLessThan(box.x - 35)
+  await move.focus()
+  await move.press('ArrowLeft')
+  expect((await frame.boundingBox())!.x).toBe(moved.x - 10)
+  const east = page.getByRole('button', { name: 'Resize Preview window east' })
+  await east.focus()
+  const before = (await frame.boundingBox())!.width
+  await east.press('ArrowRight')
+  expect((await frame.boundingBox())!.width).toBeGreaterThan(before)
+  const handle = (await east.boundingBox())!
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(handle.x + handle.width / 2 + 40, handle.y + handle.height / 2, {
+    steps: 3,
+  })
+  await page.mouse.up()
+  expect((await frame.boundingBox())!.width).toBeGreaterThan(before + 20)
+})
+
+test('floating preview tracks source aspect changes and exposes keyboard scrolling', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.body.replaceChildren())
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.addStyleTag({ content: floatingCss })
+  await page.addScriptTag({ content: floatingScript })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
+  const initial = (await frame.boundingBox())!
+  await page.getByRole('button', { name: 'Change source ratio' }).click()
+  await expect.poll(async () => (await frame.boundingBox())!.height).toBeGreaterThan(initial.height)
+
+  const content = page.getByRole('region', { name: 'Preview window content' })
+  await content.focus()
+  await expect(content).toBeFocused()
+  const initialScroll = await content.evaluate((node) => node.scrollTop)
+  await content.press('PageDown')
+  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBeGreaterThan(initialScroll)
+
+  const close = page.getByRole('button', { name: 'Close Preview window' })
+  await close.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Close Preview window.')
+})
+
+test('floating preview is bounded when narrow and has touch affordance, close, and accessible controls', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.body.replaceChildren())
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.addStyleTag({ content: floatingCss })
+  await page.addScriptTag({ content: floatingScript })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
+  expect(
+    await page
+      .getByRole('button', { name: 'Move Preview window' })
+      .evaluate((button) => getComputedStyle(button).touchAction)
+  ).toBe('none')
+  await page.setViewportSize({ width: 320, height: 240 })
+  await expect.poll(async () => (await frame.boundingBox())!.width).toBeLessThanOrEqual(296)
+  const box = (await frame.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(320)
+  for (const dark of [false, true]) {
+    await page.evaluate((value) => document.documentElement.classList.toggle('dark', value), dark)
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  }
+  await page.getByRole('button', { name: 'Close Preview window' }).click()
+  await expect(page.locator('body')).toHaveAttribute('data-closed', 'true')
+})
+
+test('floating preview close action remains operable from a touch pointer', async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    viewport: { width: 800, height: 600 },
+  })
+  try {
+    const page = await context.newPage()
+    await page.setContent(
+      '<!doctype html><html lang="en"><head><title>Touch preview</title></head><body><h1 class="sr-only">Touch fixture</h1></body></html>'
+    )
+    await page.addStyleTag({ content: floatingCss })
+    await page.addScriptTag({ content: floatingScript })
+    const close = page.getByRole('button', { name: 'Close Preview window' })
+    const box = (await close.boundingBox())!
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await expect(page.locator('body')).toHaveAttribute('data-closed', 'true')
+  } finally {
+    await context.close()
+  }
 })
 test('fractional pane geometry survives CSP that blocks inline style attributes', async ({
   page,

@@ -50,6 +50,8 @@ function Pilot() {
   const [sends, setSends] = createSignal(0);
   const [fail, setFail] = createSignal(true);
   const [mounted, setMounted] = createSignal(true);
+  const [channel, setChannel] = createSignal('Product');
+  const channelPositions = new Map();
   let readingPosition;
   return <main class="flex h-96 flex-col gap-2 p-4">
     <h1>Shared conversation pilot</h1>
@@ -58,6 +60,14 @@ function Pilot() {
       <For each={Array.from({length: 30}, (_, i) => i)}>{i => <p>Retained event {i}: readable earlier content in the transcript.</p>}</For>
       <p data-tail>{tail()}</p>
     </ConversationSurface></Show>
+    <section class="flex h-96 flex-col">
+      <button type="button" onClick={() => setChannel(channel() === 'Product' ? 'Research Agent' : 'Product')}>Switch channel</button>
+      <ConversationSurface role="region" aria-label="Cached channel transcript"
+        resetKey={channel()} initialReadingPosition={channelPositions.get(channel())}
+        onReadingPositionChange={position => channelPositions.set(channel(), position)}>
+        <For each={Array.from({length: channel() === 'Product' ? 60 : 3}, (_, i) => i)}>{i => <p data-channel-row={i}>{channel()} event {i + 1}</p>}</For>
+      </ConversationSurface>
+    </section>
     <MessageComposer value={draft()} onValueChange={setDraft} onSubmit={() => {
       if (fail()) throw new Error('Disposable transport refusal');
       setSends(sends() + 1); setDraft('');
@@ -285,6 +295,14 @@ try {
       renderSource:
         "import { renderTokenComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderTokenComposer()]));",
     },
+    {
+      pilot: 'scroll',
+      fixture: 'transcript-ssr.tsx',
+      localImport: '../../src/components/conversation/conversation-surface',
+      publicImport: '@adea-ai/ui/components/conversation',
+      renderSource:
+        "import { renderTranscript } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderTranscript()]));",
+    },
   ] as const
   for (const serverCase of serverCases) {
     const serverEntry = join(consumer, `${serverCase.pilot}-server.tsx`)
@@ -332,7 +350,14 @@ try {
         timeout: 30_000,
       })
     ) as string[]
-    if (serverCase.pilot === 'composed') {
+    if (serverCase.pilot === 'scroll') {
+      if (
+        !rendered[0]?.includes('data-slot="conversation-content"') ||
+        !rendered[0].includes('A server-rendered reply.') ||
+        rendered[0].includes('Jump to latest')
+      )
+        throw new Error('Packed native Node SSR lost scroll surface output')
+    } else if (serverCase.pilot === 'composed') {
       const [expanded, collapsed] = rendered
       if (
         !expanded?.includes('data-slot="composer-input"') ||
@@ -358,9 +383,11 @@ try {
       pilot: serverCase.pilot,
       condition: 'solid-ssr-native-node',
       checks:
-        serverCase.pilot === 'composed'
-          ? ['expanded-input-context', 'collapsed-draft-preview', 'plain-excludes-atomic-editor']
-          : ['token-editor-mirror', 'atomic-public-subpath'],
+        serverCase.pilot === 'scroll'
+          ? ['conversation-content', 'server-reply', 'no-browser-only-controls']
+          : serverCase.pilot === 'composed'
+            ? ['expanded-input-context', 'collapsed-draft-preview', 'plain-excludes-atomic-editor']
+            : ['token-editor-mirror', 'atomic-public-subpath'],
       retainedModules: serverModules,
     })
   }
@@ -1059,7 +1086,7 @@ try {
           await page.waitForTimeout(70)
           await field.press('Enter')
           await page.waitForFunction(() => document.querySelector('output')?.textContent === '2')
-          const scroller = page.getByRole('log', { name: 'Transcript' })
+          const scroller = page.getByRole('log', { name: 'Transcript', exact: true })
           await scroller.evaluate((element) => {
             element.scrollTop = element.scrollHeight
             element.dispatchEvent(new Event('scroll'))
@@ -1079,13 +1106,30 @@ try {
           await page.waitForTimeout(100)
           if (Math.abs((await scroller.evaluate((element) => element.scrollTop)) - before) > 2)
             throw new Error('Packed follow yanked the reader')
-          await page.getByRole('button', { name: 'Jump to latest' }).click()
+          await scroller.locator('..').getByRole('button', { name: 'Jump to latest' }).click()
           const bottom = await scroller.evaluate(
             (element) => element.scrollHeight - element.clientHeight - element.scrollTop
           )
           if (bottom > 2) throw new Error('Packed jump did not reach bottom')
           if (!(await scroller.evaluate((element) => document.activeElement === element)))
             throw new Error('Packed jump lost keyboard focus')
+          if (pilot === 'conversation') {
+            const cached = page.getByRole('region', { name: 'Cached channel transcript' })
+            const switchChannel = page.getByRole('button', { name: 'Switch channel' })
+            await cached.evaluate((element) => {
+              element.scrollTop = 420
+              element.dispatchEvent(new Event('scroll'))
+            })
+            await expect.poll(() => cached.evaluate((element) => element.scrollTop)).toBe(420)
+            await switchChannel.click()
+            await expect(cached.locator('[data-channel-row]')).toHaveCount(3)
+            await expect
+              .poll(() => cached.evaluate((element) => element.scrollHeight))
+              .toBeLessThan(500)
+            await switchChannel.click()
+            await expect(cached.locator('[data-channel-row]')).toHaveCount(60)
+            await expect.poll(() => cached.evaluate((element) => element.scrollTop)).toBe(420)
+          }
           if ((await field.evaluate((element) => getComputedStyle(element).resize)) !== 'none')
             throw new Error('Packed Tailwind composer styles missing')
           if (errors.length) throw new Error(`Browser errors: ${errors.join(', ')}`)
@@ -1101,6 +1145,7 @@ try {
               'ime-commit-latch',
               'reader-intent',
               'jump-focus',
+              ...(pilot === 'conversation' ? ['cached-channel-restoration'] : []),
               'tailwind-style',
             ],
             js: Buffer.byteLength(code),

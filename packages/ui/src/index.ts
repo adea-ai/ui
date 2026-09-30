@@ -80,6 +80,7 @@ export * from './components/motion'
 
 /* --- Layout -------------------------------------------------------------- */
 export * from './components/layout/split-layout'
+export * from './components/layout/floating-preview'
 export * from './components/layout/orbit-layout'
 export * from './components/layout/virtual-window'
 export * from './components/layout/app-shell'
@@ -99,6 +100,7 @@ export * from './components/theme'
 /* --- Composites ---------------------------------------------------------- */
 export * from './components/composites/account-menu'
 export * from './components/composites/action-button'
+export * from './components/composites/catalog-browser'
 export * from './components/composites/list-row'
 export * from './components/composites/settings'
 export * from './components/composites/stat'
