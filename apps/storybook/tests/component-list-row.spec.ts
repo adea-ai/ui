@@ -98,6 +98,30 @@ test('interactive native rows participate in sequential Tab navigation', async (
   await expect(defaultAction).toBeFocused()
 })
 
+test('description rows grow to contain both lines without overlapping neighbors', async ({
+  page,
+}) => {
+  const rows = [
+    page.getByTestId('description-row-regular'),
+    page.getByTestId('description-row-dense'),
+  ]
+  const descriptions = page.locator('[data-slot="list-row-description"]')
+  const rowBoxes = await Promise.all(rows.map((row) => row.boundingBox()))
+  const descriptionBoxes = await Promise.all(
+    [0, 1].map((index) => descriptions.nth(index).boundingBox())
+  )
+
+  expect(rowBoxes.every((box) => box !== null)).toBe(true)
+  expect(descriptionBoxes.every((box) => box !== null)).toBe(true)
+  expect(descriptionBoxes[0]!.y + descriptionBoxes[0]!.height).toBeLessThanOrEqual(
+    rowBoxes[0]!.y + rowBoxes[0]!.height
+  )
+  expect(descriptionBoxes[1]!.y + descriptionBoxes[1]!.height).toBeLessThanOrEqual(
+    rowBoxes[1]!.y + rowBoxes[1]!.height
+  )
+  expect(rowBoxes[1]!.y).toBeGreaterThanOrEqual(rowBoxes[0]!.y + rowBoxes[0]!.height)
+})
+
 test('interactive row composition has no serious or critical accessibility violations', async ({
   page,
 }) => {

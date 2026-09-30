@@ -37,6 +37,16 @@ function Fixture() {
           Skip tab order
         </ListRow>
         <ListRow aria-label="Static row">Static row</ListRow>
+        <ListRow data-testid="description-row-regular" description="First row supporting detail">
+          First description row
+        </ListRow>
+        <ListRow
+          data-testid="description-row-dense"
+          dense
+          description="Second row supporting detail"
+        >
+          Second description row
+        </ListRow>
       </form>
       <output aria-label="Activations">{activations()}</output>
       <output aria-label="Submissions">{submissions()}</output>
