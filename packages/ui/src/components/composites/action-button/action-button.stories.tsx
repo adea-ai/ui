@@ -64,8 +64,18 @@ export const BusyLink: Story = {
       busy
       busyLabel="Exporting report"
       variant="outline"
+      tooltip="Wait for the current export to finish"
     >
       Export
     </ActionButton>
   ),
+}
+
+/** Focusable disabled state lets keyboard and pointer users read the explanation. */
+export const DisabledWithExplanation: Story = {
+  args: {
+    disabled: true,
+    tooltip: 'Ask a workspace owner to restore access before deleting',
+    'aria-label': 'Delete workspace',
+  },
 }

@@ -11,9 +11,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
  * should compose Button directly.
  *
  * The tooltip trigger renders the polymorphic Button itself. A disabled native
- * button cannot receive pointer or keyboard events, so explanatory text for a
- * disabled action should remain visible beside it rather than relying on a
- * tooltip.
+ * control cannot receive pointer or keyboard events. When a tooltip is set,
+ * disabled actions therefore use focusable `aria-disabled` semantics and guard
+ * activation; without a tooltip, native buttons retain native disabling.
+ * Custom polymorphic components must forward aria, event, and href props for
+ * these guarantees to apply.
  */
 export type ActionButtonProps<T extends ValidComponent = 'button'> = ButtonProps<T> & {
   /** A short explanation, also shown on keyboard focus. The Button still needs its own name. */
@@ -78,10 +80,12 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     ...rest,
     variant: local.variant,
     size: local.size,
-    class: local.class,
-    disabled: disabled(),
-    'aria-disabled': local.as === 'a' && disabled() ? true : rest['aria-disabled'],
-    tabIndex: local.as === 'a' && disabled() ? -1 : rest.tabIndex,
+    class: [local.class, local.tooltip && disabled() && 'aria-disabled:pointer-events-auto']
+      .filter(Boolean)
+      .join(' '),
+    disabled: disabled() && !local.tooltip,
+    'aria-disabled': disabled() ? true : rest['aria-disabled'],
+    tabIndex: local.as === 'a' && disabled() ? (local.tooltip ? 0 : -1) : rest.tabIndex,
     role: local.as === 'a' && disabled() ? 'link' : rest.role,
     href: local.as === 'a' && disabled() ? undefined : (rest as { href?: string }).href,
     'aria-busy': busy() || local['aria-busy'],
@@ -101,7 +105,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
   return (
     <>
       <Show
-        when={local.tooltip && !disabled()}
+        when={local.tooltip}
         fallback={
           <PolymorphicButton
             as={(local.as ?? 'button') as T}

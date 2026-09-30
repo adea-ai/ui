@@ -26,9 +26,18 @@ function Fixture() {
         href="#busy-link-navigation"
         busy
         busyLabel="Exporting report"
+        tooltip="Wait for the current export to finish"
         onClick={() => setActivations((count) => count + 1)}
       >
         Export
+      </ActionButton>
+      <ActionButton
+        aria-label="Delete workspace"
+        disabled
+        tooltip="Ask a workspace owner to restore access before deleting"
+        onClick={() => setActivations((count) => count + 1)}
+      >
+        Delete
       </ActionButton>
       <button type="button" onClick={() => setBusy(false)}>
         Finish save

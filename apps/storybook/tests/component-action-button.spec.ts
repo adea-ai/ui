@@ -93,12 +93,39 @@ test('busy polymorphic links are inert and keep their caller handler from runnin
 
   const link = page.getByRole('link', { name: 'Export report' })
   await expect(link).toHaveAttribute('aria-disabled', 'true')
-  await expect(link).toHaveAttribute('tabindex', '-1')
+  await expect(link).toHaveAttribute('tabindex', '0')
   await expect(link).not.toHaveAttribute('href')
   await expect(page.getByRole('status').filter({ hasText: 'Exporting report' })).toBeVisible()
+  await link.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Wait for the current export to finish')
+  await link.focus()
+  await expect(link).toBeFocused()
   await link.evaluate((element) =>
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   )
   await expect(page.getByLabel('Activations')).toHaveText('0')
   await expect(page).not.toHaveURL(/busy-link-navigation/)
+})
+
+test('disabled actions expose tooltip explanations without becoming activatable', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>ActionButton</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+
+  const button = page.getByRole('button', { name: 'Delete workspace' })
+  await expect(button).toHaveAttribute('aria-disabled', 'true')
+  await expect(button).not.toHaveAttribute('disabled')
+  await button.hover()
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Ask a workspace owner to restore access before deleting'
+  )
+  await button.focus()
+  await expect(button).toBeFocused()
+  await expect(page.getByRole('tooltip')).toBeVisible()
+  await button.evaluate((element: HTMLButtonElement) => element.click())
+  await expect(page.getByLabel('Activations')).toHaveText('0')
 })
