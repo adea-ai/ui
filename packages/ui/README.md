@@ -78,6 +78,8 @@ ref props still apply to the input.
 `size="settings"` with `SettingsPage` for a wider,
 viewport-bounded settings surface; the shared layout keeps its panel content
 scrollable while the dialog title remains visible.
+The settings navigation and modal sizing browser contracts run against the
+packed artifact in both pull-request validation and publishing.
 
 `ThreadPanel.headerActions` accepts shared controls for host actions such as
 marking a thread unread. Closing the thread remains a separate labelled,

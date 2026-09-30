@@ -609,7 +609,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
       'packed-layout',
       'bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation',
     ],
-    ['packed-appearance', 'bun run check:packed-appearance'],
+    ['packed-appearance', 'bun run check:packed-appearance && bun run check:packed-modal-dialog'],
     ['packed-native-select', 'bun run check:packed-native-select'],
   ] as const
   for (const [id, command] of lanes) {
@@ -707,4 +707,21 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     })
   ).toBe(false)
   expect(passes({ REGISTRY_NEEDED: '' })).toBe(false)
+})
+
+test('publishing validates settings navigation and modal sizing from the release archive', () => {
+  const workflow = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/publish-ui.yml', import.meta.url), 'utf8')
+  ) as { jobs: Record<string, { env?: Record<string, string>; steps: { run?: string }[] }> }
+  for (const [id, contract] of [
+    ['packed-layout', 'check:packed-settings-navigation'],
+    ['packed-appearance', 'check:packed-modal-dialog'],
+  ] as const) {
+    const lane = workflow.jobs[id]
+    expect(lane?.env?.ADEA_PACKED_UI_TARBALL).toBe(
+      '${{ github.workspace }}/prepared-ui/package.tgz'
+    )
+    expect(lane?.env?.ADEA_PACKED_UI_SHA256).toBe('${{ needs.prepare.outputs.archive_sha256 }}')
+    expect(lane?.steps.some((step) => step.run?.includes(`bun run ${contract}`))).toBe(true)
+  }
 })
