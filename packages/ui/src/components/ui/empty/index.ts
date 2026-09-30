@@ -8,3 +8,4 @@ export {
   type EmptyMediaProps,
   type EmptyProps,
 } from './empty'
+export { EmptyState, type EmptyStateProps } from './empty-state'
