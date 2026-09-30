@@ -717,6 +717,11 @@
           "target": "components/ui/input/index.ts"
         },
         {
+          "path": "src/components/ui/input/input-control.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input/input-control.tsx"
+        },
+        {
           "path": "src/components/ui/input/input.tsx",
           "type": "registry:ui",
           "target": "components/ui/input/input.tsx"
