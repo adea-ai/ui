@@ -105,6 +105,7 @@ export function AccountMenu(props: AccountMenuProps) {
     | { callback: NonNullable<AccountMenuItem['onSelectAfterClose']> }
     | undefined
   const [menuOpen, setMenuOpen] = createSignal(false)
+  const [tooltipOpen, setTooltipOpen] = createSignal(false)
 
   onCleanup(() => {
     pendingAfterClose = undefined
@@ -115,8 +116,14 @@ export function AccountMenu(props: AccountMenuProps) {
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
   return (
-    <Tooltip disabled={menuOpen()}>
-      <DropdownMenu modal={false} onOpenChange={setMenuOpen}>
+    <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
+      <DropdownMenu
+        modal={false}
+        onOpenChange={(open) => {
+          setMenuOpen(open)
+          if (open) setTooltipOpen(false)
+        }}
+      >
         <TooltipTrigger
           as={AccountMenuButton}
           ref={(element: HTMLButtonElement) => (trigger = element)}
