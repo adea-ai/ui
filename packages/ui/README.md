@@ -92,6 +92,12 @@ updates, navigation, and other effects remain host callbacks.
 
 `SidebarNavTitle` accepts polymorphic `as` for a host's title heading.
 Use `SidebarNavSection.headingAs` (h1 through h6) for section headings.
+Sections may be uncontrolled with `defaultOpen` or controlled with `open` and
+`onOpenChange`. Put disclosure-button attributes and host-owned row interactions
+in `triggerProps`; its `onClick` and `onKeyDown` run before shared behavior, and
+`preventDefault()` cancels the corresponding toggle or Alt+Arrow reorder callback.
+`triggerProps.onReorder` receives `up` or `down`; the host remains responsible for
+updating its hierarchy and preserving stable row identity.
 Disclosure buttons stay inside their heading and trailing actions stay outside
 it, preserving hierarchy and independent keyboard actions.
 
@@ -245,6 +251,16 @@ setSelection({ accent: 'amber' })
 
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
+
+`SettingsLayout` composes a controlled vertical tab root, grouped `SettingsNavigation`,
+and a scrollable panel viewport. Supply the selected `value`, `onChange`, navigation
+groups, and matching `TabsContent` panels. The host owns URL or preference updates
+and panel content; the layout contracts its rail at narrow widths, reports repeated
+activation through `onReselect`, and reveals the selected row by default. Use
+`SettingsNavigation` directly when you already own the surrounding tabs composition.
+Shared tabs associate panels with custom trigger IDs in browser and server renders;
+an explicit panel `aria-labelledby` takes precedence. Independent tab roots keep
+their associations separate.
 
 ### Avoiding the flash
 

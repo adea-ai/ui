@@ -1960,6 +1960,8 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
+        "@adea-ai/ui/sidebar-nav",
+        "@adea-ai/ui/tabs",
         "lib"
       ],
       "files": [
@@ -1967,6 +1969,16 @@
           "path": "src/components/composites/settings/index.ts",
           "type": "registry:ui",
           "target": "components/composites/settings/index.ts"
+        },
+        {
+          "path": "src/components/composites/settings/settings-layout.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/settings/settings-layout.tsx"
+        },
+        {
+          "path": "src/components/composites/settings/settings-navigation.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/settings/settings-navigation.tsx"
         },
         {
           "path": "src/components/composites/settings/settings.tsx",

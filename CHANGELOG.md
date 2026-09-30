@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.0](https://github.com/adea-ai/ui/compare/v0.87.0...v0.88.0) (2026-09-30)
+
+
+### Features
+
+* **ui:** add controlled sidebar sections ([#160](https://github.com/adea-ai/ui/issues/160)) ([0a992fb](https://github.com/adea-ai/ui/commit/0a992fbd4ba90e86fef14637970eeb71fab375ab))
+
 ## [0.87.0](https://github.com/adea-ai/ui/compare/v0.86.0...v0.87.0) (2026-09-30)
 
 

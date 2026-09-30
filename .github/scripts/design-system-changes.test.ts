@@ -585,7 +585,7 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
   expect(coreCommands).toContain('bun run check:packed-paste-model')
   expect(coreCommands).not.toContain('bun run check:packed-conversation')
   expect(coreCommands).not.toContain(
-    'bun run check:packed-layout && bun run check:packed-layout-renderer'
+    'bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation'
   )
   expect(coreCommands).not.toContain('bun run check:packed-appearance')
 
@@ -605,7 +605,10 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
 
   const lanes = [
     ['packed-conversation', 'bun run check:packed-conversation'],
-    ['packed-layout', 'bun run check:packed-layout && bun run check:packed-layout-renderer'],
+    [
+      'packed-layout',
+      'bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation',
+    ],
     ['packed-appearance', 'bun run check:packed-appearance'],
     ['packed-native-select', 'bun run check:packed-native-select'],
   ] as const
