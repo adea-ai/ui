@@ -56,6 +56,15 @@ const replaceImports = (source: string) =>
       '../../src/components/layout/split-layout/model',
       '@adea-ai/ui/components/layout/split-layout/model'
     )
+    .replaceAll(
+      '../../src/components/layout/sidebar-nav/sidebar-nav-resize-handle',
+      '@adea-ai/ui/components/layout/sidebar-nav'
+    )
+    .replaceAll(
+      '../../src/components/layout/sidebar-nav/sidebar-nav',
+      '@adea-ai/ui/components/layout/sidebar-nav'
+    )
+    .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
     .replaceAll('../../src/styles/globals.css', './style.css')
 try {
   const sharedArchive = sharedPackedUiArchive()
@@ -112,10 +121,14 @@ try {
   for (const [name, fixture] of [
     ['main.tsx', 'split-layout.tsx'],
     ['server.tsx', 'split-layout-ssr.tsx'],
+    ['sidebar.tsx', 'sidebar-nav.tsx'],
   ] as const)
     writeFileSync(
       join(consumer, name),
-      replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
+      replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8')).replaceAll(
+        './style.css',
+        name === 'sidebar.tsx' ? './sidebar-style.css' : './style.css'
+      )
     )
   // The renderer's only shared Button is ghost/icon-xs. Discover its complete
   // class contract from the actual installed public helper, including base and
@@ -139,6 +152,11 @@ try {
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
       `@source inline(${JSON.stringify(closeButtonClasses)});\n`
   )
+  writeFileSync(
+    join(consumer, 'sidebar-style.css'),
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
+      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n"
+  )
   for (const condition of ['compiled', 'solid']) {
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
@@ -152,6 +170,18 @@ try {
       join(root, 'apps/storybook'),
       { ADEA_LAYOUT_PACKED_ROOT: consumer, ADEA_LAYOUT_PACKED_CONDITION: condition }
     )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-sidebar-nav.spec.ts',
+        '--output',
+        `test-results/packed-sidebar-${condition}`,
+      ],
+      join(root, 'apps/storybook'),
+      { ADEA_SIDEBAR_PACKED_ROOT: consumer, ADEA_SIDEBAR_PACKED_CONDITION: condition }
+    )
   }
   console.log(
     JSON.stringify({
@@ -160,6 +190,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
       checks: 76,
+      sidebarBrowserCases: 16,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',

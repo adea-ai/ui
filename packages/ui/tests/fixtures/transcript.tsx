@@ -11,8 +11,15 @@ function Fixture() {
   const [mounted, setMounted] = createSignal(true)
   const [following, setFollowing] = createSignal(true)
   const [key, setKey] = createSignal('first')
+  const [channel, setChannel] = createSignal('Product')
+  const [extraChannelRows, setExtraChannelRows] = createSignal(0)
+  const [showCachedChannel, setShowCachedChannel] = createSignal(false)
   const [scrollEvents, setScrollEvents] = createSignal(0)
   let readingPosition: ConversationReadingPosition | undefined
+  const channelPositions = new Map<string, ConversationReadingPosition>()
+  window.addEventListener('adea-open-cached-channel-fixture', () => setShowCachedChannel(true), {
+    once: true,
+  })
   function RestorableTranscript() {
     return (
       <ConversationSurface
@@ -76,6 +83,42 @@ function Fixture() {
         </div>
         <div class="flex h-96 flex-col">
           <RestorableTranscript />
+        </div>
+      </Show>
+      <Show when={showCachedChannel()}>
+        <div class="flex h-96 flex-col">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setChannel((value) => (value === 'Product' ? 'Research Agent' : 'Product'))
+            }
+          >
+            Switch channel
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setExtraChannelRows((rows) => rows + 10)}
+          >
+            Grow cached channel
+          </Button>
+          <ConversationSurface
+            role="region"
+            aria-label="Cached channel transcript"
+            resetKey={channel()}
+            initialReadingPosition={channelPositions.get(channel())}
+            onReadingPositionChange={(position) => channelPositions.set(channel(), position)}
+          >
+            {Array.from(
+              { length: channel() === 'Product' ? 60 + extraChannelRows() : 3 },
+              (_, index) => (
+                <p class="p-4" data-channel-row={index}>
+                  {channel()} message {index + 1}
+                </p>
+              )
+            )}
+          </ConversationSurface>
         </div>
       </Show>
     </main>

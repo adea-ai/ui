@@ -28,6 +28,7 @@ const geometry = (element: HTMLDivElement) => ({
   scrollHeight: element.scrollHeight,
   clientHeight: element.clientHeight,
 })
+const noop = () => {}
 
 /** Internal plain-scroller binding; host-owned restoration can disable follow. */
 export function createScrollFollow(options: {
@@ -45,6 +46,9 @@ export function createScrollFollow(options: {
   let lastWriteClientHeight = -1
   let previousTop = -1
   let lastScrollClientHeight = 0
+  let pendingRestore: { frame: number; fromTop: number; target: number } | undefined
+  let pendingRestoreUserIntent = false
+  let removeRestoreIntentListeners = noop
   const reportPosition = () => {
     if (scroller)
       untrack(() =>
@@ -60,12 +64,12 @@ export function createScrollFollow(options: {
     // Instant writes keep the self-scroll reference synchronized. A smooth
     // animation would produce intermediate positions that resemble user input.
     element.scrollTop = target
-    lastWriteTop = target
+    lastWriteTop = element.scrollTop
     lastWriteClientHeight = element.clientHeight
-    previousTop = target
+    previousTop = element.scrollTop
   }
   const pinAuto = () => {
-    if (!scroller || !options.enabled()) return
+    if (!scroller || !options.enabled() || pendingRestore) return
     const geom = geometry(scroller)
     const result = evaluateAutoPin({
       stick,
@@ -84,6 +88,26 @@ export function createScrollFollow(options: {
   }
   const onScroll = () => {
     if (!scroller) return
+    if (pendingRestore) {
+      // A reset can clamp the outgoing offset while the incoming rows are
+      // shorter. That notification is layout, not reader intent, and must not
+      // cancel the snapshot waiting for the new rows to commit.
+      const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight)
+      const clampedFromTop = Math.min(pendingRestore.fromTop, maxTop)
+      if (
+        pendingRestore.fromTop - clampedFromTop > 1 &&
+        Math.abs(scroller.scrollTop - clampedFromTop) <= 1
+      )
+        return
+      // An unexplained offset change can also be a browser clamp. Only actual
+      // user scroll intent followed by a non-clamp movement cancels restoration.
+      if (!pendingRestoreUserIntent) return
+      cancelAnimationFrame(pendingRestore.frame)
+      pendingRestore = undefined
+      pendingRestoreUserIntent = false
+      removeRestoreIntentListeners()
+      removeRestoreIntentListeners = noop
+    }
     if (!options.enabled()) {
       reportPosition()
       return
@@ -125,7 +149,21 @@ export function createScrollFollow(options: {
     options.resetKey()
     const enabled = options.enabled()
     // Capture before any reporting callback can replace the host snapshot.
-    const initial = untrack(() => options.initialPosition?.())
+    const candidate = untrack(() => options.initialPosition?.())
+    const initial =
+      candidate && Number.isFinite(candidate.top) && candidate.top >= 0 ? candidate : undefined
+    let scheduledRestore: typeof pendingRestore
+    let observer: ResizeObserver | undefined
+    onCleanup(() => {
+      if (scheduledRestore) {
+        cancelAnimationFrame(scheduledRestore.frame)
+        if (pendingRestore === scheduledRestore) pendingRestore = undefined
+      }
+      pendingRestoreUserIntent = false
+      removeRestoreIntentListeners()
+      removeRestoreIntentListeners = noop
+      observer?.disconnect()
+    })
     stick = true
     lastWriteTop = -1
     lastWriteClientHeight = -1
@@ -135,19 +173,75 @@ export function createScrollFollow(options: {
     if (!enabled || !scroller) return
     // Snapshot updates must not become another positioning owner. Consume the
     // host's snapshot only at entry/reset, then native reader intent owns follow.
-    if (initial && Number.isFinite(initial.top) && initial.top >= 0) {
-      stick = initial.following
-      writePin(scroller, stick ? bottomTarget(geometry(scroller)) : initial.top)
-      previousTop = scroller.scrollTop
-      lastScrollClientHeight = scroller.clientHeight
-    } else writePin(scroller, bottomTarget(geometry(scroller)))
+    if (initial) {
+      stick = enabled && initial.following
+    }
+
+    const observe = () => {
+      if (!enabled || typeof ResizeObserver === 'undefined') return
+      observer = new ResizeObserver(pinAuto)
+      observer.observe(scroller!)
+      if (content) observer.observe(content)
+    }
+
+    const watchRestoreIntent = () => {
+      const element = scroller
+      if (!element) return
+      const markIntent = (event: Event) => {
+        if (!pendingRestore) return
+        if (event.type === 'pointerdown' && event.target !== element) return
+        if (event.type === 'keydown') {
+          if (event.target !== element) return
+          const key = (event as KeyboardEvent).key
+          if (!['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(key))
+            return
+        }
+        pendingRestoreUserIntent = true
+      }
+      element.addEventListener('wheel', markIntent, { passive: true })
+      element.addEventListener('pointerdown', markIntent)
+      element.addEventListener('keydown', markIntent)
+      removeRestoreIntentListeners = () => {
+        element.removeEventListener('wheel', markIntent)
+        element.removeEventListener('pointerdown', markIntent)
+        element.removeEventListener('keydown', markIntent)
+      }
+    }
+
+    if (initial && !stick) {
+      // The identity effect can run before Solid has inserted the new rows. A
+      // synchronous write is clamped by the outgoing short transcript, so defer
+      // restoration until the browser has committed the new content and layout.
+      const restore = {
+        frame: 0,
+        fromTop: scroller.scrollTop,
+        target: initial.top,
+      }
+      scheduledRestore = restore
+      pendingRestore = restore
+      pendingRestoreUserIntent = false
+      watchRestoreIntent()
+      // Keep resize observation alive during the pending frame. Its callback is
+      // guarded above, and remains active if user input cancels restoration.
+      observe()
+      restore.frame = requestAnimationFrame(() => {
+        if (pendingRestore !== restore || !scroller) return
+        pendingRestore = undefined
+        pendingRestoreUserIntent = false
+        removeRestoreIntentListeners()
+        removeRestoreIntentListeners = noop
+        writePin(scroller, restore.target)
+        setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
+        reportPosition()
+      })
+      return
+    }
+
+    if (!initial && enabled) writePin(scroller, bottomTarget(geometry(scroller)))
+    else if (initial && stick) writePin(scroller, bottomTarget(geometry(scroller)))
     setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
     reportPosition()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(pinAuto)
-    observer.observe(scroller)
-    if (content) observer.observe(content)
-    onCleanup(() => observer.disconnect())
+    observe()
   })
 
   return {

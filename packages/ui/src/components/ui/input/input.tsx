@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'solid-js'
 import { createUniqueId, For, Show, splitProps } from 'solid-js'
 import { useFormFieldControl } from '#lib/form-field'
-import { cn } from '#lib/utils'
+import { InputControl } from './input-control'
 
 /**
  * Input.
@@ -46,9 +46,10 @@ export function Input(props: InputProps) {
 
   return (
     <>
-      <input
-        data-slot="input"
-        type={local.type ?? 'text'}
+      <InputControl
+        {...rest}
+        class={local.class}
+        type={local.type}
         id={field?.id ?? local.id}
         list={local.suggestions ? listId() : local.list}
         aria-label={local['aria-label']}
@@ -56,21 +57,6 @@ export function Input(props: InputProps) {
         aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
         aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
         aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
-        class={cn(
-          'h-control-md w-full min-w-0 rounded-md border border-input bg-transparent px-control-md py-1 text-sm',
-          'transition-[color,box-shadow,border-color] ease-out outline-none',
-          'placeholder:text-muted-foreground',
-          'selection:bg-primary selection:text-primary-foreground',
-          'file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
-          /* A pointer click on a text field is a typing affordance, so the ring
-             appears where the user agent already matches :focus-visible. */
-          'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
-          'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive-subtle',
-          'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
-          'read-only:bg-surface-hover',
-          local.class
-        )}
-        {...rest}
       />
       <Show when={local.suggestions}>
         {(suggestions) => (

@@ -738,6 +738,11 @@
           "target": "components/ui/input/index.ts"
         },
         {
+          "path": "src/components/ui/input/input-control.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input/input-control.tsx"
+        },
+        {
           "path": "src/components/ui/input/input.tsx",
           "type": "registry:ui",
           "target": "components/ui/input/input.tsx"
@@ -1485,6 +1490,36 @@
       ]
     },
     {
+      "name": "floating-preview",
+      "type": "registry:ui",
+      "title": "Floating Preview",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/scroll-area"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/floating-preview/floating-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/floating-preview.tsx"
+        },
+        {
+          "path": "src/components/layout/floating-preview/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/index.ts"
+        },
+        {
+          "path": "src/components/layout/floating-preview/model.ts",
+          "type": "registry:ui",
+          "target": "components/layout/floating-preview/model.ts"
+        }
+      ]
+    },
+    {
       "name": "orbit-layout",
       "type": "registry:ui",
       "title": "Orbit Layout",
@@ -1585,6 +1620,7 @@
       "title": "Sidebar Nav",
       "description": "",
       "dependencies": [
+        "@corvu/resizable@^0.2.5",
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
@@ -1596,6 +1632,11 @@
           "path": "src/components/layout/sidebar-nav/index.ts",
           "type": "registry:ui",
           "target": "components/layout/sidebar-nav/index.ts"
+        },
+        {
+          "path": "src/components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx"
         },
         {
           "path": "src/components/layout/sidebar-nav/sidebar-nav.tsx",
@@ -1810,6 +1851,53 @@
           "path": "src/components/composites/appearance-editor/theme-preview.tsx",
           "type": "registry:ui",
           "target": "components/composites/appearance-editor/theme-preview.tsx"
+        }
+      ]
+    },
+    {
+      "name": "catalog-browser",
+      "type": "registry:ui",
+      "title": "Catalog Browser",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/card",
+        "@adea-ai/ui/empty",
+        "@adea-ai/ui/input-group",
+        "@adea-ai/ui/scroll-area",
+        "@adea-ai/ui/skeleton",
+        "@adea-ai/ui/tabs",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/catalog-browser/catalog-browser-group.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-browser-group.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-browser.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-browser.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-detail.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-detail.tsx"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/catalog-types.ts",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/catalog-types.ts"
+        },
+        {
+          "path": "src/components/composites/catalog-browser/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/catalog-browser/index.ts"
         }
       ]
     },
@@ -2070,6 +2158,7 @@
         "@adea-ai/ui/button",
         "@adea-ai/ui/radio-group",
         "@adea-ai/ui/toggle-group",
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -2082,6 +2171,11 @@
           "path": "src/components/theme/index.ts",
           "type": "registry:ui",
           "target": "components/theming/index.ts"
+        },
+        {
+          "path": "src/components/theme/theme-mode-toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-mode-toggle.tsx"
         },
         {
           "path": "src/components/theme/theme-picker.tsx",

@@ -67,7 +67,9 @@ through. Use `value` with `onChange` for a controlled selection, or `defaultValu
 to initialize an uncontrolled one. Use `Select` for searchable, runtime, or
 longer lists that need a custom popover.
 
-For free-form text with native suggestions, pass `suggestions` to `Input`.
+`InputControl` is the styled native input without suggestion-list behavior. Use
+`Input` when a form should offer native datalist suggestions; custom values
+remain valid and submit unchanged.
 The library owns the datalist and unique association; a suggestion does not
 restrict the submitted value. Native `required`, `pattern`, form, event, and
 ref props still apply to the input.
@@ -92,6 +94,85 @@ it, preserving hierarchy and independent keyboard actions.
 Ctrl/Cmd + arrow moves skip disabled columns without wrapping at the edges.
 After a controlled move settles, focus follows the moved card only when the
 source card owned focus; another focus or pointer action cancels restoration.
+
+`CatalogBrowser` presents a host-owned searchable catalog with ordered category
+groups, discover/installed tabs, bounded group expansion, optional filters and
+supplemental tabs. Give `entries` the full set of detail records so opening an
+item remains stable when a query or tab filters the visible `groups`. The host
+owns catalog verification, filtering, installed state, permission decisions,
+errors, and actions. Selecting an item opens its host-rendered detail and
+returns focus to the originating result when Back is chosen. `CatalogDetail`
+provides the shared item summary/action frame and `CatalogDetailSection` gives
+host-specific permissions or metadata a shared section surface. Supply
+`resultsRegionLabel` and `detailRegionLabel` to name their keyboard-focusable,
+shared `ScrollArea` regions. The results area scrolls notices along with loading,
+empty, and error states even when those states contain no interactive control.
+
+```tsx
+import {
+  CatalogBrowser,
+  CatalogDetail,
+  CatalogDetailSection,
+  type CatalogBrowserEntry,
+  type CatalogBrowserGroup,
+} from '@adea-ai/ui/components/composites/catalog-browser'
+
+const entries: readonly CatalogBrowserEntry<VerifiedPlugin>[] = /* all detail records */ []
+const groups: readonly CatalogBrowserGroup<VerifiedPlugin>[] = /* visible filtered groups */ []
+
+<CatalogBrowser
+  open={open()}
+  tabs={[
+    { id: 'discover', label: 'Discover' },
+    { id: 'installed', label: 'Installed' },
+    { id: 'navigation', label: 'Navigation', kind: 'supplemental' },
+  ]}
+  tab={tab()}
+  tabsLabel="Catalog views"
+  onTabChange={setTab}
+  query={query()}
+  onQueryChange={setQuery}
+  searchLabel="Search catalog"
+  searchPlaceholder="Search applications"
+  resultsRegionLabel="Catalog results"
+  resultCount={visibleCount()}
+  resultLabel={(count) => `${count} applications`}
+  loadingLabel="Loading catalog"
+  status={catalogStatus()}
+  catalogError={catalogError()}
+  emptyState={emptyState()}
+  groups={groups}
+  entries={entries}
+  selectedId={selectedId()}
+  onSelect={(plugin) => setSelectedId(plugin.id)}
+  onBack={() => setSelectedId(null)}
+  backLabel="Back to catalog"
+  detailRegionLabel="Application details"
+  installedLabel="Installed"
+  publishedByLabel={(publisher) => `Published by ${publisher}`}
+  showMoreLabel={(hidden) => `See ${hidden[0]?.name} and more`}
+  showLessLabel="Show less"
+  renderIcon={(plugin) => <PluginIcon plugin={plugin} />}
+  renderDetail={(plugin) => (
+    <CatalogDetail
+      title={plugin.name}
+      description={plugin.description}
+      category={plugin.category}
+      publisher={plugin.publisher}
+      publishedByLabel={(publisher) => `Published by ${publisher}`}
+      action={<InstallButton plugin={plugin} />}
+    >
+      <CatalogDetailSection title="Permissions">
+        <PluginPermissions plugin={plugin} />
+      </CatalogDetailSection>
+    </CatalogDetail>
+  )}
+  renderSupplementalView={(id) => (id === 'navigation' ? <NavigationSettings /> : undefined)}
+/>
+```
+
+The `CatalogBrowser` story demonstrates category expansion, search, separate
+installed content, a supplemental navigation surface, and host-provided details.
 
 Tailwind ignores dependency directories by default. Register the component
 directories your application uses in its stylesheet, relative to that stylesheet:
@@ -628,3 +709,11 @@ keyboard disclosure, visible actions and automated accessibility. This is shared
 composition evidence; bounded runtime projection, storage and production chat
 integration remain application acceptance gates. Attribution for the selected
 KiroCrew source contracts is recorded in the issue-specific `NOTICE` entry.
+
+### Controlled appearance mode
+
+`ThemeModeToggle` provides the shared light/dark/system selector for hosts that
+own their preference provider and storage. Pass `mode` and `onModeChange`; the
+control owns roving keyboard focus, pressed state and explanatory tooltips. It
+does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
+existing provider-bound API.

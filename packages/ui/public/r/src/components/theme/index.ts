@@ -20,3 +20,4 @@ export {
   type ThemeSelection,
 } from './theme-provider'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
+export { ThemeModeToggle, type ThemeModeToggleProps } from './theme-mode-toggle'

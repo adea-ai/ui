@@ -79,6 +79,28 @@ const objectHasStaticProperty = (node: any, name: string, seen = new Set<unknown
   })
 }
 
+/** Returns literal values for a statically named property in an object spread. */
+const staticObjectPropertyValues = (node: any, name: string, seen = new Set<unknown>()): any[] => {
+  if (!node || seen.has(node)) return []
+  seen.add(node)
+  if (
+    node.type === 'TSAsExpression' ||
+    node.type === 'TSSatisfiesExpression' ||
+    node.type === 'TSNonNullExpression'
+  )
+    return staticObjectPropertyValues(node.expression, name, seen)
+  if (node.type !== 'ObjectExpression') return []
+  return node.properties.flatMap((property: any) => {
+    if (property.type === 'Property')
+      return staticPropertyKey(property.key, property.computed === true) === name
+        ? [property.value]
+        : []
+    if (property.type === 'SpreadElement')
+      return staticObjectPropertyValues(property.argument, name, seen)
+    return []
+  })
+}
+
 const noInlineStyles: RuleModule = {
   meta: {
     type: 'problem',
@@ -297,6 +319,14 @@ const staticStrings = (node: any): string[] => {
 
 const roleOf = (node: any): string | null => {
   for (const attribute of node.attributes ?? []) {
+    if (attribute.type === 'JSXSpreadAttribute') {
+      const role = staticObjectPropertyValues(attribute.argument, 'role')
+        .flatMap((value) => staticStrings(value))
+        .flatMap((value) => value.split(/\s+/))
+        .find((value) => value in ROLE_PRIMITIVES)
+      if (role) return role
+      continue
+    }
     if (attribute.type !== 'JSXAttribute' || attribute.name?.name !== 'role') continue
     return (
       staticStrings(attribute.value)
@@ -311,31 +341,37 @@ const roleOf = (node: any): string | null => {
 const has = (node: any, name: string): boolean =>
   (node.attributes ?? []).some(
     (attribute: any) =>
-      attribute.type === 'JSXAttribute' &&
-      (attribute.name?.type === 'JSXNamespacedName'
-        ? `${attribute.name.namespace.name}:${attribute.name.name.name}`
-        : attribute.name?.name) === name
+      (attribute.type === 'JSXAttribute' &&
+        (attribute.name?.type === 'JSXNamespacedName'
+          ? `${attribute.name.namespace.name}:${attribute.name.name.name}`
+          : attribute.name?.name) === name) ||
+      (attribute.type === 'JSXSpreadAttribute' && objectHasStaticProperty(attribute.argument, name))
   )
+
+const tabStopValue = (value: any): boolean => {
+  const expression = value?.type === 'JSXExpressionContainer' ? value.expression : value
+  if (expression?.type === 'Literal') return !(Number(expression.value) < 0)
+  if (
+    expression?.type === 'UnaryExpression' &&
+    expression.operator === '-' &&
+    expression.argument?.type === 'Literal'
+  )
+    return !(Number(expression.argument.value) > 0)
+  return true
+}
 
 const hasTabStop = (node: any): boolean =>
   (node.attributes ?? []).some((attribute: any) => {
     if (
-      attribute.type !== 'JSXAttribute' ||
-      !['tabIndex', 'tabindex'].includes(attribute.name?.name)
+      attribute.type === 'JSXAttribute' &&
+      ['tabIndex', 'tabindex'].includes(attribute.name?.name)
     )
-      return false
-    const value =
-      attribute.value?.type === 'JSXExpressionContainer'
-        ? attribute.value.expression
-        : attribute.value
-    if (value?.type === 'Literal') return !(Number(value.value) < 0)
-    if (
-      value?.type === 'UnaryExpression' &&
-      value.operator === '-' &&
-      value.argument?.type === 'Literal'
-    )
-      return !(Number(value.argument.value) > 0)
-    return true
+      return tabStopValue(attribute.value)
+    if (attribute.type === 'JSXSpreadAttribute')
+      return ['tabIndex', 'tabindex'].some((name) =>
+        staticObjectPropertyValues(attribute.argument, name).some(tabStopValue)
+      )
+    return false
   })
 
 const noInteractiveWrappers: RuleModule = {
@@ -415,6 +451,118 @@ const noInteractiveWrappers: RuleModule = {
   },
 }
 
+const BUTTON_MODULE = '@adea-ai/ui/components/ui/button'
+const ACTION_BUTTON_MODULE = '@adea-ai/ui/components/composites/action-button'
+const ICON_BUTTON_SIZES: ReadonlySet<string> = new Set([
+  'icon-2xs',
+  'icon-xs',
+  'icon-sm',
+  'icon-md',
+  'icon-lg',
+  'icon-xl',
+])
+
+const staticJsxValues = (value: any): any[] =>
+  value?.type === 'JSXExpressionContainer' ? [value.expression] : value ? [value] : []
+
+const attributeValues = (node: any, name: string): any[] => {
+  const values: any[] = []
+  for (const attribute of node.attributes ?? []) {
+    if (attribute.type === 'JSXAttribute' && attribute.name?.name === name)
+      values.splice(0, values.length, ...staticJsxValues(attribute.value))
+    if (attribute.type === 'JSXSpreadAttribute') {
+      const spreadValues = staticObjectPropertyValues(attribute.argument, name)
+      if (spreadValues.length > 0) values.splice(0, values.length, spreadValues.at(-1))
+    }
+  }
+  return values
+}
+
+const staticStringValue = (node: any): string | null => {
+  if (node?.type === 'Literal' && typeof node.value === 'string') return node.value
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
+    return node.quasis[0].value.cooked ?? node.quasis[0].value.raw
+  return null
+}
+
+const isIconButtonSize = (node: any): boolean =>
+  attributeValues(node, 'size').some((value) => {
+    const size = staticStringValue(value)
+    return size !== null && ICON_BUTTON_SIZES.has(size)
+  })
+
+const actionTooltipStatus = (node: any): 'valid' | 'blank' | 'unknown' | 'missing' => {
+  const values = attributeValues(node, 'tooltip')
+  if (values.length === 0) return 'missing'
+  const strings = values.map(staticStringValue)
+  if (strings.some((value) => value !== null && value.trim().length > 0)) return 'valid'
+  if (strings.every((value) => value !== null)) return 'blank'
+  return 'unknown'
+}
+
+const isImportedComponent = (identifier: any, imports: Set<string>): boolean =>
+  identifier?.type === 'Identifier' && imports.has(identifier.name)
+
+/** Requires shared icon actions to carry the shared explanatory-tooltip contract. */
+const requireActionButtonTooltip: RuleModule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Consumer icon-size shared Button actions use ActionButton with a nonblank tooltip; dynamic values remain a review boundary.',
+    },
+    schema: [],
+    messages: {
+      useActionButton:
+        'Icon-size Button actions use ActionButton with a nonblank tooltip. Keep the control name in aria-label; the tooltip explains the action.',
+      missingTooltip:
+        'An icon-size ActionButton needs a supplied nonblank tooltip. Keep its accessible name in aria-label as well.',
+    },
+  },
+  create(context) {
+    const buttons = new Set<string>()
+    const actionButtons = new Set<string>()
+    const recordImports = (node: any) => {
+      const source = node.source?.value
+      const target =
+        source === BUTTON_MODULE ? buttons : source === ACTION_BUTTON_MODULE ? actionButtons : null
+      if (!target) return
+      for (const specifier of node.specifiers ?? []) {
+        if (specifier.type !== 'ImportSpecifier') continue
+        const imported = specifier.imported?.name ?? specifier.imported?.value
+        if (
+          (source === BUTTON_MODULE && imported === 'Button') ||
+          (source === ACTION_BUTTON_MODULE && imported === 'ActionButton')
+        )
+          target.add(specifier.local?.name)
+      }
+    }
+
+    return {
+      ImportDeclaration: recordImports,
+      JSXOpeningElement(node: any) {
+        if (!isIconButtonSize(node)) return
+        const name = node.name?.type === 'JSXIdentifier' ? node.name.name : null
+        const isButton = name !== null && buttons.has(name)
+        const isActionButton = name !== null && actionButtons.has(name)
+        const asValues = attributeValues(node, 'as')
+        const targetsButton = asValues.some((value) => isImportedComponent(value, buttons))
+        const targetsActionButton = asValues.some((value) =>
+          isImportedComponent(value, actionButtons)
+        )
+        if (isButton || targetsButton) {
+          context.report({ node, messageId: 'useActionButton' })
+          return
+        }
+        if (!isActionButton && !targetsActionButton) return
+        const status = actionTooltipStatus(node)
+        if (status === 'missing' || status === 'blank')
+          context.report({ node, messageId: 'missingTooltip' })
+      },
+    }
+  },
+}
+
 const noPrimitiveLibraryImports: RuleModule = {
   meta: {
     type: 'problem',
@@ -484,6 +632,7 @@ const plugin = {
     'no-raw-interactive-elements': noRawInteractiveElements,
     'no-primitive-library-imports': noPrimitiveLibraryImports,
     'no-interactive-wrappers': noInteractiveWrappers,
+    'require-action-button-tooltip': requireActionButtonTooltip,
   },
 }
 
