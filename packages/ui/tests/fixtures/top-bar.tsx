@@ -2,7 +2,12 @@ import { render } from 'solid-js/web'
 import { createSignal, For } from 'solid-js'
 import { ArrowLeft, ArrowRight, Search } from 'lucide-solid'
 import { ActionButton } from '../../src/components/composites/action-button'
-import { TopBar, TopBarSection, TopBarTitle } from '../../src/components/layout/top-bar'
+import {
+  TopBar,
+  TopBarSearch,
+  TopBarSection,
+  TopBarTitle,
+} from '../../src/components/layout/top-bar'
 import '../../src/styles/globals.css'
 
 render(() => {
@@ -28,10 +33,14 @@ render(() => {
           >
             <ArrowRight aria-hidden="true" />
           </ActionButton>
+          <TopBarTitle class="hidden md:block">A long workspace title</TopBarTitle>
         </TopBarSection>
-        <TopBarTitle align="center" class="hidden md:block">
-          A long workspace title
-        </TopBarTitle>
+        <TopBarSearch
+          aria-label="Search workspace"
+          placeholder="Search projects, files and sessions"
+          shortcut="⌘K"
+          onClick={() => setLastAction('Search workspace')}
+        />
         <TopBarSection align="end">
           <For each={['Files', 'Source control', 'Browser', 'Devices', 'Agents', 'Search']}>
             {(name) => (
@@ -46,6 +55,13 @@ render(() => {
             )}
           </For>
         </TopBarSection>
+      </TopBar>
+      <TopBar draggable aria-label="Title-only toolbar">
+        <TopBarSection />
+        <TopBarTitle align="center" class="hidden md:block">
+          A title without search
+        </TopBarTitle>
+        <TopBarSection align="end" />
       </TopBar>
       <output aria-live="polite">{lastAction()}</output>
     </main>
