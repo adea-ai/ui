@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.0](https://github.com/adea-ai/ui/compare/v0.84.0...v0.85.0) (2026-09-30)
+
+
+### Features
+
+* add shared catalog browser ([#152](https://github.com/adea-ai/ui/issues/152)) ([3e53ae6](https://github.com/adea-ai/ui/commit/3e53ae602af0100feeca5b57ad0317cc2efae83f))
+
 ## [0.84.0](https://github.com/adea-ai/ui/compare/v0.83.1...v0.84.0) (2026-09-30)
 
 
