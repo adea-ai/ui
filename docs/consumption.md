@@ -394,6 +394,7 @@ takes the presentation plus the behaviour that is easy to get wrong.
 | `workspace-brand`                         | `EntityIcon` + the type scale                | an eyebrow and a title are not a component               |
 | `account-drawer`                          | `Drawer` + `AccountMenu`                     | a composition                                            |
 | `settings-section`                        | `SettingsSection`                            | unchanged in intent                                      |
+| grouped settings navigation               | `SettingsLayout` + `SettingsNavigation`      | host owns selection, hash/preferences and panel content  |
 | `workspace-states` (empty/error/skeleton) | `Empty`, `Skeleton`                          | the empty state takes an action slot                     |
 | `keyed-rows`                              | `keyedRows` (a util)                         | unchanged — this one is the highest-value port           |
 | `notifications`                           | **stays in adea**                            | URL construction and preview redaction are app policy    |

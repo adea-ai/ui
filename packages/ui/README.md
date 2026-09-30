@@ -239,6 +239,13 @@ setSelection({ accent: 'amber' })
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
 
+`SettingsLayout` composes a controlled vertical tab root, grouped `SettingsNavigation`,
+and a scrollable panel viewport. Supply the selected `value`, `onChange`, navigation
+groups, and matching `TabsContent` panels. The host owns URL or preference updates
+and panel content; the layout contracts its rail at narrow widths, reports repeated
+activation through `onReselect`, and reveals the selected row by default. Use
+`SettingsNavigation` directly when you already own the surrounding tabs composition.
+
 ### Avoiding the flash
 
 A themed app has to know the appearance before the first paint, or it paints

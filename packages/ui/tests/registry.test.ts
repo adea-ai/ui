@@ -92,6 +92,23 @@ describe('registry', () => {
     expect(notice).toContain('98a1fe67b439324ddc857f47fbdce056600a4329')
   })
 
+  test('publishes the settings layout and navigation from the root, subpath and registry', () => {
+    const settings = registryItems.find((item) => item.name === 'settings')
+    const targets = settings?.files.map((file) => file.target) ?? []
+
+    expect(readFileSync(resolve(import.meta.dir, '../src/index.ts'), 'utf8')).toContain(
+      "export * from './components/composites/settings'"
+    )
+    const settingsExports = readFileSync(
+      resolve(import.meta.dir, '../src/components/composites/settings/index.ts'),
+      'utf8'
+    )
+    expect(settingsExports).toContain('export { SettingsLayout, type SettingsLayoutProps }')
+    expect(settingsExports).toContain('SettingsNavigation,')
+    expect(targets).toContain('components/composites/settings/settings-layout.tsx')
+    expect(targets).toContain('components/composites/settings/settings-navigation.tsx')
+  })
+
   test('ships no stories or documentation as consumer source', () => {
     const offenders = registryItems.flatMap((item) =>
       item.files
@@ -172,19 +189,13 @@ describe('registry', () => {
     }
   }, 30_000)
 
-  test('a component that composes around a slot rather than importing controls has no peers', () => {
-    // `settings` is label, description and a control slot. It takes whatever the
-    // caller passes, so it must not depend on the controls a particular page uses —
-    // a peer here would drag Switch and Input into a project that wanted neither.
-    //
-    // The `lib` peer is excluded from the assertion rather than the other way round.
-    // It is not a control: it is the class-name and token helpers, which every
-    // copied component needs in order to compile at all. Demanding an empty peer
-    // list would mean demanding a component that cannot be built.
+  test('settings composites declare their reused navigation dependencies', () => {
+    // SettingsLayout composes the sidebar row recipe and Tabs; it does not pull
+    // in any of the page's optional controls such as Switch or Input.
     const settings = registryItems.find((item) => item.name === 'settings')
     const peers = (settings?.registryDependencies ?? []).filter((name) => name !== 'lib')
 
-    expect(peers).toEqual([])
+    expect(peers).toEqual(['@adea-ai/ui/sidebar-nav', '@adea-ai/ui/tabs'])
   })
 
   test('every component that needs the helpers declares the lib peer', () => {
