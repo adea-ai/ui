@@ -36,6 +36,7 @@ function Fixture() {
         disabled
         tooltip="Ask a workspace owner to restore access before deleting"
         on:click={() => setActivations((count) => count + 1)}
+        oncapture:click={() => setActivations((count) => count + 1)}
       >
         Delete
       </ActionButton>
