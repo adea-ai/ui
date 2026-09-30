@@ -11,4 +11,5 @@ export {
   sidebarNavItemStateClass,
   type SidebarNavItemProps,
   type SidebarNavProps,
+  type SidebarNavTitleProps,
 } from './sidebar-nav'

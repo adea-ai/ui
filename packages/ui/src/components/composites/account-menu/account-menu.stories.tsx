@@ -103,3 +103,31 @@ export const CustomItems: Story = {
     />
   ),
 }
+
+/** An action that opens a second layer after this menu finishes closing. */
+export const AfterCloseAction: Story = {
+  render: () => {
+    const [message, setMessage] = createSignal('')
+    return (
+      <div class="flex items-center gap-3">
+        <AccountMenu
+          items={[
+            {
+              id: 'updates',
+              label: 'Updates',
+              onSelect: () => setMessage('Selection received; waiting for the menu to close.'),
+              onSelectAfterClose: (trigger) =>
+                setMessage(
+                  `Menu closed. Stable opener: ${trigger instanceof HTMLButtonElement ? 'button' : 'unavailable'}.`
+                ),
+            },
+          ]}
+          authenticated
+        />
+        <p class="text-sm text-muted-foreground" aria-live="polite">
+          {message()}
+        </p>
+      </div>
+    )
+  },
+}

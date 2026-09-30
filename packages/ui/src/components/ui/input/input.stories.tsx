@@ -132,3 +132,13 @@ export const WithLeadingIcon: Story = {
     </div>
   ),
 }
+
+/** Native suggestions guide typing without restricting an arbitrary value. */
+export const Suggestions: Story = {
+  render: () => (
+    <div class="flex w-80 flex-col gap-1.5">
+      <Label for="input-function-key">Function key</Label>
+      <Input id="input-function-key" suggestions={['engineering', 'design', 'operations']} />
+    </div>
+  ),
+}
