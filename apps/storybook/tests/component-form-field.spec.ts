@@ -99,7 +99,8 @@ test('wires names, IDs, help and validation to the actual controls', async ({ pa
   const layoutGroup = page.locator('[data-slot="field-group"]')
   await expect(layoutGroup).toBeVisible()
   await expect(layoutGroup).not.toHaveAttribute('role', 'group')
-  await expect(page.getByRole('group')).toHaveCount(1)
+  await expect(page.getByRole('group', { name: 'Processing mode', exact: true })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Permissions', exact: true })).toBeVisible()
 })
 
 test('preserves native label activation and tracks conditional control IDs', async ({ page }) => {

@@ -174,6 +174,8 @@ test('tooltip actions stay in sequential keyboard order and open disabled explan
   await expect(available).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(unavailable).toBeFocused()
-  await expect(page.getByRole('tooltip')).toHaveText('Unavailable action help')
+  await expect(
+    page.getByRole('tooltip', { name: 'Unavailable action help', exact: true })
+  ).toHaveText('Unavailable action help')
   await expect(unavailable).toHaveAttribute('aria-describedby', /.+/)
 })
