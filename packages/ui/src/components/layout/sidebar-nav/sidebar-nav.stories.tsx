@@ -13,6 +13,7 @@ import {
   SidebarNavSection,
   SidebarNavTitle,
 } from './sidebar-nav'
+import { SidebarNavResizeHandle } from './sidebar-nav-resize-handle'
 
 /**
  * SidebarNav.
@@ -34,6 +35,48 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+/** A host-controlled pixel width, with shared Corvu pointer/keyboard behavior. */
+export const ResizableNavigation: Story = {
+  render: () => {
+    const [width, setWidth] = createSignal(272)
+    const [saved, setSaved] = createSignal(272)
+    return (
+      <main class="flex h-screen">
+        <div
+          class="relative w-(--preview-sidebar-width)"
+          style={{ '--preview-sidebar-width': `${width()}px` }}
+        >
+          <SidebarNav
+            id="resizable-navigation"
+            class="w-full"
+            aria-label="Resizable project navigation"
+          >
+            <SidebarNavHeader>
+              <SidebarNavTitle as="h1">Projects</SidebarNavTitle>
+            </SidebarNavHeader>
+            <SidebarNavContent>
+              <SidebarNavItem>Example project</SidebarNavItem>
+            </SidebarNavContent>
+          </SidebarNav>
+          <SidebarNavResizeHandle
+            value={width()}
+            minimum={208}
+            maximum={448}
+            label="Resize project navigation"
+            controls="resizable-navigation"
+            onChange={setWidth}
+            onCommit={setSaved}
+          />
+        </div>
+        <div class="flex flex-col gap-2 p-4">
+          <p>Drag the separator or focus it and use Left/Right, Home or End.</p>
+          <output aria-label="Committed width">{saved()} pixels</output>
+        </div>
+      </main>
+    )
+  },
+}
 
 const projects = [
   { name: 'adea', count: 41 },

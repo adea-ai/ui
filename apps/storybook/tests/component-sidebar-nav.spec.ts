@@ -1,24 +1,52 @@
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
-import { build } from 'vite'
+import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
 import AxeBuilder from '@axe-core/playwright'
 
 let script: string
 let css: string
+const packedRoot = process.env['ADEA_SIDEBAR_PACKED_ROOT']
+const packedCondition = process.env['ADEA_SIDEBAR_PACKED_CONDITION']
+
+if (packedRoot && packedCondition !== 'compiled' && packedCondition !== 'solid') {
+  throw new Error('Packed sidebar fixture requires an explicit package condition')
+}
 
 test.beforeAll(async () => {
   const result = await build({
-    root: resolve(import.meta.dirname, '../../../packages/ui'),
+    root: packedRoot ?? resolve(import.meta.dirname, '../../../packages/ui'),
     configFile: false,
     logLevel: 'error',
-    plugins: [solid(), tailwindcss()],
+    plugins: [
+      solid(),
+      tailwindcss(),
+      ...(packedRoot && packedCondition === 'compiled'
+        ? [
+            {
+              name: 'compiled-sidebar-condition',
+              enforce: 'post' as const,
+              configEnvironment(_name: string, config: EnvironmentOptions) {
+                config.resolve ??= {}
+                config.resolve.conditions = (config.resolve.conditions ?? []).filter(
+                  (condition) => condition !== 'solid' && condition !== 'development'
+                )
+              },
+            },
+          ]
+        : []),
+    ],
+    resolve: packedRoot
+      ? { conditions: packedCondition === 'solid' ? ['solid', 'browser'] : ['browser', 'import'] }
+      : undefined,
     build: {
       write: false,
       minify: false,
       lib: {
-        entry: resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/sidebar-nav.tsx'),
+        entry: packedRoot
+          ? resolve(packedRoot, 'sidebar.tsx')
+          : resolve(import.meta.dirname, '../../../packages/ui/tests/fixtures/sidebar-nav.tsx'),
         formats: ['iife'],
         name: 'SidebarFixture',
       },
@@ -26,6 +54,16 @@ test.beforeAll(async () => {
   })
   const outputs = Array.isArray(result) ? result : [result]
   const assets = outputs.flatMap((output) => ('output' in output ? output.output : []))
+  if (packedRoot) {
+    const modules = assets
+      .flatMap((asset) => (asset.type === 'chunk' ? Object.keys(asset.modules) : []))
+      .filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+    const expected = packedCondition === 'compiled' ? '/dist/' : '/src/'
+    if (!modules.some((id) => id.includes(expected)))
+      throw new Error(`Packed sidebar did not resolve from ${packedCondition}`)
+    if (modules.some((id) => id.includes(packedCondition === 'compiled' ? '/src/' : '/dist/')))
+      throw new Error('Packed sidebar mixed compiled and Solid-source package conditions')
+  }
   script = assets
     .filter((asset) => asset.type === 'chunk')
     .map((asset) => asset.code)
@@ -43,6 +81,48 @@ test.beforeEach(async ({ page }) => {
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
+})
+
+test('shared sidebar resizing exposes pixel values and bounded keyboard commits', async ({
+  page,
+}) => {
+  const handle = page.getByRole('separator', { name: 'Resize workspace navigation' })
+  await expect(handle).toHaveAttribute('aria-orientation', 'vertical')
+  await expect(handle).toHaveAttribute('aria-controls', 'resize-pane')
+  await expect(handle).toHaveAttribute('aria-valuemin', '208')
+  await expect(handle).toHaveAttribute('aria-valuemax', '448')
+  await expect(handle).toHaveAttribute('aria-valuenow', '272')
+  await handle.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(page.getByLabel('Navigation width', { exact: true })).toHaveText('288')
+  await expect(page.getByLabel('Committed navigation width', { exact: true })).toHaveText('288')
+  await page.keyboard.press('Home')
+  await expect(handle).toHaveAttribute('aria-valuenow', '208')
+  await page.keyboard.press('ArrowLeft')
+  await expect(handle).toHaveAttribute('aria-valuenow', '208')
+  await page.keyboard.press('End')
+  await expect(handle).toHaveAttribute('aria-valuenow', '448')
+  await page.keyboard.press('ArrowRight')
+  await expect(handle).toHaveAttribute('aria-valuenow', '448')
+})
+
+test('shared sidebar pointer resizing commits the final bounded value', async ({ page }) => {
+  const handle = page.getByRole('separator', { name: 'Resize workspace navigation' })
+  await handle.scrollIntoViewIfNeeded()
+  const bounds = await handle.boundingBox()
+  expect(bounds).not.toBeNull()
+  const x = bounds!.x + bounds!.width / 2
+  const y = bounds!.y + bounds!.height / 2
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + 100, y, { steps: 5 })
+  await page.mouse.up()
+  const changed = Number(await page.getByLabel('Navigation width', { exact: true }).textContent())
+  expect(changed).toBeGreaterThanOrEqual(370)
+  expect(changed).toBeLessThanOrEqual(374)
+  await expect(page.getByLabel('Committed navigation width', { exact: true })).toHaveText(
+    String(changed)
+  )
 })
 
 test('host heading hierarchy and disclosure semantics survive shared composition', async ({

@@ -4,6 +4,7 @@
   "title": "Sidebar Nav",
   "description": "",
   "dependencies": [
+    "@corvu/resizable@^0.2.5",
     "@kobalte/core@^0.13.14",
     "lucide-solid@^1.48.0"
   ],
@@ -15,6 +16,11 @@
       "path": "src/components/layout/sidebar-nav/index.ts",
       "type": "registry:ui",
       "target": "components/layout/sidebar-nav/index.ts"
+    },
+    {
+      "path": "src/components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx"
     },
     {
       "path": "src/components/layout/sidebar-nav/sidebar-nav.tsx",
