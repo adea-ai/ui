@@ -19,7 +19,9 @@ try {
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     peerDependencies: Record<string, string>
   }
-  const workspaceManifest = JSON.parse(readFileSync(resolve(root, '../..', 'package.json'), 'utf8')) as {
+  const workspaceManifest = JSON.parse(
+    readFileSync(resolve(root, '../..', 'package.json'), 'utf8')
+  ) as {
     devDependencies: Record<string, string>
   }
   writeFileSync(

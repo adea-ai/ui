@@ -228,7 +228,7 @@ test('floating preview pointer and keyboard controls stay within their host boun
   await page.setViewportSize({ width: 800, height: 600 })
   await page.addStyleTag({ content: floatingCss })
   await page.addScriptTag({ content: floatingScript })
-  const frame = page.getByRole('region', { name: 'Preview window' })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
   const move = page.getByRole('button', { name: 'Move Preview window' })
   const startBox = (await move.boundingBox())!
   const box = (await frame.boundingBox())!
@@ -260,6 +260,30 @@ test('floating preview pointer and keyboard controls stay within their host boun
   expect((await frame.boundingBox())!.width).toBeGreaterThan(before + 20)
 })
 
+test('floating preview tracks source aspect changes and exposes keyboard scrolling', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.body.replaceChildren())
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.addStyleTag({ content: floatingCss })
+  await page.addScriptTag({ content: floatingScript })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
+  const initial = (await frame.boundingBox())!
+  await page.getByRole('button', { name: 'Change source ratio' }).click()
+  await expect.poll(async () => (await frame.boundingBox())!.height).toBeGreaterThan(initial.height)
+
+  const content = page.getByRole('region', { name: 'Preview window content' })
+  await content.focus()
+  await expect(content).toBeFocused()
+  const initialScroll = await content.evaluate((node) => node.scrollTop)
+  await content.press('PageDown')
+  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBeGreaterThan(initialScroll)
+
+  const close = page.getByRole('button', { name: 'Close Preview window' })
+  await close.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Close Preview window.')
+})
+
 test('floating preview is bounded when narrow and has touch affordance, close, and accessible controls', async ({
   page,
 }) => {
@@ -267,7 +291,7 @@ test('floating preview is bounded when narrow and has touch affordance, close, a
   await page.setViewportSize({ width: 800, height: 600 })
   await page.addStyleTag({ content: floatingCss })
   await page.addScriptTag({ content: floatingScript })
-  const frame = page.getByRole('region', { name: 'Preview window' })
+  const frame = page.getByRole('region', { name: 'Preview window', exact: true })
   expect(
     await page
       .getByRole('button', { name: 'Move Preview window' })

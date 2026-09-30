@@ -3,9 +3,12 @@
   "type": "registry:ui",
   "title": "Floating Preview",
   "description": "",
-  "dependencies": [],
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
   "registryDependencies": [
-    "@adea-ai/ui/button"
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/scroll-area"
   ],
   "files": [
     {

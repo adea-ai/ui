@@ -1,5 +1,7 @@
-import { createSignal, onCleanup, onMount, type JSX } from 'solid-js'
-import { Button } from '../../ui/button'
+import { createEffect, createSignal, onCleanup, onMount, on, type JSX } from 'solid-js'
+import { Move, X } from 'lucide-solid'
+import { ActionButton } from '../../composites/action-button'
+import { ScrollArea } from '../../ui/scroll-area'
 import {
   type FloatingPreviewFrame,
   type FloatingPreviewResizeDirection,
@@ -8,38 +10,50 @@ import {
   resizeFloatingPreview,
 } from './model'
 
-const directions: readonly { direction: FloatingPreviewResizeDirection; class: string }[] = [
+const directions: readonly {
+  direction: FloatingPreviewResizeDirection
+  class: string
+  glyph: string
+}[] = [
   {
     direction: 'north',
     class: 'absolute -top-3 right-6 left-6 h-control-xs w-auto cursor-ns-resize touch-none',
+    glyph: '↕',
   },
   {
     direction: 'south',
     class: 'absolute -bottom-3 right-6 left-6 h-control-xs w-auto cursor-ns-resize touch-none',
+    glyph: '↕',
   },
   {
     direction: 'east',
     class: 'absolute -right-3 top-6 bottom-6 w-6 h-auto cursor-ew-resize touch-none',
+    glyph: '↔',
   },
   {
     direction: 'west',
     class: 'absolute -left-3 top-6 bottom-6 w-6 h-auto cursor-ew-resize touch-none',
+    glyph: '↔',
   },
   {
     direction: 'northwest',
     class: 'absolute -top-3 -left-3 size-control-xs cursor-nwse-resize touch-none',
+    glyph: '↖',
   },
   {
     direction: 'northeast',
     class: 'absolute -top-3 -right-3 size-control-xs cursor-nesw-resize touch-none',
+    glyph: '↗',
   },
   {
     direction: 'southwest',
     class: 'absolute -bottom-3 -left-3 size-control-xs cursor-nesw-resize touch-none',
+    glyph: '↙',
   },
   {
     direction: 'southeast',
     class: 'absolute -bottom-3 -right-3 size-control-xs cursor-nwse-resize touch-none',
+    glyph: '↘',
   },
 ]
 
@@ -79,6 +93,13 @@ export function FloatingPreview(props: FloatingPreviewProps) {
       })
     )
   }
+  createEffect(
+    on(
+      () => [props.source.width, props.source.height] as const,
+      () => measure(),
+      { defer: true }
+    )
+  )
   onMount(() => {
     if (bounds) {
       observer = new ResizeObserver(measure)
@@ -164,7 +185,7 @@ export function FloatingPreview(props: FloatingPreviewProps) {
   return (
     <div
       ref={bounds}
-      class="pointer-events-none absolute inset-0 z-(--z-tooltip) overflow-hidden"
+      class="pointer-events-none absolute inset-0 z-(--z-sticky) overflow-hidden"
       aria-label={props.label}
     >
       <section
@@ -178,12 +199,13 @@ export function FloatingPreview(props: FloatingPreviewProps) {
         }}
       >
         <header class="flex h-control-sm items-center gap-1 border-b border-border p-1">
-          <Button
+          <ActionButton
             type="button"
             variant="ghost"
             size="sm"
             class="flex-1 cursor-move touch-none"
             aria-label={`Move ${props.label}`}
+            tooltip={`Move ${props.label}. Use arrow keys to adjust its position.`}
             onPointerDown={(event) => start(event, null)}
             onPointerMove={move}
             onPointerUp={end}
@@ -191,37 +213,46 @@ export function FloatingPreview(props: FloatingPreviewProps) {
             onLostPointerCapture={end}
             onKeyDown={keyboardMove}
           >
-            Move
-          </Button>
+            <>
+              <Move aria-hidden="true" />
+              Move
+            </>
+          </ActionButton>
           <div class="flex items-center gap-1">{props.actions}</div>
           {props.onClose && (
-            <Button
+            <ActionButton
               type="button"
               variant="ghost"
               size="icon-sm"
               aria-label={`Close ${props.label}`}
+              tooltip={`Close ${props.label}.`}
               onClick={props.onClose}
             >
-              ×
-            </Button>
+              <X aria-hidden="true" />
+            </ActionButton>
           )}
         </header>
-        <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
-        {directions.map(({ direction, class: className }) => (
-          <Button
+        <ScrollArea role="region" aria-label={`${props.label} content`} class="flex-1" tabIndex={0}>
+          {props.children}
+        </ScrollArea>
+        {directions.map(({ direction, class: className, glyph }) => (
+          <ActionButton
             type="button"
             variant="ghost"
             size="icon-sm"
             class={className}
             data-direction={direction}
             aria-label={`Resize ${props.label} ${direction}`}
+            tooltip={`Resize ${props.label} from the ${direction} edge. Use arrow keys to resize.`}
             onPointerDown={(event) => start(event, direction)}
             onPointerMove={move}
             onPointerUp={end}
             onPointerCancel={end}
             onLostPointerCapture={end}
             onKeyDown={(event) => keyboardResize(event, direction)}
-          />
+          >
+            <span aria-hidden="true">{glyph}</span>
+          </ActionButton>
         ))}
       </section>
     </div>
