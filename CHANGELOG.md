@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.95.5](https://github.com/adea-ai/ui/compare/v0.95.4...v0.95.5) (2026-10-01)
+
+
+### Performance
+
+* cache the Playwright browsers and split the component lane six ways ([#220](https://github.com/adea-ai/ui/issues/220)) ([311740d](https://github.com/adea-ai/ui/commit/311740d5822abb5f8078666952a0e3821c9ec4ba))
+
 ## [0.95.4](https://github.com/adea-ai/ui/compare/v0.95.3...v0.95.4) (2026-10-01)
 
 
