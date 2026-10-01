@@ -1,6 +1,6 @@
 {
   "name": "@adea-ai/ui",
-  "version": "0.90.1",
+  "version": "0.92.0",
   "description": "The Adea design system: Kobalte-backed Solid components, semantic OKLCH tokens, and the app-shell layout primitives shared by Adea and Cortana.",
   "keywords": [
     "adea",
@@ -109,6 +109,7 @@
     "check:packed-modal-dialog": "bun scripts/check-packed-modal-dialog.ts",
     "check:packed-native-select": "bun scripts/check-packed-native-select.ts",
     "check:packed-settings-navigation": "bun scripts/check-packed-settings-navigation.ts",
+    "check:packed-tree": "bun scripts/check-packed-tree.ts",
     "check:packed-paste-model": "node scripts/check-packed-paste-model.mjs"
   },
   "dependencies": {

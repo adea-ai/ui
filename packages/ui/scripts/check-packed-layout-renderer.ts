@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
+import { build } from 'vite'
+import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -16,7 +18,8 @@ async function run(
   args: string[],
   cwd: string,
   extraEnv: Record<string, string> = {},
-  capture = false
+  capture = false,
+  timeoutMs = 0
 ): Promise<string> {
   console.log(
     JSON.stringify({ plannedCommand: command, args, cwd, owner: 'packed-layout-renderer-check' })
@@ -25,6 +28,7 @@ async function run(
     cwd,
     env: { ...process.env, ...extraEnv },
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
+    timeout: timeoutMs,
   })
   active.add(child)
   console.log(JSON.stringify({ childPid: child.pid, owner: 'packed-layout-renderer-check' }))
@@ -65,6 +69,7 @@ const replaceImports = (source: string) =>
       '@adea-ai/ui/components/layout/sidebar-nav'
     )
     .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/ui/dropdown-menu', '@adea-ai/ui/components/ui/dropdown-menu')
     .replaceAll('../../src/components/layout/top-bar', '@adea-ai/ui/components/layout/top-bar')
     .replaceAll(
       '../../src/components/composites/action-button',
@@ -142,6 +147,46 @@ try {
             : './style.css'
       )
     )
+  const serverBuild = await build({
+    root: consumer,
+    configFile: false,
+    logLevel: 'warn',
+    plugins: [solid({ ssr: true })],
+    resolve: { conditions: ['solid', 'node', 'import'] },
+    ssr: { noExternal: true },
+    build: { write: false, minify: false, ssr: join(consumer, 'server.tsx') },
+  })
+  const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
+    .flatMap((output) => ('output' in output ? output.output : []))
+    .filter((asset) => asset.type === 'chunk')
+  if (serverChunks.length !== 1) throw new Error('Expected one packed layout/sidebar SSR chunk')
+  const serverChunk = serverChunks[0]
+  if (!serverChunk) throw new Error('Missing packed layout/sidebar SSR chunk')
+  const serverUi = Object.keys(serverChunk.modules).filter((id) =>
+    id.includes('/node_modules/@adea-ai/ui/')
+  )
+  if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
+    throw new Error('Packed layout/sidebar SSR did not select unmixed Solid source')
+  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+  writeFileSync(
+    join(consumer, 'render.mjs'),
+    "import { renderLayout, renderSidebar } from './server-fixture.mjs'; process.stdout.write(renderLayout() + renderSidebar());"
+  )
+  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true, 30_000)
+  for (const text of [
+    'Server panes',
+    'first',
+    'second',
+    'Server workspace navigation',
+    'Server projects',
+    'Server project',
+    'Server row status',
+    'aria-current="page"',
+    'aria-expanded="true"',
+    'data-slot="sidebar-nav-row-actions"',
+  ])
+    if (!serverHtml.includes(text)) throw new Error(`Packed native Node SSR omitted ${text}`)
+  console.log(JSON.stringify({ result: 'packed native Node SSR passed', serverUi }))
   // The renderer's only shared Button is ghost/icon-xs. Discover its complete
   // class contract from the actual installed public helper, including base and
   // tactile classes, without emitting unrelated Button variants. Browser cases
@@ -172,7 +217,8 @@ try {
   writeFileSync(
     join(consumer, 'sidebar-style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
-      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n"
+      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n" +
+      "@source './node_modules/@adea-ai/ui/src/components/composites/action-button';\n@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n@source './node_modules/@adea-ai/ui/src/components/ui/dropdown-menu';\n"
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
@@ -217,10 +263,9 @@ try {
       result: 'packed renderer passed',
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
+      serverFixtures: ['SplitLayout', 'SidebarNav'],
       browserEngines: ['chromium', 'webkit'],
-      checks: 76,
-      sidebarBrowserCases: 16,
-      topbarBrowserCases: 4,
+      browserSuites: ['SplitLayout', 'SidebarNav', 'TopBar'],
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',

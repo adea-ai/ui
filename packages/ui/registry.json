@@ -2014,6 +2014,35 @@
       ]
     },
     {
+      "name": "tree",
+      "type": "registry:ui",
+      "title": "Tree",
+      "description": "Keyboard-accessible tree rows with virtualization-aware focus handoff.",
+      "dependencies": [
+        "lucide-solid@^1.48.0"
+      ],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/tree/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/tree/index.ts"
+        },
+        {
+          "path": "src/components/composites/tree/tree-navigation.ts",
+          "type": "registry:ui",
+          "target": "components/composites/tree/tree-navigation.ts"
+        },
+        {
+          "path": "src/components/composites/tree/tree.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/tree/tree.tsx"
+        }
+      ]
+    },
+    {
       "name": "update-dialog",
       "type": "registry:ui",
       "title": "Update Dialog",
