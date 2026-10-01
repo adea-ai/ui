@@ -102,6 +102,20 @@ test('the comfortable composer field can resize vertically and remains comfortab
     .toBeGreaterThanOrEqual(384)
 })
 
+test('the field remains usable without horizontal overflow at a narrow viewport', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 700 })
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await expect(box).toBeVisible()
+  await expect(box).toHaveCSS('resize', 'vertical')
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(320)
+  await box.fill('A narrow viewport still accepts the complete draft.')
+  await expect(box).toHaveValue('A narrow viewport still accepts the complete draft.')
+})
+
 test('a failed send preserves the draft and Escape clears the announced error', async ({
   page,
 }) => {
