@@ -54,7 +54,12 @@ function CatalogBrowserRow<Value>(props: {
       data-catalog-entry-id={props.entry.id}
       variant="outline"
       size="lg"
-      class="h-auto min-h-row-lg w-full min-w-0 justify-start gap-3 whitespace-normal"
+      // `h-auto!` must stay important: the size token's fixed `h-control-lg`
+      // is a custom class tailwind-merge cannot conflict-resolve, so an
+      // unimportant `h-auto` loses the stylesheet sort and clamps this
+      // multi-line row to one control line, spilling its content over the
+      // neighbouring rows.
+      class="h-auto! min-h-row-lg w-full min-w-0 justify-start gap-3 whitespace-normal"
       disabled={props.disabled}
       onClick={() => props.onSelect(props.entry, key)}
     >

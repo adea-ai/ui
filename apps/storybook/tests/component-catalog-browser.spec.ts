@@ -50,6 +50,20 @@ async function mountCatalog(page: Page) {
 
 test.beforeEach(async ({ page }) => mountCatalog(page))
 
+test('multi-line entry rows grow to their content instead of clipping into neighbours', async ({
+  page,
+}) => {
+  // The entry rows are control-sized buttons carrying three lines of text.
+  // A fixed height clamps them and the overflowing title/publisher lines
+  // visually overlap the neighbouring rows.
+  const overflow = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll<HTMLButtonElement>('[data-catalog-entry-id]')]
+    return rows.map((row) => row.scrollHeight - row.clientHeight)
+  })
+  expect(overflow.length).toBeGreaterThan(0)
+  for (const spill of overflow) expect(spill).toBeLessThanOrEqual(1)
+})
+
 test('tabs keep installed records and host supplemental navigation separate', async ({ page }) => {
   await expect(page.getByText('9 applications')).toBeVisible()
   const installed = page.getByRole('tab', { name: 'Installed', exact: true })
