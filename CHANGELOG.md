@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.95.4](https://github.com/adea-ai/ui/compare/v0.95.3...v0.95.4) (2026-10-01)
+
+
+### Performance
+
+* sample two external themes instead of five, and fix timeout error masking ([#218](https://github.com/adea-ai/ui/issues/218)) ([5a70ad9](https://github.com/adea-ai/ui/commit/5a70ad9bb820d8f6e50963805efb5fd0a5c98e8d))
+* **ui:** precompile full cn class tables ([#207](https://github.com/adea-ai/ui/issues/207)) ([019ae6f](https://github.com/adea-ai/ui/commit/019ae6ff433de440941dde7f90a47056bac91a03))
+
 ## [0.95.3](https://github.com/adea-ai/ui/compare/v0.95.2...v0.95.3) (2026-10-01)
 
 
