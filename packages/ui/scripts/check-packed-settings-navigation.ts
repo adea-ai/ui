@@ -4,19 +4,31 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { checkTabsSsr } from './check-tabs-ssr'
+import { sharedPackedUiArchive } from './packed-artifact.mjs'
 
 const root = resolve(import.meta.dir, '../../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-settings-navigation-'))
 
 try {
-  const [archive] = JSON.parse(
-    execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
-      cwd: join(root, 'packages/ui'),
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: 60_000,
-    })
-  ) as [{ filename: string }]
+  // The publish pipeline hands every packed check the one archive it built and
+  // verified; only the gates restore a dist/ into the checkout first. Packing
+  // locally here would archive a dist-less tree, and the type probe — which
+  // resolves through the exports map's `types` condition, not the `solid`
+  // condition the runtime checks use — would report TS2307 for a package that
+  // is actually publishable.
+  const sharedArchive = sharedPackedUiArchive()
+  let archivePath = sharedArchive
+  if (!archivePath) {
+    const [archive] = JSON.parse(
+      execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
+        cwd: join(root, 'packages/ui'),
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 60_000,
+      })
+    ) as [{ filename: string }]
+    archivePath = join(consumer, archive.filename)
+  }
   const manifest = JSON.parse(readFileSync(join(root, 'packages/ui/package.json'), 'utf8')) as {
     dependencies: Record<string, string>
     peerDependencies: Record<string, string>
@@ -32,7 +44,7 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@adea-ai/ui': `file:${join(consumer, archive.filename)}`,
+        '@adea-ai/ui': `file:${archivePath}`,
         'lucide-solid': manifest.dependencies['lucide-solid'],
         'solid-js': manifest.peerDependencies['solid-js'],
         tailwindcss: tailwindVersion.version,
