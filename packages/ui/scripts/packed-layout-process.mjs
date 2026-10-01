@@ -317,15 +317,19 @@ export async function runCommand(file, args, options) {
   if (spawnError || exit.code !== 0 || stopReason || cleanupError || stdoutTruncated) {
     const stdoutText = stdout.toString('utf8').trim()
     const stderrText = stderr.toString('utf8').trim()
-    const errorCode = cleanupError
-      ? 'ECHILD_CLEANUP'
-      : stopReason?.kind === 'timeout'
+    // The stop reason is the root cause; a cleanup failure while stopping is a
+    // symptom of it and stays on the message and the `cause`, so callers can
+    // match `ETIMEDOUT` even when the process tree raced the reaper.
+    const errorCode =
+      stopReason?.kind === 'timeout'
         ? 'ETIMEDOUT'
         : stopReason?.kind === 'aborted'
           ? 'ABORT_ERR'
           : stdoutTruncated
             ? 'EOUTPUTLIMIT'
-            : 'ECHILD'
+            : cleanupError
+              ? 'ECHILD_CLEANUP'
+              : 'ECHILD'
     const message = cleanupError
       ? `${stage} child cleanup failed${stopReason ? ` after ${stopReason.kind}` : ''}: ${cleanupError.message}`
       : stopReason?.kind === 'timeout'

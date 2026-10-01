@@ -377,17 +377,18 @@ jobs:
   #
   # **Sharded, because coverage grew and the job did not.** The lane was written for
   # two themes over ~236 stories — 472 page loads, which is what the old comment here
-  # said — and it now runs seven themes over 431 stories, because the catalogue gained
-  # themes and the sample that guards the bridge gained cases. That is 3,017 page
-  # loads, a 6.4x increase, and it started exceeding the 45-minute ceiling: the job
-  # was *cancelled* at the timeout rather than failing, which reads as an
-  # infrastructure problem and hides that the lane was simply too big.
+  # said — and the catalogue grew to 431 stories. The sample that guards the bridge
+  # once chased that growth with five external themes (3,017 page loads, a 6.4x
+  # increase that started exceeding the 45-minute ceiling), but the classes those
+  # extra themes covered are asserted numerically for every theme in
+  # `@adea-ai/themes`, so the sample is back to the two rendering extremes and the
+  # defaults: four themes, 1,724 page loads.
   #
-  # Sharding is the fix rather than a smaller sample, because the sample is chosen
-  # adversarially (see `SAMPLED_THEMES`) and each case in it was added for a reason.
-  # Playwright's `--shard` splits by test, so ten slices preserve the same coverage at
-  # roughly a tenth of the unsharded wall time, and a hang in one slice no longer takes the
-  # whole lane with it.
+  # Sharding is the fix for per-shard wall time rather than a smaller sample, because
+  # the sample is chosen adversarially (see `SAMPLED_THEMES`) and each case in it was
+  # added for a reason. Playwright's `--shard` splits by test, so ten slices preserve
+  # the same coverage at roughly a tenth of the unsharded wall time, and a hang in
+  # one slice no longer takes the whole lane with it.
   workshop:
     name: Workshop (${{ matrix.shard }})
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')

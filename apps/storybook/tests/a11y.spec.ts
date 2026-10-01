@@ -39,21 +39,18 @@ const THEMES = ['adea-dark', 'adea-light'] as const
  * adds here is *rendering* failures — a component that reads a role the bridge
  * failed to map, an overlay that lands invisible against a particular canvas.
  *
- * So the sample is chosen adversarially rather than evenly. It takes the extremes:
- * the palette with the faintest colours in the catalogue (Everforest Light, whose
- * own comment grey is 1.9:1 on its canvas), the palette most likely to break a
- * focus ring (Vesper, which is near-black with a single amber accent), the two
- * whose status colours had to be deepened the most (Ayu Light, Gruvbox Light), and
- * one representative mid-catalogue dark theme. A theme that passes here is not
- * proven correct, but a bridge defect has nowhere to hide.
+ * So the sample is chosen adversarially rather than evenly, and it is kept small
+ * on purpose. It takes the two extremes that render differently from everything
+ * else: the palette with the faintest colours in the catalogue (Everforest Light,
+ * whose own comment grey is 1.9:1 on its canvas) and the palette most likely to
+ * break a focus ring (Vesper, which is near-black with a single amber accent).
+ * The other defect classes the sample once chased — status-colour depth (Ayu
+ * Light, Gruvbox Light) and mid-catalogue representativeness (Tokyo Night) — are
+ * covered for every theme by the numeric suites, so axe has nothing unique to add
+ * there. A theme that passes here is not proven correct, but a bridge defect has
+ * nowhere to hide.
  */
-const SAMPLED_THEMES = [
-  'everforest-light',
-  'ayu-light',
-  'gruvbox-light',
-  'vesper',
-  'tokyonight-night',
-] as const
+const SAMPLED_THEMES = ['everforest-light', 'vesper'] as const
 
 test.describe.configure({ mode: 'parallel' })
 
