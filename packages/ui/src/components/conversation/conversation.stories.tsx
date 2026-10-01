@@ -214,6 +214,35 @@ export const Composer: Story = {
   },
 }
 
+/** The field contract hosts use for focus, stable identity, and accessible help. */
+export const ComposerFieldContract: Story = {
+  render: () => {
+    const [draft, setDraft] = createSignal('')
+    let field: HTMLTextAreaElement | undefined
+    return (
+      <div class="flex w-[44rem] flex-col gap-2">
+        <Button variant="outline" onClick={() => field?.focus()}>
+          Focus message
+        </Button>
+        <MessageComposer
+          inputRef={(element) => {
+            field = element
+          }}
+          inputId="conversation-message"
+          inputLabel="Message to Ada"
+          inputDescription="Enter sends; Shift and Enter adds a line break."
+          inputSize="comfortable"
+          inputResize="vertical"
+          value={draft()}
+          onValueChange={setDraft}
+          onSubmit={() => undefined}
+          placeholder="Write a message…"
+        />
+      </div>
+    )
+  },
+}
+
 /** A reply target, which is a strip above the field rather than a hidden mode. */
 export const ComposerReplying: Story = {
   render: () => {

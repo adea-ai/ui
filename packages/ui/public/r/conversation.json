@@ -8,6 +8,7 @@
     "lucide-solid@^1.48.0"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/action-button",
     "@adea-ai/ui/button",
     "@adea-ai/ui/button-group",
     "@adea-ai/ui/code-block",
