@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.95.2](https://github.com/adea-ai/ui/compare/v0.95.1...v0.95.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ui:** expose sidebar actions on hybrid touch devices ([#203](https://github.com/adea-ai/ui/issues/203)) ([a77173e](https://github.com/adea-ai/ui/commit/a77173ea6b3486fc6ecee48d999fd762401c889d))
+
 ## [0.95.1](https://github.com/adea-ai/ui/compare/v0.95.0...v0.95.1) (2026-10-01)
 
 
