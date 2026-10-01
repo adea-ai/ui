@@ -9,11 +9,22 @@ import { Spinner } from '../ui/spinner/spinner'
 import { Textarea } from '../ui/textarea/textarea'
 import { createComposerImeGuard } from './ime-guard'
 
+function invokeEventHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
+}
+
 /**
  * MessageComposer.
  *
  * The field a message is written in. It is a form, and it behaves like one: Enter
- * sends, Shift+Enter breaks the line, Escape clears the error.
+ * sends, Shift+Enter breaks the line, Escape clears the error from anywhere in
+ * the composer unless a nested control or an active IME already owns the key.
  *
  * ## What it does not know
  *
@@ -50,7 +61,7 @@ export type MessageComposerProps = Omit<ComponentProps<'form'>, 'onSubmit'> & {
   placeholder?: string
   /** Disable the whole composer, e.g. while the channel is read-only. */
   disabled?: boolean
-  /** Label the send action for a context other than a message, e.g. a reply. */
+  /** Accessible name and tooltip for the action, e.g. "Reply". */
   submitLabel?: string
   /** Show the keyboard hint under the field. */
   showHint?: boolean
@@ -99,6 +110,7 @@ export function MessageComposer(props: MessageComposerProps) {
     'inputDescribedBy',
     'inputSize',
     'inputResize',
+    'onKeyDown',
   ])
 
   const [sending, setSending] = createSignal(false)
@@ -109,6 +121,9 @@ export function MessageComposer(props: MessageComposerProps) {
     [local.inputDescribedBy, local.inputDescription ? descriptionId : undefined]
       .filter(Boolean)
       .join(' ') || undefined
+  const actionLabel = () => local.submitLabel ?? 'Send message'
+  const pendingLabel = () =>
+    `Sending ${local.submitLabel ? local.submitLabel.toLowerCase() : 'message'}`
 
   const canSend = () => local.value.trim().length > 0 && !local.disabled && !sending()
 
@@ -129,15 +144,27 @@ export function MessageComposer(props: MessageComposerProps) {
 
   const onKeyDown: JSX.EventHandlerUnion<HTMLTextAreaElement, KeyboardEvent> = (event) => {
     if (event.defaultPrevented) return
-    if (event.key === 'Escape' && error()) {
-      setError(null)
-      return
-    }
     if (event.key !== 'Enter') return
     // Shift breaks the line; a bare Enter, or a modified one, sends.
     if (event.shiftKey && !event.metaKey && !event.ctrlKey) return
     if (!ime.claimEnter(event)) return
     void send()
+  }
+
+  const onFormKeyDown: JSX.EventHandlerUnion<HTMLFormElement, KeyboardEvent> = (event) => {
+    invokeEventHandler(local.onKeyDown, event)
+    if (
+      event.defaultPrevented ||
+      event.key !== 'Escape' ||
+      !error() ||
+      event.isComposing ||
+      event.keyCode === 229
+    ) {
+      return
+    }
+    setError(null)
+    event.preventDefault()
+    event.stopPropagation()
   }
 
   return (
@@ -148,6 +175,7 @@ export function MessageComposer(props: MessageComposerProps) {
         event.preventDefault()
         void send()
       }}
+      onKeyDown={onFormKeyDown}
       {...rest}
     >
       <Show when={local.menu}>
@@ -217,8 +245,8 @@ export function MessageComposer(props: MessageComposerProps) {
               type="submit"
               size="icon-sm"
               disabled={!canSend()}
-              aria-label={sending() ? 'Sending message' : 'Send message'}
-              tooltip="Send message"
+              aria-label={sending() ? pendingLabel() : actionLabel()}
+              tooltip={actionLabel()}
             >
               <Show when={sending()} fallback={<Send />}>
                 <Spinner size="sm" label={false} class="text-primary-foreground" />
@@ -238,11 +266,20 @@ export function MessageComposer(props: MessageComposerProps) {
 
       {/* A live region, so the outcome is announced without moving focus out of the
           field the user is typing in. */}
-      <div aria-live="polite" class="min-h-0">
-        <Show when={error()}>
-          {(message) => (
-            <p class="text-foreground border-s-2 border-destructive ps-2 text-xs">{message()}</p>
-          )}
+      <div role="status" aria-live="polite" class="min-h-0">
+        <Show
+          when={sending()}
+          fallback={
+            <Show when={error()}>
+              {(message) => (
+                <p class="text-foreground border-s-2 border-destructive ps-2 text-xs">
+                  {message()}
+                </p>
+              )}
+            </Show>
+          }
+        >
+          {pendingLabel()}…
         </Show>
       </div>
     </form>

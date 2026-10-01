@@ -62,6 +62,29 @@ test('icon actions explain themselves on hover', async ({ page }) => {
   }
 })
 
+test('submitLabel names the field, action, and tooltip consistently', async ({ page }) => {
+  await page.getByRole('button', { name: 'Use reply action' }).click()
+  await expect(page.getByRole('textbox', { name: 'Reply message', exact: true })).toBeVisible()
+  const reply = page.getByRole('button', { name: 'Reply', exact: true })
+  await expect(reply).toBeVisible()
+  await reply.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Reply')
+
+  await page.getByRole('button', { name: 'Hold next send' }).click()
+  await reply.click()
+  await expect(page.getByRole('status')).toHaveText('Sending reply…')
+  await expect(page.getByRole('button', { name: 'Sending reply' })).toHaveAttribute(
+    'aria-disabled',
+    'true'
+  )
+  await page.getByRole('button', { name: 'Reject pending send' }).click()
+  await expect(
+    page.getByText(
+      'Message not sent. Your draft is still here; retry when the connection recovers.'
+    )
+  ).toBeVisible()
+})
+
 test('the field exposes its native id, accessible description, and actual textarea ref', async ({
   page,
 }) => {
@@ -129,6 +152,99 @@ test('a failed send preserves the draft and Escape clears the announced error', 
   await expect(box).toHaveValue('A draft')
   await box.press('Escape')
   await expect(alert).toHaveCount(0)
+})
+
+test('pending sends are announced, ignore duplicate Enter, and clear only after host confirmation', async ({
+  page,
+}) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Hold next send' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  await expect(page.getByRole('status')).toHaveText('Sending message…')
+  await expect(box).toHaveValue('A draft')
+  await expect(page.getByRole('button', { name: 'Sending message' })).toHaveAttribute(
+    'aria-disabled',
+    'true'
+  )
+
+  await box.press('Enter')
+  await expect(page.getByLabel('Send count')).toHaveText('1')
+  await expect(box).toHaveValue('A draft')
+
+  await page.getByRole('button', { name: 'Confirm pending send' }).click()
+  await expect(box).toHaveValue('')
+  await expect(page.getByLabel('Send count')).toHaveText('1')
+  await expect(page.getByRole('status')).toBeEmpty()
+})
+
+test('a deferred rejection announces failure and retains the controlled draft', async ({
+  page,
+}) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Hold next send' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(page.getByRole('status')).toHaveText('Sending message…')
+  await page.getByRole('button', { name: 'Reject pending send' }).click()
+
+  await expect(
+    page.getByText(
+      'Message not sent. Your draft is still here; retry when the connection recovers.'
+    )
+  ).toBeVisible()
+  await expect(box).toHaveValue('A draft')
+  await expect(page.getByLabel('Send count')).toHaveText('1')
+})
+
+test('button-origin Escape dismisses failure and keeps focus on the send action', async ({
+  page,
+}) => {
+  const send = page.getByRole('button', { name: 'Send message', exact: true })
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Reject next send' }).click()
+  await send.click()
+  const alert = page.getByText(
+    'Message not sent. Your draft is still here; retry when the connection recovers.'
+  )
+  await expect(alert).toBeVisible()
+  await expect(send).toBeFocused()
+
+  await send.press('Escape')
+  await expect(alert).toHaveCount(0)
+  await expect(send).toBeFocused()
+  await expect(box).toHaveValue('A draft')
+})
+
+test('form Escape respects a prevented overlay key and active IME events', async ({ page }) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Reject next send' }).click()
+  await page.getByRole('button', { name: 'Send message', exact: true }).click()
+  const alert = page.getByText(
+    'Message not sent. Your draft is still here; retry when the connection recovers.'
+  )
+  await expect(alert).toBeVisible()
+
+  const suggestion = page.getByRole('button', { name: 'Suggestion', exact: true })
+  await suggestion.focus()
+  await suggestion.press('Escape')
+  await expect(alert).toBeVisible()
+
+  await suggestion.evaluate((element) => {
+    element.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+        isComposing: true,
+        keyCode: 229,
+      })
+    )
+  })
+  await expect(alert).toBeVisible()
+
+  await box.press('Escape')
+  await expect(alert).toHaveCount(0)
+  await expect(box).toHaveValue('A draft')
 })
 
 test('plain Enter sends and Shift+Enter keeps the soft break', async ({ page }) => {
