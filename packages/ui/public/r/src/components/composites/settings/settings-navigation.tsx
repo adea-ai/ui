@@ -28,9 +28,13 @@ export type SettingsNavigationProps = Omit<
   value: string
   /** Called when the already-selected destination is activated again. */
   onReselect?: (value: string) => void
-  /** Reveal the selected row on value changes and window resizes. Defaults to nearest scroll. */
-  revealSelected?: boolean | ((trigger: HTMLButtonElement | undefined) => void)
-  /** Every tab list needs a label independent of its visible group headings. */
+  /** Reveal the selected row on value changes and window resizes. Defaults to nearest scrolling
+   * of the ancestors that expose a scroll affordance; hidden-overflow ancestors never move. */
+  revealSelected?:
+    | boolean
+    | ((
+        trigger: HTMLButtonElement | undefined
+      ) => void) /** Every tab list needs a label independent of its visible group headings. */
   'aria-label': string
 }
 
@@ -47,6 +51,33 @@ export type SettingsNavigationProps = Omit<
  * `revealSelected={false}` when the surrounding layout does not use an internal
  * scrolling viewport.
  */
+/**
+ * Reveal by scrolling only the ancestors that expose a scroll affordance
+ * (`auto` or `scroll`), by the exact nearest-edge delta. `scrollIntoView` also
+ * pans `overflow: hidden` ancestors, which are programmatically scrollable but
+ * give the user no way back, so one over-pan left earlier rows permanently
+ * clipped outside the viewport with no scroll to recover them (#182).
+ */
+function scrollContainerNearest(container: HTMLElement, row: HTMLElement): void {
+  const style = window.getComputedStyle(container)
+  const box = container.getBoundingClientRect()
+  const rowBox = row.getBoundingClientRect()
+  if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
+    if (rowBox.left < box.left) container.scrollLeft += rowBox.left - box.left
+    else if (rowBox.right > box.right) container.scrollLeft += rowBox.right - box.right
+  }
+  if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+    if (rowBox.top < box.top) container.scrollTop += rowBox.top - box.top
+    else if (rowBox.bottom > box.bottom) container.scrollTop += rowBox.bottom - box.bottom
+  }
+}
+
+function revealNearest(row: HTMLElement): void {
+  for (let container = row.parentElement; container; container = container.parentElement) {
+    scrollContainerNearest(container, row)
+  }
+}
+
 export function SettingsNavigation(props: SettingsNavigationProps) {
   const [local, rest] = splitProps(props, [
     'class',
@@ -67,7 +98,7 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
     const revealCurrent = () => {
       const trigger = triggers.get(value)
       if (typeof reveal === 'function') reveal(trigger)
-      else trigger?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      else if (trigger) revealNearest(trigger)
     }
 
     revealCurrent()
