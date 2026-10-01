@@ -1,7 +1,14 @@
 import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
+import { MoreHorizontal, Plus } from 'lucide-solid'
 import { ActionButton } from '../../src/components/composites/action-button/action-button'
 import { Button } from '../../src/components/ui/button/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../src/components/ui/dropdown-menu/dropdown-menu'
 import {
   Popover,
   PopoverContent,
@@ -96,6 +103,54 @@ function Fixture() {
 
   return (
     <main>
+      <h1 class="visually-hidden">Action button test page</h1>
+      <section
+        aria-label="Comfortable touch target examples"
+        class="flex max-w-full flex-wrap gap-2"
+      >
+        <Button
+          id="touch-target-plain"
+          size="icon-md"
+          touchTarget="comfortable"
+          aria-label="Plain action"
+        >
+          <Plus />
+        </Button>
+        <ActionButton
+          id="touch-target-tooltip"
+          size="icon-md"
+          touchTarget="comfortable"
+          aria-label="Tooltip action"
+          tooltip="Open action details"
+        >
+          <Plus />
+        </ActionButton>
+        <ActionButton
+          as="a"
+          id="touch-target-polymorphic-tooltip"
+          href="#comfortable-link"
+          size="icon-md"
+          touchTarget="comfortable"
+          aria-label="Polymorphic tooltip link"
+          tooltip="Open the linked action details"
+        >
+          <Plus />
+        </ActionButton>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            as={Button}
+            id="touch-target-menu-trigger"
+            size="icon-md"
+            touchTarget="comfortable"
+            aria-label="Open comfortable menu"
+          >
+            <MoreHorizontal />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent hideArrow>
+            <DropdownMenuItem>Open settings</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </section>
       <ActionButton
         aria-label="Save workspace"
         busy={busy()}
@@ -198,7 +253,7 @@ function Fixture() {
       <output aria-label="Active popper positioning listeners">
         {activePopperPositioningListeners()}
       </output>
-      <input aria-label="Start tooltip button focus order" />
+      <input aria-label="Start tooltip button focus order" size={10} />
       <ActionButton aria-label="Available action" tooltip="Available action help">
         Available action
       </ActionButton>
@@ -210,7 +265,7 @@ function Fixture() {
         tabIndex={-1}
         tooltip="Programmatic-only action help"
       >
-        Programmatic-only action
+        Action
       </ActionButton>
     </main>
   )

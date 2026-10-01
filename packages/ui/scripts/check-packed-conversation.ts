@@ -46,8 +46,12 @@ if (
 // control: the shared Tooltip pulls the Kobalte popper and FloatingUI stack
 // into the conversation pilots (measured 49,214 locally, 50,055 in CI).
 const MAX_GZIP_BYTES = 50 * 1024
-const MAX_CSS_BYTES = 42 * 1024
-// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
+// Re-baselined 42 → 43 KiB (2026-10) for the shared scene controls'
+// coarse-pointer touch rung: atomic measured 43,355 against main's 42,717
+// (+638 bytes of base CSS — the same delta that re-baselined the packed
+// consumer's list-row cap from 32 to 34 KiB).
+const MAX_CSS_BYTES = 43 * 1024
+// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 43 KiB cap.
 // Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
 const MAX_BUSY_GZIP_BYTES = 60 * 1024
 const results: unknown[] = []

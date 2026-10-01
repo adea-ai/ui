@@ -402,7 +402,8 @@ Square icon controls use the control-height tokens through the Tailwind `--size`
 mapping; `--spacing-control-*` remains the separate inline-padding ladder.
 Text controls, icon buttons and toggles share the same height in both densities.
 Dimensions remain rem-based and follow the consumer's root font size. The browser
-geometry lane checks all six rungs, heights and padding under both themes/densities.
+geometry lane checks the standard density rungs, heights and padding under both
+themes/densities; the `2xl` touch target remains 48px under compact density.
 
 `BusySendButton` translates KiroCrew's split fire/mode-picker composition. Pass
 controlled `mode`, `onModeChange` and `onFire`. `disabled` prevents firing while
@@ -412,6 +413,47 @@ visible, and the selected action cannot fire. Supply `alternateActionHint` only
 when the host implements the described keyboard chord. The component adds no
 keyboard chord, preference storage, runtime command or queue. Persistence and
 same-session preference synchronization remain application-owned.
+
+## Scene controls
+
+`SceneControls` composes movement, jump and optional zoom actions for a host
+scene. `onMovementChange(direction, pressed)` and `onJumpChange(pressed)` report
+held state from pointer or keyboard input; zoom callbacks fire once per
+activation. The shared controls capture pointers and release held actions on
+pointer end/cancel, lost capture, window blur and component cleanup. The host
+maps these typed callbacks to its own camera or movement system; the component
+does not synthesize keyboard events or access host globals. Each icon action
+uses the shared tooltip and a `2xl` 48px target that stays that size under
+compact density. Rounded movement and zoom group surfaces use the shared
+scrim treatment, which follows the library's reduced-transparency and fallback
+policy.
+
+```tsx
+import { SceneControls } from '@adea-ai/ui/components/composites/scene-controls'
+
+;<SceneControls
+  onMovementChange={(direction, pressed) => setMovement(direction, pressed)}
+  onJumpChange={(pressed) => setJumping(pressed)}
+  onZoomIn={zoomIn}
+  onZoomOut={zoomOut}
+/>
+```
+
+Labels default to English and can be supplied through `labels` for a host's
+locale. Hold actions have separate accessible names and explanatory tooltip
+strings so localization can describe the gesture without changing the action
+name. `SceneControls` owns control arrangement and interaction lifecycle;
+the host owns placement, persistence and scene behavior.
+
+After building, `bun run check:packed-scene-controls` verifies the installed npm
+archive under both compiled and Solid export conditions. It reuses the
+SceneControls and ActionButton consumer fixtures to check held callback release,
+localized labels, keyboard and pointer cleanup, and the opt-in touch target at
+320px and 200% text. It also checks packed type declarations, license/NOTICE,
+native Node SSR, module separation, and the existing 40 KiB gzip / 32 KiB CSS
+control budgets. The ActionButton fixture with menus and popovers uses the
+existing 38 KiB gzip / 40 KiB CSS overlay budgets. These packed consumer checks
+do not replace product-level native-device acceptance.
 
 Kobalte owns the menu and focus lifecycle. Its Tab prevention lacks row cycling,
 so a menu-scoped donor translation cycles enabled rows without a document listener.

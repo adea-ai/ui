@@ -251,6 +251,18 @@
 }
 
 /**
+ * Opt into the stable 2xl control rung only when a coarse pointer is available.
+ * `any-pointer` intentionally includes hybrid devices without changing the
+ * glyph or desktop density of the selected Button size.
+ */
+@utility touch-target-comfortable {
+  @media (any-pointer: coarse) {
+    min-inline-size: var(--control-height-2xl);
+    min-block-size: var(--control-height-2xl);
+  }
+}
+
+/**
  * The drag region of a frameless desktop window.
  *
  * Both macOS and Windows need draggable chrome and both need the controls
@@ -422,9 +434,9 @@
   }
 }
 
-/* The glass treatment used by the top bar, the rail, and floating overlays.
-   `--glass-*` are private: a consumer chooses *whether* to be glassy through
-   the component prop, not by reaching for these. */
+/* Glass treatments used by the top bar, rail, scene-control groups and floating
+   overlays. Consumers use the owning component; shared composites use the
+   named utility instead of restyling a primitive. */
 @utility glass-panel {
   background: color-mix(in oklch, var(--chrome) calc(var(--chrome-alpha) * 100%), transparent);
   backdrop-filter: blur(18px) saturate(1.6);
@@ -436,6 +448,12 @@
   background: color-mix(in oklch, var(--card) 72%, transparent);
   backdrop-filter: blur(12px) saturate(1.4);
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
+}
+
+@utility glass-scrim {
+  background: color-mix(in oklch, var(--scrim) 20%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 /* The focus ring. Applied by components that cannot use the global outline
@@ -657,7 +675,8 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .glass-panel,
-  .glass-surface {
+  .glass-surface,
+  .glass-scrim {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: var(--background) !important;
@@ -670,18 +689,19 @@
   }
 
   .glass-panel,
-  .glass-surface {
+  .glass-surface,
+  .glass-scrim {
     background: var(--background) !important;
     border: 1px solid var(--foreground) !important;
   }
 }
 
-/* An engine without backdrop-filter would render the glass tint alone, which
-   is 3-8% alpha — effectively a transparent panel. Fall back to a solid
-   surface instead, keeping borders and shadows so panels stay delimited. */
+/* Without backdrop-filter there is no blurred context behind a glass surface.
+   Fall back to a solid surface so glass panels and scrim groups stay legible. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-panel,
-  .glass-surface {
+  .glass-surface,
+  .glass-scrim {
     background: var(--background) !important;
   }
 }

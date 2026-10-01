@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { ACCENTS, getAccent } from '@adea-ai/themes'
 import { accentVariables, themeById } from '#lib/themes'
+import { densityTokens } from '../src/lib/tokens'
 import { THEME_CSS, valueOf } from './helpers/theme-css'
 
 /**
@@ -346,5 +347,18 @@ describe('the density axis is real', () => {
     // a migration for every existing consumer.
     expect(THEME_CSS).not.toContain("[data-density='comfortable']")
     expect(valueOf('control-height-sm', 'root'), 'the default rung is missing').toBeDefined()
+  })
+
+  test('the 2xl touch target stays 48px under compact density', () => {
+    for (const token of ['control-height-2xl', 'control-padding-2xl']) {
+      expect(valueOf(token, 'root'), `--${token} is not declared in :root`).toBeDefined()
+      expect(
+        declaredIn(selector, token),
+        `--${token} must stay unchanged under compact density`
+      ).toBeUndefined()
+    }
+    expect(px(valueOf('control-height-2xl', 'root')!)).toBe(48)
+    expect(densityTokens.map((token) => token.name)).toContain('control-height-2xl')
+    expect(densityTokens.map((token) => token.name)).toContain('control-padding-2xl')
   })
 })

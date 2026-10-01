@@ -460,6 +460,7 @@ const ICON_BUTTON_SIZES: ReadonlySet<string> = new Set([
   'icon-md',
   'icon-lg',
   'icon-xl',
+  'icon-2xl',
 ])
 
 const staticJsxValues = (value: any): any[] =>

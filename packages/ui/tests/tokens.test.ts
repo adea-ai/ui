@@ -1,4 +1,6 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { contrastRatio, parseColor as parseCatalogueColor } from '@adea-ai/themes'
 import { alertVariants } from '../src/components/ui/alert/alert'
 import { badgeVariants } from '../src/components/ui/badge/badge'
@@ -41,6 +43,7 @@ function ratio(fg: string | undefined, bg: string | undefined): number {
 const themes: Scope[] = ['root', 'dark']
 
 const manifestNames = new Set(allTokens.map((token) => token.name))
+const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), 'utf8')
 
 /* ------------------------------------------------------------------------- */
 
@@ -85,6 +88,18 @@ describe('token manifest', () => {
     // a colour that does not vary with polarity has to be a deliberate choice,
     // because the usual reason for one is that the light theme was forgotten.
     expect(notThemed.toSorted()).toEqual(['scrim', 'scrim-edge', 'scrim-foreground'])
+  })
+})
+
+describe('comfortable touch target utility', () => {
+  test('uses the stable 2xl token only when any available pointer is coarse', () => {
+    const utility = /@utility touch-target-comfortable\s*\{([\s\S]*?)^\}/m.exec(BASE_CSS)?.[1]
+
+    expect(utility).toContain('@media (any-pointer: coarse)')
+    expect(utility).toContain('min-inline-size: var(--control-height-2xl)')
+    expect(utility).toContain('min-block-size: var(--control-height-2xl)')
+    expect(manifestNames.has('control-height-2xl')).toBe(true)
+    expect(valueOf('control-height-2xl', 'root')).toBe('3rem')
   })
 })
 

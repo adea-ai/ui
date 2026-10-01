@@ -451,6 +451,16 @@ excluded. Its distinct `/apps/library` core-app launchpad is also excluded:
 this selected unit is the external verified plugin marketplace adapter, while
 Adea's #757 App Library remains a separate core-view and rail-management flow.
 
+## Scene controls adapted from Adea
+
+`packages/ui/src/components/composites/scene-controls/scene-controls.tsx` adapts
+the d-pad, jump and zoom composition, rounded scrim grouping surfaces and held-input lifecycle from
+`packages/ui/src/components/on-screen-controls.tsx` in the Adea application
+repository (https://github.com/adea-ai/adea), licensed under Apache-2.0.
+The grouping uses the shared `glass-scrim` policy and 48px button variant. The
+component reports typed pressed/released callbacks; it does not copy the host's
+synthetic keyboard events, scene placement or camera behavior.
+
 ## Windowed tree row composition translated from Terax
 
 `packages/ui/src/components/composites/tree/` translates the file-row hierarchy

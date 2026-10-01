@@ -78,7 +78,8 @@ may disable these consumer rules only through its exact path-scoped configuratio
 override; consumer files must not use inline suppressions or broad path patterns.
 
 The opt-in `adea/require-action-button-tooltip` rule covers shared `Button`
-variants with `size="icon-2xs"`, `"icon-xs"`, `"icon-sm"`, `"icon-md"`, `"icon-lg"`, or `"icon-xl"`, including polymorphic triggers
+variants with `size="icon-2xs"`, `"icon-xs"`, `"icon-sm"`, `"icon-md"`, `"icon-lg"`,
+`"icon-xl"`, or `"icon-2xl"`, including polymorphic triggers
 whose `as` prop names the shared `Button`. Use the shared `ActionButton` with a
 supplied nonblank `tooltip`; keep an `aria-label` on the control because the
 tooltip explains the action rather than naming it. The rule tracks named import
@@ -134,13 +135,13 @@ migrated consumer files.
 
 Components do not invent sizes. Two ladders cover the system:
 
-**Control sizes** — `2xs`, `xs`, `sm`, `md`, `lg`, `xl`, in `controlSize` from
-`#lib/variants`. Every pressable and editable thing steps through them, so a Button
-and a Select at the same size are the same height.
+**Control sizes** — the standard density rungs `2xs`, `xs`, `sm`, `md`, `lg`, `xl`
+in `controlSize` from `#lib/variants`. `Button` and `Toggle` also expose `2xl`, a
+stable 48px touch target that compact density does not shrink.
 
-**Icon sizes** — the same rungs prefixed `icon-`, which are the height with an equal
-width. An icon button in a toolbar lines up with the text buttons beside it because
-it is the same rung, not because two authors agreed on a class.
+**Icon sizes** — the same standard rungs prefixed `icon-`, plus `icon-2xl` on
+`Button` and `Toggle`. The touch target is square and remains 48px under compact
+density.
 
 A component that needs a size outside the ladder is usually two components. If it
 genuinely needs one, the rung goes in `theme.css` and in `src/lib/tokens.ts`.

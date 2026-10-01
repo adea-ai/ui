@@ -47,6 +47,7 @@ export const buttonVariants = cva(
         md: `${controlSize.md} [&_svg]:size-4`,
         lg: `${controlSize.lg} [&_svg]:size-4`,
         xl: `${controlSize.xl} [&_svg]:size-5`,
+        '2xl': `${controlSize['2xl']} [&_svg]:size-6`,
         /* Square, for an icon with no label. The accessible name then has to
            come from `aria-label` or a visually hidden label — an icon-only
            button with neither is the accessibility finding the Storybook lane
@@ -57,6 +58,11 @@ export const buttonVariants = cva(
         'icon-md': 'size-control-md p-0 [&_svg]:size-4',
         'icon-lg': 'size-control-lg p-0 [&_svg]:size-4',
         'icon-xl': 'size-control-xl p-0 [&_svg]:size-5',
+        'icon-2xl': 'size-control-2xl p-0 [&_svg]:size-6',
+      },
+      /** Opt in to a stable touch target on devices with any coarse pointer. */
+      touchTarget: {
+        comfortable: 'touch-target-comfortable',
       },
     },
     defaultVariants: {
@@ -76,13 +82,25 @@ export type ButtonProps<T extends ValidComponent = 'button'> = PolymorphicProps<
 >
 
 export function Button<T extends ValidComponent = 'button'>(props: ButtonProps<T>) {
-  const [local, rest] = splitProps(props as ButtonProps, ['variant', 'size', 'class'])
+  const [local, rest] = splitProps(props as ButtonProps, [
+    'variant',
+    'size',
+    'touchTarget',
+    'class',
+  ])
 
   return (
     <Polymorphic
       as="button"
       type="button"
-      class={cn(buttonVariants({ variant: local.variant, size: local.size }), local.class)}
+      class={cn(
+        buttonVariants({
+          variant: local.variant,
+          size: local.size,
+          touchTarget: local.touchTarget,
+        }),
+        local.class
+      )}
       {...(rest as ComponentProps<'button'>)}
     />
   )

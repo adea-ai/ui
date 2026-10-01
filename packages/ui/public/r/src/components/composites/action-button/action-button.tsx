@@ -84,6 +84,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     'as',
     'variant',
     'size',
+    'touchTarget',
     'class',
     'children',
     'disabled',
@@ -106,6 +107,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     ...rest,
     variant: local.variant,
     size: local.size,
+    touchTarget: local.touchTarget,
     class: [local.class, local.tooltip && disabled() && 'aria-disabled:pointer-events-auto']
       .filter(Boolean)
       .join(' '),
