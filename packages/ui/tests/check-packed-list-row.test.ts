@@ -18,16 +18,26 @@ test('packed ListRow guard allows the traced Tooltip utilities and rejects unrel
     '/Users/runner/.bun/install/cache/links/@corvu+utils@0.5.0+lockhash/node_modules/@corvu/utils/dist/chunk/ZV6G25TT.js'
   const changedVersionSolidUtility =
     '/Users/runner/.bun/install/cache/links/@corvu+utils@0.5.0+lockhash/node_modules/@corvu/utils/dist/chunk/U42ECMND.jsx'
+  // When the consumer installs on another filesystem than bun's cache (as CI's
+  // /tmp consumer does) packages are copied, so the module ID carries no
+  // inlined version and only the chunk identity can be matched.
+  const copiedTooltipUtility = '/tmp/consumer/node_modules/@corvu/utils/dist/chunk/ZV6G25TT.js'
+  const copiedSolidTooltipUtility =
+    '/tmp/consumer/node_modules/@corvu/utils/dist/chunk/U42ECMND.jsx'
+  const copiedUnknownUtilityChunk = '/tmp/consumer/node_modules/@corvu/utils/dist/chunk/UNKNOWN.jsx'
 
   expect(
     findUnrelatedPackedRowModules([
       defaultTooltipUtility,
       solidTooltipUtility,
+      copiedTooltipUtility,
+      copiedSolidTooltipUtility,
       drawer,
       unverifiedUtility,
       unknownUtilityChunk,
       changedVersionUtility,
       changedVersionSolidUtility,
+      copiedUnknownUtilityChunk,
     ])
   ).toEqual([
     drawer,
@@ -35,6 +45,7 @@ test('packed ListRow guard allows the traced Tooltip utilities and rejects unrel
     unknownUtilityChunk,
     changedVersionUtility,
     changedVersionSolidUtility,
+    copiedUnknownUtilityChunk,
   ])
 })
 

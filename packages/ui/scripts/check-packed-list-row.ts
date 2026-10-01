@@ -269,6 +269,17 @@ try {
     stdio: 'inherit',
     timeout: 120_000,
   })
+  // A consumer on a different filesystem than bun's cache gets copied
+  // packages whose module IDs carry no inlined version, so the row-module
+  // guard can only check chunk identity — pin the locked Corvu version here.
+  const corvuManifest = join(consumer, 'node_modules/@corvu/utils/package.json')
+  if (existsSync(corvuManifest)) {
+    const corvuVersion = JSON.parse(readFileSync(corvuManifest, 'utf8')).version
+    if (corvuVersion !== '0.4.2')
+      throw new Error(
+        `Packed ListRow consumer installed @corvu/utils@${corvuVersion}; the traced Tooltip path requires 0.4.2`
+      )
+  }
 
   const fixture = readFileSync(join(uiRoot, 'tests/fixtures/list-row.tsx'), 'utf8')
   const packageFixture = fixture
