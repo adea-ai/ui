@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
 import { Box, CircleDot, FileText, GitBranch, Plus, Search, Settings, Trash2 } from 'lucide-solid'
+import { ActionButton } from '../../composites/action-button'
 import { Badge } from '../../ui/badge/badge'
 import { Button } from '../../ui/button/button'
 import {
@@ -10,6 +11,8 @@ import {
   SidebarNavFooter,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavLabel,
+  SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
 } from './sidebar-nav'
@@ -347,4 +350,98 @@ export const Filterable: Story = {
       </div>
     )
   },
+}
+
+/** A selected project stays marked when its sessions are collapsed. */
+export const SelectedProjects: Story = {
+  render: () => {
+    const [selected, setSelected] = createSignal('adea')
+    const [adeaOpen, setAdeaOpen] = createSignal(true)
+    const [cortanaOpen, setCortanaOpen] = createSignal(false)
+    return (
+      <div class="flex h-screen bg-background">
+        <SidebarNav aria-label="Runtime projects">
+          <SidebarNavHeader>
+            <SidebarNavTitle as="h1">Projects and sessions</SidebarNavTitle>
+          </SidebarNavHeader>
+          <SidebarNavContent>
+            <SidebarNavSection
+              label="adea"
+              headingAs="h2"
+              collapsible
+              active={selected() === 'adea'}
+              open={adeaOpen()}
+              onOpenChange={setAdeaOpen}
+              triggerProps={{ onClick: () => setSelected('adea') }}
+            >
+              <SidebarNavRow
+                actions={
+                  <ActionButton
+                    variant="ghost"
+                    size="icon-md"
+                    aria-label="Inspect workspace options"
+                    tooltip="Workspace options"
+                  >
+                    ⋯
+                  </ActionButton>
+                }
+              >
+                <SidebarNavItem as="button" type="button" nested class="flex-1">
+                  Inspect workspace
+                </SidebarNavItem>
+              </SidebarNavRow>
+            </SidebarNavSection>
+            <SidebarNavSection
+              label="cortana"
+              headingAs="h2"
+              collapsible
+              active={selected() === 'cortana'}
+              open={cortanaOpen()}
+              onOpenChange={setCortanaOpen}
+              triggerProps={{ onClick: () => setSelected('cortana') }}
+            >
+              <SidebarNavItem as="button" type="button" nested>
+                Inspect runtime
+              </SidebarNavItem>
+            </SidebarNavSection>
+          </SidebarNavContent>
+        </SidebarNav>
+        <p class="p-4">Current project: {selected()}</p>
+      </div>
+    )
+  },
+}
+
+/** Long labels preserve their accessible text while leaving adjacent actions usable. */
+export const LongLabels: Story = {
+  render: () => (
+    <main class="flex h-screen min-w-0 max-w-full">
+      <SidebarNav aria-label="Long project names">
+        <SidebarNavHeader>
+          <SidebarNavTitle as="h1">Projects</SidebarNavTitle>
+        </SidebarNavHeader>
+        <SidebarNavContent>
+          <SidebarNavRow
+            actions={
+              <ActionButton
+                size="icon-md"
+                variant="ghost"
+                aria-label="Project options"
+                tooltip="Project options"
+              >
+                ⋯
+              </ActionButton>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              <GitBranch aria-hidden="true" />
+              <SidebarNavLabel>
+                A project name that is longer than the navigation column
+              </SidebarNavLabel>
+            </SidebarNavItem>
+          </SidebarNavRow>
+        </SidebarNavContent>
+      </SidebarNav>
+    </main>
+  ),
 }

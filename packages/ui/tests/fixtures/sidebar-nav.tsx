@@ -5,9 +5,19 @@ import {
   SidebarNavButton,
   SidebarNavContent,
   SidebarNavHeader,
+  SidebarNavItem,
+  SidebarNavLabel,
+  SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
 } from '../../src/components/layout/sidebar-nav/sidebar-nav'
+import { ActionButton } from '../../src/components/composites/action-button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '../../src/components/ui/dropdown-menu'
 import { Button } from '../../src/components/ui/button/button'
 import { SidebarNavResizeHandle } from '../../src/components/layout/sidebar-nav/sidebar-nav-resize-handle'
 import '../../src/styles/globals.css'
@@ -20,10 +30,12 @@ render(() => {
   const [savedProjectsOpen, setSavedProjectsOpen] = createSignal(true)
   const [savedAgentsOpen, setSavedAgentsOpen] = createSignal(false)
   const [filtering, setFiltering] = createSignal(false)
+  const [selectedSection, setSelectedSection] = createSignal('Projects')
   const [reordered, setReordered] = createSignal('none')
   const [dragStarted, setDragStarted] = createSignal(false)
   const [cancelClicks, setCancelClicks] = createSignal(0)
   const [cancelableReordered, setCancelableReordered] = createSignal(false)
+  const [fixtureExpanded, setFixtureExpanded] = createSignal(true)
   return (
     <main>
       <SidebarNav aria-label="Workspace navigation">
@@ -36,7 +48,9 @@ render(() => {
             headingAs="h2"
             action={<Button onClick={create}>New Room</Button>}
           >
-            <SidebarNavButton>Product</SidebarNavButton>
+            <SidebarNavItem as="button" type="button" active>
+              Product
+            </SidebarNavItem>
           </SidebarNavSection>
           <SidebarNavSection
             label="Conversations"
@@ -57,11 +71,13 @@ render(() => {
           <output aria-label="Saved agents disclosure">{String(savedAgentsOpen())}</output>
           <SidebarNavSection
             label="Projects"
+            active={selectedSection() === 'Projects'}
             collapsible
             open={filtering() || savedProjectsOpen()}
             onOpenChange={setSavedProjectsOpen}
             triggerProps={{
               id: 'projects-section-disclosure',
+              onClick: () => setSelectedSection('Projects'),
               'aria-description': 'Press Alt with Arrow Up or Arrow Down to reorder Projects.',
               draggable: true,
               ref: (element) => {
@@ -75,6 +91,8 @@ render(() => {
           </SidebarNavSection>
           <SidebarNavSection
             label="Agents"
+            active={selectedSection() === 'Agents'}
+            triggerProps={{ onClick: () => setSelectedSection('Agents') }}
             collapsible
             open={filtering() || savedAgentsOpen()}
             onOpenChange={setSavedAgentsOpen}
@@ -98,6 +116,68 @@ render(() => {
           >
             <SidebarNavButton>Must remain closed</SidebarNavButton>
           </SidebarNavSection>
+          <SidebarNavRow
+            actions={
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    as={ActionButton}
+                    variant="ghost"
+                    size="icon-md"
+                    aria-label="Fixture conversation options"
+                    tooltip="Conversation options"
+                  >
+                    ⋯
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Rename fixture conversation</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <ActionButton
+                  variant="ghost"
+                  size="icon-md"
+                  aria-label="Toggle fixture conversation children"
+                  aria-expanded={fixtureExpanded()}
+                  tooltip="Toggle conversation children"
+                  onClick={() => setFixtureExpanded((expanded) => !expanded)}
+                >
+                  ›
+                </ActionButton>
+              </>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              Fixture conversation
+            </SidebarNavItem>
+          </SidebarNavRow>
+          <SidebarNavRow
+            actions={
+              <>
+                <ActionButton
+                  size="icon-md"
+                  variant="ghost"
+                  aria-label="Long project options"
+                  tooltip="Long project options"
+                >
+                  ⋯
+                </ActionButton>
+                <ActionButton
+                  size="icon-md"
+                  variant="ghost"
+                  aria-label="Expand long project"
+                  tooltip="Expand long project"
+                >
+                  ›
+                </ActionButton>
+              </>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              <SidebarNavLabel data-stress-label>
+                Very long project name that must remain accessible while its row label is truncated
+              </SidebarNavLabel>
+            </SidebarNavItem>
+          </SidebarNavRow>
           <output aria-label="Section reorder direction">{reordered()}</output>
           <output aria-label="Section drag started">{String(dragStarted())}</output>
           <output aria-label="Canceled disclosure clicks">{cancelClicks()}</output>

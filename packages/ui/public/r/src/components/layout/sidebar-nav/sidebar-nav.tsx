@@ -44,7 +44,7 @@ export function SidebarNav<T extends ValidComponent = 'nav'>(props: SidebarNavPr
       as="nav"
       aria-label={local['aria-label'] ?? 'Section'}
       class={cn(
-        'bg-sidebar text-sidebar-foreground flex h-full w-sidebar shrink-0 flex-col border-e border-sidebar-border',
+        'bg-sidebar text-sidebar-foreground flex h-full w-sidebar min-w-0 max-w-full shrink-0 flex-col border-e border-sidebar-border',
         local.class
       )}
       {...(rest as ComponentProps<'nav'>)}
@@ -128,6 +128,8 @@ export type SidebarNavSectionProps = ComponentProps<'div'> & {
   /** Render a disclosure control instead of a plain heading. */
   collapsible?: boolean
   defaultOpen?: boolean
+  /** Mark the current project/group without changing its disclosure state. */
+  active?: boolean
   /** Controlled disclosure state. When supplied, the host owns changes. */
   open?: boolean
   /** Called for user-initiated disclosure changes. */
@@ -148,6 +150,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
     'label',
     'collapsible',
     'defaultOpen',
+    'active',
     'open',
     'onOpenChange',
     'triggerProps',
@@ -188,17 +191,29 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
 
   return (
     <div data-slot="sidebar-nav-section" class={cn('flex flex-col gap-0.5', local.class)} {...rest}>
-      <div class="group/section-header flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-sidebar-accent/60">
+      <div
+        data-slot="sidebar-nav-section-header"
+        data-active={local.active ? '' : undefined}
+        class={cn(
+          'group/section-header flex items-center gap-1 rounded-md px-2 py-1.5',
+          { '[@media(pointer:coarse)]:py-0': local.collapsible },
+          local.active ? 'bg-primary-subtle text-foreground' : 'hover:bg-sidebar-accent/60'
+        )}
+      >
         <Polymorphic
           as={local.headingAs ?? 'div'}
           aria-label={local.headingAs ? local.label : undefined}
-          class="flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase"
+          class={cn(
+            'flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide uppercase',
+            local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
+          )}
         >
           <Show when={local.collapsible} fallback={heading}>
             <button
               {...(triggerRest as ComponentProps<'button'>)}
               type="button"
               aria-expanded={open()}
+              aria-current={local.active ? 'page' : triggerRest['aria-current']}
               onClick={(event) => {
                 invokeEventHandler(trigger.onClick, event)
                 if (event.defaultPrevented) return
@@ -212,7 +227,10 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
                 event.stopPropagation()
                 trigger.onReorder?.(event.key === 'ArrowUp' ? 'up' : 'down')
               }}
-              class="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
+              class={cn(
+                'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(pointer:coarse)]:min-h-11',
+                local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
+              )}
             >
               {heading}
             </button>
@@ -231,6 +249,53 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
   )
 }
 
+export type SidebarNavRowProps = ComponentProps<'div'> & {
+  /** Adjacent controls, outside the navigation item's interactive element. */
+  actions?: JSX.Element
+}
+
+/**
+ * A navigation item and its adjacent controls. Actions stay outside the item
+ * to avoid nested buttons; touch, keyboard focus, and expanded menus expose
+ * them without requiring a pointer hover. A narrow lane or enlarged text
+ * may move actions onto a second line rather than clipping the label or controls.
+ */
+export function SidebarNavRow(props: SidebarNavRowProps) {
+  const [local, rest] = splitProps(props, ['class', 'children', 'actions'])
+  return (
+    <div
+      data-slot="sidebar-nav-row"
+      class={cn(
+        'group/sidebar-nav-row flex min-w-0 flex-wrap items-center gap-0.5 [&>[data-slot=sidebar-nav-item]]:flex-1 [&>[data-slot=sidebar-nav-item]]:basis-36',
+        local.class
+      )}
+      {...rest}
+    >
+      {local.children}
+      <Show when={local.actions}>
+        <span
+          data-slot="sidebar-nav-row-actions"
+          class="ms-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          {local.actions}
+        </span>
+      </Show>
+    </div>
+  )
+}
+
+/** Row text may truncate visually; its complete content remains the accessible name. */
+export function SidebarNavLabel(props: ComponentProps<'span'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return (
+    <span
+      data-slot="sidebar-nav-label"
+      class={cn('min-w-0 flex-1 truncate', local.class)}
+      {...rest}
+    />
+  )
+}
+
 export type SidebarNavItemProps<T extends ValidComponent = 'a'> = PolymorphicProps<
   T,
   {
@@ -243,10 +308,13 @@ export type SidebarNavItemProps<T extends ValidComponent = 'a'> = PolymorphicPro
   }
 >
 
-/** A sidebar row. Exported classes, so a caller's own element can match it. */
+/**
+ * A sidebar row. Exported classes, so a caller's own element can match it.
+ * Coarse pointers get a 44px target without changing Kiro's desktop density.
+ */
 export const sidebarNavItemClass = [
   'group/nav-item relative flex min-w-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium',
-  'whitespace-nowrap transition-colors ease-out outline-none select-none',
+  'whitespace-nowrap transition-colors ease-out outline-none select-none [@media(pointer:coarse)]:min-h-11',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
   '[&_svg]:size-4 [&_svg]:shrink-0',
 ].join(' ')
@@ -268,6 +336,7 @@ export function SidebarNavItem<T extends ValidComponent = 'a'>(props: SidebarNav
   return (
     <Polymorphic
       as="a"
+      data-slot="sidebar-nav-item"
       aria-current={local.active ? 'page' : undefined}
       data-active={local.active ? '' : undefined}
       class={cn(
