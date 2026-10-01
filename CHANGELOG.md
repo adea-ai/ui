@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.95.3](https://github.com/adea-ai/ui/compare/v0.95.2...v0.95.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* **lint:** close Solid interaction analysis gaps ([#206](https://github.com/adea-ai/ui/issues/206)) ([4ae7208](https://github.com/adea-ai/ui/commit/4ae72082d1b8b362b16fe5788c32cca0322d7d85))
+
 ## [0.95.2](https://github.com/adea-ai/ui/compare/v0.95.1...v0.95.2) (2026-10-01)
 
 
