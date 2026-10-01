@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { CircleDot, FileText, MoreHorizontal } from 'lucide-solid'
+import { ChevronDown, ChevronUp, CircleDot, FileText, MoreHorizontal } from 'lucide-solid'
+import { ActionButton } from '../action-button/action-button'
 import { Avatar, AvatarFallback } from '../../ui/avatar/avatar'
 import { Badge } from '../../ui/badge/badge'
 import { Button } from '../../ui/button/button'
@@ -79,10 +80,10 @@ export const States: Story = {
   ),
 }
 
-/** A two-line row, with the secondary line dimmed rather than resized. */
+/** A row grows from the two-line token when a description wraps. */
 export const WithDescription: Story = {
   render: () => (
-    <div class="w-96 rounded-xl border border-border p-2">
+    <div class="w-72 rounded-xl border border-border p-2">
       <ListRow
         selected
         leading={<FileText />}
@@ -97,7 +98,12 @@ export const WithDescription: Story = {
             <AvatarFallback name="Ada Lovelace" />
           </Avatar>
         }
-        description="Maintains the design system"
+        description="Maintains the design system and keeps long workspace descriptions readable at narrow widths"
+        trailing={
+          <Button size="icon-2xs" variant="ghost" aria-label="More actions for Ada Lovelace">
+            <MoreHorizontal />
+          </Button>
+        }
       >
         Ada Lovelace
       </ListRow>
@@ -110,6 +116,49 @@ export const WithDescription: Story = {
         description="Runs the soak lane"
       >
         Alan Turing
+      </ListRow>
+    </div>
+  ),
+}
+
+/** A long label and several actions stay readable in a narrow described row. */
+export const ActionHeavyDescription: Story = {
+  render: () => (
+    <div class="w-80 rounded-xl border border-border p-2">
+      <ListRow
+        leading={<CircleDot />}
+        description="A long description explains what this workspace application does and why its management actions remain available at narrow widths."
+        trailing={
+          <>
+            <Badge size="sm" variant="secondary">
+              In sidebar
+            </Badge>
+            <Button size="sm" variant="ghost">
+              Open A Very Long Workspace Application Name
+            </Button>
+            <ActionButton
+              size="icon-sm"
+              variant="ghost"
+              tooltip="Move workspace application up"
+              aria-label="Move workspace application up"
+            >
+              <ChevronUp />
+            </ActionButton>
+            <ActionButton
+              size="icon-sm"
+              variant="ghost"
+              tooltip="Move workspace application down"
+              aria-label="Move workspace application down"
+            >
+              <ChevronDown />
+            </ActionButton>
+            <Button size="sm" variant="ghost" aria-label="Disable workspace application">
+              Disable
+            </Button>
+          </>
+        }
+      >
+        A Very Long Workspace Application Name
       </ListRow>
     </div>
   ),

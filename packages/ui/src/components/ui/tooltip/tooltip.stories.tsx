@@ -22,6 +22,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
  * Timing lives in the provider, because a tooltip that opens in 200ms in a
  * toolbar and 700ms in a sidebar reads as a bug. The workshop mounts one at the
  * root, exactly as an application does.
+ * A tooltip opened by keyboard focus stays available when the pointer moves
+ * elsewhere; Escape, blur, activation, scrolling, and opening another tooltip
+ * still dismiss it.
  */
 const meta = {
   title: 'Primitives/Overlays/Tooltip',

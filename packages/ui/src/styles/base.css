@@ -92,6 +92,45 @@
   }
 }
 
+/* Emitted only when ListRowControl is used. A described row changes its own
+   height and stacks trailing actions when its available width gets tight. */
+@utility list-row-description {
+  &[data-description] {
+    align-items: flex-start;
+    container: list-row / inline-size;
+    flex-wrap: wrap;
+    min-height: var(--row-height-lg);
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+
+  &[data-description] [data-slot='list-row-content'] {
+    flex: 1 1 14rem;
+  }
+
+  @container list-row (width < 28rem) {
+    &[data-description] [data-slot='list-row-content'] {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &[data-description] [data-slot='list-row-label'],
+    &[data-description] [data-slot='list-row-trailing'] {
+      flex: none;
+      width: 100%;
+    }
+
+    &[data-description] [data-slot='list-row-trailing'] {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    &[data-description] [data-slot='list-row-trailing'] button {
+      max-width: 100%;
+      white-space: normal;
+    }
+  }
+}
+
 @custom-variant data-horizontal {
   &:where([data-orientation='horizontal']) {
     @slot;

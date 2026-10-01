@@ -106,6 +106,18 @@ const coreSamples: PackedSample[] = [
     ],
   },
   {
+    name: 'list-row',
+    imports:
+      "import { ListRowControl } from '@adea-ai/ui/components/composites/list-row'; import { Button } from '@adea-ai/ui/components/ui/button'",
+    jsx: '<ListRowControl description="Keeps long descriptions readable at narrow widths" trailing={<Button size="icon-2xs" variant="ghost" aria-label="Row actions">More</Button>}>Workspace</ListRowControl>',
+    sources: [
+      'components/composites/list-row/list-row-control.tsx',
+      'components/ui/button/button.tsx',
+      'lib/variants.ts',
+      'lib/utils.ts',
+    ],
+  },
+  {
     name: 'conversation-composer',
     imports: "import { MessageComposer } from '@adea-ai/ui/components/conversation'",
     jsx: '<MessageComposer value="Draft" onValueChange={() => {}} onSubmit={() => {}} />',
@@ -338,6 +350,24 @@ try {
             throw new Error('Packed Button is missing shared control sizing')
           if (sample.name === 'conversation-transcript' && !css.includes('.h-control-md'))
             throw new Error('Packed ConversationSurface is missing shared control sizing')
+          if (
+            sample.name === 'list-row' &&
+            (!css.includes('.list-row-description') ||
+              !css.includes('var(--row-height-lg)') ||
+              !css.includes('@container list-row') ||
+              !css.includes('flex-direction:column'))
+          )
+            throw new Error('Packed ListRowControl is missing data-description row geometry')
+          if (sample.name === 'list-row') {
+            if (modules.some((id) => /components\/ui\/tooltip\//.test(id)))
+              throw new Error(
+                `Packed ${condition} ListRowControl retained the optional Tooltip module`
+              )
+            if (/aria-describedby|data-closed/.test(code))
+              throw new Error(
+                `Packed ${condition} ListRowControl output contains rich Tooltip implementation markers`
+              )
+          }
           if (sample.name === 'conversation-composer' && !css.includes('.h-control-md'))
             throw new Error('Packed MessageComposer is missing shared control sizing')
           if (sample.name === 'busy-send' && !css.includes('.h-control-md'))

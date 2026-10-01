@@ -160,6 +160,9 @@ jobs:
       - name: Verify packed conversation composition
         run: bun run check:packed-conversation
 
+      - name: Verify packed ListRow browser contract
+        run: bun run check:packed-list-row
+
   packed-layout:
     name: Packed layout
     needs: [changes, registry-core]
