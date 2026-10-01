@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.92.0](https://github.com/adea-ai/ui/compare/v0.91.0...v0.92.0) (2026-10-01)
+
+
+### Features
+
+* add virtualization-aware Tree and TreeRow ([#179](https://github.com/adea-ai/ui/issues/179)) ([688cc9d](https://github.com/adea-ai/ui/commit/688cc9dfd1ecf7a992797ac6782baa11924beeaf))
+
 ## [0.91.0](https://github.com/adea-ai/ui/compare/v0.90.3...v0.91.0) (2026-10-01)
 
 
