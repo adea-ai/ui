@@ -1,6 +1,6 @@
 /** Actual installed tarball, reused source interactions, both browser conditions and required Solid SSR. */
 import { spawn } from 'node:child_process'
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { build } from 'vite'
@@ -142,12 +142,18 @@ try {
   )
   if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
     throw new Error('Packed appearance SSR did not select unmixed Solid source')
-  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+  // The SSR chunk embeds every resolved runtime class literal; scanned at the
+  // consumer root it would inflate the appearance CSS budget with utilities the
+  // source-scanned bundle never uses. node_modules/.cache stays invisible to
+  // Tailwind's scanner while module resolution still reaches the dependencies.
+  const ssrDirectory = join(consumer, 'node_modules', '.cache', 'adea-packed-ssr')
+  mkdirSync(ssrDirectory, { recursive: true })
+  writeFileSync(join(ssrDirectory, 'server-fixture.mjs'), serverChunk.code)
   writeFileSync(
-    join(consumer, 'render.mjs'),
+    join(ssrDirectory, 'render.mjs'),
     "import { renderAppearance } from './server-fixture.mjs'; process.stdout.write(renderAppearance());"
   )
-  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true)
+  const serverHtml = await run('node', [join(ssrDirectory, 'render.mjs')], consumer, {}, true)
   for (const text of [
     'data-appearance-editor',
     'aria-label="Appearance mode"',
