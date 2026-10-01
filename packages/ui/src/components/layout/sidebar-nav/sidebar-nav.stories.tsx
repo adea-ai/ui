@@ -348,3 +348,50 @@ export const Filterable: Story = {
     )
   },
 }
+
+/** A selected project stays marked when its sessions are collapsed. */
+export const SelectedProjects: Story = {
+  render: () => {
+    const [selected, setSelected] = createSignal('adea')
+    const [adeaOpen, setAdeaOpen] = createSignal(true)
+    const [cortanaOpen, setCortanaOpen] = createSignal(false)
+    return (
+      <div class="flex h-screen bg-background">
+        <SidebarNav aria-label="Runtime projects">
+          <SidebarNavHeader>
+            <SidebarNavTitle as="h1">Projects and sessions</SidebarNavTitle>
+          </SidebarNavHeader>
+          <SidebarNavContent>
+            <SidebarNavSection
+              label="adea"
+              headingAs="h2"
+              collapsible
+              active={selected() === 'adea'}
+              open={adeaOpen()}
+              onOpenChange={setAdeaOpen}
+              triggerProps={{ onClick: () => setSelected('adea') }}
+            >
+              <SidebarNavItem as="button" type="button" nested>
+                Inspect workspace
+              </SidebarNavItem>
+            </SidebarNavSection>
+            <SidebarNavSection
+              label="cortana"
+              headingAs="h2"
+              collapsible
+              active={selected() === 'cortana'}
+              open={cortanaOpen()}
+              onOpenChange={setCortanaOpen}
+              triggerProps={{ onClick: () => setSelected('cortana') }}
+            >
+              <SidebarNavItem as="button" type="button" nested>
+                Inspect runtime
+              </SidebarNavItem>
+            </SidebarNavSection>
+          </SidebarNavContent>
+        </SidebarNav>
+        <p class="p-4">Current project: {selected()}</p>
+      </div>
+    )
+  },
+}

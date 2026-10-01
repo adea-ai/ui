@@ -128,6 +128,8 @@ export type SidebarNavSectionProps = ComponentProps<'div'> & {
   /** Render a disclosure control instead of a plain heading. */
   collapsible?: boolean
   defaultOpen?: boolean
+  /** Mark the current project/group without changing its disclosure state. */
+  active?: boolean
   /** Controlled disclosure state. When supplied, the host owns changes. */
   open?: boolean
   /** Called for user-initiated disclosure changes. */
@@ -148,6 +150,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
     'label',
     'collapsible',
     'defaultOpen',
+    'active',
     'open',
     'onOpenChange',
     'triggerProps',
@@ -188,17 +191,29 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
 
   return (
     <div data-slot="sidebar-nav-section" class={cn('flex flex-col gap-0.5', local.class)} {...rest}>
-      <div class="group/section-header flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-sidebar-accent/60">
+      <div
+        data-slot="sidebar-nav-section-header"
+        data-active={local.active ? '' : undefined}
+        class={cn(
+          'group/section-header flex items-center gap-1 rounded-md px-2 py-1.5',
+          { '[@media(pointer:coarse)]:py-0': local.collapsible },
+          local.active ? 'bg-primary-subtle text-foreground' : 'hover:bg-sidebar-accent/60'
+        )}
+      >
         <Polymorphic
           as={local.headingAs ?? 'div'}
           aria-label={local.headingAs ? local.label : undefined}
-          class="flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase"
+          class={cn(
+            'flex min-w-0 flex-1 items-center gap-1.5 text-2xs font-medium tracking-wide uppercase',
+            local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
+          )}
         >
           <Show when={local.collapsible} fallback={heading}>
             <button
               {...(triggerRest as ComponentProps<'button'>)}
               type="button"
               aria-expanded={open()}
+              aria-current={local.active ? 'page' : triggerRest['aria-current']}
               onClick={(event) => {
                 invokeEventHandler(trigger.onClick, event)
                 if (event.defaultPrevented) return
@@ -212,7 +227,10 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
                 event.stopPropagation()
                 trigger.onReorder?.(event.key === 'ArrowUp' ? 'up' : 'down')
               }}
-              class="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
+              class={cn(
+                'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(pointer:coarse)]:min-h-11',
+                local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
+              )}
             >
               {heading}
             </button>
@@ -243,10 +261,13 @@ export type SidebarNavItemProps<T extends ValidComponent = 'a'> = PolymorphicPro
   }
 >
 
-/** A sidebar row. Exported classes, so a caller's own element can match it. */
+/**
+ * A sidebar row. Exported classes, so a caller's own element can match it.
+ * Coarse pointers get a 44px target without changing Kiro's desktop density.
+ */
 export const sidebarNavItemClass = [
   'group/nav-item relative flex min-w-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium',
-  'whitespace-nowrap transition-colors ease-out outline-none select-none',
+  'whitespace-nowrap transition-colors ease-out outline-none select-none [@media(pointer:coarse)]:min-h-11',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
   '[&_svg]:size-4 [&_svg]:shrink-0',
 ].join(' ')

@@ -5,6 +5,7 @@ import {
   SidebarNavButton,
   SidebarNavContent,
   SidebarNavHeader,
+  SidebarNavItem,
   SidebarNavSection,
   SidebarNavTitle,
 } from '../../src/components/layout/sidebar-nav/sidebar-nav'
@@ -20,6 +21,7 @@ render(() => {
   const [savedProjectsOpen, setSavedProjectsOpen] = createSignal(true)
   const [savedAgentsOpen, setSavedAgentsOpen] = createSignal(false)
   const [filtering, setFiltering] = createSignal(false)
+  const [selectedSection, setSelectedSection] = createSignal('Projects')
   const [reordered, setReordered] = createSignal('none')
   const [dragStarted, setDragStarted] = createSignal(false)
   const [cancelClicks, setCancelClicks] = createSignal(0)
@@ -36,7 +38,9 @@ render(() => {
             headingAs="h2"
             action={<Button onClick={create}>New Room</Button>}
           >
-            <SidebarNavButton>Product</SidebarNavButton>
+            <SidebarNavItem as="button" type="button" active>
+              Product
+            </SidebarNavItem>
           </SidebarNavSection>
           <SidebarNavSection
             label="Conversations"
@@ -57,11 +61,13 @@ render(() => {
           <output aria-label="Saved agents disclosure">{String(savedAgentsOpen())}</output>
           <SidebarNavSection
             label="Projects"
+            active={selectedSection() === 'Projects'}
             collapsible
             open={filtering() || savedProjectsOpen()}
             onOpenChange={setSavedProjectsOpen}
             triggerProps={{
               id: 'projects-section-disclosure',
+              onClick: () => setSelectedSection('Projects'),
               'aria-description': 'Press Alt with Arrow Up or Arrow Down to reorder Projects.',
               draggable: true,
               ref: (element) => {
@@ -75,6 +81,8 @@ render(() => {
           </SidebarNavSection>
           <SidebarNavSection
             label="Agents"
+            active={selectedSection() === 'Agents'}
+            triggerProps={{ onClick: () => setSelectedSection('Agents') }}
             collapsible
             open={filtering() || savedAgentsOpen()}
             onOpenChange={setSavedAgentsOpen}

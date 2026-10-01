@@ -219,7 +219,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
       checks: 76,
-      sidebarBrowserCases: 16,
+      sidebarBrowserCases: 28,
       topbarBrowserCases: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:

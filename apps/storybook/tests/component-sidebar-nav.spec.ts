@@ -213,8 +213,50 @@ test('controlled sections preserve independent saved state and disclosure trigge
   ).toEqual([])
 })
 
+test('selected sections update independently of saved disclosure state', async ({ page }) => {
+  const projects = page.getByRole('button', { name: 'Projects', exact: true })
+  const agents = page.getByRole('button', { name: 'Agents', exact: true })
+  const projectsHeader = projects.locator('xpath=../..')
+  const agentsHeader = agents.locator('xpath=../..')
+  await expect(projects).toHaveAttribute('aria-current', 'page')
+  await expect(projectsHeader).toHaveAttribute('data-active', '')
+  const selectedFill = await projectsHeader.evaluate(
+    (element) => getComputedStyle(element).backgroundColor
+  )
+  expect(selectedFill).not.toBe('rgba(0, 0, 0, 0)')
+  await agents.click()
+  await expect(agents).toHaveAttribute('aria-current', 'page')
+  await expect(agentsHeader).toHaveAttribute('data-active', '')
+  await expect(agentsHeader).toHaveCSS('background-color', selectedFill)
+  await expect(projects).not.toHaveAttribute('aria-current', 'page')
+  await expect(projectsHeader).not.toHaveAttribute('data-active', '')
+  await expect(projects).toHaveAttribute('aria-expanded', 'true')
+  await projects.click()
+  await expect(projects).toHaveAttribute('aria-current', 'page')
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+  await expect(agents).toHaveAttribute('aria-expanded', 'true')
+})
+
 test.describe('touch navigation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test('disclosures and navigation rows keep 44px coarse-pointer targets', async ({ page }) => {
+    expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true)
+    const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
+    for (const name of ['Projects', 'Conversations', 'Product', 'Research']) {
+      const target = nav.getByRole('button', { name, exact: true }).first()
+      const bounds = await target.boundingBox()
+      expect(bounds, name).not.toBeNull()
+      expect(bounds!.height, name).toBeGreaterThanOrEqual(44)
+      expect(bounds!.width, name).toBeGreaterThanOrEqual(44)
+    }
+    const projects = nav.getByRole('button', { name: 'Projects', exact: true })
+    await projects.tap()
+    await expect(projects).toHaveAttribute('aria-expanded', 'false')
+    await projects.tap()
+    await expect(projects).toHaveAttribute('aria-expanded', 'true')
+    await nav.getByRole('button', { name: 'Research', exact: true }).tap()
+  })
 
   test('section creation actions remain discoverable without hover', async ({ page }) => {
     expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
