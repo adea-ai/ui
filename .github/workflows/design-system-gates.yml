@@ -458,12 +458,15 @@ jobs:
     needs: changes
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
     runs-on: ubuntu-latest
-    # Shards are sized to keep every job under the five-minute iteration bar:
+    # Shards are sized to keep every job near the five-minute iteration bar:
     # four shards left the slowest with a ~5-minute test step on its own, and
     # a CDN-starved engine install once pushed a shard past 15 minutes of
     # setup on top. The browsers now come from the GitHub cache (lockfile is
     # the key), and the extra shards keep the tail short under contention.
-    timeout-minutes: 15
+    # The ceiling stays above the longest observed shard (a 15m15s cancel
+    # under runner contention): a timeout cancels the shard without
+    # reporting which story failed, so it must bound runaways, not the bar.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
