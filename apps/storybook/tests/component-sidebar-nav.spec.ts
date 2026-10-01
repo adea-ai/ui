@@ -145,11 +145,7 @@ test('host heading hierarchy and disclosure semantics survive shared composition
   await disclosure.press('Space')
   await expect(nav.getByRole('button', { name: 'Research' })).toBeVisible()
   const results = await new AxeBuilder({ page }).analyze()
-  expect(
-    results.violations.filter((violation) =>
-      ['serious', 'critical'].includes(violation.impact ?? '')
-    )
-  ).toEqual([])
+  expect(results.violations).toEqual([])
 })
 
 test('controlled sections preserve independent saved state and disclosure trigger contracts', async ({
@@ -206,11 +202,7 @@ test('controlled sections preserve independent saved state and disclosure trigge
   await expect(projects).toHaveAttribute('aria-expanded', 'false')
 
   const results = await new AxeBuilder({ page }).analyze()
-  expect(
-    results.violations.filter((violation) =>
-      ['serious', 'critical'].includes(violation.impact ?? '')
-    )
-  ).toEqual([])
+  expect(results.violations).toEqual([])
 })
 
 test('selected sections update independently of saved disclosure state', async ({ page }) => {
