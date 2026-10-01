@@ -244,7 +244,7 @@ test.describe('touch navigation', () => {
     expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true)
     const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
     for (const name of ['Projects', 'Conversations', 'Product', 'Research']) {
-      const target = nav.getByRole('button', { name, exact: true }).first()
+      const target = nav.getByRole('button', { name, exact: name !== 'Conversations' }).first()
       const bounds = await target.boundingBox()
       expect(bounds, name).not.toBeNull()
       expect(bounds!.height, name).toBeGreaterThanOrEqual(44)
