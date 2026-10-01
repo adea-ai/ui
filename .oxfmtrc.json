@@ -6,6 +6,8 @@
   "ignorePatterns": [
     "CHANGELOG.md",
     ".github/.code-foundry",
+    ".github/actions/",
+    "plugin.json",
     ".agents",
     "dist",
     "storybook-static",
