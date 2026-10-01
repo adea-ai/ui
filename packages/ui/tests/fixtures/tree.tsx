@@ -117,12 +117,16 @@ function WindowedTreeFixture() {
 
   return (
     <main class="mx-auto w-full max-w-96 p-2">
+      <h1 class="sr-only">Windowed tree fixture</h1>
       <Button aria-label="Before tree" variant="outline">
         Before tree
       </Button>
       <div
         ref={setViewport}
         data-testid="tree-test-viewport"
+        role="region"
+        aria-label="Workspace tree viewport"
+        tabIndex={0}
         class="h-32 w-full overflow-auto"
         onScroll={(event) => {
           const nextTop = event.currentTarget.scrollTop

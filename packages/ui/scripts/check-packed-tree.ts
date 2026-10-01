@@ -247,6 +247,14 @@ export function RootExportConsumer() {
         await expect(tree.locator('[role="treeitem"][tabindex="0"]')).toHaveCount(1)
         await expect(page.getByLabel('Full projection count')).toHaveText('100001')
 
+        const beforeTreeButton = page.getByRole('button', { name: 'Before tree' })
+        const viewportRegion = page.getByRole('region', { name: 'Workspace tree viewport' })
+        await beforeTreeButton.focus()
+        await beforeTreeButton.press('Tab')
+        await expect(viewportRegion).toBeFocused()
+        await viewportRegion.press('Tab')
+        await expect(root).toBeFocused()
+
         const firstFile = page.getByRole('treeitem', { name: 'file 0' })
         await root.press('ArrowRight')
         await expect(firstFile).toBeFocused()
@@ -284,6 +292,7 @@ export function RootExportConsumer() {
         await expect(page.getByLabel('Selected row')).toHaveText('file-0')
 
         const rename = page.getByRole('button', { name: 'Rename file-0' })
+        await expect(firstFile).toBeFocused()
         await firstFile.press('Tab')
         await expect(rename).toBeFocused()
         await rename.press('ArrowDown')
@@ -374,10 +383,15 @@ export function RootExportConsumer() {
         await expect(fallbackPage.getByLabel('Active row')).toHaveText('root')
         await expect(fallbackTree.locator('[role="treeitem"][tabindex="0"]')).toHaveCount(1)
 
-        const beforeTree = fallbackPage.getByRole('button', { name: 'Before tree' })
+        const fallbackBeforeTree = fallbackPage.getByRole('button', { name: 'Before tree' })
+        const treeViewport = fallbackPage.getByRole('region', {
+          name: 'Workspace tree viewport',
+        })
         await fallbackPage.getByRole('button', { name: 'Clear active id' }).click()
-        await beforeTree.focus()
-        await beforeTree.press('Tab')
+        await fallbackBeforeTree.focus()
+        await fallbackBeforeTree.press('Tab')
+        await expect(treeViewport).toBeFocused()
+        await treeViewport.press('Tab')
         await expect(fallbackRoot).toBeFocused()
 
         await fallbackPage.evaluate(() => {
