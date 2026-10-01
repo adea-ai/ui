@@ -637,7 +637,19 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     expect(download?.with?.['run-id']).toBeUndefined()
     expect(download?.with?.repository).toBeUndefined()
     expect(lane.steps.some((step) => step.run === command)).toBe(true)
+    if (id === 'packed-conversation') {
+      expect(lane.steps.some((step) => step.run === 'bun run check:packed-list-row')).toBe(true)
+    }
   }
+
+  const publishWorkflow = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/publish-ui.yml', import.meta.url), 'utf8')
+  ) as { jobs: Record<string, { steps: { run?: string }[] }> }
+  expect(
+    publishWorkflow.jobs['packed-conversation']?.steps.some(
+      (step) => step.run === 'bun run check:packed-list-row'
+    )
+  ).toBe(true)
 
   const gate = workflow.jobs.registry
   expect(gate.name).toBe('Registry')

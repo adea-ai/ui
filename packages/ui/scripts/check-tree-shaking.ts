@@ -67,6 +67,18 @@ const SAMPLES: readonly { name: string; names: readonly string[]; note: string; 
     { name: 'CodeBlock', names: ['CodeBlock'], note: 'lucide icons' },
     { name: 'DiffBlock', names: ['DiffBlock'], note: 'lucide icons' },
     { name: 'MessageRow', names: ['MessageRow'], note: 'conversation layer, no dependency' },
+    {
+      name: 'ListRow',
+      names: ['ListRow'],
+      note: 'rich row with optional tooltip',
+      entry: '/components/composites/list-row',
+    },
+    {
+      name: 'ListRowControl',
+      names: ['ListRowControl'],
+      note: 'plain row without tooltip dependency',
+      entry: '/components/composites/list-row',
+    },
     { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog' },
     { name: 'NavigationMenu', names: ['NavigationMenu'], note: 'Kobalte navigation menu' },
     { name: 'CalendarSurface', names: ['CalendarSurface'], note: 'corvu calendar' },
@@ -103,7 +115,7 @@ function kb(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} kB`
 }
 
-type BundleSize = { raw: number; gzip: number; chunks: number }
+type BundleSize = { raw: number; gzip: number; chunks: number; code: string }
 
 async function bundle(entrySource: string, dir: string, name: string): Promise<BundleSize> {
   const entry = join(dir, `${name}.ts`)
@@ -140,7 +152,7 @@ async function bundle(entrySource: string, dir: string, name: string): Promise<B
   )
 
   const code = chunks.map((chunk) => chunk.code).join('\n')
-  return { raw: Buffer.byteLength(code), gzip: gzipSync(code).length, chunks: chunks.length }
+  return { raw: Buffer.byteLength(code), gzip: gzipSync(code).length, chunks: chunks.length, code }
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'adea-tree-shaking-'))
@@ -214,6 +226,29 @@ try {
    * the whole reason chart.js was chosen over a batteries-included library, and a
    * single `register(...)` of everything would break it with nothing failing.
    */
+  const plainRow = sizes.get('ListRowControl')!
+  const richRow = sizes.get('ListRow')!
+  const tooltipMarkers = ['aria-describedby', 'data-closed']
+  if (!tooltipMarkers.every((marker) => richRow.code.includes(marker))) {
+    findings.push(
+      'the rich ListRow comparison bundle is missing Tooltip markers, so the tree-shaking proof is inconclusive.'
+    )
+  }
+  const leakedTooltipMarkers = tooltipMarkers.filter((marker) => plainRow.code.includes(marker))
+  if (leakedTooltipMarkers.length > 0) {
+    findings.push(
+      `ListRowControl pulled in rich Tooltip code (${leakedTooltipMarkers.join(', ')}).`
+    )
+  }
+  if (plainRow.gzip >= richRow.gzip) {
+    findings.push(
+      `ListRowControl (${kb(plainRow.gzip)}) is not smaller than rich ListRow (${kb(richRow.gzip)}).`
+    )
+  }
+  console.log(
+    `\n  row split       ListRowControl ${kb(plainRow.gzip)}; rich ListRow ${kb(richRow.gzip)}; Tooltip absent from plain output`
+  )
+
   const line = sizes.get('LineChart')!
   const allCharts = sizes.get('AllCharts')!
   const saved = allCharts.gzip - line.gzip

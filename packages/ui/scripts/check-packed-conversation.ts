@@ -42,7 +42,10 @@ if (
 // Small fixture-specific headroom; module exclusions remain independent gates.
 // Re-baselined 26 → 33 KiB (2026-09) for the `cn` swap: measured 32,238 gzip —
 // the config-extended merge runtime ships cn's compiler and default tables.
-const MAX_GZIP_BYTES = 33 * 1024
+// Re-baselined 33 → 50 KiB (2026-10) for the composer's ActionButton send
+// control: the shared Tooltip pulls the Kobalte popper and FloatingUI stack
+// into the conversation pilots (measured 49,214 locally, 50,055 in CI).
+const MAX_GZIP_BYTES = 50 * 1024
 const MAX_CSS_BYTES = 42 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 42 KiB cap.
 // Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
@@ -714,6 +717,9 @@ void textarea
           await page.addScriptTag({ type: 'module', content: code })
           if (pilot === 'composer-fields') {
             const field = page.getByRole('textbox', { name: 'Message', exact: true })
+            // The fixture's <output> also exposes role=status, so a bare getByRole
+            // resolves to two elements; the announcer is the one declaring both.
+            const announcer = page.locator('[role="status"][aria-live="polite"]')
             await expect(field).toHaveAttribute('id', 'message-draft')
             const describedBy = (await field.getAttribute('aria-describedby'))?.split(' ') ?? []
             if (
@@ -736,7 +742,7 @@ void textarea
 
             await page.getByRole('button', { name: 'Hold next send' }).click()
             await reply.click()
-            await expect(page.getByRole('status')).toHaveText('Sending reply…')
+            await expect(announcer).toHaveText('Sending reply…')
             await expect(page.getByRole('button', { name: 'Sending reply' })).toHaveAttribute(
               'aria-disabled',
               'true'
@@ -747,20 +753,20 @@ void textarea
             await expect(replyField).toHaveValue('A draft')
             await page.getByRole('button', { name: 'Confirm pending send' }).click()
             await expect(replyField).toHaveValue('')
-            await expect(page.getByRole('status')).toBeEmpty()
+            await expect(announcer).toBeEmpty()
 
             await replyField.fill('A draft')
             await page.getByRole('button', { name: 'Hold next send' }).click()
             await reply.click()
-            await expect(page.getByRole('status')).toHaveText('Sending reply…')
+            await expect(announcer).toHaveText('Sending reply…')
             await page.getByRole('button', { name: 'Reject pending send' }).click()
-            await expect(page.getByRole('status')).toContainText('Message not sent')
+            await expect(announcer).toContainText('Message not sent')
             await expect(replyField).toHaveValue('A draft')
             await expect(page.getByLabel('Send count')).toHaveText('2')
 
             await page.getByRole('button', { name: 'Reject next send' }).click()
             await reply.click()
-            const alert = page.getByRole('status')
+            const alert = announcer.getByText('Message not sent')
             await expect(alert).toContainText('Message not sent')
             await expect(reply).toBeFocused()
             await reply.press('Escape')
@@ -1311,7 +1317,9 @@ void textarea
             await expect(cached.locator('[data-channel-row]')).toHaveCount(60)
             await expect.poll(() => cached.evaluate((element) => element.scrollTop)).toBe(420)
           }
-          if ((await field.evaluate((element) => getComputedStyle(element).resize)) !== 'none')
+          // #192 made the composer textarea resize vertically; the UA default
+          // (what remains without Tailwind) is 'both'.
+          if ((await field.evaluate((element) => getComputedStyle(element).resize)) !== 'vertical')
             throw new Error('Packed Tailwind composer styles missing')
           if (errors.length) throw new Error(`Browser errors: ${errors.join(', ')}`)
           results.push({

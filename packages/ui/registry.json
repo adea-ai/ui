@@ -1951,6 +1951,11 @@
           "target": "components/composites/list-row/index.ts"
         },
         {
+          "path": "src/components/composites/list-row/list-row-control.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/list-row/list-row-control.tsx"
+        },
+        {
           "path": "src/components/composites/list-row/list-row.tsx",
           "type": "registry:ui",
           "target": "components/composites/list-row/list-row.tsx"
