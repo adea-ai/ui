@@ -19,6 +19,25 @@ import { waitForFiniteAnimations } from './finite-animations'
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
 console.log(`Owned pilot runner PID: ${process.pid}`)
+const packedComposerFieldsFixture = readFileSync(
+  join(root, 'tests/fixtures/message-composer.tsx'),
+  'utf8'
+)
+  .replace(
+    '../../src/components/conversation/message-composer',
+    '@adea-ai/ui/components/conversation'
+  )
+  .replace('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+  .replace('../../src/styles/globals.css', './style.css')
+if (packedComposerFieldsFixture === '') throw new Error('Composer field fixture is empty')
+if (
+  packedComposerFieldsFixture.includes('../../src/') ||
+  !packedComposerFieldsFixture.includes("'@adea-ai/ui/components/conversation'") ||
+  !packedComposerFieldsFixture.includes("'@adea-ai/ui/components/ui/button'")
+)
+  throw new Error(
+    'Packed composer fixture retained a source alias or missed a package import rewrite'
+  )
 // First packed baseline: 23,880/23,936 gzip JS bytes and 40,203 raw CSS bytes.
 // Small fixture-specific headroom; module exclusions remain independent gates.
 // Re-baselined 26 → 33 KiB (2026-09) for the `cn` swap: measured 32,238 gzip —
@@ -235,6 +254,55 @@ try {
     )
   )
     throw new Error('Packed public composer declarations exposed the private input-render seam')
+  const typedConsumer = join(consumer, 'message-composer-consumer.tsx')
+  writeFileSync(
+    typedConsumer,
+    `import type { ComponentProps } from 'solid-js'
+import { MessageComposer } from '@adea-ai/ui/components/conversation'
+
+let textarea: HTMLTextAreaElement | undefined
+const props: ComponentProps<typeof MessageComposer> = {
+  value: 'Draft',
+  onValueChange: () => undefined,
+  onSubmit: async () => undefined,
+  inputRef: (element) => { textarea = element },
+  inputId: 'message-draft',
+  inputLabel: 'Message',
+  inputDescription: 'Messages support Markdown.',
+  inputDescribedBy: 'host-instructions',
+  inputSize: 'comfortable',
+  inputResize: 'vertical',
+  submitLabel: 'Reply',
+}
+
+export function PackedMessageComposerConsumer() {
+  return <MessageComposer {...props} />
+}
+
+void textarea
+`
+  )
+  writeFileSync(
+    join(consumer, 'message-composer-tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: {
+        target: 'ES2022',
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
+        strict: true,
+        jsx: 'preserve',
+        jsxImportSource: 'solid-js',
+        noEmit: true,
+        skipLibCheck: true,
+        lib: ['ES2022', 'DOM'],
+      },
+      include: [typedConsumer],
+    })
+  )
+  execFileSync(resolve(root, '../../node_modules/.bin/tsc'), [
+    '--project',
+    join(consumer, 'message-composer-tsconfig.json'),
+  ])
   if (Object.keys(manifest.exports).some((key) => /(?:^|\/)internal(?:\/|$)/.test(key)))
     throw new Error('Packed UI export map exposes an internal module path')
   const privateImportProbe = `
@@ -392,7 +460,7 @@ try {
       retainedModules: serverModules,
     })
   }
-  for (const pilot of ['conversation', 'busy', 'composed', 'atomic'] as const) {
+  for (const pilot of ['conversation', 'composer-fields', 'busy', 'composed', 'atomic'] as const) {
     for (const condition of ['compiled', 'solid'] as const) {
       const dir = join(consumer, pilot + '-' + condition)
       mkdirSync(dir)
@@ -404,22 +472,26 @@ try {
         join(dir, 'main.tsx'),
         pilot === 'conversation'
           ? fixture
-          : pilot === 'busy'
-            ? busyFixture
-            : pilot === 'composed'
-              ? composedFixture
-              : atomicFixture
+          : pilot === 'composer-fields'
+            ? packedComposerFieldsFixture
+            : pilot === 'busy'
+              ? busyFixture
+              : pilot === 'composed'
+                ? composedFixture
+                : atomicFixture
       )
       writeFileSync(
         join(dir, 'style.css'),
         "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
-          (pilot === 'conversation'
+          (pilot === 'conversation' || pilot === 'composer-fields'
             ? [
-                'components/conversation/conversation-surface.tsx',
                 'components/conversation/message-composer.tsx',
                 'components/ui/textarea/textarea.tsx',
                 'components/ui/spinner/spinner.tsx',
                 'components/ui/kbd/kbd.tsx',
+                ...(pilot === 'conversation'
+                  ? ['components/conversation/conversation-surface.tsx']
+                  : []),
               ]
             : [
                 ...(pilot === 'composed' || pilot === 'atomic'
@@ -503,7 +575,11 @@ try {
             ? /\/conversation\/(?:busy-send-button|chat-composer|atomic|paste-token-editor)/.test(
                 id
               )
-            : /\/conversation\/(?:message-composer|conversation-surface|scroll-follow)/.test(id)
+            : pilot === 'composer-fields'
+              ? /\/conversation\/(?:busy-send-button|chat-composer|atomic|paste-token-editor|conversation-surface|scroll-follow)/.test(
+                  id
+                )
+              : /\/conversation\/(?:message-composer|conversation-surface|scroll-follow)/.test(id)
       )
       if (unrelatedConversation.length)
         throw new Error(`Unrelated conversation units: ${unrelatedConversation.join(', ')}`)
@@ -608,7 +684,7 @@ try {
         })
       )
       const acceptedGzipBudget =
-        pilot === 'conversation'
+        pilot === 'conversation' || pilot === 'composer-fields'
           ? MAX_GZIP_BYTES
           : pilot === 'busy'
             ? MAX_BUSY_GZIP_BYTES
@@ -636,6 +712,107 @@ try {
           await page.setContent('<div id="app"></div>')
           await page.addStyleTag({ content: css })
           await page.addScriptTag({ type: 'module', content: code })
+          if (pilot === 'composer-fields') {
+            const field = page.getByRole('textbox', { name: 'Message', exact: true })
+            await expect(field).toHaveAttribute('id', 'message-draft')
+            const describedBy = (await field.getAttribute('aria-describedby'))?.split(' ') ?? []
+            if (
+              !describedBy.includes('message-instructions') ||
+              describedBy.length !== 2 ||
+              !describedBy.some((id) => id !== 'message-instructions')
+            )
+              throw new Error('Packed composer lost its host and field descriptions')
+            await expect(page.locator('#message-instructions')).toHaveText(
+              'Do not include secrets in a message.'
+            )
+            await page.getByRole('button', { name: 'Focus message' }).click()
+            await expect(field).toBeFocused()
+            await page.getByRole('button', { name: 'Use reply action' }).click()
+            const replyField = page.getByRole('textbox', { name: 'Reply message', exact: true })
+            await expect(replyField).toBeVisible()
+            const reply = page.getByRole('button', { name: 'Reply', exact: true })
+            await reply.hover()
+            await expect(page.getByRole('tooltip')).toHaveText('Reply')
+
+            await page.getByRole('button', { name: 'Hold next send' }).click()
+            await reply.click()
+            await expect(page.getByRole('status')).toHaveText('Sending reply…')
+            await expect(page.getByRole('button', { name: 'Sending reply' })).toHaveAttribute(
+              'aria-disabled',
+              'true'
+            )
+            await expect(replyField).toHaveValue('A draft')
+            await replyField.press('Enter')
+            await expect(page.getByLabel('Send count')).toHaveText('1')
+            await expect(replyField).toHaveValue('A draft')
+            await page.getByRole('button', { name: 'Confirm pending send' }).click()
+            await expect(replyField).toHaveValue('')
+            await expect(page.getByRole('status')).toBeEmpty()
+
+            await replyField.fill('A draft')
+            await page.getByRole('button', { name: 'Hold next send' }).click()
+            await reply.click()
+            await expect(page.getByRole('status')).toHaveText('Sending reply…')
+            await page.getByRole('button', { name: 'Reject pending send' }).click()
+            await expect(page.getByRole('status')).toContainText('Message not sent')
+            await expect(replyField).toHaveValue('A draft')
+            await expect(page.getByLabel('Send count')).toHaveText('2')
+
+            await page.getByRole('button', { name: 'Reject next send' }).click()
+            await reply.click()
+            const alert = page.getByRole('status')
+            await expect(alert).toContainText('Message not sent')
+            await expect(reply).toBeFocused()
+            await reply.press('Escape')
+            await expect(alert).toHaveCount(0)
+            await expect(reply).toBeFocused()
+            await expect(replyField).toHaveValue('A draft')
+
+            await page.getByRole('button', { name: 'Reject next send' }).click()
+            await reply.click()
+            await expect(alert).toContainText('Message not sent')
+            const suggestion = page.getByRole('button', { name: 'Suggestion', exact: true })
+            await suggestion.focus()
+            await suggestion.press('Escape')
+            await expect(alert).toBeVisible()
+            await suggestion.evaluate((element) => {
+              element.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                  key: 'Escape',
+                  bubbles: true,
+                  cancelable: true,
+                  isComposing: true,
+                  keyCode: 229,
+                })
+              )
+            })
+            await expect(alert).toBeVisible()
+            await replyField.press('Escape')
+            await expect(alert).toHaveCount(0)
+            await expect(replyField).toHaveValue('A draft')
+            if (errors.length) throw new Error(`Browser errors: ${errors.join(', ')}`)
+            results.push({
+              pilot,
+              condition,
+              engine,
+              checks: [
+                'installed-field-api-and-description',
+                'host-textarea-ref',
+                'submit-label-action-and-tooltip',
+                'pending-status-and-no-duplicate-send',
+                'host-confirmed-draft-clear',
+                'deferred-rejection-retains-draft',
+                'button-origin-escape-focus',
+                'prevented-overlay-and-ime-escape',
+              ],
+              js: Buffer.byteLength(code),
+              gzip: gzipSync(code).length,
+              css: Buffer.byteLength(css),
+              chunks: js.length,
+              retainedModules: modules,
+            })
+            continue
+          }
           if (pilot === 'atomic') {
             const field = page.getByRole('textbox', { name: 'Message', exact: true })
             await field.fill('Atomic draft before collapse')
