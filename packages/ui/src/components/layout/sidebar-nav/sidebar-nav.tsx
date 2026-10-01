@@ -196,7 +196,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
         data-active={local.active ? '' : undefined}
         class={cn(
           'group/section-header flex items-center gap-1 rounded-md px-2 py-1.5',
-          { '[@media(pointer:coarse)]:py-0': local.collapsible },
+          { '[@media(any-pointer:coarse)]:py-0': local.collapsible },
           local.active ? 'bg-primary-subtle text-foreground' : 'hover:bg-sidebar-accent/60'
         )}
       >
@@ -228,7 +228,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
                 trigger.onReorder?.(event.key === 'ArrowUp' ? 'up' : 'down')
               }}
               class={cn(
-                'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(pointer:coarse)]:min-h-11',
+                'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(any-pointer:coarse)]:min-h-11',
                 local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
               )}
             >
@@ -237,7 +237,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
           </Show>
         </Polymorphic>
         <Show when={local.action}>
-          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100">
             {local.action}
           </span>
         </Show>
@@ -275,7 +275,7 @@ export function SidebarNavRow(props: SidebarNavRowProps) {
       <Show when={local.actions}>
         <span
           data-slot="sidebar-nav-row-actions"
-          class="ms-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
+          class="ms-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(any-pointer:coarse)]:opacity-100"
         >
           {local.actions}
         </span>
@@ -310,11 +310,11 @@ export type SidebarNavItemProps<T extends ValidComponent = 'a'> = PolymorphicPro
 
 /**
  * A sidebar row. Exported classes, so a caller's own element can match it.
- * Coarse pointers get a 44px target without changing Kiro's desktop density.
+ * Any coarse pointer gets a 44px target without changing desktop density.
  */
 export const sidebarNavItemClass = [
   'group/nav-item relative flex min-w-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium',
-  'whitespace-nowrap transition-colors ease-out outline-none select-none [@media(pointer:coarse)]:min-h-11',
+  'whitespace-nowrap transition-colors ease-out outline-none select-none [@media(any-pointer:coarse)]:min-h-11',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
   '[&_svg]:size-4 [&_svg]:shrink-0',
 ].join(' ')
