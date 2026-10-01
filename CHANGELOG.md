@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.95.0](https://github.com/adea-ai/ui/compare/v0.94.0...v0.95.0) (2026-10-01)
+
+
+### Features
+
+* **ui:** add shared scene controls and touch targets ([#193](https://github.com/adea-ai/ui/issues/193)) ([d789855](https://github.com/adea-ai/ui/commit/d789855f78ed4dd7d27ca4e83ec32297cba4e6d9))
+
 ## [0.94.0](https://github.com/adea-ai/ui/compare/v0.93.2...v0.94.0) (2026-10-01)
 
 
