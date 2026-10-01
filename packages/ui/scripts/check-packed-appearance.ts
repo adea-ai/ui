@@ -193,16 +193,18 @@ try {
   )
   writeFileSync(
     join(consumer, 'style.css'),
-    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+    // Native SSR evidence lives beside this browser entry. Automatic discovery
+    // would also scan that generated bundle and emit its unused variant classes.
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'destructive-style.css'),
-    "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './destructive.tsx';\n@source './node_modules/@adea-ai/ui/src/components/ui/{alert,badge,button}';\n@source './node_modules/@adea-ai/ui/src/components/composites/list-row';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay,themes}.ts';\n"
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './destructive.tsx';\n@source './node_modules/@adea-ai/ui/src/components/ui/{alert,badge,button,tooltip}';\n@source './node_modules/@adea-ai/ui/src/components/composites/list-row';\n@source './node_modules/@adea-ai/ui/src/components/theme/theme-picker.tsx';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay,themes}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'modal-style.css'),
     [
-      "@import 'tailwindcss';",
+      "@import 'tailwindcss' source(none);",
       "@import '@adea-ai/ui/theme.css';",
       "@import '@adea-ai/ui/base.css';",
       "@source './modal.tsx';",

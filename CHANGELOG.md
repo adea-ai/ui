@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.90.3](https://github.com/adea-ai/ui/compare/v0.90.2...v0.90.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ui:** bound packed appearance CSS discovery ([#196](https://github.com/adea-ai/ui/issues/196)) ([6c430cd](https://github.com/adea-ai/ui/commit/6c430cd60ec02a3c080c71b3c65ec503ac554cc1))
+
+## [0.90.2](https://github.com/adea-ai/ui/compare/v0.90.1...v0.90.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ci:** unblock the Design System Gates (zombie-aware packed liveness, tooltip count) ([#191](https://github.com/adea-ai/ui/issues/191)) ([47f3f45](https://github.com/adea-ai/ui/commit/47f3f454b83f666815aaf3be717bb425fbeda5ab))
+
 ## [0.90.1](https://github.com/adea-ai/ui/compare/v0.90.0...v0.90.1) (2026-10-01)
 
 
