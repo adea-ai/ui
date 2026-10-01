@@ -584,10 +584,12 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
   expect(coreCommands).toContain('bun run check:packed-consumer')
   expect(coreCommands).toContain('bun run check:packed-paste-model')
   expect(coreCommands).not.toContain('bun run check:packed-conversation')
+  expect(coreCommands).not.toContain('bun run check:packed-layout-renderer')
   expect(coreCommands).not.toContain(
-    'bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation'
+    'bun run check:packed-layout && bun run check:packed-settings-navigation'
   )
   expect(coreCommands).not.toContain('bun run check:packed-appearance')
+  expect(coreCommands).not.toContain('bun run check:packed-modal-dialog')
 
   const coreCheckout = core.steps.find((step) => step.name === 'Checkout')
   expect(coreCheckout?.with?.ref).toBe('${{ github.sha }}')
@@ -605,11 +607,10 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
 
   const lanes = [
     ['packed-conversation', 'bun run check:packed-conversation'],
-    [
-      'packed-layout',
-      'bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation',
-    ],
-    ['packed-appearance', 'bun run check:packed-appearance && bun run check:packed-modal-dialog'],
+    ['packed-layout', 'bun run check:packed-layout && bun run check:packed-settings-navigation'],
+    ['packed-layout-renderer', 'bun run check:packed-layout-renderer'],
+    ['packed-appearance', 'bun run check:packed-appearance'],
+    ['packed-modal-dialog', 'bun run check:packed-modal-dialog'],
     ['packed-native-select', 'bun run check:packed-native-select'],
   ] as const
   for (const [id, command] of lanes) {
@@ -658,7 +659,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     'registry-core',
     'packed-conversation',
     'packed-layout',
+    'packed-layout-renderer',
     'packed-appearance',
+    'packed-modal-dialog',
     'packed-native-select',
   ])
   const gateStep = gate.steps[0]
@@ -668,7 +671,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     CORE_RESULT: '${{ needs.registry-core.result }}',
     CONVERSATION_RESULT: '${{ needs.packed-conversation.result }}',
     LAYOUT_RESULT: '${{ needs.packed-layout.result }}',
+    LAYOUT_RENDERER_RESULT: '${{ needs.packed-layout-renderer.result }}',
     APPEARANCE_RESULT: '${{ needs.packed-appearance.result }}',
+    MODAL_DIALOG_RESULT: '${{ needs.packed-modal-dialog.result }}',
     NATIVE_SELECT_RESULT: '${{ needs.packed-native-select.result }}',
   })
 
@@ -678,7 +683,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     CORE_RESULT: 'success',
     CONVERSATION_RESULT: 'success',
     LAYOUT_RESULT: 'success',
+    LAYOUT_RENDERER_RESULT: 'success',
     APPEARANCE_RESULT: 'success',
+    MODAL_DIALOG_RESULT: 'success',
     NATIVE_SELECT_RESULT: 'success',
   }
   const passes = (overrides: Record<string, string>) =>
@@ -691,7 +698,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
     'CORE_RESULT',
     'CONVERSATION_RESULT',
     'LAYOUT_RESULT',
+    'LAYOUT_RENDERER_RESULT',
     'APPEARANCE_RESULT',
+    'MODAL_DIALOG_RESULT',
     'NATIVE_SELECT_RESULT',
   ]) {
     for (const value of ['failure', 'cancelled', 'skipped', '']) {
@@ -704,7 +713,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
       CORE_RESULT: 'skipped',
       CONVERSATION_RESULT: 'skipped',
       LAYOUT_RESULT: 'skipped',
+      LAYOUT_RENDERER_RESULT: 'skipped',
       APPEARANCE_RESULT: 'skipped',
+      MODAL_DIALOG_RESULT: 'skipped',
       NATIVE_SELECT_RESULT: 'skipped',
     })
   ).toBe(true)
@@ -714,7 +725,9 @@ test('packed Registry browser jobs use this run’s library build and unchanged 
       CORE_RESULT: 'success',
       CONVERSATION_RESULT: 'skipped',
       LAYOUT_RESULT: 'skipped',
+      LAYOUT_RENDERER_RESULT: 'skipped',
       APPEARANCE_RESULT: 'skipped',
+      MODAL_DIALOG_RESULT: 'skipped',
       NATIVE_SELECT_RESULT: 'skipped',
     })
   ).toBe(false)
@@ -727,7 +740,9 @@ test('publishing validates settings navigation and modal sizing from the release
   ) as { jobs: Record<string, { env?: Record<string, string>; steps: { run?: string }[] }> }
   for (const [id, contract] of [
     ['packed-layout', 'check:packed-settings-navigation'],
-    ['packed-appearance', 'check:packed-modal-dialog'],
+    ['packed-layout-renderer', 'check:packed-layout-renderer'],
+    ['packed-appearance', 'check:packed-appearance'],
+    ['packed-modal-dialog', 'check:packed-modal-dialog'],
   ] as const) {
     const lane = workflow.jobs[id]
     expect(lane?.env?.ADEA_PACKED_UI_TARBALL).toBe(

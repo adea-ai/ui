@@ -43,8 +43,10 @@ test('PR and publish packed jobs use the pinned engines without installing their
     }
     for (const [name, deadline] of [
       ['packed-conversation', 15],
-      ['packed-layout', 20],
+      ['packed-layout', 15],
+      ['packed-layout-renderer', 20],
       ['packed-appearance', 20],
+      ['packed-modal-dialog', 15],
       ['packed-native-select', 15],
     ] as const) {
       const job = workflow.jobs[name]
