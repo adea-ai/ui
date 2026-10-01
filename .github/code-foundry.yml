@@ -6,7 +6,7 @@ codeql: auto
 dependency_review: auto
 package_manager: bun
 runtime_repository: 0xPlayerOne/code-foundry
-runtime_ref: v1.33.2
+runtime_ref: v1.38.1
 runner: ubuntu-latest
 ci_runner: ubuntu-latest
 test_runner: ubuntu-latest
@@ -59,3 +59,6 @@ required_capabilities:
 coverage_enforcement: auto
 coverage_metrics: lines
 coverage_report:
+codeql_rust_shards: '["all"]'
+codeql_rust_threads: 1
+codeql_rust_max_parallel: 1
