@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.95.1](https://github.com/adea-ai/ui/compare/v0.95.0...v0.95.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **sheet:** restore focus to external openers ([#205](https://github.com/adea-ai/ui/issues/205)) ([ffd4405](https://github.com/adea-ai/ui/commit/ffd4405833f86f8522180024460ffad2a85a4423))
+* **ui:** pass Escape through toggle group items so overlays can dismiss ([#213](https://github.com/adea-ai/ui/issues/213)) ([23db670](https://github.com/adea-ai/ui/commit/23db670184a33c3af17a0c52d3cb2d8d26159478))
+
 ## [0.95.0](https://github.com/adea-ai/ui/compare/v0.94.0...v0.95.0) (2026-10-01)
 
 
