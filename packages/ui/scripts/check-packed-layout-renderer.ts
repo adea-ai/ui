@@ -173,7 +173,8 @@ try {
   writeFileSync(
     join(consumer, 'sidebar-style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
-      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n"
+      "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n" +
+      "@source './node_modules/@adea-ai/ui/src/components/composites/action-button';\n@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n@source './node_modules/@adea-ai/ui/src/components/ui/dropdown-menu';\n"
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
