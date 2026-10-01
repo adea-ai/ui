@@ -6,6 +6,7 @@ import {
   SidebarNavContent,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavLabel,
   SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
@@ -147,6 +148,34 @@ render(() => {
           >
             <SidebarNavItem as="button" type="button" class="flex-1">
               Fixture conversation
+            </SidebarNavItem>
+          </SidebarNavRow>
+          <SidebarNavRow
+            actions={
+              <>
+                <ActionButton
+                  size="icon-md"
+                  variant="ghost"
+                  aria-label="Long project options"
+                  tooltip="Long project options"
+                >
+                  ⋯
+                </ActionButton>
+                <ActionButton
+                  size="icon-md"
+                  variant="ghost"
+                  aria-label="Expand long project"
+                  tooltip="Expand long project"
+                >
+                  ›
+                </ActionButton>
+              </>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              <SidebarNavLabel data-stress-label>
+                Very long project name that must remain accessible while its row label is truncated
+              </SidebarNavLabel>
             </SidebarNavItem>
           </SidebarNavRow>
           <output aria-label="Section reorder direction">{reordered()}</output>

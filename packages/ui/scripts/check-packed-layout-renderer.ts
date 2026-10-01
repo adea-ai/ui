@@ -265,9 +265,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       serverFixtures: ['SplitLayout', 'SidebarNav'],
       browserEngines: ['chromium', 'webkit'],
-      checks: 76,
-      sidebarBrowserCases: 36,
-      topbarBrowserCases: 4,
+      browserSuites: ['SplitLayout', 'SidebarNav', 'TopBar'],
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:
         'Selected binary renderer; full shell, required root compatibility, app migrations and native/manual AT remain separate.',

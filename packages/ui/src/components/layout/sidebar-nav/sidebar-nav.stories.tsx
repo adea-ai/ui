@@ -11,6 +11,7 @@ import {
   SidebarNavFooter,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavLabel,
   SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
@@ -409,4 +410,38 @@ export const SelectedProjects: Story = {
       </div>
     )
   },
+}
+
+/** Long labels preserve their accessible text while leaving adjacent actions usable. */
+export const LongLabels: Story = {
+  render: () => (
+    <main class="flex h-screen min-w-0 max-w-full">
+      <SidebarNav aria-label="Long project names">
+        <SidebarNavHeader>
+          <SidebarNavTitle as="h1">Projects</SidebarNavTitle>
+        </SidebarNavHeader>
+        <SidebarNavContent>
+          <SidebarNavRow
+            actions={
+              <ActionButton
+                size="icon-md"
+                variant="ghost"
+                aria-label="Project options"
+                tooltip="Project options"
+              >
+                ⋯
+              </ActionButton>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              <GitBranch aria-hidden="true" />
+              <SidebarNavLabel>
+                A project name that is longer than the navigation column
+              </SidebarNavLabel>
+            </SidebarNavItem>
+          </SidebarNavRow>
+        </SidebarNavContent>
+      </SidebarNav>
+    </main>
+  ),
 }

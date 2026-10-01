@@ -292,3 +292,49 @@ test.describe('touch navigation', () => {
     await expect(page.getByLabel('Created sections')).toHaveText('2')
   })
 })
+
+test('narrow navigation at doubled root text keeps labels and adjacent actions within bounds', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
+  const name = 'Very long project name that must remain accessible while its row label is truncated'
+  const row = nav.getByRole('button', { name, exact: true })
+  const label = row.locator('[data-stress-label]')
+  const bounds = (await nav.boundingBox())!
+  expect(bounds.width).toBeLessThanOrEqual(320)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  for (const control of [
+    row,
+    label,
+    page.getByRole('button', { name: 'Long project options', exact: true }),
+    page.getByRole('button', { name: 'Expand long project', exact: true }),
+  ]) {
+    const box = (await control.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(bounds.x)
+    expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1)
+  }
+  expect(await label.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+  await row.focus()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Long project options', exact: true })
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
+  await expect(
+    page.getByRole('tooltip', { name: 'Long project options', exact: true })
+  ).toHaveCount(0)
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toHaveText('Expand long project')
+  await expect(
+    page.getByRole('button', { name: 'Expand long project', exact: true })
+  ).toHaveAttribute('aria-describedby', (await tooltip.getAttribute('id'))!)
+  await page.keyboard.press('Escape')
+  await expect(tooltip).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})

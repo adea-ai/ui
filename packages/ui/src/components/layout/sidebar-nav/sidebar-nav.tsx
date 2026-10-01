@@ -44,7 +44,7 @@ export function SidebarNav<T extends ValidComponent = 'nav'>(props: SidebarNavPr
       as="nav"
       aria-label={local['aria-label'] ?? 'Section'}
       class={cn(
-        'bg-sidebar text-sidebar-foreground flex h-full w-sidebar shrink-0 flex-col border-e border-sidebar-border',
+        'bg-sidebar text-sidebar-foreground flex h-full w-sidebar min-w-0 max-w-full shrink-0 flex-col border-e border-sidebar-border',
         local.class
       )}
       {...(rest as ComponentProps<'nav'>)}
@@ -257,26 +257,42 @@ export type SidebarNavRowProps = ComponentProps<'div'> & {
 /**
  * A navigation item and its adjacent controls. Actions stay outside the item
  * to avoid nested buttons; touch, keyboard focus, and expanded menus expose
- * them without requiring a pointer hover.
+ * them without requiring a pointer hover. A narrow lane or enlarged text
+ * may move actions onto a second line rather than clipping the label or controls.
  */
 export function SidebarNavRow(props: SidebarNavRowProps) {
   const [local, rest] = splitProps(props, ['class', 'children', 'actions'])
   return (
     <div
       data-slot="sidebar-nav-row"
-      class={cn('group/sidebar-nav-row flex min-w-0 items-center gap-0.5', local.class)}
+      class={cn(
+        'group/sidebar-nav-row flex min-w-0 flex-wrap items-center gap-0.5 [&>[data-slot=sidebar-nav-item]]:flex-1 [&>[data-slot=sidebar-nav-item]]:basis-36',
+        local.class
+      )}
       {...rest}
     >
       {local.children}
       <Show when={local.actions}>
         <span
           data-slot="sidebar-nav-row-actions"
-          class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
+          class="ms-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
         >
           {local.actions}
         </span>
       </Show>
     </div>
+  )
+}
+
+/** Row text may truncate visually; its complete content remains the accessible name. */
+export function SidebarNavLabel(props: ComponentProps<'span'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return (
+    <span
+      data-slot="sidebar-nav-label"
+      class={cn('min-w-0 flex-1 truncate', local.class)}
+      {...rest}
+    />
   )
 }
 
@@ -320,6 +336,7 @@ export function SidebarNavItem<T extends ValidComponent = 'a'>(props: SidebarNav
   return (
     <Polymorphic
       as="a"
+      data-slot="sidebar-nav-item"
       aria-current={local.active ? 'page' : undefined}
       data-active={local.active ? '' : undefined}
       class={cn(

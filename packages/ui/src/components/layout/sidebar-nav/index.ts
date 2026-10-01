@@ -5,6 +5,7 @@ export {
   SidebarNavFooter,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavLabel,
   SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
