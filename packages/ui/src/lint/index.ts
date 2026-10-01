@@ -42,12 +42,34 @@ type RuleModule = {
 
 interface LintContext {
   options?: unknown[]
+  sourceCode?: {
+    getScope?: (node: unknown) => LintScope | undefined
+  }
   report: (descriptor: {
     node: unknown
     messageId?: string
     message?: string
     data?: Record<string, Json>
   }) => void
+}
+
+interface LintScope {
+  set?: Map<string, any>
+  upper?: LintScope
+}
+
+interface LintVariable {
+  defs?: { type?: string; parent?: { kind?: string }; node?: { init?: unknown } }[]
+  identifiers?: object[]
+}
+
+const variableOf = (node: any, context: LintContext): LintVariable | null => {
+  if (node?.type !== 'Identifier' && node?.type !== 'JSXIdentifier') return null
+  for (let scope = context.sourceCode?.getScope?.(node); scope; scope = scope.upper) {
+    const variable = scope.set?.get(node.name)
+    if (variable) return variable
+  }
+  return null
 }
 
 /** Reads a static object-property key without evaluating a computed expression. */
@@ -177,7 +199,7 @@ const noRawInteractiveElements: RuleModule = {
     type: 'problem',
     docs: {
       description:
-        'Interactive elements this package provides (button, input, textarea, select, option, label) are composed from the package, not written as raw markup.',
+        'Interactive elements this package provides (button, input, textarea, select, option, label), including statically known Solid Dynamic tags, are composed from the package, not written as raw markup.',
     },
     schema: [
       {
@@ -197,6 +219,10 @@ const noRawInteractiveElements: RuleModule = {
   create(context) {
     const options = (context.options?.[0] ?? {}) as RawElementOptions
     const allowed = new Set(options.allow ?? [])
+    const dynamicImports: SolidDynamicImports = {
+      named: new WeakSet(),
+      namespaces: new WeakSet(),
+    }
     const emit = (node: unknown, element: string) => {
       const target = ELEMENT_PRIMITIVES[element]!
       context.report({
@@ -207,11 +233,14 @@ const noRawInteractiveElements: RuleModule = {
       })
     }
     return {
+      Program(node: any) {
+        collectSolidDynamicImports(node, dynamicImports)
+      },
       JSXOpeningElement(node: any) {
-        if (node.name?.type !== 'JSXIdentifier') return
-        const element = node.name.name
-        if (!(element in ELEMENT_PRIMITIVES) || allowed.has(element)) return
-        emit(node, element)
+        for (const element of jsxElementNames(node, dynamicImports, context)) {
+          if (!(element in ELEMENT_PRIMITIVES) || allowed.has(element)) continue
+          emit(node, element)
+        }
       },
     }
   },
@@ -238,20 +267,37 @@ const DEFAULT_PRIMITIVE_PACKAGES = Object.freeze([
 
 /**
  * The interactive ARIA roles an application can dress a generic element in, and
- * the primitive that owns each role. `link` is deliberately absent: an `<a>` is
- * natively interactive and Button itself supports `as="a"` for the link-styled
- * case.
+ * the published primitive that owns each role. Native anchors are not generic
+ * elements, so their built-in link semantics are unaffected by the `link` entry.
  */
 const ROLE_PRIMITIVES: Readonly<Record<string, { primitive: string; path: string }>> =
   Object.freeze({
     button: { primitive: 'Button', path: '@adea-ai/ui/components/ui/button' },
+    link: { primitive: 'TextLink', path: '@adea-ai/ui/components/ui/text-link' },
     checkbox: { primitive: 'Checkbox', path: '@adea-ai/ui/components/ui/checkbox' },
-    radio: { primitive: 'RadioGroup', path: '@adea-ai/ui/components/ui/radio-group' },
+    radio: { primitive: 'RadioGroupItem', path: '@adea-ai/ui/components/ui/radio-group' },
+    radiogroup: { primitive: 'RadioGroup', path: '@adea-ai/ui/components/ui/radio-group' },
     switch: { primitive: 'Switch', path: '@adea-ai/ui/components/ui/switch' },
-    tab: { primitive: 'Tabs', path: '@adea-ai/ui/components/ui/tabs' },
-    option: { primitive: 'Select', path: '@adea-ai/ui/components/ui/select' },
-    menuitem: { primitive: 'DropdownMenu', path: '@adea-ai/ui/components/ui/dropdown-menu' },
+    tab: { primitive: 'TabsTrigger', path: '@adea-ai/ui/components/ui/tabs' },
+    tablist: { primitive: 'TabsList', path: '@adea-ai/ui/components/ui/tabs' },
+    tabpanel: { primitive: 'TabsContent', path: '@adea-ai/ui/components/ui/tabs' },
+    option: { primitive: 'SelectItem', path: '@adea-ai/ui/components/ui/select' },
+    listbox: { primitive: 'Select', path: '@adea-ai/ui/components/ui/select' },
+    combobox: { primitive: 'Combobox', path: '@adea-ai/ui/components/ui/combobox' },
+    searchbox: { primitive: 'Input', path: '@adea-ai/ui/components/ui/input' },
+    menu: { primitive: 'DropdownMenuContent', path: '@adea-ai/ui/components/ui/dropdown-menu' },
+    menuitem: { primitive: 'DropdownMenuItem', path: '@adea-ai/ui/components/ui/dropdown-menu' },
+    menuitemcheckbox: {
+      primitive: 'DropdownMenuCheckboxItem',
+      path: '@adea-ai/ui/components/ui/dropdown-menu',
+    },
+    menuitemradio: {
+      primitive: 'DropdownMenuRadioItem',
+      path: '@adea-ai/ui/components/ui/dropdown-menu',
+    },
     textbox: { primitive: 'Input', path: '@adea-ai/ui/components/ui/input' },
+    tree: { primitive: 'Tree', path: '@adea-ai/ui/components/composites/tree' },
+    treeitem: { primitive: 'TreeRow', path: '@adea-ai/ui/components/composites/tree' },
   })
 
 /**
@@ -284,44 +330,206 @@ const GENERIC_ELEMENTS: ReadonlySet<string> = new Set([
   'svg',
 ])
 
-const CLICK_HANDLERS: ReadonlySet<string> = new Set([
-  'onClick',
-  'onDoubleClick',
-  'onPointerDown',
-  'onPointerUp',
-  'onMouseDown',
-  'onMouseUp',
-  'on:click',
-  'on:dblclick',
-  'on:pointerdown',
-  'on:pointerup',
-  'on:mousedown',
-  'on:mouseup',
-])
+const CLICK_HANDLERS: ReadonlySet<string> = new Set(
+  [
+    'onClick',
+    'onDblClick',
+    'onDoubleClick',
+    'onPointerDown',
+    'onPointerUp',
+    'onMouseDown',
+    'onMouseUp',
+    'onTouchStart',
+    'onTouchEnd',
+    'on:click',
+    'on:dblclick',
+    'on:pointerdown',
+    'on:pointerup',
+    'on:mousedown',
+    'on:mouseup',
+    'on:touchstart',
+    'on:touchend',
+  ].flatMap((handler) => [handler, handler.toLowerCase()])
+)
 
 interface InteractiveWrapperOptions {
   /** Element names this rule should not report (rare; prefer fixing the file). */
   allow?: string[]
+  /** Also reject opaque generic-element props and Solid Dynamic tag overrides. */
+  rejectUnknownSpreads?: boolean
   /** Replaces the default report message. */
   message?: string
 }
 
-/** Only statically knowable branches; unresolved roles remain a review boundary. */
-const staticStrings = (node: any): string[] => {
+/** Returns a const binding's immutable initializer, when its value is statically knowable. */
+const constInitializer = (node: any, context: LintContext): any => {
+  const variable = variableOf(node, context)
+  const definition = variable?.defs?.[0]
+  if (definition?.type !== 'Variable' || definition.parent?.kind !== 'const') return null
+  return definition.node?.init ?? null
+}
+
+/** Reads literal strings through static branches and local const aliases. */
+const staticStrings = (node: any, context?: LintContext, seen = new Set<unknown>()): string[] => {
+  if (!node || seen.has(node)) return []
+  seen.add(node)
+  if (
+    node.type === 'TSAsExpression' ||
+    node.type === 'TSSatisfiesExpression' ||
+    node.type === 'TSNonNullExpression'
+  )
+    return staticStrings(node.expression, context, seen)
   if (node?.type === 'Literal' && typeof node.value === 'string') return [node.value]
-  if (node?.type === 'JSXExpressionContainer') return staticStrings(node.expression)
+  if (node?.type === 'JSXExpressionContainer') return staticStrings(node.expression, context, seen)
   if (node?.type === 'ConditionalExpression')
-    return [...staticStrings(node.consequent), ...staticStrings(node.alternate)]
+    return [
+      ...staticStrings(node.consequent, context, new Set(seen)),
+      ...staticStrings(node.alternate, context, new Set(seen)),
+    ]
+  if (node?.type === 'LogicalExpression')
+    return [
+      ...staticStrings(node.left, context, new Set(seen)),
+      ...staticStrings(node.right, context, new Set(seen)),
+    ]
   if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
     return [node.quasis[0].value.cooked ?? node.quasis[0].value.raw]
+  if (node?.type === 'Identifier' && context) {
+    const initializer = constInitializer(node, context)
+    return initializer ? staticStrings(initializer, context, seen) : []
+  }
   return []
 }
 
-const roleOf = (node: any): string | null => {
+interface SolidDynamicImports {
+  named: WeakSet<object>
+  namespaces: WeakSet<object>
+}
+
+const collectSolidDynamicImport = (node: any, imports: SolidDynamicImports): void => {
+  if (node.source?.value !== 'solid-js/web') return
+  for (const specifier of node.specifiers ?? []) {
+    if (specifier.type === 'ImportNamespaceSpecifier' && specifier.local)
+      imports.namespaces.add(specifier.local)
+    if (specifier.type !== 'ImportSpecifier') continue
+    const imported = specifier.imported?.name ?? specifier.imported?.value
+    if (imported === 'Dynamic' && specifier.local) imports.named.add(specifier.local)
+  }
+}
+
+const collectSolidDynamicImports = (program: any, imports: SolidDynamicImports): void => {
+  for (const statement of program.body ?? [])
+    if (statement.type === 'ImportDeclaration') collectSolidDynamicImport(statement, imports)
+}
+
+const isImportedBinding = (node: any, bindings: WeakSet<object>, context: LintContext): boolean =>
+  variableOf(node, context)?.identifiers?.some((identifier: object) => bindings.has(identifier)) ??
+  false
+
+const isSolidDynamic = (name: any, imports: SolidDynamicImports, context: LintContext): boolean => {
+  if (name?.type === 'JSXIdentifier') return isImportedBinding(name, imports.named, context)
+  return (
+    name?.type === 'JSXMemberExpression' &&
+    name.property?.name === 'Dynamic' &&
+    name.object?.type === 'JSXIdentifier' &&
+    isImportedBinding(name.object, imports.namespaces, context)
+  )
+}
+
+interface DynamicComponentResolution {
+  values: any[]
+  opaqueAfterKnownIntrinsic: boolean
+}
+
+const valuesIncludeKnownIntrinsic = (values: any[], context: LintContext): boolean =>
+  values
+    .flatMap((value) => staticStrings(value, context))
+    .some((element) => GENERIC_ELEMENTS.has(element) || element in ELEMENT_PRIMITIVES)
+
+/** Applies `component` assignments made by a spread, tracking opaque overrides. */
+const applyDynamicComponentSpread = (
+  node: any,
+  resolution: DynamicComponentResolution,
+  context: LintContext
+): DynamicComponentResolution => {
+  while (
+    node?.type === 'TSAsExpression' ||
+    node?.type === 'TSSatisfiesExpression' ||
+    node?.type === 'TSNonNullExpression'
+  )
+    node = node.expression
+  if (!node || node.type !== 'ObjectExpression')
+    return {
+      values: [],
+      opaqueAfterKnownIntrinsic:
+        resolution.opaqueAfterKnownIntrinsic ||
+        valuesIncludeKnownIntrinsic(resolution.values, context),
+    }
+
+  let current = resolution
+  for (const property of node.properties ?? []) {
+    if (property.type === 'SpreadElement') {
+      current = applyDynamicComponentSpread(property.argument, current, context)
+      continue
+    }
+    if (property.type !== 'Property') continue
+    const key = staticPropertyKey(property.key, property.computed === true)
+    if (key === 'component')
+      current = { values: [property.value], opaqueAfterKnownIntrinsic: false }
+    else if (property.computed && key === null)
+      current = {
+        values: [],
+        opaqueAfterKnownIntrinsic:
+          current.opaqueAfterKnownIntrinsic || valuesIncludeKnownIntrinsic(current.values, context),
+      }
+  }
+  return current
+}
+
+const dynamicComponentResolution = (
+  node: any,
+  context: LintContext
+): DynamicComponentResolution => {
+  let resolution: DynamicComponentResolution = {
+    values: [],
+    opaqueAfterKnownIntrinsic: false,
+  }
+  for (const attribute of node.attributes ?? []) {
+    if (attribute.type === 'JSXAttribute' && attribute.name?.name === 'component') {
+      resolution = {
+        values: attribute.value ? [attribute.value] : [],
+        opaqueAfterKnownIntrinsic: false,
+      }
+      continue
+    }
+    if (attribute.type === 'JSXSpreadAttribute')
+      resolution = applyDynamicComponentSpread(attribute.argument, resolution, context)
+  }
+  return resolution
+}
+
+/** Resolves native tags passed to Solid Dynamic while leaving component values alone. */
+const jsxElementNames = (
+  node: any,
+  imports: SolidDynamicImports,
+  context: LintContext
+): string[] => {
+  if (isSolidDynamic(node.name, imports, context))
+    return [
+      ...new Set(
+        dynamicComponentResolution(node, context).values.flatMap((value) =>
+          staticStrings(value, context)
+        )
+      ),
+    ]
+  if (node.name?.type === 'JSXIdentifier') return [node.name.name]
+  return []
+}
+
+const roleOf = (node: any, context: LintContext): string | null => {
   for (const attribute of node.attributes ?? []) {
     if (attribute.type === 'JSXSpreadAttribute') {
       const role = staticObjectPropertyValues(attribute.argument, 'role')
-        .flatMap((value) => staticStrings(value))
+        .flatMap((value) => staticStrings(value, context))
         .flatMap((value) => value.split(/\s+/))
         .find((value) => value in ROLE_PRIMITIVES)
       if (role) return role
@@ -329,7 +537,7 @@ const roleOf = (node: any): string | null => {
     }
     if (attribute.type !== 'JSXAttribute' || attribute.name?.name !== 'role') continue
     return (
-      staticStrings(attribute.value)
+      staticStrings(attribute.value, context)
         .flatMap((role) => role.split(/\s+/))
         .find((role) => role in ROLE_PRIMITIVES) ?? null
     )
@@ -374,6 +582,28 @@ const hasTabStop = (node: any): boolean =>
     return false
   })
 
+/** Unknown/computed props make a JSX object spread opaque to interaction checks. */
+const opaqueSpread = (node: any, seen = new Set<unknown>()): boolean => {
+  while (
+    node?.type === 'TSAsExpression' ||
+    node?.type === 'TSSatisfiesExpression' ||
+    node?.type === 'TSNonNullExpression'
+  )
+    node = node.expression
+  if (!node || seen.has(node) || node.type !== 'ObjectExpression') return true
+  seen.add(node)
+  return node.properties.some((property: any) => {
+    if (property.type === 'SpreadElement') return opaqueSpread(property.argument, seen)
+    if (property.type !== 'Property') return true
+    return staticPropertyKey(property.key, property.computed === true) === null
+  })
+}
+
+const hasOpaqueSpread = (node: any): boolean =>
+  (node.attributes ?? []).some(
+    (attribute: any) => attribute.type === 'JSXSpreadAttribute' && opaqueSpread(attribute.argument)
+  )
+
 const noInteractiveWrappers: RuleModule = {
   meta: {
     type: 'problem',
@@ -386,6 +616,7 @@ const noInteractiveWrappers: RuleModule = {
         type: 'object',
         properties: {
           allow: { type: 'array', items: { type: 'string' } },
+          rejectUnknownSpreads: { type: 'boolean' },
           message: { type: 'string' },
         },
         additionalProperties: false,
@@ -398,34 +629,65 @@ const noInteractiveWrappers: RuleModule = {
         'A click handler on {{element}} composes {{primitive}} by hand: use {{primitive}} from {{path}}. A div that reacts to clicks is a button that cannot be reached by keyboard.',
       tabindexWrapper:
         'A tabindex on {{element}} makes a layout element focusable, which is focus management the primitives already own: compose the real component instead.',
+      opaqueSpreadWrapper:
+        'A spread on {{element}} may hide a role, activation handler, or tab stop. Pass statically named props or compose the shared component instead.',
+      opaqueDynamicComponentWrapper:
+        'An opaque spread follows a known raw design-system or generic tag on Solid Dynamic and may replace the tag or hide interactive props. Pass statically named props or a shared component so the interaction rule can inspect the final component.',
     },
   },
   create(context) {
     const options = (context.options?.[0] ?? {}) as InteractiveWrapperOptions
     const allowed = new Set(options.allow ?? [])
+    const dynamicImports: SolidDynamicImports = {
+      named: new WeakSet(),
+      namespaces: new WeakSet(),
+    }
     return {
+      Program(node: any) {
+        collectSolidDynamicImports(node, dynamicImports)
+      },
       JSXOpeningElement(node: any) {
-        if (node.name?.type !== 'JSXIdentifier') return
-        const element = node.name.name
-        if (allowed.has(element) || element in ELEMENT_PRIMITIVES) return
-        // A capitalized element is a component — often a design-system primitive
-        // composing a role deliberately (a Button carrying role="option" inside a
-        // custom listbox, for example). That is composition, not impersonation.
-        if (element[0] === element[0]?.toUpperCase()) return
-
-        const role = roleOf(node)
-        if (role && role in ROLE_PRIMITIVES) {
-          const target = ROLE_PRIMITIVES[role]!
-          context.report({
-            node,
-            messageId: 'roleWrapper',
-            data: { element, role, primitive: target.primitive, path: target.path },
-            ...(options.message ? { message: options.message } : {}),
-          })
-          return
+        if (options.rejectUnknownSpreads && isSolidDynamic(node.name, dynamicImports, context)) {
+          const resolution = dynamicComponentResolution(node, context)
+          if (resolution.opaqueAfterKnownIntrinsic) {
+            context.report({
+              node,
+              messageId: 'opaqueDynamicComponentWrapper',
+              ...(options.message ? { message: options.message } : {}),
+            })
+            return
+          }
         }
 
-        if (GENERIC_ELEMENTS.has(element)) {
+        for (const element of jsxElementNames(node, dynamicImports, context)) {
+          if (allowed.has(element) || element in ELEMENT_PRIMITIVES) continue
+          // Capitalized JSX components are composed controls, not raw elements.
+          // Solid Dynamic is resolved above only when its component is a known tag.
+          if (element[0] === element[0]?.toUpperCase()) continue
+          if (!GENERIC_ELEMENTS.has(element)) continue
+
+          if (options.rejectUnknownSpreads && hasOpaqueSpread(node)) {
+            context.report({
+              node,
+              messageId: 'opaqueSpreadWrapper',
+              data: { element },
+              ...(options.message ? { message: options.message } : {}),
+            })
+            break
+          }
+
+          const role = roleOf(node, context)
+          if (role && role in ROLE_PRIMITIVES) {
+            const target = ROLE_PRIMITIVES[role]!
+            context.report({
+              node,
+              messageId: 'roleWrapper',
+              data: { element, role, primitive: target.primitive, path: target.path },
+              ...(options.message ? { message: options.message } : {}),
+            })
+            continue
+          }
+
           const click = [...CLICK_HANDLERS].find((handler) => has(node, handler))
           if (click) {
             const target = ROLE_PRIMITIVES.button!
@@ -435,16 +697,15 @@ const noInteractiveWrappers: RuleModule = {
               data: { element, primitive: target.primitive, path: target.path },
               ...(options.message ? { message: options.message } : {}),
             })
-            return
+            continue
           }
-          if (hasTabStop(node)) {
+          if (hasTabStop(node))
             context.report({
               node,
               messageId: 'tabindexWrapper',
               data: { element },
               ...(options.message ? { message: options.message } : {}),
             })
-          }
         }
       },
     }
