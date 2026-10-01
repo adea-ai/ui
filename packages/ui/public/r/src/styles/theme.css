@@ -601,10 +601,11 @@
      precede every `[data-font]` block for the reason given there. */
 
   /* Shell geometry. One place to change how wide a rail or sidebar is, so the two
-     consumer apps cannot disagree. 74px is the figure KiroCrew's own layout hook
-     publishes as `RAIL_W_COLLAPSED`; an older comment in that codebase names 58px,
-     which its shipped behaviour does not use. */
-  --rail-width: 4.625rem; /* 74px */
+     consumer apps cannot disagree. 56px keeps the icon column to its content:
+     20px glyphs centred in a 36px row need less chrome than the 74px the donor's
+     layout hook published, and the tighter column returns the difference to the
+     canvas. */
+  --rail-width: 3.5rem; /* 56px */
   --rail-width-expanded: 14.75rem; /* 236px */
   --rail-item-height: 2.25rem;
   --sidebar-width: 16rem; /* 256px */

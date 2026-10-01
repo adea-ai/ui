@@ -14,7 +14,7 @@ import { SideRailContext, createSideRailValue } from './side-rail-context'
  * component rather than something each view arranges.
  *
  * Two forms, one component. Collapsed it is an icon column; expanded it carries
- * labels. Both widths come from `--rail-width` (74px) and `--rail-width-expanded`
+ * labels. Both widths come from `--rail-width` (56px) and `--rail-width-expanded`
  * (236px), so an app cannot pick its own and end up a few pixels out of step with
  * the app beside it.
  *
@@ -145,16 +145,24 @@ export const sideRailItemClass = [
    * element, no listener, and it works on whatever element a caller renders the row
    * as — an anchor, a button, a router's own link.
    *
-   * The collapsed rail opts out: a 1.02 scale on a 74px column pushes the row past
+   * The collapsed rail opts out: a 1.02 scale on a 56px column pushes the row past
    * the rail's own edge, which reads as a glitch rather than as feedback.
    */
   'hover:scale-[1.02] active:scale-[0.97] group-data-[collapsed=true]/rail:hover:scale-100 group-data-[collapsed=true]/rail:active:scale-[0.98]',
-  '[&_svg]:size-4 [&_svg]:shrink-0',
+  '[&_svg]:size-5 [&_svg]:shrink-0',
 ].join(' ')
 
+/*
+ * The rail's states are accent-driven: the icon carries `--primary` on hover and
+ * on the active destination, and both states draw the accent's own tint rather
+ * than a neutral fill, so the rail reads as the app's accent chroma instead of a
+ * grey column. The active label stays on `sidebar-foreground` because the accent
+ * presets guarantee their 3:1 interaction minimum against the surface, not the
+ * 4.5:1 small text owes; the icon is a graphic and rides the accent.
+ */
 export const sideRailItemStateClass = {
-  active: 'bg-sidebar-accent text-sidebar-accent-foreground',
-  idle: 'text-sidebar-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+  active: 'bg-primary-subtle text-sidebar-foreground [&_svg]:text-primary',
+  idle: 'text-sidebar-muted-foreground hover:bg-primary-subtle/60 hover:text-primary',
 }
 
 /**
@@ -259,7 +267,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
         {...(rest as Record<string, unknown>)}
       >
         <Show when={local.badge}>
-          <span class="relative flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+          <span class="relative flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
             {local.children}
             <span class="absolute -top-1 -end-1 flex items-center justify-center">
               {local.badge}
@@ -267,7 +275,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
           </span>
         </Show>
         <Show when={!local.badge}>
-          <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+          <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
             {local.children}
           </span>
         </Show>
@@ -307,7 +315,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
               }}
             >
               <span
-                class={cn('flex size-4 shrink-0 items-center justify-center [&_svg]:size-4', {
+                class={cn('flex size-5 shrink-0 items-center justify-center [&_svg]:size-5', {
                   'text-primary': local.active,
                 })}
               >
@@ -368,7 +376,7 @@ export function SideRailButton(
         )}
         {...rest}
       >
-        <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+        <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
           {local.children}
         </span>
         <span class="min-w-0 flex-1 truncate group-data-[collapsed=true]/rail:sr-only">
@@ -397,7 +405,7 @@ export function SideRailButton(
                 height: `${position().height}px`,
               }}
             >
-              <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+              <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
                 {local.children}
               </span>
               {local.label}

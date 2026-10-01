@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '../../src/components/ui/dropdown-menu/dropdown-menu'
 import { builtinThemes, themeCssVariables } from '../../src/lib/themes'
+import { Settings } from 'lucide-solid'
 import '../../src/styles/globals.css'
 
 const nord =
@@ -102,7 +103,7 @@ function Fixture() {
       <SideRail>
         <SideRailContent>
           <SideRailButton label="Utilities" active>
-            Utilities
+            <Settings />
           </SideRailButton>
         </SideRailContent>
       </SideRail>

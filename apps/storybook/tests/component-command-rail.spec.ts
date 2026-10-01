@@ -186,6 +186,8 @@ test('SideRailButton applies the shared active state and data marker', async ({ 
     const style = getComputedStyle(element)
     const theme = element.closest<HTMLElement>('[data-theme-id]')
     if (!theme) throw new Error('The rail button lost its theme scope')
+    const icon = element.querySelector('svg')
+    if (!icon) throw new Error('The rail button rendered without its icon')
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d', { willReadFrequently: true })
     if (!context) throw new Error('Canvas is unavailable for token comparison')
@@ -197,15 +199,18 @@ test('SideRailButton applies the shared active state and data marker', async ({ 
     }
     return {
       background: color(style.backgroundColor),
-      activeBackground: color(getComputedStyle(theme).getPropertyValue('--sidebar-accent').trim()),
+      activeBackground: color(getComputedStyle(theme).getPropertyValue('--primary-subtle').trim()),
       foreground: color(style.color),
-      activeForeground: color(
-        getComputedStyle(theme).getPropertyValue('--sidebar-accent-foreground').trim()
+      sidebarForeground: color(
+        getComputedStyle(theme).getPropertyValue('--sidebar-foreground').trim()
       ),
+      icon: color(getComputedStyle(icon).color),
+      primary: color(getComputedStyle(theme).getPropertyValue('--primary').trim()),
     }
   })
   expect(colors.background).toBe(colors.activeBackground)
-  expect(colors.foreground).toBe(colors.activeForeground)
+  expect(colors.foreground).toBe(colors.sidebarForeground)
+  expect(colors.icon).toBe(colors.primary)
 })
 
 test('compact StatusChip keeps its label available and hides its decorative dot', async ({

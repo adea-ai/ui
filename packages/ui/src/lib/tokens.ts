@@ -513,7 +513,7 @@ export const densityTokens: TokenDefinition[] = [
   { name: 'row-height-sm', kind: 'dimension', description: '28px — a dense list row.' },
   { name: 'row-height-md', kind: 'dimension', description: '32px — the default list row.' },
   { name: 'row-height-lg', kind: 'dimension', description: '36px — a two-line list row.' },
-  { name: 'rail-width', kind: 'dimension', description: '58px — the icon-only rail.' },
+  { name: 'rail-width', kind: 'dimension', description: '56px — the icon-only rail.' },
   { name: 'rail-width-expanded', kind: 'dimension', description: '236px — the labelled rail.' },
   {
     name: 'rail-item-height',
