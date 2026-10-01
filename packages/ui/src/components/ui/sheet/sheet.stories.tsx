@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { createSignal } from 'solid-js'
 import { Button } from '../button/button'
 import {
   Sheet,
@@ -116,4 +117,24 @@ export const FromTheBottom: Story = {
       </SheetContent>
     </Sheet>
   ),
+}
+
+/** A controlled sheet can return focus to a stable opener outside its trigger. */
+export const ControlledExternalOpener: Story = {
+  render: () => {
+    const [open, setOpen] = createSignal(false)
+    let opener: HTMLButtonElement | undefined
+
+    return (
+      <Sheet open={open()} onOpenChange={setOpen}>
+        <Button ref={(element) => (opener = element)} onClick={() => setOpen(true)}>
+          Open from workspace command
+        </Button>
+        <SheetContent side="start" restoreFocusRef={() => opener}>
+          <SheetTitle>Workspace navigation</SheetTitle>
+          <Button onClick={() => setOpen(false)}>Close navigation</Button>
+        </SheetContent>
+      </Sheet>
+    )
+  },
 }

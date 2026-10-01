@@ -33,6 +33,12 @@ import {
  *      handler takes control or focus has moved to another layer. For controlled
  *      dialogs without a composed trigger, pass `restoreFocusRef` when the opener
  *      cannot be inferred from the focused element.
+ *   5. **It keeps its own portal out of an enclosing layer's `aria-hidden`
+ *      bookkeeping.** A non-modal dialog opened while a modal `Sheet` is alive would
+ *      otherwise be aria-hidden one frame after it mounts — the enclosing layer's
+ *      hide-outside observer walks late-arriving body children as background. The
+ *      portal carries the marker that observer exempts; a modal layer opened above
+ *      still hides it, because that path matches a different attribute.
  *
  * Use `Dialog` directly when you need its composition; use this when you want a
  * dialog that is correct by default. `size="settings"` supplies a wide, bounded
@@ -111,6 +117,20 @@ export function ModalDialog(props: ModalDialogProps) {
         if (!wasInert[index]) node.removeAttribute('inert')
       })
     })
+
+    // Kobalte's hide-outside observer walks body children added after its layer
+    // opened and aria-hides them one frame later, so a non-modal dialog portaled
+    // in during that window would land outside the accessibility tree — role
+    // queries never resolve it again while the enclosing layer stays open. The
+    // observer exempts added nodes carrying its top-layer marker (it checks the
+    // React Aria spelling it ported; `data-kb-top-layer` is only matched by a
+    // newer layer's initial walk, which must still hide this dialog).
+    let portal = element
+    while (portal.parentElement !== null && portal.parentElement !== document.body) {
+      portal = portal.parentElement
+    }
+    portal.setAttribute('data-react-aria-top-layer', 'true')
+    onCleanup(() => portal.removeAttribute('data-react-aria-top-layer'))
   })
 
   return (

@@ -98,8 +98,10 @@ try {
   for (const path of [
     'dist/components/ui/modal-dialog/modal-dialog.d.ts',
     'dist/components/ui/dialog/dialog.d.ts',
+    'dist/components/ui/sheet/sheet.d.ts',
     'src/components/ui/modal-dialog/modal-dialog.tsx',
     'src/components/ui/dialog/dialog.tsx',
+    'src/components/ui/sheet/sheet.tsx',
   ]) {
     if (!existsSync(join(packageRootInConsumer, path)))
       throw new Error(`Packed dialog contract file missing: ${path}`)
@@ -110,15 +112,22 @@ try {
     `import type { ComponentProps } from 'solid-js'
 import { DialogContent } from '@adea-ai/ui/components/ui/dialog'
 import { ModalDialog } from '@adea-ai/ui/components/ui/modal-dialog'
+import { Sheet, SheetContent, SheetTitle, type SheetContentProps } from '@adea-ai/ui/components/ui/sheet'
 
 const size: ComponentProps<typeof ModalDialog>['size'] = 'settings'
 const positioner: ComponentProps<typeof DialogContent>['positioner'] = 'inset'
+const restoreFocusRef: NonNullable<SheetContentProps['restoreFocusRef']> = () => undefined
 
 export function PackedDialogConsumer() {
   return <>
     <ModalDialog open={false} onClose={() => undefined} title="Workspace settings" size={size} />
     <ModalDialog open={false} onClose={() => undefined} title="A short task" />
     <DialogContent positioner={positioner}>Constrained composition</DialogContent>
+    <Sheet open={false} onOpenChange={() => undefined}>
+      <SheetContent side="start" restoreFocusRef={restoreFocusRef}>
+        <SheetTitle>Workspace navigation</SheetTitle>
+      </SheetContent>
+    </Sheet>
   </>
 }
 `
@@ -153,6 +162,14 @@ export function PackedDialogConsumer() {
     )
     .replace('../../src/styles/globals.css', './style.css')
   writeFileSync(join(consumer, 'modal.tsx'), sourceFixture)
+  const sheetFixture = readFileSync(join(packageRoot, 'tests/fixtures/sheet-focus.tsx'), 'utf8')
+    .replace(
+      '../../src/components/ui/modal-dialog/modal-dialog',
+      '@adea-ai/ui/components/ui/modal-dialog'
+    )
+    .replace('../../src/components/ui/sheet/sheet', '@adea-ai/ui/components/ui/sheet')
+    .replace('../../src/styles/globals.css', './style.css')
+  writeFileSync(join(consumer, 'sheet.tsx'), sheetFixture)
   writeFileSync(
     join(consumer, 'style.css'),
     [
@@ -160,7 +177,8 @@ export function PackedDialogConsumer() {
       "@import '@adea-ai/ui/theme.css';",
       "@import '@adea-ai/ui/base.css';",
       "@source './modal.tsx';",
-      "@source './node_modules/@adea-ai/ui/src/components/ui/{dialog,modal-dialog}';",
+      "@source './sheet.tsx';",
+      "@source './node_modules/@adea-ai/ui/src/components/ui/{dialog,modal-dialog,sheet}';",
       "@source './node_modules/@adea-ai/ui/src/lib/overlay.ts';",
     ].join('\n')
   )
@@ -181,6 +199,21 @@ export function PackedDialogConsumer() {
         ADEA_MODAL_DIALOG_PACKED_CONDITION: condition,
       }
     )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-sheet-focus.spec.ts',
+        '--grep=stable external opener|nested (non-modal|modal) dialog',
+        `--output=${join(consumer, `sheet-results-${condition}`)}`,
+      ],
+      storybookRoot,
+      {
+        ADEA_SHEET_FOCUS_PACKED_ROOT: consumer,
+        ADEA_SHEET_FOCUS_PACKED_CONDITION: condition,
+      }
+    )
   }
 
   console.log(
@@ -193,6 +226,7 @@ export function PackedDialogConsumer() {
       browsers: ['chromium', 'webkit'],
       assertions: [
         'typed size and positioner exports',
+        'typed Sheet restoreFocusRef and stable external-opener restoration',
         '320/390px',
         '200% root font',
         'scroll viewport',

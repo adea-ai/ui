@@ -147,11 +147,16 @@ export function createDialogFocusRestoration({
           if (
             !(target instanceof HTMLElement) ||
             target === document.body ||
-            target === document.documentElement ||
+            target === document.documentElement
+          ) {
+            return
+          }
+          if (
             target === element ||
             element.contains(target) ||
             target === (opener instanceof HTMLElement ? opener : null)
           ) {
+            if (!cycle.closed) cycle.focusMovedOutside = false
             return
           }
           cycle.focusMovedOutside = true
