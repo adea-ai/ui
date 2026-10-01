@@ -16,7 +16,7 @@ import { join, resolve } from 'node:path'
  */
 const ROOT = resolve(import.meta.dir, '..')
 /** oxlint hoists to the workspace root's bin; the package-local .bin does not carry it. */
-const OXLINT = resolve(ROOT, '../../node_modules/.bin/oxlint')
+const OXLINT = process.env.ADEA_OXLINT_BIN ?? resolve(ROOT, '../../node_modules/.bin/oxlint')
 const PLUGIN_SOURCE = resolve(ROOT, 'src/lint/index.ts')
 
 let dir: string
@@ -39,15 +39,17 @@ afterAll(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
+type RuleSetting = string | [string, Record<string, unknown>]
+
 /** An oxlint config loading the built plugin, with the named rules at error. */
-function writeConfig(rules: Record<string, string>): string {
+function writeConfig(rules: Record<string, RuleSetting>): string {
   const target = join(dir, `.oxlintrc-${Math.random().toString(36).slice(2)}.json`)
   writeFileSync(
     target,
     JSON.stringify({
       jsPlugins: [pluginPath],
       rules: Object.fromEntries(
-        Object.entries(rules).map(([rule, level]) => [`adea/${rule}`, level])
+        Object.entries(rules).map(([rule, setting]) => [`adea/${rule}`, setting])
       ),
     })
   )
@@ -56,9 +58,9 @@ function writeConfig(rules: Record<string, string>): string {
 
 /** A consumer config with one path-scoped rule override. */
 function writeConfigWithOverride(
-  rules: Record<string, string>,
+  rules: Record<string, RuleSetting>,
   files: string[],
-  overrideRules: Record<string, string>
+  overrideRules: Record<string, RuleSetting>
 ): string {
   const target = join(dir, `.oxlintrc-${Math.random().toString(36).slice(2)}.json`)
   writeFileSync(
@@ -66,13 +68,13 @@ function writeConfigWithOverride(
     JSON.stringify({
       jsPlugins: [pluginPath],
       rules: Object.fromEntries(
-        Object.entries(rules).map(([rule, level]) => [`adea/${rule}`, level])
+        Object.entries(rules).map(([rule, setting]) => [`adea/${rule}`, setting])
       ),
       overrides: [
         {
           files,
           rules: Object.fromEntries(
-            Object.entries(overrideRules).map(([rule, level]) => [`adea/${rule}`, level])
+            Object.entries(overrideRules).map(([rule, setting]) => [`adea/${rule}`, setting])
           ),
         },
       ],
@@ -116,7 +118,7 @@ function lint(config: string, name: string, body: string): string {
 
 function expectNoLintFindings(output: string): void {
   const result = JSON.parse(output) as { diagnostics: unknown[] }
-  expect(result.diagnostics).toHaveLength(0)
+  expect(result.diagnostics).toEqual([])
 }
 
 describe('the design system lint plugin', () => {
@@ -149,6 +151,67 @@ describe('the design system lint plugin', () => {
     )
     expect(output).not.toContain('no-raw-interactive-elements')
     expectNoLintFindings(output)
+  })
+
+  test('Solid Dynamic checks imported aliases and statically resolved intrinsic tags only', () => {
+    const config = writeConfig({ 'no-raw-interactive-elements': 'error' })
+    const output = lint(
+      config,
+      'dynamic-intrinsics.tsx',
+      `import { Dynamic as Render } from 'solid-js/web'
+import * as Web from 'solid-js/web'
+const BUTTON_TAG = 'button' as const
+const Icon = () => <svg />
+const MixedTag = true ? 'input' as const : Icon
+export function Examples() {
+  return <><Render component="button" /><Render component={BUTTON_TAG} /><Web.Dynamic component={MixedTag} /><Render component={Icon} /><Render component="button" {...{ component: Icon }} /><Render {...{ component: 'button' }} component={Icon} /><Render {...{ ...{ component: 'button' }, ...{ component: 'button' } }} /></>
+}
+`
+    )
+    expect(output).toContain('no-raw-interactive-elements')
+    expect(output.match(/no-raw-interactive-elements/g)).toHaveLength(4)
+    expect(output).toContain('use Button from @adea-ai/ui/components/ui/button')
+    expect(output).toContain('use Input from @adea-ai/ui/components/ui/input')
+  })
+
+  test('local Dynamic names and namespace shadows remain ordinary components', () => {
+    const config = writeConfig({ 'no-raw-interactive-elements': 'error' })
+    const output = lint(
+      config,
+      'dynamic-shadow.tsx',
+      `import { Dynamic as Render } from 'solid-js/web'
+import * as Web from 'solid-js/web'
+const Icon = () => <svg />
+export function Examples() {
+  const Local = () => {
+    const Render = (_props: any) => <span />
+    const Web = { Dynamic: Render }
+    return <><Render component="button" /><Web.Dynamic component="input" /></>
+  }
+  return <><Render component={Icon} /><Web.Dynamic component={Icon} /><Local /></>
+}
+`
+    )
+    expectNoLintFindings(output)
+  })
+
+  test('Solid Dynamic import bindings declared after JSX are still resolved', () => {
+    const config = writeConfig({
+      'no-raw-interactive-elements': 'error',
+      'no-interactive-wrappers': 'error',
+    })
+    const output = lint(
+      config,
+      'dynamic-late-import.tsx',
+      `export const Examples = () => <><Render component="button" /><Render component="div" role="combobox" /></>
+import { Dynamic as Render } from 'solid-js/web'
+`
+    )
+    expect(
+      output.match(/adea\(no-(?:raw-interactive-elements|interactive-wrappers)\)/g)
+    ).toHaveLength(2)
+    expect(output).toContain('use Button from @adea-ai/ui/components/ui/button')
+    expect(output).toContain('@adea-ai/ui/components/ui/combobox')
   })
 
   test('every JSX style attribute is rejected, including geometry and theme variables', () => {
@@ -306,7 +369,9 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
   // normal test deadline measures a case, rather than several CLI startups.
   for (const [name, source] of Object.entries({
     named: "export { TextField } from '@kobalte/core/text-field'",
+    aliased: "import { TextField as Field } from '@kobalte/core/text-field'; export { Field }",
     star: "export * from '@corvu/drawer'",
+    namespace: "import * as Drawer from '@corvu/drawer'; export { Drawer }",
     dynamic: "export const load = () => import('cmdk-solid')",
     require: "export const primitive = require('@base-ui/react/dialog')",
   })) {
@@ -328,6 +393,14 @@ export function Examples({ active, state }: { active: boolean; state: string }) 
     native: 'on:click={() => {}}',
     bound: 'onClick={[() => {}, "data"]}',
     pointer: 'onPointerUp={() => {}}',
+    'lowercase-click': 'onclick={() => {}}',
+    'solid-double-click': 'onDblClick={() => {}}',
+    'lowercase-double-click': 'ondblclick={() => {}}',
+    'lowercase-pointer': 'onpointerdown={() => {}}',
+    'lowercase-mouse': 'onmouseup={() => {}}',
+    'touch-start': 'onTouchStart={() => {}}',
+    'lowercase-touch': 'ontouchend={() => {}}',
+    'native-touch-end': 'on:touchend={() => {}}',
   })) {
     test(`${name} wrapper interaction is reported`, () => {
       const config = writeConfig({ 'no-interactive-wrappers': 'error' })
@@ -383,13 +456,88 @@ export function Examples({ activate, handleKey, props }: { activate: () => void;
     const output = lint(
       config,
       'unresolved-wrappers.tsx',
-      `export function Examples({ roleKey, props }: { roleKey: string; props: object }) {
-  return <><div {...{ [roleKey]: 'button' }} /><span {...props} /><main {...{ tabIndex: -1, onKeyDown: () => {} }} /></>
+      `import { Dynamic as Render } from 'solid-js/web'
+export function Examples({ roleKey, props }: { roleKey: string; props: object }) {
+  return <><div {...{ [roleKey]: 'button' }} /><span {...props} /><main {...{ tabIndex: -1, onKeyDown: () => {} }} /><Render component="div" {...props} /><Render component="button" {...props} /></>
 }
 `
     )
     expect(output).not.toContain('no-interactive-wrappers')
     expectNoLintFindings(output)
+  })
+
+  test('strict unknown-spread checking is opt-in and still inspects static props', () => {
+    const config = writeConfig({
+      'no-interactive-wrappers': ['error', { rejectUnknownSpreads: true }],
+    })
+    const output = lint(
+      config,
+      'strict-spreads.tsx',
+      `import { Button } from '@adea-ai/ui/components/ui/button'
+export function Examples({ props, keyName, activate }: { props: object; keyName: string; activate: () => void }) {
+  return <><div {...props} /><span {...{ [keyName]: true }} /><article {...{ class: 'layout' }} /><footer {...{ ['data-note']: 'safe' }} /><main {...{ role: 'combobox' }} /><nav {...{ ...{ onClick: activate } }} /><Button {...props} /></>
+}
+`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output.match(/no-interactive-wrappers/g)).toHaveLength(4)
+    expect(output).toContain('may hide a role, activation handler, or tab stop')
+    expect(output).toContain('hand-builds Combobox')
+    expect(output).toContain('@adea-ai/ui/components/ui/combobox')
+  })
+
+  test('strict spreads resolve Dynamic generic tags and local const roles', () => {
+    const config = writeConfig({
+      'no-interactive-wrappers': ['error', { rejectUnknownSpreads: true }],
+    })
+    const output = lint(
+      config,
+      'strict-dynamic.tsx',
+      `import { Dynamic as Render } from 'solid-js/web'
+import { Button } from '@adea-ai/ui/components/ui/button'
+const TAG = 'div' as const
+const ROLE = 'link' as const
+const Icon = () => <svg />
+export const Example = ({ props }: { props: object }) => <><Render component={TAG} role={ROLE} /><Render component="div" {...props} /><Render {...props} component={TAG} /><Render {...props} component={Button} /><Render component={Icon} {...props} /><Button {...props} /></>
+`
+    )
+    expect(output).toContain('@adea-ai/ui/components/ui/text-link')
+    expect(output.match(/no-interactive-wrappers/g)).toHaveLength(3)
+    expect(output).toContain('may hide a role, activation handler, or tab stop')
+    expect(output).toContain('may replace the tag or hide interactive props')
+  })
+
+  test('strict spreads cannot hide a known native Dynamic tag after an opaque override', () => {
+    const config = writeConfig({
+      'no-interactive-wrappers': ['error', { rejectUnknownSpreads: true }],
+    })
+    const output = lint(
+      config,
+      'strict-dynamic-native-override.tsx',
+      `import { Dynamic as Render } from 'solid-js/web'
+import { Button } from '@adea-ai/ui/components/ui/button'
+export const Example = ({ props }: { props: object }) => <><Render component="button" {...props} /><Render component="input" {...props} /><Render {...props} component={Button} /></>
+`
+    )
+    expect(output).toContain('no-interactive-wrappers')
+    expect(output.match(/no-interactive-wrappers/g)).toHaveLength(2)
+    expect(output).toContain('may replace the tag or hide interactive props')
+  })
+
+  test('supported generic roles map to exported primitives while native anchors pass', () => {
+    const config = writeConfig({ 'no-interactive-wrappers': 'error' })
+    const output = lint(
+      config,
+      'supported-roles.tsx',
+      `const LINK = 'link' as const
+const COMBOBOX = true ? 'combobox' : 'textbox'
+export const Examples = () => <><div role={LINK} /><span role={COMBOBOX} /><a role="link" href="/docs">Docs</a></>
+`
+    )
+    expect(output.match(/no-interactive-wrappers/g)).toHaveLength(2)
+    expect(output).toContain('@adea-ai/ui/components/ui/text-link')
+    expect(output).toContain('@adea-ai/ui/components/ui/combobox')
+    expect(output).not.toContain('role="link"')
   })
 
   test('a div wearing role="button" is reported as a Button re-implementation', () => {

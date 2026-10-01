@@ -29,10 +29,11 @@ Two reasons, and the second is the one that matters:
    written largely by agents, a rule that comes with the fix is worth far more than
    a rule that only rejects.
 
-`no-restyle` runs with `allow: ['layout', 'conventional-*', 'dev-*', ...]`. The
-named CSS hooks are the sanctioned escape hatch for a genuine one-off; see
-`packages/ui/src/styles/`. Add a hook there rather than restyling a component
-inline.
+`no-restyle` runs with `allow: ['layout', 'conventional-*', 'dev-*', ...]`. Named
+CSS hooks on shared components are for consumer layout only. They must not
+override padding, colour, typography, shape, focus, or state appearance. Use the
+component's public variants; if the required appearance is missing, extend the
+shared component contract instead of adding a consumer CSS override.
 
 ---
 
@@ -111,13 +112,43 @@ corvu, and cmdk-solid. Forwarding a primitive through an application barrel does
 not make it a shared component.
 
 The wrapper rule recognizes expression roles and Solid's `on:click` listeners
-as well as click, mouse, and pointer activation. A negative tabindex alone is
+as well as click, double-click, mouse, pointer, and touch activation. It checks
+Solid's camel-case and lowercase event props, including `onDblClick`, and native
+`on:touchstart`/`on:touchend` listeners. A negative tabindex alone is
 allowed for programmatic focus, such as a skip-link destination; it does not
 exempt an interactive role or activation handler. Static roles, activation
 handlers, and tab stops inside literal object spreads are checked; dynamic role
 values and unresolved identifier or function spreads still require review
 because their behavior cannot be inferred statically. Do not disable the rules in
 migrated consumer files.
+
+`adea/no-raw-interactive-elements` also checks Solid's `Dynamic` when it is
+imported from `solid-js/web` (including a renamed import or namespace import) and
+its `component` prop resolves to a literal or local `const` intrinsic tag. It
+leaves normal component values such as `Icon` unresolved and legal. The wrapper
+rule maps supported generic-element roles to published components, including
+`link` to `TextLink` and `combobox` to `Combobox`; a native `<a>` keeps its built-in
+link semantics and is not reported by the generic-element rule.
+
+Consumers can opt into fail-closed handling of opaque generic-element prop
+spreads and opaque overrides to known Solid `Dynamic` tags. This preserves the
+existing default for compatibility; Adea should turn it on after consuming a
+release that includes the option:
+
+```json
+{
+  "adea/no-interactive-wrappers": ["error", { "rejectUnknownSpreads": true }]
+}
+```
+
+With that option, an identifier, function, or computed-key spread on a generic
+element is reported because it can hide an interactive role, activation handler,
+or tab stop. Statically named object spreads remain inspectable and are checked
+for their actual props. If a statically known generic or raw design-system tag is
+passed to Solid `Dynamic` before a later opaque spread, the rule reports that the
+spread may replace the tag or hide interaction props; it does not claim to know
+which component wins at runtime. An opaque spread before a final known shared
+component remains valid component prop forwarding.
 
 ```tsx
 /**
