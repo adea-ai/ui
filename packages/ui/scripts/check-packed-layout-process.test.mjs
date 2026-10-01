@@ -3,19 +3,11 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { runCommand } from './packed-layout-process.mjs'
+import { isProcessRunning, runCommand } from './packed-layout-process.mjs'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function isRunning(pid) {
-  try {
-    process.kill(pid, 0)
-    return true
-  } catch (error) {
-    if (error.code === 'ESRCH') return false
-    throw error
-  }
-}
+const isRunning = isProcessRunning
 
 async function waitForExit(pids, timeoutMs) {
   const end = Date.now() + timeoutMs
