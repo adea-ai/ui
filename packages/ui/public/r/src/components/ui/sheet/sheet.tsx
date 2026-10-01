@@ -1,11 +1,15 @@
-import { Dialog as KobalteDialog, Content as KobalteDialogContent } from '@kobalte/core/dialog'
+import {
+  Dialog as KobalteDialog,
+  Content as KobalteDialogContent,
+  useDialogContext,
+} from '@kobalte/core/dialog'
 // AlertDialog shares DialogRoot.Content; Sheet uses the stable named primitive.
 import { X } from 'lucide-solid'
-import type { ComponentProps, JSX } from 'solid-js'
+import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { cva, type VariantProps } from '../../../lib/variants'
 import { cn } from '../../../lib/utils'
-import { DialogOverlay } from '../dialog/dialog'
+import { createDialogFocusRestoration, DialogOverlay } from '../dialog/dialog'
 
 /**
  * Sheet.
@@ -18,6 +22,11 @@ import { DialogOverlay } from '../dialog/dialog'
  * `side` decides which edge; the panel is a full-height column for `start` and
  * `end`, and a full-width row for `top` and `bottom`. The slide-in direction
  * follows from the side, so a caller never pairs them by hand.
+ *
+ * Controlled sheets opened from outside a `SheetTrigger` restore focus to the
+ * element focused before opening. Pass `restoreFocusRef` when a stable external
+ * opener must be used instead, such as when another layer closes before the
+ * sheet opens.
  */
 const sheetVariants = cva(
   'bg-popover text-popover-foreground fixed z-(--z-dialog) flex flex-col gap-4 border-border shadow-lg',
@@ -39,10 +48,27 @@ const sheetVariants = cva(
 export type SheetContentProps = ComponentProps<typeof KobalteDialogContent> &
   VariantProps<typeof sheetVariants> & {
     closeButton?: JSX.Element | false
+    /** Supplies the stable external element to focus when the controlled sheet closes. */
+    restoreFocusRef?: Accessor<HTMLElement | undefined>
   }
 
 export function SheetContent(props: SheetContentProps) {
-  const [local, rest] = splitProps(props, ['class', 'side', 'children', 'closeButton'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'side',
+    'children',
+    'closeButton',
+    'restoreFocusRef',
+    'onOpenAutoFocus',
+    'onCloseAutoFocus',
+  ])
+  const dialog = useDialogContext()
+  const focusRestoration = createDialogFocusRestoration({
+    open: dialog.isOpen,
+    restoreFocusRef: local.restoreFocusRef,
+    onOpenAutoFocus: local.onOpenAutoFocus,
+    onCloseAutoFocus: local.onCloseAutoFocus,
+  })
 
   return (
     <KobalteDialog.Portal>
@@ -55,11 +81,18 @@ export function SheetContent(props: SheetContentProps) {
           local.class
         )}
         {...rest}
+        onOpenAutoFocus={focusRestoration.onOpenAutoFocus}
+        onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
       >
         {local.children}
         <Show when={local.closeButton !== false}>
+          {/* The close action opts into the tab order explicitly. Engines that
+              derive tabbability from the DOM instead of the host (Playwright's
+              WebKit walks only explicit tabindex and form controls) would skip
+              an implicitly-tabbable button and jump past the sheet's end. */}
           <KobalteDialog.CloseButton
             aria-label="Close"
+            tabindex="0"
             class="absolute top-3.5 end-3.5 rounded-md p-1 text-muted-foreground transition-colors ease-out outline-none hover:bg-surface-hover hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle"
           >
             {local.closeButton ?? <X class="size-4" />}
