@@ -6,6 +6,7 @@
   "rangeStrategy": "bump",
   "rebaseWhen": "behind-base-branch",
   "pruneStaleBranches": true,
+  "draftPR": true,
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 10am on monday"]
@@ -13,27 +14,23 @@
   "vulnerabilityAlerts": {
     "labels": ["security"]
   },
-  "osvVulnerabilities": {
-    "labels": ["security"]
-  },
+  "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
-      "description": "This repository is the source of the @adea-ai/* packages: never self-update an internal package, and bump external dependencies as one grouped branch when the gates allow it.",
-      "matchPackagePatterns": ["^@adea-ai/"],
+      "description": "This repository is the source of the @adea-ai/* packages: never self-update an internal package.",
+      "matchPackageNames": ["/^@adea-ai//"],
       "enabled": false
     },
     {
-      "description": "Non-major external dependency updates ride one branch and automerge once the design-system gates pass — the gates are the review for these.",
+      "description": "Non-major external dependency updates ride one grouped branch per cycle. No auto-merge: GitHub refuses to attach it to a draft PR, and every PR must open as a draft because the code-foundry gates only run on the ready-for-review transition — a human marks each batch ready and merges it once the gates pass.",
       "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
       "groupName": "external non-major dependencies",
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true,
       "schedule": ["after 8am and before 8pm every weekday"]
     },
     {
-      "description": "Major bumps of external dependencies get a reviewed PR, one per package.",
+      "description": "Major external bumps share one draft PR per cycle instead of one per package — a grouped major PR reads as one upgrade decision.",
       "matchUpdateTypes": ["major"],
+      "groupName": "external major dependencies",
       "labels": ["dependencies", "major"]
     }
   ]
