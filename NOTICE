@@ -450,3 +450,22 @@ installation/execution authority, provider data and app-specific services are
 excluded. Its distinct `/apps/library` core-app launchpad is also excluded:
 this selected unit is the external verified plugin marketplace adapter, while
 Adea's #757 App Library remains a separate core-view and rail-management flow.
+
+## Windowed tree row composition translated from Terax
+
+`packages/ui/src/components/composites/tree/` translates the file-row hierarchy
+from `src/modules/explorer/FileExplorer.tsx` and
+`src/modules/explorer/TreeRow.tsx`, pinned at Terax revision
+`b02a7dcbfe58d22b2352d9618b8ed3199e317a00`.
+
+    Copyright 2026 Crynta. Licensed under the Apache License, Version 2.0.
+
+The shared rows retain the disclosure, leading file/folder affordance, primary
+label, selection, and trailing-action composition. The shared Tree owns ARIA
+tree semantics and roving keyboard focus, including wrapped Up/Down movement;
+the donor's Up/Down behavior clamps at the ends. Hosts supply the complete
+expanded projection and mounted window, and retain filesystem identity,
+selection, open/rename/drop behavior, native services, and the reveal callback.
+React, Tauri, Hugeicons, and Terax runtime state are not included. The donor
+contains no Tree ARIA or row-focus contract, so those semantics are supplied by
+this Solid component and are checked under the packed consumer.

@@ -98,6 +98,8 @@ Base UI and friends — they will not run in a Solid codebase.
 Where a primitive lacks coverage, the component implements it, and its doc comment
 says so and explains what was done instead. That is the only case where a
 hand-rolled control is correct, and the comment is what makes it reviewable.
+The windowed `Tree` contract documents the missing Kobalte primitive, its donor
+provenance, keyboard rules, and host-owned virtualization seam in [tree.md](tree.md).
 
 Consumers enable the five baseline `@adea-ai/ui/lint` rules as errors. The
 icon-action tooltip rule is separately opt-in until a consumer enables it. Raw controls,
