@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.95.7](https://github.com/adea-ai/ui/compare/v0.95.6...v0.95.7) (2026-10-01)
+
+
+### Bug Fixes
+
+* **catalog-browser:** keep multi-line entry rows sized to their content ([#226](https://github.com/adea-ai/ui/issues/226)) ([4f85f5a](https://github.com/adea-ai/ui/commit/4f85f5a114dbebb3b97eb90b1cd80b6bf3896f78))
+
+
+### Performance
+
+* **ci:** split the packed layout and appearance lanes under the five-minute job budget ([#224](https://github.com/adea-ai/ui/issues/224)) ([85606a9](https://github.com/adea-ai/ui/commit/85606a971b3aede455742a935a6eae05bccbc403))
+
 ## [0.95.6](https://github.com/adea-ai/ui/compare/v0.95.5...v0.95.6) (2026-10-01)
 
 
