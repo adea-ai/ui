@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
+import { build } from 'vite'
+import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -143,6 +145,46 @@ try {
             : './style.css'
       )
     )
+  const serverBuild = await build({
+    root: consumer,
+    configFile: false,
+    logLevel: 'warn',
+    plugins: [solid({ ssr: true })],
+    resolve: { conditions: ['solid', 'node', 'import'] },
+    ssr: { noExternal: true },
+    build: { write: false, minify: false, ssr: join(consumer, 'server.tsx') },
+  })
+  const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
+    .flatMap((output) => ('output' in output ? output.output : []))
+    .filter((asset) => asset.type === 'chunk')
+  if (serverChunks.length !== 1) throw new Error('Expected one packed layout/sidebar SSR chunk')
+  const serverChunk = serverChunks[0]
+  if (!serverChunk) throw new Error('Missing packed layout/sidebar SSR chunk')
+  const serverUi = Object.keys(serverChunk.modules).filter((id) =>
+    id.includes('/node_modules/@adea-ai/ui/')
+  )
+  if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
+    throw new Error('Packed layout/sidebar SSR did not select unmixed Solid source')
+  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+  writeFileSync(
+    join(consumer, 'render.mjs'),
+    "import { renderLayout, renderSidebar } from './server-fixture.mjs'; process.stdout.write(renderLayout() + renderSidebar());"
+  )
+  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true)
+  for (const text of [
+    'Server panes',
+    'first',
+    'second',
+    'Server workspace navigation',
+    'Server projects',
+    'Server project',
+    'Server row status',
+    'aria-current="page"',
+    'aria-expanded="true"',
+    'data-slot="sidebar-nav-row-actions"',
+  ])
+    if (!serverHtml.includes(text)) throw new Error(`Packed native Node SSR omitted ${text}`)
+  console.log(JSON.stringify({ result: 'packed native Node SSR passed', serverUi }))
   // The renderer's only shared Button is ghost/icon-xs. Discover its complete
   // class contract from the actual installed public helper, including base and
   // tactile classes, without emitting unrelated Button variants. Browser cases
@@ -219,6 +261,7 @@ try {
       result: 'packed renderer passed',
       browserConditions: ['compiled', 'solid'],
       serverCondition: 'Solid source SSR -> native Node',
+      serverFixtures: ['SplitLayout', 'SidebarNav'],
       browserEngines: ['chromium', 'webkit'],
       checks: 76,
       sidebarBrowserCases: 36,
