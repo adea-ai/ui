@@ -93,9 +93,12 @@ test('toolbar actions remain reachable without document overflow at narrow width
       await page.evaluate((scale) => {
         document.documentElement.style.fontSize = `${16 * scale}px`
       }, factor)
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
-      ).toBe(true)
+      // The first sample can land before the fixture's initial layout has
+      // settled and report a transient frame; measure the settled document,
+      // so a genuine overflow still fails once the timeout elapses.
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+        .toBe(true)
       if (width < 768) {
         const middleTrack = await titleOnlyToolbar.evaluate((element) =>
           Number.parseFloat(getComputedStyle(element).gridTemplateColumns.split(' ')[1]!)

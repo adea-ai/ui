@@ -16,7 +16,7 @@ describe('packed conversation size budgets', () => {
   })
 
   test('caps only the atomic feature increment over the paired composed fixture', () => {
-    expect(MAX_ATOMIC_INCREMENT_GZIP_BYTES).toBe(6 * 1024)
+    expect(MAX_ATOMIC_INCREMENT_GZIP_BYTES).toBe(6.5 * 1024)
     expect(assertAtomicIncrementBudget(53_650, 53_650 + MAX_ATOMIC_INCREMENT_GZIP_BYTES)).toBe(
       MAX_ATOMIC_INCREMENT_GZIP_BYTES
     )

@@ -59,6 +59,7 @@
       "development": "./src/lib/*.ts",
       "import": "./dist/lib/*.js"
     },
+    "./lib/cn-tables.generated": null,
     "./lint": {
       "types": "./dist/lint/index.d.ts",
       "default": "./dist/lint.js"
@@ -89,13 +90,15 @@
     }
   },
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
-    "dev": "vite build --watch",
+    "build": "bun run cn:build && vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "dev": "bun run cn:build && vite build --watch",
     "lint": "oxlint",
-    "test": "bun test --conditions=browser tests",
+    "test": "bun run cn:check && bun test --conditions=browser tests",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
-    "registry:build": "bun scripts/build-registry.ts",
-    "registry:validate": "bun scripts/validate-registry.ts",
+    "cn:build": "bun scripts/build-cn-tables.ts",
+    "cn:check": "bun scripts/check-cn-tables.ts",
+    "registry:build": "bun run cn:build && bun scripts/build-registry.ts",
+    "registry:validate": "bun run cn:check && bun scripts/validate-registry.ts",
     "pack:check": "bun scripts/check-pack.ts",
     "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
     "theme:build": "bun scripts/build-default-theme.ts",

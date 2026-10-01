@@ -32,6 +32,26 @@ describe('registry', () => {
     ).toEqual([])
   })
 
+  test('ships generated cn tables with the shared helpers without exporting them', () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve(import.meta.dir, '../package.json'), 'utf8')
+    ) as { exports: Record<string, unknown> }
+    const lib = registryItems.find((item) => item.name === 'lib')
+    const generatedTables = lib?.files.find(
+      (file) => file.path === 'src/lib/cn-tables.generated.ts'
+    )
+    const servedUtils = readFileSync(join(publicRegistryDir, 'src/lib/utils.ts'), 'utf8')
+
+    expect(generatedTables?.target).toBe('lib/cn-tables.generated.ts')
+    expect(lib?.dependencies).toContain('cn@^0.4.0')
+    expect(packageJson.exports['./lib/cn-tables.generated']).toBeNull()
+    expect(servedUtils).toContain("from './cn-tables.generated'")
+    expect(servedUtils).not.toContain('#lib/cn-tables.generated')
+    expect(
+      readFileSync(join(publicRegistryDir, 'src/lib/cn-tables.generated.ts'), 'utf8')
+    ).toContain('Copyright (c) 2026 shadcn')
+  })
+
   test('covers every component folder, plus the theme', () => {
     const names = registryItems.map((item) => item.name)
 

@@ -1,5 +1,6 @@
-import { createCn } from 'cn/config'
+import { createCn } from 'cn/engine'
 import type { CnFunction } from 'cn'
+import tables from '#lib/cn-tables.generated'
 
 /**
  * Merge conditional class values, letting the last conflicting utility win.
@@ -21,52 +22,8 @@ import type { CnFunction } from 'cn'
  * shows up as a control that ignores its `size` prop, long after the line
  * that caused it was written.
  *
- * Registering the families below is what makes "the last class wins" true for
- * the whole system, including for consumers overriding a component's default.
+ * Compiling the design-system families into full tables makes "the last class
+ * wins" true for the whole system, including for consumer overrides, without
+ * loading the runtime config/compiler path.
  */
-export const cn: CnFunction = createCn({
-  extend: {
-    classGroups: {
-      'ds-height': [
-        {
-          h: [
-            'control-2xs',
-            'control-xs',
-            'control-sm',
-            'control-md',
-            'control-lg',
-            'control-xl',
-            'control-2xl',
-            'row-sm',
-            'row-md',
-            'row-lg',
-            'rail-item',
-            'topbar',
-            'statusbar',
-          ],
-        },
-      ],
-      'ds-width': [
-        {
-          w: ['rail', 'rail-expanded', 'sidebar', 'sidebar-compact'],
-        },
-      ],
-      // `size-*` is a real Tailwind group, but the token-derived values are
-      // not, so they need the same treatment as height and width.
-      'ds-size': [
-        {
-          size: [
-            'control-2xs',
-            'control-xs',
-            'control-sm',
-            'control-md',
-            'control-lg',
-            'control-xl',
-            'control-2xl',
-            'rail-item',
-          ],
-        },
-      ],
-    },
-  },
-})
+export const cn: CnFunction = createCn(tables)

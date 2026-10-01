@@ -38,6 +38,8 @@ than copied:
     SolidJS (solid-js)             MIT License
     lucide (lucide-solid)          ISC License
     Tailwind CSS                   MIT License
+    cn (cn@0.4.0)                  MIT License; generated tables retain the
+                                   upstream notice in `src/lib/cn-tables.generated.ts`
 
 The shadcn/ui design vocabulary is used throughout the system. Its NativeSelect
 source is translated in one component and separately attributed below.

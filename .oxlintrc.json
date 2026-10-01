@@ -130,6 +130,7 @@
     "build/**",
     "coverage/**",
     "storybook-static/**",
-    "packages/ui/public/r/**"
+    "packages/ui/public/r/**",
+    "packages/ui/src/lib/cn-tables.generated.ts"
   ]
 }

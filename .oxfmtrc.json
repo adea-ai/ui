@@ -13,6 +13,7 @@
     "storybook-static",
     "node_modules",
     "coverage",
+    "packages/ui/src/lib/cn-tables.generated.ts",
     "bun.lock",
     "apps/*/public/assets",
     "packages/ui/registry.json",
