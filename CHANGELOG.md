@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.93.1](https://github.com/adea-ai/ui/compare/v0.93.0...v0.93.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ui:** preserve rich ListRow tooltips and described sizing ([#181](https://github.com/adea-ai/ui/issues/181)) ([001f5fd](https://github.com/adea-ai/ui/commit/001f5fd40c65e2842265e5450c72af9da4b2406a))
+
 ## [0.93.0](https://github.com/adea-ai/ui/compare/v0.92.0...v0.93.0) (2026-10-01)
 
 
