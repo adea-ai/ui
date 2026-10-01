@@ -54,12 +54,29 @@ export function ToggleGroup(props: ToggleGroupProps) {
 export type ToggleGroupItemProps = ComponentProps<typeof KobalteToggleGroup.Item> &
   VariantProps<typeof toggleVariants>
 
+function invokeEventHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    ;(handler as (event: Event) => void)(event)
+  }
+}
+
 export function ToggleGroupItem(props: ToggleGroupItemProps) {
-  const [local, rest] = splitProps(props, ['class', 'variant', 'size'])
+  const [local, rest] = splitProps(props, ['class', 'variant', 'size', 'onKeyDown'])
 
   return (
     <KobalteToggleGroup.Item
       class={cn(toggleVariants({ variant: local.variant, size: local.size }), local.class)}
+      onKeyDown={(event) => {
+        invokeEventHandler(local.onKeyDown, event)
+        // The group root's selection collection clears the selection and marks
+        // Escape handled, which starves an enclosing dialog or drawer of the
+        // Escape it needs to dismiss. Stopping at the focused item is the only
+        // point before that handler, so pass Escape through from here.
+        if (event.key === 'Escape') event.stopPropagation()
+      }}
       {...rest}
     />
   )
