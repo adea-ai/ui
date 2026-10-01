@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.93.0](https://github.com/adea-ai/ui/compare/v0.92.0...v0.93.0) (2026-10-01)
+
+
+### Features
+
+* expose MessageComposer field contract ([#192](https://github.com/adea-ai/ui/issues/192)) ([29d2727](https://github.com/adea-ai/ui/commit/29d27273a2d81bfa066a9346e2e96b7037652931))
+
+
+### Bug Fixes
+
+* **ui:** hide closed tooltip content from assistive tech ([#198](https://github.com/adea-ai/ui/issues/198)) ([895cf5d](https://github.com/adea-ai/ui/commit/895cf5dde0134b8524f817f28a7092308596339f))
+
 ## [0.92.0](https://github.com/adea-ai/ui/compare/v0.91.0...v0.92.0) (2026-10-01)
 
 
