@@ -249,6 +249,37 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
   )
 }
 
+export type SidebarNavRowProps = ComponentProps<'div'> & {
+  /** Adjacent controls, outside the navigation item's interactive element. */
+  actions?: JSX.Element
+}
+
+/**
+ * A navigation item and its adjacent controls. Actions stay outside the item
+ * to avoid nested buttons; touch, keyboard focus, and expanded menus expose
+ * them without requiring a pointer hover.
+ */
+export function SidebarNavRow(props: SidebarNavRowProps) {
+  const [local, rest] = splitProps(props, ['class', 'children', 'actions'])
+  return (
+    <div
+      data-slot="sidebar-nav-row"
+      class={cn('group/sidebar-nav-row flex min-w-0 items-center gap-0.5', local.class)}
+      {...rest}
+    >
+      {local.children}
+      <Show when={local.actions}>
+        <span
+          data-slot="sidebar-nav-row-actions"
+          class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          {local.actions}
+        </span>
+      </Show>
+    </div>
+  )
+}
+
 export type SidebarNavItemProps<T extends ValidComponent = 'a'> = PolymorphicProps<
   T,
   {

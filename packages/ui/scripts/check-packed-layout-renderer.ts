@@ -65,6 +65,7 @@ const replaceImports = (source: string) =>
       '@adea-ai/ui/components/layout/sidebar-nav'
     )
     .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/ui/dropdown-menu', '@adea-ai/ui/components/ui/dropdown-menu')
     .replaceAll('../../src/components/layout/top-bar', '@adea-ai/ui/components/layout/top-bar')
     .replaceAll(
       '../../src/components/composites/action-button',
@@ -219,7 +220,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
       checks: 76,
-      sidebarBrowserCases: 28,
+      sidebarBrowserCases: 36,
       topbarBrowserCases: 4,
       attribution: 'Apache LICENSE and full donor MIT NOTICE',
       limitations:

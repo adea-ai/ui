@@ -237,6 +237,23 @@ test('selected sections update independently of saved disclosure state', async (
   await expect(agents).toHaveAttribute('aria-expanded', 'true')
 })
 
+test('adjacent row actions become discoverable by keyboard and stay visible for an open menu', async ({
+  page,
+}) => {
+  const row = page.getByRole('button', { name: 'Fixture conversation', exact: true })
+  const action = page.getByRole('button', { name: 'Fixture conversation options', exact: true })
+  const actions = action.locator('..')
+  await row.focus()
+  await expect(actions).toHaveCSS('opacity', '1')
+  await page.keyboard.press('Tab')
+  await expect(action).toBeFocused()
+  await action.press('Enter')
+  await expect(page.getByRole('menuitem', { name: 'Rename fixture conversation' })).toBeVisible()
+  await expect(actions).toHaveCSS('opacity', '1')
+  await page.keyboard.press('Escape')
+  await expect(action).toBeFocused()
+})
+
 test.describe('touch navigation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
@@ -256,6 +273,14 @@ test.describe('touch navigation', () => {
     await projects.tap()
     await expect(projects).toHaveAttribute('aria-expanded', 'true')
     await nav.getByRole('button', { name: 'Research', exact: true }).tap()
+  })
+
+  test('adjacent row actions remain discoverable without hover', async ({ page }) => {
+    const action = page.getByRole('button', { name: 'Fixture conversation options', exact: true })
+    await action.scrollIntoViewIfNeeded()
+    await expect(action.locator('..')).toHaveCSS('opacity', '1')
+    await action.tap()
+    await expect(page.getByRole('menuitem', { name: 'Rename fixture conversation' })).toBeVisible()
   })
 
   test('section creation actions remain discoverable without hover', async ({ page }) => {

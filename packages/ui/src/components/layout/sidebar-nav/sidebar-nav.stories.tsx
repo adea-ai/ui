@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
 import { Box, CircleDot, FileText, GitBranch, Plus, Search, Settings, Trash2 } from 'lucide-solid'
+import { ActionButton } from '../../composites/action-button'
 import { Badge } from '../../ui/badge/badge'
 import { Button } from '../../ui/button/button'
 import {
@@ -10,6 +11,7 @@ import {
   SidebarNavFooter,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
 } from './sidebar-nav'
@@ -371,9 +373,22 @@ export const SelectedProjects: Story = {
               onOpenChange={setAdeaOpen}
               triggerProps={{ onClick: () => setSelected('adea') }}
             >
-              <SidebarNavItem as="button" type="button" nested>
-                Inspect workspace
-              </SidebarNavItem>
+              <SidebarNavRow
+                actions={
+                  <ActionButton
+                    variant="ghost"
+                    size="icon-md"
+                    aria-label="Inspect workspace options"
+                    tooltip="Workspace options"
+                  >
+                    ⋯
+                  </ActionButton>
+                }
+              >
+                <SidebarNavItem as="button" type="button" nested class="flex-1">
+                  Inspect workspace
+                </SidebarNavItem>
+              </SidebarNavRow>
             </SidebarNavSection>
             <SidebarNavSection
               label="cortana"

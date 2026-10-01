@@ -6,9 +6,17 @@ import {
   SidebarNavContent,
   SidebarNavHeader,
   SidebarNavItem,
+  SidebarNavRow,
   SidebarNavSection,
   SidebarNavTitle,
 } from '../../src/components/layout/sidebar-nav/sidebar-nav'
+import { ActionButton } from '../../src/components/composites/action-button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '../../src/components/ui/dropdown-menu'
 import { Button } from '../../src/components/ui/button/button'
 import { SidebarNavResizeHandle } from '../../src/components/layout/sidebar-nav/sidebar-nav-resize-handle'
 import '../../src/styles/globals.css'
@@ -106,6 +114,28 @@ render(() => {
           >
             <SidebarNavButton>Must remain closed</SidebarNavButton>
           </SidebarNavSection>
+          <SidebarNavRow
+            actions={
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  as={ActionButton}
+                  variant="ghost"
+                  size="icon-md"
+                  aria-label="Fixture conversation options"
+                  tooltip="Conversation options"
+                >
+                  ⋯
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Rename fixture conversation</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            }
+          >
+            <SidebarNavItem as="button" type="button" class="flex-1">
+              Fixture conversation
+            </SidebarNavItem>
+          </SidebarNavRow>
           <output aria-label="Section reorder direction">{reordered()}</output>
           <output aria-label="Section drag started">{String(dragStarted())}</output>
           <output aria-label="Canceled disclosure clicks">{cancelClicks()}</output>
