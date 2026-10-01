@@ -21,7 +21,7 @@ const meta = {
     variant: { control: 'select', options: ['default', 'outline', 'subtle'] },
     size: {
       control: 'select',
-      options: ['sm', 'md', 'lg', 'icon-sm', 'icon-md', 'icon-lg'],
+      options: ['sm', 'md', 'lg', '2xl', 'icon-sm', 'icon-md', 'icon-lg', 'icon-2xl'],
     },
   },
   tags: ['autodocs'],
@@ -87,13 +87,14 @@ export const FormattingRow: Story = {
   ),
 }
 
-/** The six sizes, which match the shared control ladder. */
+/** The shared control sizes, including the stable 48px touch target. */
 export const Sizes: Story = {
   render: () => (
     <div class="flex flex-wrap items-center gap-3">
       <Toggle size="sm">sm</Toggle>
       <Toggle size="md">md</Toggle>
       <Toggle size="lg">lg</Toggle>
+      <Toggle size="2xl">2xl</Toggle>
       <Toggle size="icon-sm" aria-label="Icon sm">
         <Bold />
       </Toggle>
@@ -101,6 +102,9 @@ export const Sizes: Story = {
         <Bold />
       </Toggle>
       <Toggle size="icon-lg" aria-label="Icon lg">
+        <Bold />
+      </Toggle>
+      <Toggle size="icon-2xl" aria-label="Icon 2xl">
         <Bold />
       </Toggle>
     </div>

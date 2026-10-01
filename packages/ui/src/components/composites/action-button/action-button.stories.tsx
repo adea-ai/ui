@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { Plus } from 'lucide-solid'
 import { ActionButton } from './action-button'
 
 const meta = {
@@ -51,6 +52,45 @@ export const AsLink: Story = {
     <ActionButton as="a" href="#action-button" variant="outline" tooltip="Open the action docs">
       Open documentation
     </ActionButton>
+  ),
+}
+
+/**
+ * The chosen size stays visually compact; coarse-pointer devices receive the
+ * stable touch target. Disabled and polymorphic tooltip states keep the same
+ * accessible behavior.
+ */
+export const ComfortableTouchTarget: Story = {
+  render: () => (
+    <div class="flex flex-wrap items-center gap-3">
+      <ActionButton
+        size="icon-md"
+        touchTarget="comfortable"
+        aria-label="Open details"
+        tooltip="Open the selected item details"
+      >
+        <Plus />
+      </ActionButton>
+      <ActionButton
+        as="a"
+        href="#comfortable-action"
+        size="icon-md"
+        touchTarget="comfortable"
+        aria-label="Open documentation"
+        tooltip="Open the action documentation"
+      >
+        <Plus />
+      </ActionButton>
+      <ActionButton
+        size="icon-md"
+        touchTarget="comfortable"
+        aria-label="Unavailable action"
+        disabled
+        tooltip="Ask an owner to restore access before continuing"
+      >
+        <Plus />
+      </ActionButton>
+    </div>
   ),
 }
 

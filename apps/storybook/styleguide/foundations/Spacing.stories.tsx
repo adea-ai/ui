@@ -35,11 +35,12 @@ const densityRows = [
   { size: 'md', usage: 'The form default. Button and Input unless told otherwise.' },
   { size: 'lg', usage: 'A primary form action.' },
   { size: 'xl', usage: 'A hero control in an empty state.' },
+  { size: '2xl', usage: 'A 48px touch target that remains stable under compact density.' },
 ] as const
 
 /**
- * The control ladder. Everything pressable is one of these six heights — there
- * is no seventh, and a component that needs one is usually two components.
+ * The control ladder includes the standard density steps and a stable 48px touch
+ * target for controls that must stay usable under compact density.
  */
 export const ControlSizes: Story = {
   render: () => (
@@ -90,8 +91,8 @@ export const Density: Story = {
     <div class="flex max-w-prose flex-col gap-4">
       <p class="text-sm text-muted-foreground">
         A toolbar of seven controls at <code>size=&quot;sm&quot;</code> is 28px tall and reads as an
-        instrument panel. The same seven at <code>size=&quot;xl&quot;</code> is 40px and reads as a
-        form. Neither is wrong — the rule is that everything in one row is the same rung.
+        instrument panel. A <code>size=&quot;2xl&quot;</code> control stays 48px at either density
+        for touch interaction. The rule is that controls used together share an appropriate rung.
       </p>
       <div class="flex flex-col gap-3 rounded-xl border border-border p-4">
         <div class="text-sm font-medium">A toolbar: one rung, one row</div>
@@ -102,6 +103,9 @@ export const Density: Story = {
           </Button>
           <Button size="sm" variant="ghost">
             Clear
+          </Button>
+          <Button size="2xl" variant="secondary">
+            Touch target
           </Button>
           <Badge size="md" variant="success">
             3 passed

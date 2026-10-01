@@ -1,0 +1,24 @@
+{
+  "name": "scene-controls",
+  "type": "registry:ui",
+  "title": "Scene Controls",
+  "description": "Shared host-neutral scene movement, jump and zoom controls.",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/action-button"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/scene-controls/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/scene-controls/index.ts"
+    },
+    {
+      "path": "src/components/composites/scene-controls/scene-controls.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/scene-controls/scene-controls.tsx"
+    }
+  ]
+}

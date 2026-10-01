@@ -582,6 +582,7 @@
   --control-height-md: 2rem; /* 32px — form default */
   --control-height-lg: 2.25rem; /* 36px */
   --control-height-xl: 2.5rem; /* 40px */
+  --control-height-2xl: 3rem; /* 48px — stable touch target */
 
   --control-padding-2xs: 0.375rem;
   --control-padding-xs: 0.5rem;
@@ -589,6 +590,7 @@
   --control-padding-md: 0.75rem;
   --control-padding-lg: 0.875rem;
   --control-padding-xl: 1rem;
+  --control-padding-2xl: 1.125rem;
 
   --row-height-sm: 1.75rem;
   --row-height-md: 2rem;
@@ -646,14 +648,15 @@
   --z-toast: 180;
 }
 
-/* Compact density: the whole control ladder one rung tighter.
+/* Compact density: the standard control ladder one rung tighter.
  *
  * It is a *shift* rather than a second set of numbers chosen by eye, so the
  * relationship between the rungs is identical at either density and a control keeps
  * its place in the ladder. Height moves by 4px per rung and padding by 2px, which is
  * the step each already uses, and the row heights move by the same 4px. A `sm`
  * control goes from 28px to 24px — the `xs` control's comfortable height. That is the
- * intended meaning, not an oversight.
+ * intended meaning, not an oversight. The `2xl` touch target is intentionally
+ * omitted here so it stays at least 48px at either density.
  *
  * 16px at `2xs` is the floor. One rung below it would be 12px, under the minimum
  * comfortable touch target, so the ladder compresses from the bottom rather than
@@ -833,6 +836,7 @@
   --height-control-md: var(--control-height-md);
   --height-control-lg: var(--control-height-lg);
   --height-control-xl: var(--control-height-xl);
+  --height-control-2xl: var(--control-height-2xl);
   /* Tailwind `size-*` prefers --size-* and then --spacing-*. Without this
      bridge, square icon controls use the padding ladder below for both axes.
      Height, square size and inline padding remain distinct semantic contracts. */
@@ -842,6 +846,7 @@
   --size-control-md: var(--control-height-md);
   --size-control-lg: var(--control-height-lg);
   --size-control-xl: var(--control-height-xl);
+  --size-control-2xl: var(--control-height-2xl);
   --height-row-sm: var(--row-height-sm);
   --height-row-md: var(--row-height-md);
   --height-row-lg: var(--row-height-lg);
@@ -855,6 +860,7 @@
   --spacing-control-md: var(--control-padding-md);
   --spacing-control-lg: var(--control-padding-lg);
   --spacing-control-xl: var(--control-padding-xl);
+  --spacing-control-2xl: var(--control-padding-2xl);
 
   --width-rail: var(--rail-width);
   --width-rail-expanded: var(--rail-width-expanded);

@@ -481,6 +481,11 @@ export const densityTokens: TokenDefinition[] = [
     description: '40px — a hero control in an empty state.',
   },
   {
+    name: 'control-height-2xl',
+    kind: 'dimension',
+    description: '48px — a stable touch target, unchanged by compact density.',
+  },
+  {
     name: 'control-padding-2xs',
     kind: 'dimension',
     description: 'Inline padding that pairs with the 20px control.',
@@ -509,6 +514,11 @@ export const densityTokens: TokenDefinition[] = [
     name: 'control-padding-xl',
     kind: 'dimension',
     description: 'Inline padding that pairs with the 40px control.',
+  },
+  {
+    name: 'control-padding-2xl',
+    kind: 'dimension',
+    description: 'Inline padding that pairs with the stable 48px touch target.',
   },
   { name: 'row-height-sm', kind: 'dimension', description: '28px — a dense list row.' },
   { name: 'row-height-md', kind: 'dimension', description: '32px — the default list row.' },

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -38,12 +38,117 @@ test.beforeAll(async () => {
     .join('\n')
 })
 
-test.beforeEach(async ({ page }) => {
-  await page.setContent(
-    '<!doctype html><html lang="en"><head><title>ActionButton</title></head><body></body></html>'
-  )
+async function mountFixture(page: Page) {
+  await page.setContent(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ActionButton</title>
+  </head>
+  <body></body>
+</html>`)
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
+}
+
+test.beforeEach(async ({ page }) => mountFixture(page))
+
+test('comfortable target is opt-in on fine-pointer devices', async ({ page }) => {
+  const coarsePointer = await page.evaluate(() => matchMedia('(any-pointer: coarse)').matches)
+  test.skip(coarsePointer, 'the default browser context exposes a coarse pointer')
+
+  const button = page.locator('#touch-target-plain')
+  await expect(button).toBeVisible()
+  await expect(button).not.toHaveAttribute('touchtarget')
+  const bounds = await button.boundingBox()
+  expect(bounds?.width).toBe(32)
+  expect(bounds?.height).toBe(32)
+  expect(await button.locator('svg').evaluate((icon) => icon.getBoundingClientRect().width)).toBe(
+    16
+  )
+})
+
+test('comfortable targets preserve glyphs, keyboard focus and menu return at 320px and 200% text', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 320, height: 640 },
+    hasTouch: true,
+    isMobile: true,
+  })
+  const touchPage = await context.newPage()
+
+  try {
+    await mountFixture(touchPage)
+    await touchPage.addStyleTag({
+      content: 'html { font-size: 200% !important; } body { margin: 0; }',
+    })
+    await touchPage.evaluate(() => document.documentElement.setAttribute('data-density', 'compact'))
+    expect(await touchPage.evaluate(() => matchMedia('(any-pointer: coarse)').matches)).toBe(true)
+
+    const targets = [
+      '#touch-target-plain',
+      '#touch-target-tooltip',
+      '#touch-target-polymorphic-tooltip',
+      '#touch-target-menu-trigger',
+    ]
+    for (const selector of targets) {
+      const target = touchPage.locator(selector)
+      await expect(target).toBeVisible()
+      await expect(target).not.toHaveAttribute('touchtarget')
+      const bounds = await target.boundingBox()
+      expect(bounds?.width, `${selector} width`).toBeGreaterThanOrEqual(96)
+      expect(bounds?.height, `${selector} height`).toBeGreaterThanOrEqual(96)
+      expect(bounds?.x, `${selector} left edge`).toBeGreaterThanOrEqual(0)
+      expect((bounds?.x ?? 0) + (bounds?.width ?? 0), `${selector} right edge`).toBeLessThanOrEqual(
+        320
+      )
+    }
+
+    const plain = touchPage.locator('#touch-target-plain')
+    expect(await plain.locator('svg').evaluate((icon) => icon.getBoundingClientRect().width)).toBe(
+      32
+    )
+    await plain.focus()
+    await expect(plain).toBeFocused()
+
+    const ordinaryTooltip = touchPage.getByRole('button', { name: 'Tooltip action' })
+    await ordinaryTooltip.focus()
+    await expect(ordinaryTooltip).toBeFocused()
+    await expect(touchPage.getByRole('tooltip')).toHaveText('Open action details')
+
+    const polymorphic = touchPage.getByRole('link', { name: 'Polymorphic tooltip link' })
+    await polymorphic.focus()
+    await expect(polymorphic).toBeFocused()
+    await expect(touchPage.getByRole('tooltip')).toHaveText('Open the linked action details')
+
+    const menuTrigger = touchPage.getByRole('button', { name: 'Open comfortable menu' })
+    await menuTrigger.focus()
+    await expect(menuTrigger).toBeFocused()
+    await touchPage.keyboard.press('Enter')
+    const menuItem = touchPage.getByRole('menuitem', { name: 'Open settings' })
+    await expect(menuItem).toBeFocused()
+    await touchPage.keyboard.press('Escape')
+    await expect(menuTrigger).toBeFocused()
+    const overflow = await touchPage.evaluate(() =>
+      [...document.body.querySelectorAll('*')]
+        .map((element) => ({
+          tag: element.tagName.toLowerCase(),
+          id: element.id,
+          className: typeof element.className === 'string' ? element.className : '',
+          right: Math.round(element.getBoundingClientRect().right),
+          width: Math.round(element.getBoundingClientRect().width),
+          text: element.textContent?.trim().slice(0, 48),
+        }))
+        .filter((element) => element.right > document.documentElement.clientWidth)
+    )
+    expect(
+      await touchPage.evaluate(() => document.documentElement.scrollWidth),
+      JSON.stringify(overflow)
+    ).toBeLessThanOrEqual(320)
+  } finally {
+    await context.close()
+  }
 })
 
 test('busy state preserves the button name, disables repeat activation and announces progress', async ({

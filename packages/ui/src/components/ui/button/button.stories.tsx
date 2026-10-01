@@ -44,14 +44,22 @@ const meta = {
         'md',
         'lg',
         'xl',
+        '2xl',
         'icon-2xs',
         'icon-xs',
         'icon-sm',
         'icon-md',
         'icon-lg',
         'icon-xl',
+        'icon-2xl',
       ],
       description: 'A rung on the shared control ladder. `md` is the default.',
+    },
+    touchTarget: {
+      control: 'select',
+      options: ['comfortable'],
+      description:
+        'Preserve the chosen visual size while expanding the hit area to the stable 2xl token on coarse-pointer devices.',
     },
     disabled: { control: 'boolean' },
   },
@@ -89,7 +97,7 @@ export const Variants: Story = {
 }
 
 /**
- * The six heights, which are the same six heights every control uses.
+ * The standard heights plus a stable touch-target rung.
  *
  * `sm` is the toolbar default and `md` the form default — 28px and 32px, the two
  * rungs that carry almost every control in the product.
@@ -103,6 +111,7 @@ export const Sizes: Story = {
       <Button size="md">md</Button>
       <Button size="lg">lg</Button>
       <Button size="xl">xl</Button>
+      <Button size="2xl">2xl touch target</Button>
     </div>
   ),
 }
@@ -136,6 +145,23 @@ export const IconOnly: Story = {
       </Button>
       <Button size="icon-xl" aria-label="Delete" variant="destructive">
         <Trash2 />
+      </Button>
+      <Button size="icon-2xl" aria-label="Move forward" variant="secondary">
+        <Plus />
+      </Button>
+    </div>
+  ),
+}
+
+/** The opt-in hit area grows on coarse-pointer devices without growing the icon. */
+export const ComfortableTouchTarget: Story = {
+  render: () => (
+    <div class="flex flex-wrap items-center gap-3">
+      <Button size="icon-md" touchTarget="comfortable" aria-label="Add item">
+        <Plus />
+      </Button>
+      <Button size="md" touchTarget="comfortable">
+        Save changes
       </Button>
     </div>
   ),

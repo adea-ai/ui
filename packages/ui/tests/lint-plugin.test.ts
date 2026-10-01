@@ -506,9 +506,9 @@ export function Examples() {
       'all-icon-sizes.tsx',
       `import { Button } from '@adea-ai/ui/components/ui/button'
 import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
-export function Examples() { return <><Button size="icon-2xs" aria-label="Close" /><Button size="icon-xl" aria-label="Open" /><ActionButton size="icon-2xs" aria-label="Save" /><ActionButton size="icon-xl" aria-label="Delete" /></> }`
+export function Examples() { return <><Button size="icon-2xs" aria-label="Close" /><Button size="icon-xl" aria-label="Open" /><Button size="icon-2xl" aria-label="Move forward" /><ActionButton size="icon-2xs" aria-label="Save" /><ActionButton size="icon-xl" aria-label="Delete" /><ActionButton size="icon-2xl" aria-label="Jump" /></> }`
     )
-    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(4)
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(6)
   })
 
   test('icon-size ActionButton requires a supplied nonblank tooltip', () => {

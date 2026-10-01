@@ -395,6 +395,11 @@ try {
             throw new Error(`Button exceeds existing 40 KiB gzip budget: ${bytes}`)
           // Complete discovered CSS: Button 32,155; dialog 39,385; shell 25,389.
           // The dialog's earlier 25,088 measurement omitted nested primitives/helpers.
+          // list-row re-baselined 32 → 34 KiB (2026-10): the shared scene
+          // controls' coarse-pointer touch rung adds 638 bytes of base CSS
+          // (measured 33,185 against main's 32,547, which held only 221 bytes of
+          // headroom). Re-baselined, not relaxed — the cap still bounds the
+          // fixture's complete stylesheet.
           const cssCapKiB =
             sample.name === 'update-dialog'
               ? 48
@@ -408,7 +413,9 @@ try {
                     ? 28
                     : sample.name === 'carousel-subpath'
                       ? 35
-                      : 32
+                      : sample.name === 'list-row'
+                        ? 34
+                        : 32
           if (Buffer.byteLength(css) > cssCapKiB * 1024)
             throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
           // JS gzip, measured: overlay 37,922; shell 24,434. The 32 KiB cap held
