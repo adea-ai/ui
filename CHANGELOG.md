@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.90.1](https://github.com/adea-ai/ui/compare/v0.90.0...v0.90.1) (2026-10-01)
+
+
+### Tests
+
+* execute packed appearance server rendering ([#189](https://github.com/adea-ai/ui/issues/189)) ([badee85](https://github.com/adea-ai/ui/commit/badee85a282e8f99d54fe190a282291beb171160))
+
+
+### Maintenance
+
+* **code-foundry:** upgrade to v1.38.1 ([#187](https://github.com/adea-ai/ui/issues/187)) ([eff7a7f](https://github.com/adea-ai/ui/commit/eff7a7f3e0a99672b863faaa0eeb0f483e4d5908))
+
 ## [0.90.0](https://github.com/adea-ai/ui/compare/v0.89.2...v0.90.0) (2026-09-30)
 
 
