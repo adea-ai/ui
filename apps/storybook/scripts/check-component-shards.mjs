@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 
 const storybookRoot = resolve(import.meta.dirname, '..')
 const playwright = resolve(storybookRoot, 'node_modules/.bin/playwright')
-const shards = ['1/4', '2/4', '3/4', '4/4']
+const shards = ['1/6', '2/6', '3/6', '4/6', '5/6', '6/6']
 
 function collectInstances(suite, instances = []) {
   for (const spec of suite.specs ?? []) {

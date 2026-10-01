@@ -415,6 +415,19 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # The browsers come from the GitHub cache, not the Playwright CDN: four
+      # to ten shards downloading the same engines concurrently starve the CDN
+      # and one shard drew a 15.8-minute install. The lockfile pins the
+      # engine versions, so it is the cache key; the restore-keys fallback
+      # keeps older engines on a bump so only the delta downloads.
+      - name: Restore the Playwright browsers
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
+
       - name: Install the browser for the accessibility lane
         run: bunx playwright install --with-deps chromium
 
@@ -438,21 +451,26 @@ jobs:
           if-no-files-found: ignore
 
   # These tests bundle the actual component entry themselves. They need neither
-  # the workshop build nor its story sweep, so four independent one-worker shards
+  # the workshop build nor its story sweep, so six independent one-worker shards
   # can run beside the workshop build and story shards.
   components:
     name: Component interactions (${{ matrix.shard }})
     needs: changes
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
     runs-on: ubuntu-latest
-    # Four shards each run the full two-engine suite with retries; under
-    # runner contention they routinely need well past 20 minutes, and a
-    # timeout cancels the shard rather than reporting which story failed.
-    timeout-minutes: 30
+    # Shards are sized to keep every job near the five-minute iteration bar:
+    # four shards left the slowest with a ~5-minute test step on its own, and
+    # a CDN-starved engine install once pushed a shard past 15 minutes of
+    # setup on top. The browsers now come from the GitHub cache (lockfile is
+    # the key), and the extra shards keep the tail short under contention.
+    # The ceiling stays above the longest observed shard (a 15m15s cancel
+    # under runner contention): a timeout cancels the shard without
+    # reporting which story failed, so it must bound runaways, not the bar.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: ['1/4', '2/4', '3/4', '4/4']
+        shard: ['1/6', '2/6', '3/6', '4/6', '5/6', '6/6']
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -464,10 +482,17 @@ jobs:
           bun-version: 1.4.0
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Verify all component tests partition across four shards
-        if: matrix.shard == '1/4'
+      - name: Verify all component tests partition across six shards
+        if: matrix.shard == '1/6'
         working-directory: apps/storybook
         run: bun scripts/check-component-shards.mjs
+      - name: Restore the Playwright browsers
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
       - name: Install headless component engines
         run: bunx playwright install --with-deps chromium webkit
       - name: Check controlled component interactions

@@ -33,12 +33,12 @@ const workshopGateStart = workflow.indexOf('\n  workshop-gate:\n')
 if (workshopGateStart < 0) throw new Error('Could not find workflow section workshop-gate.')
 const workshopGate = workflow.slice(workshopGateStart)
 
-test('component browser contracts partition the complete Playwright suite into four shards', () => {
+test('component browser contracts partition the complete Playwright suite into six shards', () => {
   expect(changesJob).toContain('component-shards.test.ts')
-  expect(componentsJob).toContain("shard: ['1/4', '2/4', '3/4', '4/4']")
+  expect(componentsJob).toContain("shard: ['1/6', '2/6', '3/6', '4/6', '5/6', '6/6']")
   expect(componentsJob).toContain('fail-fast: false')
   expect(componentsJob).toContain('run: bun run test:components --shard=${{ matrix.shard }}')
-  expect(componentsJob).toContain("if: matrix.shard == '1/4'")
+  expect(componentsJob).toContain("if: matrix.shard == '1/6'")
   expect(componentsJob).toContain('run: bun scripts/check-component-shards.mjs')
   expect(reportUpload).toContain('if: always()')
   expect(reportUpload).toContain('name: component-interactions-report-${{ strategy.job-index }}')
@@ -67,6 +67,6 @@ test('the stable Workshop gate still requires every component shard to succeed',
   )
   expect(workshopGate).toContain('BUILD_RESULT')
   expect(workshopGate).toContain('STORIES_RESULT')
-  expect(contributing).toContain('suite runs in four Playwright shards across Chromium and WebKit')
+  expect(contributing).toContain('suite runs in six Playwright shards across Chromium and WebKit')
   expect(contributing).toMatch(/every story shard and every\s+component shard succeed/)
 })
