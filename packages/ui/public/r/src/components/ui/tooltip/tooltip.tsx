@@ -1,4 +1,4 @@
-import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip'
+import { Tooltip as KobalteTooltip, useTooltipContext } from '@kobalte/core/tooltip'
 import type { ComponentProps } from 'solid-js'
 import { createContext, splitProps, useContext } from 'solid-js'
 import { cn } from '../../../lib/utils'
@@ -79,8 +79,11 @@ export type TooltipContentProps = ComponentProps<typeof KobalteTooltip.Content> 
 }
 
 export function TooltipContent(props: TooltipContentProps) {
-  const [local, rest] = splitProps(props, ['class', 'hideArrow', 'children'])
+  const [local, rest] = splitProps(props, ['class', 'hideArrow', 'children', 'aria-hidden'])
+  const context = useTooltipContext()
 
+  // Kobalte keeps force-mounted and exiting content present after close. Hide
+  // that retained tooltip from assistive technology until it opens again.
   return (
     <KobalteTooltip.Portal>
       <KobalteTooltip.Content
@@ -92,6 +95,7 @@ export function TooltipContent(props: TooltipContentProps) {
           'data-expanded:duration-150 data-closed:duration-100',
           local.class
         )}
+        aria-hidden={context.isOpen() ? local['aria-hidden'] : true}
         {...rest}
       >
         {local.children}

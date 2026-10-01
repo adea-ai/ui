@@ -145,11 +145,7 @@ test('host heading hierarchy and disclosure semantics survive shared composition
   await disclosure.press('Space')
   await expect(nav.getByRole('button', { name: 'Research' })).toBeVisible()
   const results = await new AxeBuilder({ page }).analyze()
-  expect(
-    results.violations.filter((violation) =>
-      ['serious', 'critical'].includes(violation.impact ?? '')
-    )
-  ).toEqual([])
+  expect(results.violations).toEqual([])
 })
 
 test('controlled sections preserve independent saved state and disclosure trigger contracts', async ({
@@ -206,15 +202,84 @@ test('controlled sections preserve independent saved state and disclosure trigge
   await expect(projects).toHaveAttribute('aria-expanded', 'false')
 
   const results = await new AxeBuilder({ page }).analyze()
-  expect(
-    results.violations.filter((violation) =>
-      ['serious', 'critical'].includes(violation.impact ?? '')
-    )
-  ).toEqual([])
+  expect(results.violations).toEqual([])
+})
+
+test('selected sections update independently of saved disclosure state', async ({ page }) => {
+  const projects = page.getByRole('button', { name: 'Projects', exact: true })
+  const agents = page.getByRole('button', { name: 'Agents', exact: true })
+  const projectsHeader = projects.locator('xpath=../..')
+  const agentsHeader = agents.locator('xpath=../..')
+  await expect(projects).toHaveAttribute('aria-current', 'page')
+  await expect(projectsHeader).toHaveAttribute('data-active', '')
+  const selectedFill = await projectsHeader.evaluate(
+    (element) => getComputedStyle(element).backgroundColor
+  )
+  expect(selectedFill).not.toBe('rgba(0, 0, 0, 0)')
+  await agents.click()
+  await expect(agents).toHaveAttribute('aria-current', 'page')
+  await expect(agentsHeader).toHaveAttribute('data-active', '')
+  await expect(agentsHeader).toHaveCSS('background-color', selectedFill)
+  await expect(projects).not.toHaveAttribute('aria-current', 'page')
+  await expect(projectsHeader).not.toHaveAttribute('data-active', '')
+  await expect(projects).toHaveAttribute('aria-expanded', 'true')
+  await projects.click()
+  await expect(projects).toHaveAttribute('aria-current', 'page')
+  await expect(projects).toHaveAttribute('aria-expanded', 'false')
+  await expect(agents).toHaveAttribute('aria-expanded', 'true')
+})
+
+test('adjacent row actions become discoverable by keyboard and stay visible for an open menu', async ({
+  page,
+}) => {
+  const row = page.getByRole('button', { name: 'Fixture conversation', exact: true })
+  const action = page.getByRole('button', { name: 'Fixture conversation options', exact: true })
+  const actions = action.locator('..')
+  await expect(action).toHaveAttribute('aria-haspopup', /^(true|menu)$/)
+  await expect(
+    page.getByRole('button', { name: 'Toggle fixture conversation children' })
+  ).toHaveAttribute('aria-expanded', 'true')
+  await page.mouse.move(900, 700)
+  await expect(actions).toHaveCSS('opacity', '0')
+  await row.focus()
+  await expect(actions).toHaveCSS('opacity', '1')
+  await page.keyboard.press('Tab')
+  await expect(action).toBeFocused()
+  await action.press('Enter')
+  await expect(page.getByRole('menuitem', { name: 'Rename fixture conversation' })).toBeVisible()
+  await expect(actions).toHaveCSS('opacity', '1')
+  await page.keyboard.press('Escape')
+  await expect(action).toBeFocused()
 })
 
 test.describe('touch navigation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test('disclosures and navigation rows keep 44px coarse-pointer targets', async ({ page }) => {
+    expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true)
+    const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
+    for (const name of ['Projects', 'Conversations', 'Product', 'Research']) {
+      const target = nav.getByRole('button', { name, exact: name !== 'Conversations' }).first()
+      const bounds = await target.boundingBox()
+      expect(bounds, name).not.toBeNull()
+      expect(bounds!.height, name).toBeGreaterThanOrEqual(44)
+      expect(bounds!.width, name).toBeGreaterThanOrEqual(44)
+    }
+    const projects = nav.getByRole('button', { name: 'Projects', exact: true })
+    await projects.tap()
+    await expect(projects).toHaveAttribute('aria-expanded', 'false')
+    await projects.tap()
+    await expect(projects).toHaveAttribute('aria-expanded', 'true')
+    await nav.getByRole('button', { name: 'Research', exact: true }).tap()
+  })
+
+  test('adjacent row actions remain discoverable without hover', async ({ page }) => {
+    const action = page.getByRole('button', { name: 'Fixture conversation options', exact: true })
+    await action.scrollIntoViewIfNeeded()
+    await expect(action.locator('..')).toHaveCSS('opacity', '1')
+    await action.tap()
+    await expect(page.getByRole('menuitem', { name: 'Rename fixture conversation' })).toBeVisible()
+  })
 
   test('section creation actions remain discoverable without hover', async ({ page }) => {
     expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
@@ -226,4 +291,50 @@ test.describe('touch navigation', () => {
     }
     await expect(page.getByLabel('Created sections')).toHaveText('2')
   })
+})
+
+test('narrow navigation at doubled root text keeps labels and adjacent actions within bounds', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
+  const name = 'Very long project name that must remain accessible while its row label is truncated'
+  const row = nav.getByRole('button', { name, exact: true })
+  const label = row.locator('[data-stress-label]')
+  const bounds = (await nav.boundingBox())!
+  expect(bounds.width).toBeLessThanOrEqual(320)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  for (const control of [
+    row,
+    label,
+    page.getByRole('button', { name: 'Long project options', exact: true }),
+    page.getByRole('button', { name: 'Expand long project', exact: true }),
+  ]) {
+    const box = (await control.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(bounds.x)
+    expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1)
+  }
+  expect(await label.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+  await row.focus()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Long project options', exact: true })
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
+  await expect(
+    page.getByRole('tooltip', { name: 'Long project options', exact: true })
+  ).toHaveCount(0)
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toHaveText('Expand long project')
+  await expect(
+    page.getByRole('button', { name: 'Expand long project', exact: true })
+  ).toHaveAttribute('aria-describedby', (await tooltip.getAttribute('id'))!)
+  await page.keyboard.press('Escape')
+  await expect(tooltip).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })

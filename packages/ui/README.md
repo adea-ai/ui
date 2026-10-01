@@ -93,6 +93,7 @@ focus restoration and is cancelled if the menu unmounts. Authentication,
 updates, navigation, and other effects remain host callbacks.
 
 `SidebarNavTitle` accepts polymorphic `as` for a host's title heading.
+`SidebarNavLabel` keeps a row's complete accessible text while truncating its visible label, leaving room for adjacent controls. The navigation root clamps its preferred width to the containing lane at narrow widths and enlarged root text. `SidebarNavRow` moves adjacent actions onto a second line when the item's preferred label space and the controls cannot fit together.
 Use `SidebarNavSection.headingAs` (h1 through h6) for section headings.
 Sections may be uncontrolled with `defaultOpen` or controlled with `open` and
 `onOpenChange`. Put disclosure-button attributes and host-owned row interactions

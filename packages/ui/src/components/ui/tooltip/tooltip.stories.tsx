@@ -11,6 +11,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
  * receive the pointer, so it can never hold a control, and it is announced via
  * `aria-describedby` rather than replacing a label.
  *
+ * Kobalte may retain content for an exit animation or `forceMount`. The wrapper
+ * removes a closed tooltip from the accessibility tree immediately, while
+ * leaving an open tooltip's caller-provided `aria-hidden` value intact.
+ *
  * **A tooltip is never the only label.** If a control has no accessible name
  * without its tooltip, the tooltip is a label doing the wrong job — a screen
  * reader may never focus the trigger, and a touch user never hovers.

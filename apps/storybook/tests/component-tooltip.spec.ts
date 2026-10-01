@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -62,4 +63,54 @@ test('the tooltip arrow defaults on and updates when hideArrow changes', async (
   await expect(tooltip).toBeVisible()
   await expect(page.getByLabel('Arrow visibility')).toHaveText('shown')
   await expect(arrow).toHaveCount(1)
+})
+
+test('a force-mounted tooltip leaves the accessibility tree as its close animation starts', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Press ArrowRight to toggle the tooltip arrow' })
+  const retainedTooltip = page.locator('[role="tooltip"]').filter({
+    hasText: 'Tooltip with optional arrow',
+  })
+
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await trigger.focus()
+
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toHaveText('Tooltip with optional arrow')
+  await expect(trigger).toHaveAttribute('aria-describedby', /.+/)
+  await expect(retainedTooltip).not.toHaveAttribute('aria-hidden', 'true')
+
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Next action' })).toBeFocused()
+  await expect(retainedTooltip).toHaveAttribute('data-closed', '')
+  await expect(retainedTooltip).toHaveAttribute('aria-hidden', 'true')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(trigger).not.toHaveAttribute('aria-describedby', /.+/)
+  await expect
+    .poll(() => retainedTooltip.evaluate((element) => getComputedStyle(element).animationName))
+    .not.toBe('none')
+
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
+test('a controlled tooltip hides caller-visible content only while closed', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Controlled tooltip trigger' })
+  const retainedTooltip = page.locator('[role="tooltip"]').filter({
+    hasText: 'Controlled tooltip description',
+  })
+
+  await expect(retainedTooltip).toHaveAttribute('aria-hidden', 'true')
+  await page.getByRole('button', { name: 'Open controlled tooltip' }).click()
+  await expect(page.getByRole('tooltip', { name: 'Controlled tooltip description' })).toBeVisible()
+  await expect(retainedTooltip).toHaveAttribute('aria-hidden', 'false')
+  const tooltipId = await retainedTooltip.getAttribute('id')
+  if (!tooltipId) throw new Error('The open tooltip must expose its live content id')
+  await expect(trigger).toHaveAttribute('aria-describedby', tooltipId)
+
+  await page.getByRole('button', { name: 'Close controlled tooltip' }).click()
+  await expect(retainedTooltip).toHaveAttribute('data-closed', '')
+  await expect(retainedTooltip).toHaveAttribute('aria-hidden', 'true')
+  await expect(page.getByRole('tooltip', { name: 'Controlled tooltip description' })).toHaveCount(0)
+  await expect(trigger).not.toHaveAttribute('aria-describedby', /.+/)
 })
