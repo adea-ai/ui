@@ -184,5 +184,11 @@ test('toolbar actions remain reachable without document overflow at narrow width
       await expect(page.getByRole('tooltip')).toHaveCount(0)
     }
   }
+  // The role count drops as soon as the closed tooltip flips aria-hidden, but
+  // the still-mounted node composites its text at partial opacity through the
+  // exit animation and axe still audits it. Scan only once it has unmounted.
+  await expect
+    .poll(() => page.evaluate(() => document.querySelectorAll('[role="tooltip"]').length))
+    .toBe(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })

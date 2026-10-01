@@ -359,6 +359,13 @@ test('narrow navigation at doubled root text keeps wrapped labels and actions ac
     await page.keyboard.press('Escape')
     await expect(tooltip).toHaveCount(0)
     await expect(expand).toBeFocused()
+    // Role queries stop matching as soon as the closed tooltip flips
+    // aria-hidden, but the still-mounted node composites its text at partial
+    // opacity through the exit animation and axe still audits it. Scan only
+    // once the node itself has unmounted.
+    await expect
+      .poll(() => page.evaluate(() => document.querySelectorAll('[role="tooltip"]').length))
+      .toBe(0)
     expect((await new AxeBuilder({ page }).analyze()).violations, direction).toEqual([])
   }
 })
