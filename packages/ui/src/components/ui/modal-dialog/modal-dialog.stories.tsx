@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { TriangleAlert } from 'lucide-solid'
 import { createSignal } from 'solid-js'
+import { SettingsPage, SettingsRow, SettingsSection } from '../../composites/settings/settings'
 import { Button } from '../button/button'
 import { Input } from '../input/input'
 import { Label } from '../label/label'
+import { Switch } from '../switch/switch'
 import { ModalDialog } from './modal-dialog'
 
 /**
@@ -62,6 +64,59 @@ export const Default: Story = {
             </Button>
             <Button onClick={() => setOpen(false)}>Save</Button>
           </div>
+        </ModalDialog>
+      </>
+    )
+  },
+}
+
+/** A grouped settings surface with a bounded header and scrollable page body. */
+export const SettingsSurface: Story = {
+  render: () => {
+    const [open, setOpen] = createSignal(false)
+    return (
+      <>
+        <Button onClick={() => setOpen(true)}>Workspace settings</Button>
+        <ModalDialog
+          open={open()}
+          onClose={() => setOpen(false)}
+          size="settings"
+          title="Workspace settings"
+          description="Preferences and boundaries for this workspace."
+        >
+          <SettingsPage>
+            <SettingsSection
+              title="General"
+              description="Applies to everyone who can access this workspace."
+            >
+              <SettingsRow label="Workspace name" description="Shown anywhere members select it.">
+                <Input value="Adea" aria-label="Workspace name" />
+              </SettingsRow>
+              <SettingsRow
+                label="Automatic updates"
+                description="Install signed updates while the workspace is idle."
+              >
+                <Switch defaultChecked aria-label="Automatic updates" />
+              </SettingsRow>
+            </SettingsSection>
+            <SettingsSection
+              title="Notifications"
+              description="Choose which workspace events need your attention."
+            >
+              <SettingsRow
+                label="Task assignments"
+                description="Notify me when a task is assigned to me."
+              >
+                <Switch aria-label="Task assignments" />
+              </SettingsRow>
+              <SettingsRow
+                label="Private previews"
+                description="Keep message bodies hidden in system notifications."
+              >
+                <Switch defaultChecked aria-label="Private previews" />
+              </SettingsRow>
+            </SettingsSection>
+          </SettingsPage>
         </ModalDialog>
       </>
     )

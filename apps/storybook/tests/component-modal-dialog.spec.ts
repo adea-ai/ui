@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
 import { build, type EnvironmentOptions } from 'vite'
@@ -160,6 +161,89 @@ test('the default modal close button stays anchored to the panel after entrance 
   expect(topInset).toBeLessThan(22)
   expect(rightInset).toBeGreaterThan(8)
   expect(rightInset).toBeLessThan(22)
+})
+
+test('the settings surface stays inside narrow viewports and leaves its body scrollable', async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 1280, height: 900, fontScale: 1 },
+    { width: 320, height: 700, fontScale: 1 },
+    { width: 390, height: 844, fontScale: 1 },
+    { width: 320, height: 700, fontScale: 2 },
+    { width: 390, height: 844, fontScale: 2 },
+  ]
+
+  await page.getByRole('button', { name: 'Open workspace settings' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Workspace settings' })
+  await expect(dialog).toBeVisible()
+  await dialog.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {}))
+    )
+  })
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+    await page.evaluate((fontScale) => {
+      document.documentElement.style.fontSize = `${fontScale * 100}%`
+    }, viewport.fontScale)
+
+    const bounds = await dialog.boundingBox()
+    expect(bounds).not.toBeNull()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.y).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width)
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height)
+    expect(bounds!.width).toBeLessThanOrEqual(viewport.width)
+    if (viewport.width > 1000) expect(bounds!.width).toBeGreaterThan(1000)
+
+    const scrollRegion = page.getByTestId('settings-scroll-region')
+    const scrollMetrics = await scrollRegion.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }))
+    expect(scrollMetrics.clientHeight).toBeGreaterThan(0)
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight)
+    const scrollTop = await scrollRegion.evaluate((element) => {
+      element.scrollTop = element.scrollHeight
+      return element.scrollTop
+    })
+    expect(scrollTop).toBeGreaterThan(0)
+  }
+})
+
+test('the settings surface keeps keyboard focus contained and has no axe violations', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Open workspace settings' })
+  await trigger.focus()
+  await trigger.press('Enter')
+
+  const dialog = page.getByRole('dialog', { name: 'Workspace settings' })
+  const firstAction = dialog.getByRole('button', { name: 'First settings action' })
+  const close = dialog.getByRole('button', { name: 'Close', exact: true })
+  await expect(dialog).toBeVisible()
+  await expect
+    .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true)
+
+  await firstAction.focus()
+  await page.keyboard.press('Tab')
+  await expect(close).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(firstAction).toBeFocused()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByLabel('Close status')).toHaveText('Closing')
+  await page.evaluate(() => {
+    ;(window as Window & { completeModalDialogClose?: () => void }).completeModalDialogClose?.()
+  })
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
 })
 
 test('a known external return-focus ref supports pointer-opened controlled dialogs', async ({
