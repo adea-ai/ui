@@ -5,9 +5,74 @@ import { Button } from '../../src/components/ui/button/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../src/components/ui/tabs/tabs'
 import {
   SettingsLayout,
+  SettingsNavigation,
   type SettingsNavigationGroup,
 } from '../../src/components/composites/settings'
 import '../../src/styles/globals.css'
+
+const variant = (window as { settingsNavFixture?: string }).settingsNavFixture
+
+function ForcedRowFixture() {
+  const [value, setValue] = createSignal('account')
+  const groups: readonly SettingsNavigationGroup[] = [
+    {
+      label: 'Workspace preferences',
+      items: [
+        { value: 'account', label: 'Account', icon: <UserRound aria-hidden="true" /> },
+        { value: 'appearance', label: 'Appearance', icon: <Settings aria-hidden="true" /> },
+        {
+          value: 'workspace',
+          label: 'Workspace defaults',
+          icon: <Database aria-hidden="true" />,
+        },
+        { value: 'input', label: 'Input and notifications', icon: <Bell aria-hidden="true" /> },
+      ],
+    },
+    {
+      label: 'Access and privacy',
+      items: [
+        { value: 'privacy', label: 'Privacy', icon: <ShieldCheck aria-hidden="true" /> },
+        { value: 'notifications', label: 'Notifications', icon: <Bell aria-hidden="true" /> },
+        {
+          value: 'diagnostics',
+          label: 'Diagnostics and recovery',
+          icon: <Database aria-hidden="true" />,
+        },
+      ],
+    },
+  ]
+
+  return (
+    <main class="flex h-screen min-h-0 flex-col gap-2 p-2">
+      <Button type="button" onClick={() => setValue('diagnostics')}>
+        Select diagnostics
+      </Button>
+      {/* The consumer shape from the field report: a clipped pane wrapping a
+      scroller, with the grouped list forced into a row. The pane is fixed
+      narrow so the row genuinely overflows the affordance scroller. */}
+      <div id="forced-row-pane" class="flex h-48 w-40 min-h-0 min-w-0 overflow-hidden">
+        <div id="forced-row-scroller" class="min-w-0 flex-1 overflow-x-auto">
+          <Tabs
+            id="forced-row-tabs"
+            orientation="vertical"
+            value={value()}
+            onChange={(next: string) => setValue(next)}
+          >
+            <SettingsNavigation
+              id="forced-row-navigation"
+              value={value()}
+              onChange={(next: string) => setValue(next)}
+              aria-label="Settings sections"
+              groups={groups}
+              class="w-max flex-row items-center"
+            />
+          </Tabs>
+        </div>
+      </div>
+      <output aria-label="Selected section">{value()}</output>
+    </main>
+  )
+}
 
 function SettingsNavigationFixture() {
   const [value, setValue] = createSignal('account')
@@ -112,4 +177,8 @@ function SettingsNavigationFixture() {
   )
 }
 
-render(() => <SettingsNavigationFixture />, document.body)
+if (variant === 'forced-row') {
+  render(() => <ForcedRowFixture />, document.body)
+} else {
+  render(() => <SettingsNavigationFixture />, document.body)
+}
