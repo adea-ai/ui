@@ -66,6 +66,17 @@ test('controlled mode selection owns roving focus and explanatory tooltips witho
   await expect(page.getByTestId('mode')).toHaveText('dark')
 })
 
+test('Escape on a focused item stays unhandled for an enclosing dismissible layer', async ({
+  page,
+}) => {
+  const group = page.getByRole('group', { name: 'Appearance', exact: true })
+  const system = group.getByRole('button', { name: 'System', exact: true })
+  await system.focus()
+  await system.press('Escape')
+  await expect(page.getByTestId('escape')).toHaveText('pass-through')
+  await expect(page.getByTestId('mode')).toHaveText('system')
+})
+
 test('disabled selection and enlarged narrow layout remain accessible', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await page.evaluate(() => {
