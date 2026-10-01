@@ -235,6 +235,16 @@ test('the settings surface keeps keyboard focus contained and has no axe violati
   await expect(close).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(firstAction).toBeFocused()
+  // Contrast must be measured on the settled surface: mid fade-in the
+  // dialog composites its text through partial opacity over the scrim, and
+  // axe reports that transient blend as a contrast violation.
+  await dialog.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {}))
+    )
+  })
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await page.keyboard.press('Escape')
