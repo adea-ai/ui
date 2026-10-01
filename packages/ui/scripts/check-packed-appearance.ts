@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
+import { build } from 'vite'
+import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -120,6 +122,41 @@ try {
       join(consumer, name),
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
     )
+  const serverBuild = await build({
+    root: consumer,
+    configFile: false,
+    logLevel: 'warn',
+    plugins: [solid({ ssr: true })],
+    resolve: { conditions: ['solid', 'node', 'import'] },
+    ssr: { noExternal: true },
+    build: { write: false, minify: false, ssr: join(consumer, 'server.tsx') },
+  })
+  const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
+    .flatMap((output) => ('output' in output ? output.output : []))
+    .filter((asset) => asset.type === 'chunk')
+  if (serverChunks.length !== 1) throw new Error('Expected one packed appearance SSR chunk')
+  const serverChunk = serverChunks[0]
+  if (!serverChunk) throw new Error('Missing packed appearance SSR chunk')
+  const serverUi = Object.keys(serverChunk.modules).filter((id) =>
+    id.includes('/node_modules/@adea-ai/ui/')
+  )
+  if (!serverUi.some((id) => id.includes('/src/')) || serverUi.some((id) => id.includes('/dist/')))
+    throw new Error('Packed appearance SSR did not select unmixed Solid source')
+  writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
+  writeFileSync(
+    join(consumer, 'render.mjs'),
+    "import { renderAppearance } from './server-fixture.mjs'; process.stdout.write(renderAppearance());"
+  )
+  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true)
+  for (const text of [
+    'data-appearance-editor',
+    'aria-label="Appearance mode"',
+    'Save',
+    'Cancel',
+    'Reset',
+  ])
+    if (!serverHtml.includes(text)) throw new Error(`Packed native Node SSR omitted ${text}`)
+  console.log(JSON.stringify({ result: 'packed appearance native Node SSR passed', serverUi }))
   writeFileSync(
     join(consumer, 'destructive.tsx'),
     replaceDestructiveImports(
