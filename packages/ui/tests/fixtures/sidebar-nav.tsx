@@ -34,6 +34,7 @@ render(() => {
   const [dragStarted, setDragStarted] = createSignal(false)
   const [cancelClicks, setCancelClicks] = createSignal(0)
   const [cancelableReordered, setCancelableReordered] = createSignal(false)
+  const [fixtureExpanded, setFixtureExpanded] = createSignal(true)
   return (
     <main>
       <SidebarNav aria-label="Workspace navigation">
@@ -116,20 +117,32 @@ render(() => {
           </SidebarNavSection>
           <SidebarNavRow
             actions={
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  as={ActionButton}
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    as={ActionButton}
+                    variant="ghost"
+                    size="icon-md"
+                    aria-label="Fixture conversation options"
+                    tooltip="Conversation options"
+                  >
+                    ⋯
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Rename fixture conversation</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <ActionButton
                   variant="ghost"
                   size="icon-md"
-                  aria-label="Fixture conversation options"
-                  tooltip="Conversation options"
+                  aria-label="Toggle fixture conversation children"
+                  aria-expanded={fixtureExpanded()}
+                  tooltip="Toggle conversation children"
+                  onClick={() => setFixtureExpanded((expanded) => !expanded)}
                 >
-                  ⋯
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Rename fixture conversation</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  ›
+                </ActionButton>
+              </>
             }
           >
             <SidebarNavItem as="button" type="button" class="flex-1">

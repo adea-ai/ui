@@ -243,6 +243,12 @@ test('adjacent row actions become discoverable by keyboard and stay visible for 
   const row = page.getByRole('button', { name: 'Fixture conversation', exact: true })
   const action = page.getByRole('button', { name: 'Fixture conversation options', exact: true })
   const actions = action.locator('..')
+  await expect(action).toHaveAttribute('aria-haspopup', /^(true|menu)$/)
+  await expect(
+    page.getByRole('button', { name: 'Toggle fixture conversation children' })
+  ).toHaveAttribute('aria-expanded', 'true')
+  await page.mouse.move(900, 700)
+  await expect(actions).toHaveCSS('opacity', '0')
   await row.focus()
   await expect(actions).toHaveCSS('opacity', '1')
   await page.keyboard.press('Tab')

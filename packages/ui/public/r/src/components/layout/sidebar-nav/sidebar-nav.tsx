@@ -271,7 +271,7 @@ export function SidebarNavRow(props: SidebarNavRowProps) {
       <Show when={local.actions}>
         <span
           data-slot="sidebar-nav-row-actions"
-          class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
+          class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity ease-out group-hover/sidebar-nav-row:opacity-100 group-focus-within/sidebar-nav-row:opacity-100 has-[[aria-haspopup=menu][aria-expanded=true]]:opacity-100 has-[[aria-haspopup=true][aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100"
         >
           {local.actions}
         </span>
