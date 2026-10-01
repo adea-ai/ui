@@ -131,7 +131,7 @@ same standard for anything added.
 
 The workshop builds once, then runs its complete story/theme accessibility and
 interaction sweep in ten Playwright shards. The isolated component interaction
-suite runs in four Playwright shards across Chromium and WebKit. The required
+suite runs in six Playwright shards across Chromium and WebKit. The required
 `Workshop` context succeeds only when the build, every story shard and every
 component shard succeed.
 
