@@ -5,10 +5,11 @@ import '../../src/styles/globals.css'
 
 function Fixture() {
   const [hideArrow, setHideArrow] = createSignal(false)
+  const [controlledOpen, setControlledOpen] = createSignal(false)
 
   return (
     <main>
-      <Tooltip openDelay={0}>
+      <Tooltip openDelay={0} forceMount>
         <TooltipTrigger
           as="button"
           type="button"
@@ -21,6 +22,19 @@ function Fixture() {
         <TooltipContent hideArrow={hideArrow()}>Tooltip with optional arrow</TooltipContent>
       </Tooltip>
       <output aria-label="Arrow visibility">{hideArrow() ? 'hidden' : 'shown'}</output>
+      <button type="button">Next action</button>
+      <button type="button" onClick={() => setControlledOpen(true)}>
+        Open controlled tooltip
+      </button>
+      <button type="button" onClick={() => setControlledOpen(false)}>
+        Close controlled tooltip
+      </button>
+      <Tooltip open={controlledOpen()} onOpenChange={setControlledOpen} forceMount>
+        <TooltipTrigger as="button" type="button">
+          Controlled tooltip trigger
+        </TooltipTrigger>
+        <TooltipContent aria-hidden="false">Controlled tooltip description</TooltipContent>
+      </Tooltip>
     </main>
   )
 }
