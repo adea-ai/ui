@@ -23,17 +23,18 @@
  * check that silently builds is a check that hides a broken build.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const packageRoot = resolve(import.meta.dir, '..')
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const manifest: {
   files?: string[]
-  exports: Record<string, string | Record<string, string>>
+  exports: Record<string, string | Record<string, string> | null>
   name: string
   version: string
   private?: boolean
-} = await Bun.file(resolve(packageRoot, 'package.json')).json()
+} = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8'))
 
 if (!existsSync(resolve(packageRoot, 'dist'))) {
   console.error('pack:check — dist/ is absent. Run `bun run build` first.')
@@ -84,6 +85,9 @@ for (const source of sourceFiles.filter(
   (file) => file.startsWith('lib/') && file.endsWith('.ts')
 )) {
   const lib = source.slice('lib/'.length, -'.ts'.length)
+  // A generated helper may need to be present in the archive for internal
+  // imports without being a package subpath consumers can import directly.
+  if (manifest.exports[`./lib/${lib}`] === null) continue
   const conditions = manifest.exports['./lib/*']
   if (!conditions || typeof conditions === 'string')
     throw new Error('Missing library export conditions')
@@ -91,8 +95,27 @@ for (const source of sourceFiles.filter(
     entryPoints.push(target.replace('./', '').replaceAll('*', lib))
   }
 }
+const privateGeneratedTablesExport = './lib/cn-tables.generated'
+if (manifest.exports[privateGeneratedTablesExport] !== null) {
+  failures.push(
+    `${privateGeneratedTablesExport} must remain explicitly blocked while its files ship for internal imports.`
+  )
+} else {
+  entryPoints.push(
+    'src/lib/cn-tables.generated.ts',
+    'dist/lib/cn-tables.generated.js',
+    'dist/lib/cn-tables.generated.d.ts'
+  )
+}
+const unexpectedPrivateExclusions = Object.entries(manifest.exports)
+  .filter(([specifier, entry]) => entry === null && specifier !== privateGeneratedTablesExport)
+  .map(([specifier]) => specifier)
+if (unexpectedPrivateExclusions.length > 0)
+  failures.push(
+    `unexpected private export exclusions: ${unexpectedPrivateExclusions.toSorted().join(', ')}`
+  )
 for (const [specifier, entry] of Object.entries(manifest.exports)) {
-  if (specifier.includes('*')) continue
+  if (specifier.includes('*') || entry === null) continue
   for (const target of typeof entry === 'string' ? [entry] : Object.values(entry)) {
     if (typeof target === 'string') entryPoints.push(target.replace('./', ''))
   }
