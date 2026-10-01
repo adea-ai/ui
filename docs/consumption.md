@@ -335,7 +335,7 @@ end up a few pixels out of step with the one beside it.
 
 | Token                   | Default | What it is                       |
 | ----------------------- | ------- | -------------------------------- |
-| `--rail-width`          | 58px    | The icon-only side rail.         |
+| `--rail-width`          | 56px    | The icon-only side rail.         |
 | `--rail-width-expanded` | 236px   | The labelled rail.               |
 | `--sidebar-width`       | 256px   | The secondary navigation column. |
 | `--topbar-height`       | 48px    | The window title row.            |

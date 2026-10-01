@@ -123,7 +123,7 @@ export const Expanded: Story = {
 }
 
 /**
- * The collapsed form: 58px, icons only, with tooltips on hover.
+ * The collapsed form: 56px, icons only, with tooltips on hover.
  *
  * Hover a row to see the label. Note the badge moves to the corner of its row
  * rather than disappearing with the label — an unread count is the one piece of
@@ -175,7 +175,7 @@ export const BothForms: Story = {
   render: () => (
     <div class="flex h-screen gap-8 bg-background p-8">
       <div class="flex flex-col gap-3">
-        <code class="text-xs text-muted-foreground">collapsed · 58px</code>
+        <code class="text-xs text-muted-foreground">collapsed · 56px</code>
         <div class="h-[28rem] overflow-hidden rounded-lg border border-border">
           <SideRail collapsed aria-label="Primary, collapsed">
             <SideRailHeader>
