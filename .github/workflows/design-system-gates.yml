@@ -393,7 +393,15 @@ jobs:
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
     needs: [changes, workshop-build]
     runs-on: ubuntu-latest
+    # The pinned Playwright image already ships the browsers and their OS
+    # dependencies, so ten shards no longer each pay a `playwright install
+    # --with-deps` download; the guard below fails fast if the image and the
+    # installed @playwright/test drift apart.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 30
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     strategy:
       # A slice that fails must not cancel the others: the report is more useful
       # complete, and the shards are independent.
@@ -406,6 +414,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
@@ -414,8 +425,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install the browser for the accessibility lane
-        run: bunx playwright install --with-deps chromium
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
 
       - name: Download the built workshop
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
@@ -444,7 +455,14 @@ jobs:
     needs: changes
     if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
     runs-on: ubuntu-latest
+    # Same pinned image as the packed lanes and the workshop shards: Chromium
+    # and WebKit ship in the image, so four shards no longer each download and
+    # apt-install their engines.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     strategy:
       fail-fast: false
       matrix:
@@ -454,6 +472,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
@@ -464,8 +484,8 @@ jobs:
         if: matrix.shard == '1/4'
         working-directory: apps/storybook
         run: bun scripts/check-component-shards.mjs
-      - name: Install headless component engines
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
       - name: Check controlled component interactions
         working-directory: apps/storybook
         run: bun run test:components --shard=${{ matrix.shard }}
