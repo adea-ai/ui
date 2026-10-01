@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.91.0](https://github.com/adea-ai/ui/compare/v0.90.3...v0.91.0) (2026-10-01)
+
+
+### Features
+
+* **ui:** share sidebar selection and adjacent row actions ([#183](https://github.com/adea-ai/ui/issues/183)) ([baaa3ff](https://github.com/adea-ai/ui/commit/baaa3ff4cc8561bb7ecb4cf5cd8b647a00b57c07))
+
 ## [0.90.3](https://github.com/adea-ai/ui/compare/v0.90.2...v0.90.3) (2026-10-01)
 
 
