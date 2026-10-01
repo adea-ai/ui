@@ -18,7 +18,8 @@ async function run(
   args: string[],
   cwd: string,
   extraEnv: Record<string, string> = {},
-  capture = false
+  capture = false,
+  timeoutMs = 0
 ): Promise<string> {
   console.log(
     JSON.stringify({ plannedCommand: command, args, cwd, owner: 'packed-layout-renderer-check' })
@@ -27,6 +28,7 @@ async function run(
     cwd,
     env: { ...process.env, ...extraEnv },
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
+    timeout: timeoutMs,
   })
   active.add(child)
   console.log(JSON.stringify({ childPid: child.pid, owner: 'packed-layout-renderer-check' }))
@@ -170,7 +172,7 @@ try {
     join(consumer, 'render.mjs'),
     "import { renderLayout, renderSidebar } from './server-fixture.mjs'; process.stdout.write(renderLayout() + renderSidebar());"
   )
-  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true)
+  const serverHtml = await run('node', [join(consumer, 'render.mjs')], consumer, {}, true, 30_000)
   for (const text of [
     'Server panes',
     'first',
