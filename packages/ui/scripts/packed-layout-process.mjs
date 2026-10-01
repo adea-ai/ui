@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { readdirSync, readFileSync } from 'node:fs'
 
 const OUTPUT_TAIL_BYTES = 12 * 1024
 const STDOUT_LIMIT_BYTES = 1024 * 1024
@@ -22,15 +23,59 @@ function appendOutput(current, chunk, limitBytes) {
   }
 }
 
-function groupExists(pid) {
-  if (!pid || process.platform === 'win32') return false
+// A killed process lingers as a zombie until its parent reaps it, and
+// kill(pid, 0) reports zombies as alive. Under CI load the reaper can lag
+// past the whole cleanup window, which would report a dead tree as surviving
+// SIGKILL — so on Linux the /proc state is the truth.
+function isZombie(pid) {
+  if (process.platform !== 'linux') return false
   try {
-    process.kill(-pid, 0)
-    return true
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8')
+    return stat.slice(stat.lastIndexOf(')') + 2).split(' ')[0] === 'Z'
+  } catch {
+    return false
+  }
+}
+
+export function isProcessRunning(pid) {
+  if (!pid) return false
+  try {
+    process.kill(pid, 0)
   } catch (error) {
     if (error.code === 'ESRCH') return false
     throw error
   }
+  return !isZombie(pid)
+}
+
+function groupExists(pid) {
+  if (!pid || process.platform === 'win32') return false
+  try {
+    process.kill(-pid, 0)
+  } catch (error) {
+    if (error.code === 'ESRCH') return false
+    throw error
+  }
+  if (process.platform !== 'linux') return true
+  // The group is only alive if a member still runs; zombies do not count.
+  let entries
+  try {
+    entries = readdirSync('/proc')
+  } catch {
+    return true
+  }
+  for (const entry of entries) {
+    if (!/^\d+$/.test(entry)) continue
+    let stat
+    try {
+      stat = readFileSync(`/proc/${entry}/stat`, 'utf8')
+    } catch {
+      continue
+    }
+    const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ')
+    if (Number(fields[2]) === pid && fields[0] !== 'Z') return true
+  }
+  return false
 }
 
 function signalGroup(child, signal) {
