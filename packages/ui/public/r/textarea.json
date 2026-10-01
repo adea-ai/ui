@@ -3,7 +3,9 @@
   "type": "registry:ui",
   "title": "Textarea",
   "description": "",
-  "dependencies": [],
+  "dependencies": [
+    "class-variance-authority@^0.7.1"
+  ],
   "registryDependencies": [
     "lib"
   ],

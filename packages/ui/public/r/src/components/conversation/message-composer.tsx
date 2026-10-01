@@ -1,7 +1,8 @@
 import { CornerDownLeft, Paperclip, Send, X } from 'lucide-solid'
-import type { ComponentProps, JSX } from 'solid-js'
-import { Show, createSignal, splitProps } from 'solid-js'
+import type { ComponentProps, JSX, Ref } from 'solid-js'
+import { Show, createSignal, createUniqueId, splitProps } from 'solid-js'
 import { cn } from '../../lib/utils'
+import { ActionButton } from '../composites/action-button/action-button'
 import { Button } from '../ui/button/button'
 import { Kbd } from '../ui/kbd/kbd'
 import { Spinner } from '../ui/spinner/spinner'
@@ -61,6 +62,20 @@ export type MessageComposerProps = Omit<ComponentProps<'form'>, 'onSubmit'> & {
   menu?: JSX.Element
   /** The reply target, drawn as a strip above the field. */
   replyTo?: { label: string; onDismiss: () => void }
+  /** Ref to the actual message textarea, for host focus and selection behavior. */
+  inputRef?: Ref<HTMLTextAreaElement>
+  /** Stable host-owned id for the actual textarea. */
+  inputId?: string
+  /** Accessible name for the actual textarea. Defaults to "Message" or "Reply message". */
+  inputLabel?: string
+  /** Additional help text associated with the actual textarea. */
+  inputDescription?: string
+  /** Existing host description id, combined with `inputDescription` when supplied. */
+  inputDescribedBy?: string
+  /** Comfortable uses the shared 4rem minimum and 12rem maximum field heights. */
+  inputSize?: 'default' | 'comfortable'
+  /** The shared resize behavior for the actual textarea. */
+  inputResize?: 'vertical' | 'none' | 'both'
 }
 
 export function MessageComposer(props: MessageComposerProps) {
@@ -77,11 +92,23 @@ export function MessageComposer(props: MessageComposerProps) {
     'trailing',
     'menu',
     'replyTo',
+    'inputRef',
+    'inputId',
+    'inputLabel',
+    'inputDescription',
+    'inputDescribedBy',
+    'inputSize',
+    'inputResize',
   ])
 
   const [sending, setSending] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
   const ime = createComposerImeGuard()
+  const descriptionId = `message-composer-help-${createUniqueId()}`
+  const describedBy = () =>
+    [local.inputDescribedBy, local.inputDescription ? descriptionId : undefined]
+      .filter(Boolean)
+      .join(' ') || undefined
 
   const canSend = () => local.value.trim().length > 0 && !local.disabled && !sending()
 
@@ -131,15 +158,16 @@ export function MessageComposer(props: MessageComposerProps) {
         {(reply) => (
           <div class="bg-muted text-muted-foreground flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs">
             <span class="min-w-0 flex-1 truncate">Replying to {reply().label}</span>
-            <Button
+            <ActionButton
               type="button"
               variant="ghost"
               size="icon-2xs"
               aria-label="Cancel reply"
+              tooltip="Cancel reply"
               onClick={() => reply().onDismiss()}
             >
               <X />
-            </Button>
+            </ActionButton>
           </div>
         )}
       </Show>
@@ -153,6 +181,8 @@ export function MessageComposer(props: MessageComposerProps) {
         )}
       >
         <Textarea
+          ref={local.inputRef}
+          id={local.inputId}
           onCompositionStart={ime.onCompositionStart}
           onCompositionEnd={ime.onCompositionEnd}
           onFocus={ime.onFocus}
@@ -163,24 +193,37 @@ export function MessageComposer(props: MessageComposerProps) {
           placeholder={local.placeholder ?? 'Write a message…'}
           disabled={local.disabled}
           rows={1}
-          aria-label={local.submitLabel ? `${local.submitLabel} message` : 'Message'}
-          class="min-h-9 resize-none border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+          aria-label={
+            local.inputLabel ?? (local.submitLabel ? `${local.submitLabel} message` : 'Message')
+          }
+          aria-describedby={describedBy()}
+          variant="composer"
+          size={local.inputSize ?? 'comfortable'}
+          resize={local.inputResize ?? 'vertical'}
         />
+        <Show when={local.inputDescription}>
+          {(description) => (
+            <span id={descriptionId} class="sr-only">
+              {description()}
+            </span>
+          )}
+        </Show>
 
         <div class="flex items-center gap-1">
           <Show when={local.leading}>{local.leading}</Show>
           <div class="ms-auto flex items-center gap-1">
             <Show when={local.trailing}>{local.trailing}</Show>
-            <Button
+            <ActionButton
               type="submit"
               size="icon-sm"
               disabled={!canSend()}
               aria-label={sending() ? 'Sending message' : 'Send message'}
+              tooltip="Send message"
             >
               <Show when={sending()} fallback={<Send />}>
                 <Spinner size="sm" label={false} class="text-primary-foreground" />
               </Show>
-            </Button>
+            </ActionButton>
           </div>
         </div>
       </div>
@@ -220,17 +263,18 @@ export function ComposerAttachmentButton(
   const [local, rest] = splitProps(props, ['count', 'open', 'children'])
 
   return (
-    <Button
+    <ActionButton
       type="button"
       variant="ghost"
       size="icon-sm"
       aria-label={local.count ? `${local.count} attached, add an attachment` : 'Add an attachment'}
       aria-expanded={local.open}
+      tooltip="Add an attachment"
       class="text-muted-foreground"
       {...rest}
     >
       {local.children ?? <Paperclip />}
-    </Button>
+    </ActionButton>
   )
 }
 

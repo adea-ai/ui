@@ -32,6 +32,22 @@ export const Default: Story = {
   ),
 }
 
+/** A comfortable field with an explicit vertical resize affordance. */
+export const Comfortable: Story = {
+  render: () => (
+    <div class="flex w-96 flex-col gap-1.5">
+      <Label for="textarea-comfortable">Message</Label>
+      <Textarea
+        id="textarea-comfortable"
+        variant="composer"
+        size="comfortable"
+        resize="vertical"
+        placeholder="Write a message…"
+      />
+    </div>
+  ),
+}
+
 /** With content, at the minimum height. */
 export const WithValue: Story = {
   render: () => (

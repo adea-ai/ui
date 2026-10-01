@@ -55,6 +55,68 @@ test('the send control keeps a measurable themed control height', async ({ page 
     .toBeGreaterThan(0)
 })
 
+test('icon actions explain themselves on hover', async ({ page }) => {
+  for (const name of ['Send message', 'Add an attachment', 'Cancel reply']) {
+    await page.getByRole('button', { name, exact: true }).hover()
+    await expect(page.getByRole('tooltip')).toHaveText(name)
+  }
+})
+
+test('the field exposes its native id, accessible description, and actual textarea ref', async ({
+  page,
+}) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await expect(box).toHaveAttribute('id', 'message-draft')
+  const descriptionId = await box.getAttribute('aria-describedby')
+  expect(descriptionId).toBeTruthy()
+  expect(descriptionId?.split(' ')).toContain('message-instructions')
+  expect(descriptionId?.split(' ')).toHaveLength(2)
+  await expect(page.locator('#message-instructions')).toHaveText(
+    'Do not include secrets in a message.'
+  )
+  const composerDescriptionId = descriptionId
+    ?.split(' ')
+    .find((id) => id !== 'message-instructions')
+  expect(composerDescriptionId).toBeTruthy()
+  await expect(page.locator(`#${composerDescriptionId}`)).toHaveText('Messages support Markdown.')
+
+  await page.getByRole('button', { name: 'Focus message' }).click()
+  await expect(box).toBeFocused()
+})
+
+test('the comfortable composer field can resize vertically and remains comfortable at 200% text', async ({
+  page,
+}) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await expect(box).toHaveCSS('resize', 'vertical')
+  await expect
+    .poll(() => box.evaluate((element) => parseFloat(getComputedStyle(element).maxHeight)))
+    .toBeGreaterThan(0)
+
+  await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+  await expect
+    .poll(() => box.evaluate((element) => parseFloat(getComputedStyle(element).minHeight)))
+    .toBeGreaterThanOrEqual(128)
+  await expect
+    .poll(() => box.evaluate((element) => parseFloat(getComputedStyle(element).maxHeight)))
+    .toBeGreaterThanOrEqual(384)
+})
+
+test('a failed send preserves the draft and Escape clears the announced error', async ({
+  page,
+}) => {
+  const box = page.getByRole('textbox', { name: 'Message', exact: true })
+  await page.getByRole('button', { name: 'Reject next send' }).click()
+  await box.press('Enter')
+  const alert = page.getByText(
+    'Message not sent. Your draft is still here; retry when the connection recovers.'
+  )
+  await expect(alert).toBeVisible()
+  await expect(box).toHaveValue('A draft')
+  await box.press('Escape')
+  await expect(alert).toHaveCount(0)
+})
+
 test('plain Enter sends and Shift+Enter keeps the soft break', async ({ page }) => {
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
   await box.press('Enter')

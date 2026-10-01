@@ -320,6 +320,14 @@ The selected KiroCrew textarea guard is translated to Solid ownership; it adds
 no document listener or application session state. Source and license details
 are retained in `NOTICE`.
 
+The field contract addresses the textarea itself: `inputRef` receives its native
+`HTMLTextAreaElement`, `inputId` assigns its stable id, and `inputLabel`,
+`inputDescription` and `inputDescribedBy` provide its accessible name and help.
+The default `inputSize="comfortable"` uses the shared 4rem minimum and 12rem
+maximum; `inputResize` selects one of the Textarea's named resize behaviors.
+`Textarea` owns both its standalone and borderless `variant="composer"`
+appearances, so consumers do not need to style a nested control.
+
 Run `bun run test:components` for the built Solid component contracts in
 Chromium and WebKit. The event-sequence tests exercise browser handling of
 composition flags, timers and focus recovery; manual operating-system IME
