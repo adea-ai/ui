@@ -1,67 +1,56 @@
 name: Bug report
-description: Something in the design system is broken or looks wrong.
+description: Report a reproducible problem or unexpected behavior
+title: '[bug] '
 labels: [bug]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for the report. Two things make a visual defect much faster to fix:
-        a screenshot, and which of the two themes it appears in.
-
   - type: textarea
-    id: what-happened
+    id: environment
     attributes:
-      label: What happened
-      description: What you saw, and what you expected instead.
-    validations:
-      required: true
-
-  - type: input
-    id: component
-    attributes:
-      label: Component
-      description: The Storybook title, e.g. "Layout / Side rail" or "Primitives / Forms / Select".
-      placeholder: Primitives / Overlays / Dialog
-    validations:
-      required: true
-
-  - type: dropdown
-    id: theme
-    attributes:
-      label: Theme
-      options:
-        - Dark
-        - Light
-        - Both
-      default: 0
-    validations:
-      required: true
-
-  - type: input
-    id: apps
-    attributes:
-      label: Where you saw it
-      description: The workshop, Adea, Cortana, or somewhere else — and the version.
-      placeholder: Adea 0.55.0, installed desktop build on macOS
-    validations:
-      required: true
-
-  - type: textarea
-    id: repro
-    attributes:
-      label: How to reproduce
-      description: The story URL is ideal. A code snippet is the next best thing.
+      label: Environment
+      description: Include the commit, branch, runtime/tool versions, operating system, and affected app or package.
       placeholder: |
-        1. Open the workshop
-        2. Go to Layout / Side rail
-        3. Hover the Artifacts row
+        Commit:
+        Branch:
+        Runtime/tool versions:
+        OS:
+        App/package:
     validations:
       required: true
-
   - type: textarea
-    id: evidence
+    id: description
     attributes:
-      label: Screenshot or recording
-      description: Drag an image in, or paste a link. A dark-theme and a light-theme pair is ideal.
+      label: Description
+      description: Explain what happened, what you expected, and what actually occurred.
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable reproduction.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Error output and diagnostics
+      description: Include relevant logs, stack traces, CI run links, dependency changes, or screenshots. Remove secrets first.
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - label: Blocks a deployment or pull request.
+        - label: Security or privacy impact is suspected; I will report details privately.
+        - label: Low priority or cosmetic.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and found no duplicate.
+          required: true
