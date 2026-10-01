@@ -219,6 +219,51 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
+
+      - name: Verify packed pane model and settings navigation
+        working-directory: packages/ui
+        run: bun run check:packed-layout && bun run check:packed-settings-navigation
+
+  packed-layout-renderer:
+    name: Packed layout renderer
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     timeout-minutes: 20
     env:
       PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -254,9 +299,9 @@ jobs:
       - name: Verify pinned headless engines
         run: node .github/scripts/check-playwright-runtime.mjs
 
-      - name: Verify packed pane model and renderer
+      - name: Verify packed pane renderer
         working-directory: packages/ui
-        run: bun run check:packed-layout && bun run check:packed-layout-renderer && bun run check:packed-settings-navigation
+        run: bun run check:packed-layout-renderer
 
   packed-appearance:
     name: Packed appearance
@@ -301,7 +346,52 @@ jobs:
 
       - name: Verify packed appearance interactions and SSR
         working-directory: packages/ui
-        run: bun run check:packed-appearance && bun run check:packed-modal-dialog
+        run: bun run check:packed-appearance
+
+  packed-modal-dialog:
+    name: Packed modal dialog
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_RUNTIME_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      ADEA_PACKED_UI_TARBALL: ${{ github.workspace }}/prepared-ui/package.tgz
+      ADEA_PACKED_UI_SHA256: ${{ needs.prepare.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Prepare Bun extraction
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download the verified UI package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: prepared-ui-package
+          path: ${{ github.workspace }}/prepared-ui/
+
+      - name: Verify the shared archive
+        run: |
+          printf '%s  %s\n' "$ADEA_PACKED_UI_SHA256" "$ADEA_PACKED_UI_TARBALL" | sha256sum --check
+
+      - name: Verify pinned headless engines
+        run: node .github/scripts/check-playwright-runtime.mjs
+
+      - name: Verify packed modal dialog
+        working-directory: packages/ui
+        run: bun run check:packed-modal-dialog
 
   packed-native-select:
     name: Packed native select
@@ -355,7 +445,9 @@ jobs:
       - prepare
       - packed-conversation
       - packed-layout
+      - packed-layout-renderer
       - packed-appearance
+      - packed-modal-dialog
       - packed-native-select
     runs-on: ubuntu-latest
     timeout-minutes: 15
