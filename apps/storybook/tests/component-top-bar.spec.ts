@@ -179,7 +179,9 @@ test('toolbar actions remain reachable without document overflow at narrow width
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       })
       await page.mouse.move(0, 0)
-      await expect(page.getByRole('tooltip')).toBeHidden()
+      // Count, not visibility: a tooltip caught mid exit-animation still
+      // matches the role, and a strict locator would trip over two of them.
+      await expect(page.getByRole('tooltip')).toHaveCount(0)
     }
   }
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
