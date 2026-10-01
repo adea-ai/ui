@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.90.3](https://github.com/adea-ai/ui/compare/v0.90.2...v0.90.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ui:** bound packed appearance CSS discovery ([#196](https://github.com/adea-ai/ui/issues/196)) ([6c430cd](https://github.com/adea-ai/ui/commit/6c430cd60ec02a3c080c71b3c65ec503ac554cc1))
+
 ## [0.90.2](https://github.com/adea-ai/ui/compare/v0.90.1...v0.90.2) (2026-10-01)
 
 
