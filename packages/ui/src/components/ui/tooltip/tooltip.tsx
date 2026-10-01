@@ -273,6 +273,22 @@ export function Tooltip(props: TooltipRootProps) {
     }
   }
 
+  // Kobalte dismisses on Escape only when its content owns the top-most
+  // layer, and a handoff keeps the previous tooltip's content mounted while
+  // it exits — swallowing the key for the tooltip that just took over.
+  // Listening on document (capture) closes this tooltip first; the layer's
+  // own handler still runs for anything stacked above it.
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape') return
+    markCloseIntent()
+    onOpenChange(false)
+  }
+  createEffect(() => {
+    if (isServer || !isOpen()) return
+    document.addEventListener('keydown', handleKeyDown, true)
+    onCleanup(() => document.removeEventListener('keydown', handleKeyDown, true))
+  })
+
   return (
     <TooltipInteractionContext.Provider value={interaction}>
       <KobalteTooltip

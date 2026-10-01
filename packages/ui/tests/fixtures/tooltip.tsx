@@ -9,6 +9,7 @@ function Fixture() {
 
   return (
     <main>
+      <h1 class="sr-only">Tooltip fixture</h1>
       <Tooltip openDelay={0} forceMount>
         <TooltipTrigger
           as="button"

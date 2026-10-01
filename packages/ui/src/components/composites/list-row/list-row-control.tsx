@@ -94,7 +94,10 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
         <Show when={local.trailing}>
           <span
             data-slot="list-row-trailing"
-            class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground"
+            class={cn(
+              'ms-auto flex shrink-0 items-center gap-1',
+              local.selected ? 'text-foreground' : 'text-muted-foreground'
+            )}
           >
             {local.trailing}
           </span>
