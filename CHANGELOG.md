@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.95.6](https://github.com/adea-ai/ui/compare/v0.95.5...v0.95.6) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ui:** reveal settings rows without panning clipped ancestors ([#223](https://github.com/adea-ai/ui/issues/223)) ([2099309](https://github.com/adea-ai/ui/commit/209930991be57f69dc354115ae0c6df96ec3bd75))
+
 ## [0.95.5](https://github.com/adea-ai/ui/compare/v0.95.4...v0.95.5) (2026-10-01)
 
 
