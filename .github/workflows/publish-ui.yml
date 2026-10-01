@@ -209,6 +209,10 @@ jobs:
         working-directory: packages/ui
         run: bun run check:packed-conversation
 
+      - name: Verify packed ListRow browser contract
+        working-directory: packages/ui
+        run: bun run check:packed-list-row
+
   packed-layout:
     name: Packed layout
     needs: prepare

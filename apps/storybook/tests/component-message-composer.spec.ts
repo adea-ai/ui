@@ -1,8 +1,12 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
+
+// The fixture's <output> also exposes role="status", so a bare getByRole would
+// resolve to two elements; the announcer is the one declaring role and live region.
+const announcer = (page: Page) => page.locator('[role="status"][aria-live="polite"]')
 
 let script: string
 let css: string
@@ -72,7 +76,7 @@ test('submitLabel names the field, action, and tooltip consistently', async ({ p
 
   await page.getByRole('button', { name: 'Hold next send' }).click()
   await reply.click()
-  await expect(page.getByRole('status')).toHaveText('Sending reply…')
+  await expect(announcer(page)).toHaveText('Sending reply…')
   await expect(page.getByRole('button', { name: 'Sending reply' })).toHaveAttribute(
     'aria-disabled',
     'true'
@@ -161,7 +165,7 @@ test('pending sends are announced, ignore duplicate Enter, and clear only after 
   await page.getByRole('button', { name: 'Hold next send' }).click()
   await page.getByRole('button', { name: 'Send message' }).click()
 
-  await expect(page.getByRole('status')).toHaveText('Sending message…')
+  await expect(announcer(page)).toHaveText('Sending message…')
   await expect(box).toHaveValue('A draft')
   await expect(page.getByRole('button', { name: 'Sending message' })).toHaveAttribute(
     'aria-disabled',
@@ -175,7 +179,7 @@ test('pending sends are announced, ignore duplicate Enter, and clear only after 
   await page.getByRole('button', { name: 'Confirm pending send' }).click()
   await expect(box).toHaveValue('')
   await expect(page.getByLabel('Send count')).toHaveText('1')
-  await expect(page.getByRole('status')).toBeEmpty()
+  await expect(announcer(page)).toBeEmpty()
 })
 
 test('a deferred rejection announces failure and retains the controlled draft', async ({
@@ -184,7 +188,7 @@ test('a deferred rejection announces failure and retains the controlled draft', 
   const box = page.getByRole('textbox', { name: 'Message', exact: true })
   await page.getByRole('button', { name: 'Hold next send' }).click()
   await page.getByRole('button', { name: 'Send message' }).click()
-  await expect(page.getByRole('status')).toHaveText('Sending message…')
+  await expect(announcer(page)).toHaveText('Sending message…')
   await page.getByRole('button', { name: 'Reject pending send' }).click()
 
   await expect(

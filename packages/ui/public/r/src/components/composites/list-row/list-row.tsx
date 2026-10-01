@@ -1,161 +1,93 @@
 import type { PolymorphicProps } from '@kobalte/core/polymorphic'
-import { Polymorphic } from '@kobalte/core/polymorphic'
-import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import type { ComponentProps, ValidComponent } from 'solid-js'
+import { createSignal, createUniqueId, Show, splitProps } from 'solid-js'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 import { cn } from '../../../lib/utils'
+import { ListRowControl, type ListRowControlProps } from './list-row-control'
 
-/**
- * ListRow.
- *
- * One row in a list of like things: a project, a session, a file, a person. It
- * is the highest-frequency component in an application of this shape, and the
- * one where a half-pixel of drift is most visible — twenty rows of a sidebar
- * make any inconsistency in height or padding obvious.
- *
- * The structure is fixed at four slots — `leading`, `children`, `meta`,
- * `trailing` — so rows that show an avatar, an icon, a status dot, a timestamp
- * and an overflow menu all sit at the same height without the caller doing
- * arithmetic.
- *
- * A row is only interactive when it is given an `as` that can be activated
- * (an anchor, a button) or an `onClick`. Click handlers default to a native
- * button; a row without either remains a `div` with no hover treatment.
- */
 export type ListRowProps<T extends ValidComponent = 'div'> = PolymorphicProps<
   T,
-  {
-    class?: string
-    /** Marks the row as current. Sets `aria-current` for a link row. */
-    selected?: boolean
-    /** Draw the row at the compact height. */
-    dense?: boolean
-    /** Leading slot: an avatar, an icon, a checkbox. */
-    leading?: JSX.Element
-    /** Trailing slot: a count, a menu trigger, a timestamp. */
-    trailing?: JSX.Element
-    /** A dimmed second line under the main content. */
-    description?: string
+  ListRowControlProps<T> & {
     /** A short explanation shown on pointer hover and keyboard focus. */
     tooltip?: string
     /** Native button type; defaults to `button` for button rows. */
     type?: ComponentProps<'button'>['type']
+    /** Additional accessible description preserved on plain and rich rows. */
+    'aria-describedby'?: string
   }
 >
 
-type ListRowBaseProps<T extends ValidComponent = 'div'> = ListRowProps<T> & {
-  as?: T
-  type?: ComponentProps<'button'>['type']
+type ListRowTooltipTargetProps<T extends ValidComponent = 'div'> = Omit<ListRowProps<T>, 'as'> & {
+  rowAs?: T
+  externalDescribedBy?: string
+  tooltipId?: string
+  tooltipOpen?: () => boolean
 }
-
-function ListRowBase<T extends ValidComponent = 'div'>(props: ListRowBaseProps<T>) {
-  const [local, rest] = splitProps(props as ListRowProps, [
-    'as',
-    'class',
-    'selected',
-    'dense',
-    'leading',
-    'trailing',
-    'description',
-    'tooltip',
-    'type',
-    'tabIndex',
-    'children',
-  ])
-
-  return (
-    <Polymorphic
-      as={(local.as ?? 'div') as T}
-      type={local.as === 'button' ? (local.type ?? 'button') : local.type}
-      tabIndex={local.tabIndex ?? (local.as === 'button' || local.as === 'a' ? 0 : undefined)}
-      aria-current={local.selected ? 'true' : undefined}
-      data-selected={local.selected ? '' : undefined}
-      class={cn(
-        'group/row flex min-w-0 items-center gap-2.5 rounded-md px-2 text-sm',
-        'transition-colors ease-out outline-none',
-        'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
-        {
-          'h-row-sm': local.dense && !local.description,
-          'h-row-md': !local.dense && !local.description,
-          'min-h-row-sm py-1': local.dense && local.description,
-          'min-h-row-md py-1.5': !local.dense && local.description,
-        },
-        {
-          'bg-primary-subtle text-foreground': local.selected,
-          'hover:bg-surface-hover': !local.selected,
-        },
-        local.class
-      )}
-      {...(rest as ComponentProps<'div'>)}
-    >
-      <Show when={local.leading}>
-        <span class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
-          {local.leading}
-        </span>
-      </Show>
-      <span class="flex min-w-0 flex-1 flex-col">
-        <span class="truncate">{local.children}</span>
-        <Show when={local.description}>
-          <span
-            data-slot="list-row-description"
-            class={cn(
-              'truncate text-xs',
-              local.selected ? 'text-foreground' : 'text-muted-foreground'
-            )}
-          >
-            {local.description}
-          </span>
-        </Show>
-      </span>
-      <Show when={local.trailing}>
-        <span
-          data-slot="list-row-trailing"
-          class={cn(
-            'ms-auto flex shrink-0 items-center gap-1',
-            local.selected ? 'text-foreground' : 'text-muted-foreground'
-          )}
-        >
-          {local.trailing}
-        </span>
-      </Show>
-    </Polymorphic>
-  )
-}
-
-type ListRowTooltipTargetProps<T extends ValidComponent = 'div'> = Omit<
-  ListRowBaseProps<T>,
-  'as'
-> & { rowAs?: T }
 
 /** Adapts TooltipTrigger's polymorphic target to ListRow's semantic element. */
 function ListRowTooltipTarget<T extends ValidComponent = 'div'>(
   props: ListRowTooltipTargetProps<T>
 ) {
-  const [local, rest] = splitProps(props as ListRowTooltipTargetProps, ['rowAs'])
-  return <ListRowBase as={local.rowAs} {...(rest as ListRowBaseProps<T>)} />
+  const [local, rest] = splitProps(props as ListRowTooltipTargetProps, [
+    'rowAs',
+    'externalDescribedBy',
+    'tooltipId',
+    'tooltipOpen',
+  ])
+  const describedBy = () => {
+    const ids = [
+      rest['aria-describedby'],
+      local.externalDescribedBy,
+      local.tooltipOpen?.() ? local.tooltipId : undefined,
+    ]
+      .flatMap((value) => value?.split(/\s+/) ?? [])
+      .filter(Boolean)
+    return [...new Set(ids)].join(' ') || undefined
+  }
+
+  return (
+    <ListRowControl
+      as={local.rowAs}
+      {...(rest as unknown as ListRowControlProps<T>)}
+      aria-describedby={describedBy()}
+    />
+  )
 }
 
+/**
+ * Rich row composition with optional hover and keyboard tooltip behavior.
+ * Import ListRowControl when the tooltip API is not needed and the consumer
+ * wants the plain renderer to tree-shake independently.
+ */
 export function ListRow<T extends ValidComponent = 'div'>(props: ListRowProps<T>) {
-  const [local, rest] = splitProps(props as ListRowProps, ['as', 'tooltip'])
+  const [local, rest] = splitProps(props as ListRowProps<T>, ['as', 'tooltip', 'aria-describedby'])
+  const [tooltipOpen, setTooltipOpen] = createSignal(false)
+  const tooltipId = `list-row-tooltip-${createUniqueId()}`
   const hasClickHandler = () => Boolean(rest.onClick || rest['on:click'])
   const rowAs = () => (local.as ?? (hasClickHandler() ? 'button' : 'div')) as T
   const rowType = () => (rowAs() === 'button' ? (rest.type ?? 'button') : rest.type)
+  const rowProps = () =>
+    ({
+      ...rest,
+      type: rowType(),
+      'aria-describedby': local['aria-describedby'],
+    }) as unknown as ListRowControlProps<T>
 
   return (
-    <Show
-      when={local.tooltip}
-      fallback={<ListRowBase as={rowAs()} type={rowType()} {...(rest as ListRowBaseProps<T>)} />}
-    >
-      <Tooltip>
+    <Show when={local.tooltip} fallback={<ListRowControl as={rowAs()} {...rowProps()} />}>
+      <Tooltip open={tooltipOpen()} onOpenChange={setTooltipOpen}>
         <TooltipTrigger
           as={ListRowTooltipTarget}
           rowAs={rowAs()}
           type={rowType()}
+          externalDescribedBy={local['aria-describedby']}
+          tooltipId={tooltipId}
+          tooltipOpen={tooltipOpen}
           {...(rest as ListRowTooltipTargetProps<T>)}
         >
           {rest.children}
         </TooltipTrigger>
-        <TooltipContent>{local.tooltip}</TooltipContent>
+        <TooltipContent id={tooltipId}>{local.tooltip}</TooltipContent>
       </Tooltip>
     </Show>
   )
@@ -163,12 +95,13 @@ export function ListRow<T extends ValidComponent = 'div'>(props: ListRowProps<T>
 
 /**
  * A group of rows with an optional heading and a scrolling body. The heading is
- * a plain label rather than a control: grouping is for reading, and a
- * disclosure on a list of five rows costs more attention than it saves.
+ * a plain label rather than a control: grouping is for reading, and a disclosure
+ * on a list of five rows costs more attention than it saves.
  */
-export function ListGroup(props: ComponentProps<'div'> & { label?: string; action?: JSX.Element }) {
+export function ListGroup(
+  props: ComponentProps<'div'> & { label?: string; action?: import('solid-js').JSX.Element }
+) {
   const [local, rest] = splitProps(props, ['class', 'label', 'action', 'children'])
-
   return (
     <div data-slot="list-group" class={cn('flex flex-col gap-0.5', local.class)} {...rest}>
       <Show when={local.label}>

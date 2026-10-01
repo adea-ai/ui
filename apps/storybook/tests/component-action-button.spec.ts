@@ -80,6 +80,93 @@ test('tooltip listens on the polymorphic link and opens from keyboard focus', as
   await expect(page.getByRole('tooltip')).toHaveText('Open details')
 })
 
+test('a controlled tooltip stays closed when its parent rejects open requests', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Rejected tooltip trigger' })
+  await expect(page.getByLabel('Active tooltip dismissal listeners')).toHaveText(
+    '0 document / 0 window'
+  )
+  await trigger.focus()
+  await expect(trigger).toBeFocused()
+  await expect(page.getByLabel('Rejected tooltip requests')).toHaveText('1')
+  await expect(trigger).toHaveAttribute('data-closed', '')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByLabel('Active tooltip dismissal listeners')).toHaveText(
+    '0 document / 0 window'
+  )
+
+  await trigger.hover()
+  await expect(page.getByLabel('Rejected tooltip requests')).toHaveText('2')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByLabel('Active tooltip dismissal listeners')).toHaveText(
+    '0 document / 0 window'
+  )
+})
+
+test('another tooltip requests one controlled close and leaves acceptance with the parent', async ({
+  page,
+}) => {
+  const source = page.getByRole('button', { name: 'Controlled tooltip handoff source' })
+  const sourceTooltip = page.getByRole('tooltip', { name: 'Controlled tooltip help' })
+  const target = page.getByRole('button', { name: 'Tooltip handoff target' })
+  const targetTooltip = page.getByRole('tooltip', { name: 'Handoff target help' })
+  const dismissalListeners = page.getByLabel('Active tooltip dismissal listeners')
+  const positioningListeners = page.getByLabel('Active popper positioning listeners')
+
+  await expect(dismissalListeners).toHaveText('0 document / 0 window')
+  await expect(positioningListeners).toHaveText('0')
+  await source.evaluate((element: HTMLButtonElement) => element.focus({ preventScroll: true }))
+  await expect(sourceTooltip).toBeVisible()
+  await expect(dismissalListeners).toHaveText(/^[1-9]\d* document \/ [1-9]\d* window$/)
+  const sourcePositioningListeners = Number(await positioningListeners.textContent())
+  expect(sourcePositioningListeners).toBeGreaterThan(0)
+
+  await target.hover()
+  await expect(targetTooltip).toBeVisible()
+  const maxPositioningListeners = Number(await positioningListeners.textContent())
+  expect(maxPositioningListeners).toBeGreaterThanOrEqual(sourcePositioningListeners)
+  // The handoff reaches the controlled parent once. It refuses this close, so
+  // the source stays open until the parent changes its controlled value.
+  await expect(page.getByLabel('Controlled tooltip close requests')).toHaveText('1')
+  await expect(sourceTooltip).toBeVisible()
+  await expect(source).toBeFocused()
+
+  await page.getByRole('button', { name: 'Accept tooltip close' }).click()
+  await expect(sourceTooltip).toBeHidden()
+  await expect(targetTooltip).toBeHidden()
+  await expect(dismissalListeners).toHaveText('0 document / 0 window')
+  expect(Number(await positioningListeners.textContent())).toBeLessThanOrEqual(
+    maxPositioningListeners
+  )
+
+  // Repeated opens do not add another positioning listener, and Escape still
+  // closes through the parent's controlled state.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await source.evaluate((element: HTMLButtonElement) => element.blur())
+    await source.evaluate((element: HTMLButtonElement) => element.focus({ preventScroll: true }))
+    await expect(sourceTooltip).toBeVisible()
+    expect(Number(await positioningListeners.textContent())).toBeLessThanOrEqual(
+      maxPositioningListeners
+    )
+    await source.press('Escape')
+    await expect(sourceTooltip).toBeHidden()
+    await expect(dismissalListeners).toHaveText('0 document / 0 window')
+    expect(Number(await positioningListeners.textContent())).toBeLessThanOrEqual(
+      maxPositioningListeners
+    )
+  }
+
+  await page.mouse.move(1, 1)
+  await page
+    .getByRole('button', { name: 'Unmount tooltip handoff fixture' })
+    .evaluate((element: HTMLButtonElement) => element.click())
+  await expect(source).toHaveCount(0)
+  await expect(target).toHaveCount(0)
+  await expect(positioningListeners).toHaveText('0')
+  await expect(dismissalListeners).toHaveText('0 document / 0 window')
+})
+
 test('tooltip dismisses on pointer activation and stays closed over the opened popover', async ({
   page,
 }) => {
