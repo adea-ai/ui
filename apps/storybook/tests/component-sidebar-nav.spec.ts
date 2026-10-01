@@ -256,7 +256,7 @@ test.describe('touch navigation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
   test('disclosures and navigation rows keep 44px coarse-pointer targets', async ({ page }) => {
-    expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true)
+    expect(await page.evaluate(() => matchMedia('(any-pointer: coarse)').matches)).toBe(true)
     const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
     for (const name of ['Projects', 'Conversations', 'Product', 'Research']) {
       const target = nav.getByRole('button', { name, exact: name !== 'Conversations' }).first()
@@ -282,7 +282,7 @@ test.describe('touch navigation', () => {
   })
 
   test('section creation actions remain discoverable without hover', async ({ page }) => {
-    expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
+    expect(await page.evaluate(() => matchMedia('(any-pointer: coarse)').matches)).toBe(true)
     for (const name of ['New Room', 'New conversation']) {
       const action = page.getByRole('button', { name, exact: true })
       await expect(action).toBeInViewport()
@@ -293,48 +293,79 @@ test.describe('touch navigation', () => {
   })
 })
 
-test('narrow navigation at doubled root text keeps labels and adjacent actions within bounds', async ({
+test('narrow navigation at doubled root text keeps wrapped labels and actions accessible in LTR and RTL', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%'
   })
-  const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
   const name = 'Very long project name that must remain accessible while its row label is truncated'
-  const row = nav.getByRole('button', { name, exact: true })
-  const label = row.locator('[data-stress-label]')
-  const bounds = (await nav.boundingBox())!
-  expect(bounds.width).toBeLessThanOrEqual(320)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
-  for (const control of [
-    row,
-    label,
-    page.getByRole('button', { name: 'Long project options', exact: true }),
-    page.getByRole('button', { name: 'Expand long project', exact: true }),
-  ]) {
-    const box = (await control.boundingBox())!
-    expect(box.x).toBeGreaterThanOrEqual(bounds.x)
-    expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1)
+  for (const direction of ['ltr', 'rtl'] as const) {
+    await page.evaluate((value) => {
+      document.documentElement.dir = value
+    }, direction)
+
+    const nav = page.getByRole('navigation', { name: 'Workspace navigation' })
+    const row = nav.getByRole('button', { name, exact: true })
+    const label = row.locator('[data-stress-label]')
+    const rowGroup = row.locator('xpath=..')
+    const actions = rowGroup.locator('[data-slot="sidebar-nav-row-actions"]')
+    const options = page.getByRole('button', { name: 'Long project options', exact: true })
+    const expand = page.getByRole('button', { name: 'Expand long project', exact: true })
+    const bounds = (await nav.boundingBox())!
+    const rowBounds = (await row.boundingBox())!
+    const actionsBounds = (await actions.boundingBox())!
+
+    expect(bounds.x, direction).toBeGreaterThanOrEqual(0)
+    expect(bounds.x + bounds.width, direction).toBeLessThanOrEqual(320)
+    expect(bounds.width, direction).toBeLessThanOrEqual(320)
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+      direction
+    ).toBeLessThanOrEqual(320)
+    await expect(row, direction).toHaveAccessibleName(name)
+    expect(actionsBounds.y, `${direction}: actions wrap below the item`).toBeGreaterThanOrEqual(
+      rowBounds.y + rowBounds.height
+    )
+
+    for (const control of [row, label, actions, options, expand]) {
+      const box = (await control.boundingBox())!
+      expect(box.x, `${direction}: ${control}`).toBeGreaterThanOrEqual(bounds.x)
+      expect(box.x + box.width, `${direction}: ${control}`).toBeLessThanOrEqual(
+        bounds.x + bounds.width + 1
+      )
+    }
+    expect(
+      await label.evaluate((element) => element.scrollWidth > element.clientWidth),
+      direction
+    ).toBe(true)
+    await expect(options).toHaveAccessibleName('Long project options')
+    await expect(expand).toHaveAccessibleName('Expand long project')
+
+    await row.focus()
+    await page.keyboard.press('Tab')
+    await expect(options).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(expand).toBeFocused()
+    await expect(
+      page.getByRole('tooltip', { name: 'Long project options', exact: true })
+    ).toHaveCount(0)
+    const tooltip = page.getByRole('tooltip')
+    await expect(tooltip).toHaveText('Expand long project')
+    const tooltipId = await tooltip.getAttribute('id')
+    expect(tooltipId).not.toBeNull()
+    await expect(expand).toHaveAttribute('aria-describedby', tooltipId!)
+    await page.keyboard.press('Escape')
+    await expect(tooltip).toHaveCount(0)
+    await expect(expand).toBeFocused()
+    // Role queries stop matching as soon as the closed tooltip flips
+    // aria-hidden, but the still-mounted node composites its text at partial
+    // opacity through the exit animation and axe still audits it. Scan only
+    // once the node itself has unmounted.
+    await expect
+      .poll(() => page.evaluate(() => document.querySelectorAll('[role="tooltip"]').length))
+      .toBe(0)
+    expect((await new AxeBuilder({ page }).analyze()).violations, direction).toEqual([])
   }
-  expect(await label.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
-  await row.focus()
-  await page.keyboard.press('Tab')
-  await expect(
-    page.getByRole('button', { name: 'Long project options', exact: true })
-  ).toBeFocused()
-  await page.keyboard.press('Tab')
-  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
-  await expect(
-    page.getByRole('tooltip', { name: 'Long project options', exact: true })
-  ).toHaveCount(0)
-  const tooltip = page.getByRole('tooltip')
-  await expect(tooltip).toHaveText('Expand long project')
-  await expect(
-    page.getByRole('button', { name: 'Expand long project', exact: true })
-  ).toHaveAttribute('aria-describedby', (await tooltip.getAttribute('id'))!)
-  await page.keyboard.press('Escape')
-  await expect(tooltip).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Expand long project', exact: true })).toBeFocused()
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
