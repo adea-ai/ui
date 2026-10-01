@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.93.2](https://github.com/adea-ai/ui/compare/v0.93.1...v0.93.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* verify settings-navigation against the shared packed archive ([#204](https://github.com/adea-ai/ui/issues/204)) ([3e5af3b](https://github.com/adea-ai/ui/commit/3e5af3b18d949cf908822c0d3159ca5c81e6d381))
+
 ## [0.93.1](https://github.com/adea-ai/ui/compare/v0.93.0...v0.93.1) (2026-10-01)
 
 
