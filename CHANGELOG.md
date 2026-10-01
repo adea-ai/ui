@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.94.0](https://github.com/adea-ai/ui/compare/v0.93.2...v0.94.0) (2026-10-01)
+
+
+### Features
+
+* **ui:** tighten the side rail and drive its states from the accent ([#194](https://github.com/adea-ai/ui/issues/194)) ([be6ab4d](https://github.com/adea-ai/ui/commit/be6ab4d5b2cfce3c2665a7cbba5f85a1f3787311))
+
 ## [0.93.2](https://github.com/adea-ai/ui/compare/v0.93.1...v0.93.2) (2026-10-01)
 
 
