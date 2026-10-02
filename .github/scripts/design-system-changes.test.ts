@@ -526,6 +526,15 @@ test('Pages publishes the exact successful main build and keeps registry install
   )
   expect(currentMainBuild?.if).toContain("steps.guard.outputs.source == 'current-main'")
   expect(currentMainBuild?.run).toBe('bun run storybook:build')
+  const uiPackageBuildIndex = steps.findIndex(
+    (step) => step.name === 'Build the ui package for a current-main build'
+  )
+  expect(uiPackageBuildIndex).toBeGreaterThanOrEqual(0)
+  expect(steps[uiPackageBuildIndex]?.if).toBe(currentMainBuild?.if)
+  expect(steps[uiPackageBuildIndex]?.run).toBe('bun run --cwd packages/ui build')
+  expect(uiPackageBuildIndex).toBeLessThan(
+    steps.findIndex((step) => step.name.includes('Build Storybook'))
+  )
   const download = pages.jobs['prepare'].steps.find((step) => step.name.includes('this run'))
   expect(download?.with?.name).toBe('storybook-static')
   expect(download?.with?.['run-id']).toContain('github.event.workflow_run.id')

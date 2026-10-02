@@ -80,6 +80,14 @@ jobs:
         if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
         run: bun install --frozen-lockfile
 
+      - name: Build the ui package for a current-main build
+        if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
+        # Storybook resolves the @adea-ai/ui "./lib/*" export through its
+        # "import" condition into dist/, exactly like the gates workshop
+        # build does. Without a built package the fallback cannot resolve
+        # @adea-ai/ui/lib/tokens or themes and the build fails.
+        run: bun run --cwd packages/ui build
+
       - name: Build Storybook from current main
         if: steps.guard.outputs.source == 'manual' || steps.guard.outputs.source == 'current-main'
         run: bun run storybook:build
