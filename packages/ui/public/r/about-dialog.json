@@ -1,0 +1,26 @@
+{
+  "name": "about-dialog",
+  "type": "registry:ui",
+  "title": "About Dialog",
+  "description": "Shared app identity and version support dialog.",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/alert",
+    "@adea-ai/ui/dialog"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/about-dialog/about-dialog.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/about-dialog/about-dialog.tsx"
+    },
+    {
+      "path": "src/components/composites/about-dialog/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/about-dialog/index.ts"
+    }
+  ]
+}

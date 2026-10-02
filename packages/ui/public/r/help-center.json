@@ -1,0 +1,28 @@
+{
+  "name": "help-center",
+  "type": "registry:ui",
+  "title": "Help Center",
+  "description": "Shared keyboard shortcuts and project resource page.",
+  "dependencies": [
+    "lucide-solid@^1.48.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/alert",
+    "@adea-ai/ui/card",
+    "@adea-ai/ui/kbd",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/help-center/help-center.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/help-center/help-center.tsx"
+    },
+    {
+      "path": "src/components/composites/help-center/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/help-center/index.ts"
+    }
+  ]
+}

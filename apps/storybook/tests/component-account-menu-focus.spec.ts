@@ -61,7 +61,7 @@ for (const closeMethod of ['Close button', 'Escape']) {
 
     const dialog = page.getByRole('dialog', { name: 'Version & updates' })
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByRole('button').first()).toBeFocused()
+    await expect(dialog).toBeFocused()
 
     if (closeMethod === 'Escape') {
       await page.keyboard.press('Escape')

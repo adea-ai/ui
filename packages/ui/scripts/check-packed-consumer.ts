@@ -88,6 +88,18 @@ const coreSamples: PackedSample[] = [
     ],
   },
   {
+    name: 'about-dialog',
+    imports: "import { AboutDialog } from '@adea-ai/ui/components/composites/about-dialog'",
+    jsx: '<AboutDialog appName="Cortana" appIcon="/app-icon.svg" version="0.64.0" platform="desktop" copyright="Contributors" sourceUrl="https://github.com/adea-ai/cortana" open onOpenChange={() => {}} />',
+    source: 'composites/about-dialog',
+  },
+  {
+    name: 'help-center',
+    imports: "import { HelpCenter } from '@adea-ai/ui/components/composites/help-center'",
+    jsx: '<HelpCenter appName="Adea" shortcuts={[{ label: "Settings", keys: ["⌘", ","] }]} links={[{ label: "Project", url: "https://github.com/adea-ai/adea" }]} />',
+    source: 'composites/help-center',
+  },
+  {
     name: 'tooltip-subpath',
     imports:
       "import { Tooltip, TooltipContent, TooltipTrigger } from '@adea-ai/ui/components/ui/tooltip'",
