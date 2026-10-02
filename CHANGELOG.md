@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.99.1](https://github.com/adea-ai/ui/compare/v0.99.0...v0.99.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** steady theme menus, accent selection indicators, one default swatch ([#260](https://github.com/adea-ai/ui/issues/260)) ([ccf557b](https://github.com/adea-ai/ui/commit/ccf557bf7925b4cc07e94a0247295f60cd9aa2a5))
+
 ## [0.99.0](https://github.com/adea-ai/ui/compare/v0.98.0...v0.99.0) (2026-10-02)
 
 
