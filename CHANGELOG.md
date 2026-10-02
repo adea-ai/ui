@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.97.3](https://github.com/adea-ai/ui/compare/v0.97.2...v0.97.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** carry foreground ink in the About dialog's body text ([#242](https://github.com/adea-ai/ui/issues/242)) ([0f9d81a](https://github.com/adea-ai/ui/commit/0f9d81a8469ca8e4844583a773de9f7295342fca))
+
 ## [0.97.2](https://github.com/adea-ai/ui/compare/v0.97.1...v0.97.2) (2026-10-02)
 
 
