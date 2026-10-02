@@ -41,9 +41,15 @@ import { menuContentPadding, menuItem, overlayMotion, overlaySurface } from '../
  * - `Content` must be a direct child of `Menu`, and the `Viewport` is a **sibling
  *   of the menus** — not inside them. All the panels share one viewport, which is
  *   what lets the bar animate between them instead of each panel popping in place.
+ * - The viewport is an empty surface. Each `Content` reaches it through Kobalte's
+ *   `Portal`, which mounts the panel inside the viewport while keeping it in its
+ *   own `Menu`'s context. A `Content` rendered anywhere else — the viewport's own
+ *   children included — has no `Menu` above it, and Kobalte throws
+ *   `useMenuRootContext must be used within a MenuRoot` the moment a panel opens.
  *
- * The wrapper enforces the last of those by rendering the `Viewport` itself, so a
- * caller cannot forget it and get a menu whose panels never appear.
+ * The wrapper enforces the last two by rendering the `Viewport` itself and by
+ * portalling every `NavigationMenuContent`, so a caller cannot forget either and
+ * get a menu whose panels never appear.
  */
 
 export type NavigationMenuProps = ComponentProps<typeof KobalteNavigationMenu.Root> & {
@@ -112,25 +118,41 @@ export function NavigationMenuContent(props: ComponentProps<typeof KobalteNaviga
   const [local, rest] = splitProps(props, ['class', 'children'])
 
   return (
-    <KobalteNavigationMenu.Content
-      class={cn(
-        'grid w-max gap-1 p-2',
+    <KobalteNavigationMenu.Portal>
+      <KobalteNavigationMenu.Content
+        class={cn(
+          // Absolute so the viewport sizes to the active panel's measured box and
+          // animates between panels, rather than stacking them.
+          'absolute top-0 left-0 grid w-max gap-1 p-2 outline-none',
+          // The motion is the panel's, not the viewport's. Kobalte keeps an
+          // outgoing panel mounted until the viewport's own animation ends; a
+          // viewport that carries an entrance animation never fires that again
+          // after it opens, so the previous panel would stay painted under the
+          // next one.
+          overlayMotion,
         // A two-column panel is the shape most menu bars want, and it is opt-in
         // through this hook rather than a prop because the column count is a
         // layout decision the caller's content makes.
-        'data-[wide]:grid-cols-2',
-        local.class
-      )}
-      {...rest}
-    >
-      {local.children}
-    </KobalteNavigationMenu.Content>
+          'data-[wide]:grid-cols-2',
+          local.class
+        )}
+        {...rest}
+      >
+        {local.children}
+      </KobalteNavigationMenu.Content>
+    </KobalteNavigationMenu.Portal>
   )
 }
 
 /**
  * The shared panel surface. One per menu bar, and the wrapper supplies it — but
  * exported so a caller with an unusual layout can place it themselves.
+ *
+ * It renders no children: the panels arrive through each `NavigationMenuContent`'s
+ * portal. Kobalte positions it under the bar and publishes the active panel's size
+ * as `--kb-navigation-menu-viewport-*`, which the surface animates between.
+ * `box-content` keeps the border outside that measured size so a panel is never
+ * clipped by its own frame.
  */
 export function NavigationMenuViewport(
   props: ComponentProps<typeof KobalteNavigationMenu.Viewport>
@@ -139,24 +161,16 @@ export function NavigationMenuViewport(
 
   return (
     <KobalteNavigationMenu.Viewport
+      data-slot="navigation-menu-viewport"
       class={cn(
-        'absolute top-full left-0 isolate z-(--z-menu) mt-1.5 flex justify-center overflow-hidden',
+        overlaySurface,
+        'isolate z-(--z-menu) mt-1.5 box-content list-none overflow-hidden',
         'h-(--kb-navigation-menu-viewport-height) w-(--kb-navigation-menu-viewport-width)',
-        'origin-top transition-[width,height] duration-200 ease-out',
+        'origin-(--kb-menu-content-transform-origin) transition-[width,height] duration-200 ease-out',
         local.class
       )}
       {...rest}
-    >
-      <div
-        class={cn(
-          overlaySurface,
-          overlayMotion,
-          'w-full rounded-lg border border-border bg-popover p-1 shadow-lg'
-        )}
-      >
-        <KobalteNavigationMenu.Content />
-      </div>
-    </KobalteNavigationMenu.Viewport>
+    />
   )
 }
 
