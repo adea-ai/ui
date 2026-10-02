@@ -228,6 +228,9 @@ export function RootExportConsumer() {
       let context: BrowserContext | undefined
       try {
         context = await browser.newContext({ viewport: { width: 640, height: 720 } })
+        // macOS WebKit follows the system preference to skip buttons on Tab.
+        const rowActionKey =
+          engine === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
         const page = await context.newPage()
         const pageErrors: string[] = []
         page.on('pageerror', (error) => pageErrors.push(error.message))
@@ -293,14 +296,14 @@ export function RootExportConsumer() {
 
         const rename = page.getByRole('button', { name: 'Rename file-0' })
         await expect(firstFile).toBeFocused()
-        await firstFile.press('Tab')
+        await firstFile.press(rowActionKey)
         await expect(rename).toBeFocused()
         await rename.press('ArrowDown')
         await expect(page.getByLabel('Active row')).toHaveText('file-0')
         await rename.press('Enter')
         await expect(page.getByLabel('Action count')).toHaveText('1')
         const copy = page.getByRole('button', { name: 'Copy file-0' })
-        await rename.press('Tab')
+        await rename.press(rowActionKey)
         await expect(copy).toBeFocused()
         await copy.press('ArrowDown')
         await expect(page.getByLabel('Active row')).toHaveText('file-0')
