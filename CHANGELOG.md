@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.98.0](https://github.com/adea-ai/ui/compare/v0.97.7...v0.98.0) (2026-10-02)
+
+
+### Features
+
+* **ui:** make the dragged pane its own ghost with grab cursors ([#255](https://github.com/adea-ai/ui/issues/255)) ([3914cf5](https://github.com/adea-ai/ui/commit/3914cf5443302595d7c31bc5ef701e31941ae91b))
+
 ## [0.97.7](https://github.com/adea-ai/ui/compare/v0.97.6...v0.97.7) (2026-10-02)
 
 
