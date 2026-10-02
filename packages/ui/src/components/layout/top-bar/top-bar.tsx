@@ -125,6 +125,13 @@ export type TopBarSearchProps = ComponentProps<'button'> & {
   placeholder?: string
   /** The shortcut chip drawn at the trailing edge, e.g. "⌘K". */
   shortcut?: string
+  /**
+   * The parseable chord behind `shortcut`, e.g. `Meta+K`. The chip is
+   * `aria-hidden` — reading it out would pollute the button's accessible
+   * name — so this is what assistive technology announces instead. Supply it
+   * whenever `shortcut` is drawn.
+   */
+  keyshortcuts?: string
 }
 
 /**
@@ -137,7 +144,7 @@ export type TopBarSearchProps = ComponentProps<'button'> & {
  * like from the user's side.
  */
 export function TopBarSearch(props: TopBarSearchProps) {
-  const [local, rest] = splitProps(props, ['class', 'placeholder', 'shortcut'])
+  const [local, rest] = splitProps(props, ['class', 'placeholder', 'shortcut', 'keyshortcuts'])
 
   return (
     <button
@@ -151,12 +158,16 @@ export function TopBarSearch(props: TopBarSearchProps) {
         'window-no-drag',
         local.class
       )}
+      aria-keyshortcuts={local.keyshortcuts}
       {...rest}
     >
       <Search aria-hidden="true" class="size-4 shrink-0 sm:hidden" />
       <span class="sr-only sm:not-sr-only sm:truncate">{local.placeholder ?? 'Search'}</span>
       <Show when={local.shortcut}>
-        <kbd class="bg-muted ms-auto hidden h-5 shrink-0 items-center rounded-sm border border-border px-1.5 font-mono text-2xs sm:flex">
+        <kbd
+          aria-hidden="true"
+          class="bg-muted ms-auto hidden h-5 shrink-0 items-center rounded-sm border border-border px-1.5 font-mono text-2xs sm:flex"
+        >
           {local.shortcut}
         </kbd>
       </Show>

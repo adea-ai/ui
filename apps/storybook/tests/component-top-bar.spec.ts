@@ -83,7 +83,10 @@ test('toolbar actions remain reachable without document overflow at narrow width
   await page.addScriptTag({ content: script })
   const toolbar = page.locator('[data-slot="top-bar"][aria-label="Workspace toolbar"]')
   const titleOnlyToolbar = page.locator('[data-slot="top-bar"][aria-label="Title-only toolbar"]')
-  const search = toolbar.getByRole('button', { name: 'Search workspace', exact: true })
+  const search = toolbar.getByRole('button', {
+    name: 'Search projects, files and sessions',
+    exact: true,
+  })
   const tabKey =
     test.info().project.name === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
   await expect(titleOnlyToolbar).toBeVisible()
@@ -175,7 +178,12 @@ test('toolbar actions remain reachable without document overflow at narrow width
           ).toEqual([])
         }
         await page.keyboard.press('Enter')
-        await expect(page.locator('output')).toHaveText((await button.getAttribute('aria-label'))!)
+        // The search button has no aria-label on purpose: its name is the
+        // placeholder span, which is exactly what the fixture records.
+        const firedLabel =
+          (await button.getAttribute('aria-label')) ??
+          (await button.locator('span').first().textContent())!
+        await expect(page.locator('output')).toHaveText(firedLabel)
         if (index < (await buttons.count()) - 1) await page.keyboard.press(tabKey)
       }
       await page.evaluate(() => {
@@ -194,4 +202,20 @@ test('toolbar actions remain reachable without document overflow at narrow width
     .poll(() => page.evaluate(() => document.querySelectorAll('[role="tooltip"]').length))
     .toBe(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
+test('the search chord stays out of the button accessible name', async ({ page }) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+
+  // The name is the placeholder alone; the drawn ⌘K chip is aria-hidden and the
+  // parseable chord lives on aria-keyshortcuts — the same contract as the menu
+  // items. A name that reads "… sessions ⌘K" is the regression this guards.
+  const search = page.locator('[data-slot="top-bar-search"]')
+  await expect(search).toHaveAccessibleName('Search projects, files and sessions')
+  await expect(search).toHaveAttribute('aria-keyshortcuts', 'Meta+K')
+  await expect(search.locator('kbd')).toHaveAttribute('aria-hidden', 'true')
 })
