@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.97.0](https://github.com/adea-ai/ui/compare/v0.96.0...v0.97.0) (2026-10-02)
+
+
+### Features
+
+* **ui:** standardize desktop support surfaces ([#232](https://github.com/adea-ai/ui/issues/232)) ([d0a452a](https://github.com/adea-ai/ui/commit/d0a452a859556d9ad023cda93161ae23fa15f032))
+
 ## [0.96.0](https://github.com/adea-ai/ui/compare/v0.95.7...v0.96.0) (2026-10-02)
 
 
