@@ -108,3 +108,28 @@ test('a rail menu can open beside its trigger with its bottom aligned', async ({
   await page.keyboard.press('Escape')
   await expect(opener).toBeFocused()
 })
+
+test('a rail tooltip keeps its positioning separate from the reopened menu', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    await opener.focus()
+    await expect(page.getByRole('tooltip')).toBeVisible()
+    await opener.click()
+    const menu = page.getByRole('menu')
+    await expect(menu).toBeVisible()
+    await expect
+      .poll(async () => {
+        const trigger = await opener.boundingBox()
+        const panel = await menu.boundingBox()
+        return trigger && panel ? Math.abs(panel.x - trigger.x - trigger.width - 4) : Infinity
+      })
+      .toBeLessThan(1)
+    await page.keyboard.press('Escape')
+    await expect(menu).toHaveCount(0)
+    await expect(opener).toBeFocused()
+  }
+  expect(errors).toEqual([])
+})

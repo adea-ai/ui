@@ -151,7 +151,6 @@ export function AccountMenu(props: AccountMenuProps) {
         >
           <UserRound aria-hidden="true" />
         </TooltipTrigger>
-        <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
         <DropdownMenuContent
           hideArrow={local.hideArrow}
           class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
@@ -204,6 +203,8 @@ export function AccountMenu(props: AccountMenuProps) {
           </Show>
         </DropdownMenuContent>
       </DropdownMenu>
+      {/* Both overlays own a Popper context; the tooltip must stay outside the menu root. */}
+      <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
     </Tooltip>
   )
 }
