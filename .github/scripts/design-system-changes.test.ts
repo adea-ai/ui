@@ -518,7 +518,7 @@ test('Pages publishes the exact successful main build and keeps registry install
   expect(helperCheckoutIndex).toBeLessThan(guardIndex)
   expect(guardIndex).toBeLessThan(sourceCheckoutIndex)
   expect(sourceCheckout?.if).toBe("steps.guard.outputs.publish == 'true'")
-  expect(sourceCheckout?.with?.ref).toBe('${{ steps.guard.outputs.head_sha }}')
+  expect(sourceCheckout?.with?.ref).toBe('${{ steps.guard.outputs.revision }}')
   const guard = steps[guardIndex]?.run
   expect(guard).toBe('node .github/scripts/registry-pages.mjs')
   const currentMainBuild = pages.jobs['prepare'].steps.find((step) =>

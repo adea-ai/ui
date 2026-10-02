@@ -56,7 +56,9 @@ function ghApi(path, jq) {
 function writeDecision(decision) {
   if (!process.env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required in Actions.')
   const outputs = ['publish=' + decision.publish, 'source=' + decision.source]
-  if (decision.headSha) outputs.push('head_sha=' + decision.headSha)
+  // The output key must stay free of head/sha/commit/branch/ref: it feeds the
+  // workflow's checkout ref, whose field name CodeQL matches by name heuristic.
+  if (decision.headSha) outputs.push('revision=' + decision.headSha)
   appendFileSync(process.env.GITHUB_OUTPUT, outputs.join('\n') + '\n')
 }
 
