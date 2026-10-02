@@ -590,7 +590,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 <p class="text-2xs font-semibold tracking-widest text-muted-foreground uppercase">
                   Installed version
                 </p>
-                <p class="text-xl font-semibold tracking-tight text-primary">
+                <p class="text-xl font-semibold tracking-tight text-foreground">
                   v{state()?.currentVersion || local.fallbackVersion || '0.1.0'}
                 </p>
                 <p class="text-sm text-muted-foreground">
@@ -757,7 +757,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
           <Show when={notes()}>
             <div class="flex flex-col gap-2">
               <div class="flex items-center gap-2">
-                <h2 id="update-release-notes" class="text-sm font-semibold text-primary">
+                <h2 id="update-release-notes" class="text-sm font-semibold text-foreground">
                   What changed in this release
                 </h2>
                 <Badge variant="subtle" size="sm">
@@ -780,7 +780,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
           <Show when={changelog()}>
             <div class="flex flex-col gap-2">
-              <h2 id="update-changelog" class="text-sm font-semibold text-primary">
+              <h2 id="update-changelog" class="text-sm font-semibold text-foreground">
                 Installed changelog
               </h2>
               <p class="text-xs text-muted-foreground">
