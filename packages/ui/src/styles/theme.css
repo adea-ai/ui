@@ -601,9 +601,9 @@
   --tooltip-max-width: min(16rem, calc(100vw - 1.5rem));
 
   /* Shadows. Two parts on purpose: a tinted spread that reads as elevation, plus a
-     hairline that keeps an edge visible when the surface behind a panel is the
-     same colour as the panel — which is the light theme, where `--card` and
-     `--background` are both white. */
+     hairline that keeps an edge visible when the surface behind a panel is
+     nearly the same colour as the panel — which is the light theme, where `--card`
+     is one faint step off a white `--background`. */
   --shadow-2xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
   --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.06);
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.06), 0 0 0 1px oklch(0 0 0 / 0.04);

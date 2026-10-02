@@ -106,8 +106,9 @@ Two more fills are painted _onto_ a surface rather than being surfaces:
 translucent in the status family, because a hover fill has to work over whatever is
 beneath it while a status tint has to keep its meaning.
 
-**A card always carries its own edge.** In the light theme `--card` and
-`--background` are both white, so a borderless card there is invisible. Making the
+**A card always carries its own edge.** In the light theme `--card` is
+`oklch(0.965 0 0)` on a white `--background` — a 3.5% step, too faint to read as an
+edge — so a borderless card there all but disappears. Making the
 border structural rather than optional is what stops one app's cards from reading as
 floating panels and another's as nothing at all.
 
