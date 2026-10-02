@@ -47,18 +47,6 @@ export const Default: Story = {
   ),
 }
 
-/** A tooltip can omit its caret when the floating label should read as a plain note. */
-export const WithoutArrow: Story = {
-  render: () => (
-    <Tooltip>
-      <TooltipTrigger as={Button} variant="outline">
-        Hover me
-      </TooltipTrigger>
-      <TooltipContent hideArrow>Runs the soak lane with a 24-hour budget.</TooltipContent>
-    </Tooltip>
-  ),
-}
-
 /**
  * An icon-only control, which is the tooltip's main use.
  *
@@ -91,9 +79,8 @@ export const OnAnIconButton: Story = {
 /**
  * A tooltip carrying a keyboard shortcut.
  *
- * `Kbd` re-colours itself inside a tooltip, because the tooltip's own surface is
- * the theme-invariant scrim — a key cap drawn for the canvas reads as a hole
- * there.
+ * `Kbd` ships no tooltip variant: the tip's card surface is the same canvas a
+ * key cap is drawn for, so the default chip reads unchanged.
  */
 export const WithShortcut: Story = {
   render: () => (

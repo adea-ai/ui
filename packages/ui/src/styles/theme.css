@@ -614,6 +614,11 @@
   --sidebar-width-compact: 3rem;
   --topbar-height: 3rem;
   --statusbar-height: 1.75rem;
+  /* A tip wraps before it can overflow the window carrying it: the 16rem
+     readable measure governs on a desktop, but the measure scales with the root
+     font while the window does not, so at a 200% zoom the viewport term wins and
+     a tooltip can never push its document wider than itself. */
+  --tooltip-max-width: min(16rem, calc(100vw - 1.5rem));
 
   /* Shadows. Two parts on purpose: a tinted spread that reads as elevation, plus a
      hairline that keeps an edge visible when the surface behind a panel is the

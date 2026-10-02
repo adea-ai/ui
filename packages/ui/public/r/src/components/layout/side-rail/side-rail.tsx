@@ -2,6 +2,7 @@ import { Polymorphic, type PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
 import { Show, createMemo, createSignal, splitProps } from 'solid-js'
 import { Portal } from 'solid-js/web'
+import { tooltipTip } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 import { SideRailContext, createSideRailValue } from './side-rail-context'
 
@@ -305,8 +306,8 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
               aria-hidden="true"
               data-slot="side-rail-tip"
               class={cn(
-                'bg-card text-card-foreground border-border pointer-events-none fixed z-(--z-tooltip)',
-                'flex items-center gap-2.5 rounded-md border ps-3 pe-3 text-sm font-medium whitespace-nowrap shadow-lg'
+                tooltipTip,
+                'pointer-events-none fixed z-(--z-tooltip) flex items-center gap-2.5 ps-3 pe-3 whitespace-nowrap'
               )}
               style={{
                 top: `${position().top}px`,
@@ -398,7 +399,10 @@ export function SideRailButton(
             <div
               aria-hidden="true"
               data-slot="side-rail-tip"
-              class="bg-card text-card-foreground border-border pointer-events-none fixed z-(--z-tooltip) flex items-center gap-2.5 rounded-md border ps-3 pe-3 text-sm font-medium whitespace-nowrap shadow-lg"
+              class={cn(
+                tooltipTip,
+                'pointer-events-none fixed z-(--z-tooltip) flex items-center gap-2.5 ps-3 pe-3 whitespace-nowrap'
+              )}
               style={{
                 top: `${position().top}px`,
                 left: `${position().left}px`,

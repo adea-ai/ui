@@ -4,25 +4,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../src/components/ui
 import '../../src/styles/globals.css'
 
 function Fixture() {
-  const [hideArrow, setHideArrow] = createSignal(false)
   const [controlledOpen, setControlledOpen] = createSignal(false)
 
   return (
     <main>
       <h1 class="sr-only">Tooltip fixture</h1>
       <Tooltip openDelay={0} forceMount>
-        <TooltipTrigger
-          as="button"
-          type="button"
-          onKeyDown={(event: KeyboardEvent) => {
-            if (event.key === 'ArrowRight') setHideArrow((hidden) => !hidden)
-          }}
-        >
-          Press ArrowRight to toggle the tooltip arrow
+        <TooltipTrigger as="button" type="button">
+          Focus to open the force-mounted tooltip
         </TooltipTrigger>
-        <TooltipContent hideArrow={hideArrow()}>Tooltip with optional arrow</TooltipContent>
+        <TooltipContent>Tooltip without a caret</TooltipContent>
       </Tooltip>
-      <output aria-label="Arrow visibility">{hideArrow() ? 'hidden' : 'shown'}</output>
       <button type="button">Next action</button>
       <button type="button" onClick={() => setControlledOpen(true)}>
         Open controlled tooltip
