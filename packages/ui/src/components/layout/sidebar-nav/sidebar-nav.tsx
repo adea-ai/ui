@@ -182,7 +182,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
           })}
         />
       </Show>
-      <span class="min-w-0 flex-1 truncate">{local.label}</span>
+      <span class="min-w-0 flex-1 truncate text-start">{local.label}</span>
       <Show when={local.count !== undefined}>
         <span class="shrink-0 tabular-nums text-muted-foreground">{local.count}</span>
       </Show>
@@ -290,7 +290,7 @@ export function SidebarNavLabel(props: ComponentProps<'span'>) {
   return (
     <span
       data-slot="sidebar-nav-label"
-      class={cn('min-w-0 flex-1 truncate', local.class)}
+      class={cn('min-w-0 flex-1 truncate text-start', local.class)}
       {...rest}
     />
   )
