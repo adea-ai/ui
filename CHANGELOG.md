@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.96.0](https://github.com/adea-ai/ui/compare/v0.95.7...v0.96.0) (2026-10-02)
+
+
+### Features
+
+* **catalog-browser:** compact rows with accent metadata and tighter detail ([#229](https://github.com/adea-ai/ui/issues/229)) ([6f15a05](https://github.com/adea-ai/ui/commit/6f15a054077fd063ec59789eb14365d922b7c4e8))
+
+
+### Bug Fixes
+
+* **ci:** build the ui package before the Pages fallback Storybook build ([#228](https://github.com/adea-ai/ui/issues/228)) ([ebde23a](https://github.com/adea-ai/ui/commit/ebde23ac3807729159d79142654afc24fd1ecd61))
+
 ## [0.95.7](https://github.com/adea-ai/ui/compare/v0.95.6...v0.95.7) (2026-10-01)
 
 
