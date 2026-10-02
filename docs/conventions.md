@@ -216,8 +216,8 @@ the code. Anything else is noise that will be stale within a release.
 // Set the radius token.
 
 // Worth keeping: records a constraint and a consequence.
-// The light theme's `--card` and `--background` are both white, so a borderless
-// card there is invisible. That is why the border is structural.
+// The light theme's `--card` is one faint step off a white `--background`, so a
+// borderless card there all but disappears. That is why the border is structural.
 ```
 
 The doc comment at the top of a component should say what it is _for_ and when to

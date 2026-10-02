@@ -27,14 +27,18 @@ default, is three decisions. Everything else follows from them.
 
 ### 1. A tinted canvas, with the accent as a separate axis
 
-The two defaults are **composed**, not authored, and their canvases are **tinted**:
-`#0f141f` at hue 265 for dark, `#e3e9f4` at hue 262 for light, each borrowed from a
-palette chosen for its canvas and neither of them a pure grey. This document previously
-described a pure-grey neutral ladder — hue 0, zero chroma — and that was the opposite
-decision, made for a system whose themes were all imported and could not agree on a
-tint. It stopped being the right one when the defaults became a pair: two themes that
-share a hue family read as one interface at two exposures, and a neutral has no hue to
-share.
+The two defaults are **composed**, not authored. Both take their hues from GitHub's
+dark palette; Adea Dark takes its canvas and greyscale from GitHub Dark Default and
+**re-greys** them, halving the chroma and rotating the hue from GitHub's blue
+(`h≈258`) to a violet-grey (`h≈301`), so the canvas is `oklch(0.1756 0.0063 300.91)`
+rather than a pure grey. Adea Light keeps GitHub Light Default's white canvas and
+carries the same hues transposed onto paper, so a red is the same red in both
+appearances and switching appearance changes lightness and nothing else.
+
+An earlier revision of this document described canvases borrowed from Aardvark Ink and
+Nord Light, and before that a pure-grey neutral ladder. Neither is current:
+`@adea-ai/themes` composes the family from GitHub's palettes, and its
+`tests/provenance.test.ts` asserts the partnership.
 
 Both are reproduced from upstream and credited in `@adea-ai/themes`'s NOTICE. The
 separation on a large dark surface still comes from the surface ladder and the elevation
@@ -42,16 +46,17 @@ tokens rather than from the tint, which is where it belongs.
 
 Colour beyond the canvas is carried by **two roles and nothing else**:
 
-- The **accent axis** — seven presets, applied as `data-accent` on the same element
-  that carries the theme. It re-colours the primary, its label, the hover rung, the
-  tint and the focus ring. The default (`theme`) uses the variant's own primary,
-  which in adea's palette is neutral, so the interface stays monochrome unless the
-  user asks otherwise.
+- The **accent axis** — the theme's own primary (`theme`, the default) plus six
+  presets (violet, blue, green, amber, cyan, pink), applied as `data-accent` on the
+  same element that carries the theme. It re-colours the primary, its label, the
+  hover rung, the tint and the focus ring. In both Adea defaults the theme's own
+  primary is a violet, so the interface carries one hue unless the user picks
+  another.
 - The **status roles** — `success`, `warning`, `destructive`, `info` — which mean
   something and are never decorative.
 
 That split is what lets a theme be anyone's palette without giving up the accent the
-user chose, and an accent be any of seven without the theme having to know about it.
+user chose, and an accent be any of the presets without the theme having to know about it.
 A fifth colour on a surface would make the primary stop meaning "this is the thing to
 press", which is still the rule.
 
@@ -101,8 +106,9 @@ Two more fills are painted _onto_ a surface rather than being surfaces:
 translucent in the status family, because a hover fill has to work over whatever is
 beneath it while a status tint has to keep its meaning.
 
-**A card always carries its own edge.** In the light theme `--card` and
-`--background` are both white, so a borderless card there is invisible. Making the
+**A card always carries its own edge.** In the light theme `--card` is
+`oklch(0.965 0 0)` on a white `--background` — a 3.5% step, too faint to read as an
+edge — so a borderless card there all but disappears. Making the
 border structural rather than optional is what stops one app's cards from reading as
 floating panels and another's as nothing at all.
 
@@ -132,18 +138,20 @@ advance-width cell, three times Space Grotesk's, so a two-word label reads as tw
 floating words without negative word spacing, while its glyphs carry more sidebearing
 and tolerate a tighter track.
 
-Eight rungs, each with its own line-height because the ratio is not constant:
+Eight rungs, each with its own line-height because the ratio is not constant. The
+weight column is what the shared components set; a rung with no component use yet is
+marked as such rather than given an invented weight.
 
-| Token       | Size | Leading | Use                                             |
-| ----------- | ---- | ------- | ----------------------------------------------- |
-| `text-3xl`  | 30px | 1.2     | An empty-state headline. Once per app, at most. |
-| `text-2xl`  | 24px | 1.25    | A display figure — a stat, a count.             |
-| `text-xl`   | 20px | 1.35    | A page title.                                   |
-| `text-lg`   | 18px | 1.4     | A section heading inside a page.                |
-| `text-base` | 16px | 1.5     | Card and dialog titles.                         |
-| `text-sm`   | 14px | 1.55    | **The default.** Body copy, labels, controls.   |
-| `text-xs`   | 12px | 1.5     | Metadata, badges, secondary rows.               |
-| `text-2xs`  | 11px | 1.45    | The floor: keyboard keys, the status bar.       |
+| Token       | Size | Leading | Weight                               | Use                                                               |
+| ----------- | ---- | ------- | ------------------------------------ | ----------------------------------------------------------------- |
+| `text-3xl`  | 30px | 1.2     | — (no shared component uses it)      | An app-level empty-state headline. Once per app, at most.         |
+| `text-2xl`  | 24px | 1.25    | — (no shared component uses it)      | A display figure larger than `Stat`'s.                            |
+| `text-xl`   | 20px | 1.35    | 600                                  | A page title (`PageTitle`), a stat value (`Stat`).                |
+| `text-lg`   | 18px | 1.4     | — (no shared component uses it)      | A section heading inside a page.                                  |
+| `text-base` | 16px | 1.5     | 600                                  | Card, dialog and settings-section titles.                         |
+| `text-sm`   | 14px | 1.55    | 400 body · 500 labels · 600 emphasis | **The default.** Body copy, labels, controls, empty-state titles. |
+| `text-xs`   | 12px | 1.5     | 400 · 500 for badges                 | Metadata, badges, secondary rows, code.                           |
+| `text-2xs`  | 11px | 1.45    | 500                                  | The floor: keyboard keys, the status bar.                         |
 
 Weights stop at 600. On a dark surface a bold word blooms, and with a variable face
 the step from 500 to 600 is already a clear one — 700 buys attention by making the
@@ -159,7 +167,7 @@ text actually sits on. Body text must clear **7:1**; secondary text, labels on f
 buttons and the focus ring must clear **4.5:1** (or **3:1** for the ring, which is a
 non-text indicator).
 
-The other 25 variants in the catalogue are held to a **different and lower floor**, and
+The other 32 variants in the catalogue are held to a **different and lower floor**, and
 the difference is deliberate rather than an oversight: a third-party palette is somebody
 else's solved set, and re-solving it to 7:1 would stop it being that palette.
 

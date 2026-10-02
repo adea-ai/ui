@@ -15,8 +15,8 @@ import { Button } from '../button/button'
  * Card.
  *
  * A surface that sits on the canvas. Every card carries its own edge — a border
- * — because in the light theme `--card` and `--background` are both white, and
- * a borderless card there is invisible. Making the border structural rather than
+ * — because in the light theme `--card` is one faint step off a white
+ * `--background`, and a borderless card there all but disappears. Making the border structural rather than
  * optional is what stops one app's cards from reading as floating panels and
  * another's as nothing at all.
  *

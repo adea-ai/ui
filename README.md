@@ -44,7 +44,7 @@ set of hand-rolled controls: shadcn supplies the token vocabulary and the varian
 convention, Kobalte and corvu supply the accessible behaviour, and every visual
 decision lives in one place.
 
-- **87 registry entries** — 85 shared UI modules across primitives, window layout,
+- **90 registry entries** — 88 shared UI modules across primitives, window layout,
   composites and feature modules, plus the theme stylesheet and shared library
   utilities.
 - **One token file.** Semantic OKLCH colours, an eight-rung type scale, the
@@ -52,7 +52,7 @@ decision lives in one place.
   motion and a z-index stack. Contrast is
   _measured_ in tests, not reviewed by eye.
 - **Four user-facing axes** — appearance, theme, accent and typeface — plus density,
-  each a value on `ThemeProvider` and a set of tokens. Twenty-seven themes ship in
+  each a value on `ThemeProvider` and a set of tokens. Thirty-four themes ship in
   the catalogue, every one validated against WCAG AA floors; the two defaults are
   held to AAA.
 - **Dark-first**, with light as an equal — not a lesser inversion.
@@ -64,7 +64,7 @@ decision lives in one place.
 - **Storybook 10** with per-story accessibility checks, MDX documentation and token
   galleries. The [published Storybook](https://adea-ai.github.io/ui/) is the review
   surface; if a component is not in it, it is not done.
-- **A shadcn registry** of 87 items, so a consumer can take one component without
+- **A shadcn registry** of 90 items, so a consumer can take one component without
   adopting the package — or install the whole thing from npm.
 
 ## Install
