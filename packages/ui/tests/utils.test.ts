@@ -14,6 +14,23 @@ test('token-derived utilities conflict-resolve within their family', () => {
   expect(cn('size-control-xl', 'size-control-2xl')).toBe('size-control-2xl')
 })
 
+// The token utilities used to sit in groups of their own, which conflict only with
+// themselves: `cn('h-control-sm', 'h-auto')` kept both and stylesheet order chose
+// the control height, so ThemePicker's options were 28px tall with squashed
+// previews. They now extend Tailwind's own groups and inherit their conflicts.
+test('token-derived utilities conflict with the standard utilities of the same property', () => {
+  expect(cn('h-control-sm', 'h-auto')).toBe('h-auto')
+  expect(cn('h-auto', 'h-control-sm')).toBe('h-control-sm')
+  expect(cn('h-row-md', 'h-10')).toBe('h-10')
+  expect(cn('min-h-row-sm', 'min-h-0')).toBe('min-h-0')
+  expect(cn('w-rail', 'w-auto')).toBe('w-auto')
+  expect(cn('size-control-sm', 'size-auto')).toBe('size-auto')
+  expect(cn('size-control-sm', 'h-auto')).toBe('size-control-sm h-auto')
+  expect(cn('px-control-sm', 'p-0')).toBe('p-0')
+  expect(cn('px-control-sm', 'px-control-md')).toBe('px-control-md')
+  expect(cn('h-control-sm px-control-sm', 'h-auto p-0')).toBe('h-auto p-0')
+})
+
 test('the stable 2xl control rung uses shared 48px tokens for text and icon buttons', () => {
   expect(controlSizes).toContain('2xl')
   expect(controlSize['2xl']).toContain('h-control-2xl')
