@@ -20,6 +20,11 @@ for (const fontSize of ['100%', '200%']) {
     const description = section.getByText("Theme default · Uses the palette's intended color.", {
       exact: true,
     })
+    // WebKit in the packed-solid lane measured mid font-swap: the fallback
+    // face's wider text shoves the wrapped description below the floor the
+    // settled layout clears. The assertion is about the layout, so measure
+    // after the faces the stylesheet declares have landed.
+    await page.evaluate(() => document.fonts.ready)
     const metrics = await description.evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
