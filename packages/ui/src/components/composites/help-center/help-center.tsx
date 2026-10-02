@@ -45,7 +45,7 @@ export function HelpCenter(props: HelpCenterProps) {
       </Show>
       <Card>
         <CardHeader>
-          <h2 class="text-base font-semibold text-primary">Keyboard shortcuts</h2>
+          <h2 class="text-base font-semibold text-foreground">Keyboard shortcuts</h2>
         </CardHeader>
         <CardContent>
           <ul class="flex flex-col gap-3">
@@ -64,7 +64,7 @@ export function HelpCenter(props: HelpCenterProps) {
       </Card>
       <Card>
         <CardHeader>
-          <h2 class="text-base font-semibold text-primary">Project links</h2>
+          <h2 class="text-base font-semibold text-foreground">Project links</h2>
         </CardHeader>
         <CardContent>
           <ul class="flex flex-col gap-4">
@@ -75,6 +75,7 @@ export function HelpCenter(props: HelpCenterProps) {
                     as="a"
                     variant="link"
                     size="sm"
+                    class="text-foreground decoration-primary"
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"

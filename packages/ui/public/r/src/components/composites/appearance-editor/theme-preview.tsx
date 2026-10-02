@@ -105,6 +105,64 @@ export function ThemeMiniatureSplit(props: { light: AdeaTheme; dark: AdeaTheme; 
   )
 }
 
+/**
+ * The dropdown-item preview: the ThemePreview composition (rail + panel +
+ * text bars + action row) at menu scale, so a menu item carries the theme's
+ * actual chrome rather than the three-band trigger swatch. `aria-hidden` —
+ * the item's accessible name stays the theme name.
+ */
+export function ThemeMenuPreview(props: { theme: AdeaTheme; class?: string }) {
+  const colors = () => props.theme.colors
+  return (
+    <span
+      data-theme-menu-preview
+      aria-hidden="true"
+      class={cn(
+        'flex h-16 w-28 shrink-0 overflow-hidden rounded-md border border-(--appearance-preview-border)',
+        props.class
+      )}
+      style={{
+        'background-color': colors().surface,
+        '--appearance-preview-border': colors().border,
+      }}
+    >
+      <span
+        class="flex w-5 shrink-0 flex-col items-center gap-1.5 border-e border-(--appearance-preview-border) pt-2"
+        style={{ 'background-color': colors().surfaceElevated }}
+      >
+        <span class="size-1.5 rounded-[3px]" style={{ 'background-color': colors().accent }} />
+        <span
+          class="size-1.5 rounded-[3px]"
+          style={{ 'background-color': colors().surfaceActive }}
+        />
+        <span
+          class="size-1.5 rounded-[3px]"
+          style={{ 'background-color': colors().surfaceActive }}
+        />
+      </span>
+      <span
+        class="m-1 flex min-w-0 flex-1 flex-col gap-1 rounded-md border border-(--appearance-preview-border) p-1.5"
+        style={{
+          'background-color': colors().background,
+          '--appearance-preview-border': colors().border,
+        }}
+      >
+        <span class="h-1.5 w-8 rounded-full" style={{ 'background-color': colors().text }} />
+        <span class="h-1 w-full rounded-full" style={{ 'background-color': colors().textMuted }} />
+        <span class="h-1 w-3/4 rounded-full" style={{ 'background-color': colors().textMuted }} />
+        <span class="mt-auto flex items-center gap-1">
+          <span class="h-2.5 w-7 rounded-[3px]" style={{ 'background-color': colors().accent }} />
+          <span class="h-2.5 w-4 rounded-[3px]" style={{ 'background-color': colors().error }} />
+          <span
+            class="h-2.5 w-4 rounded-[3px]"
+            style={{ 'background-color': colors().surfaceActive }}
+          />
+        </span>
+      </span>
+    </span>
+  )
+}
+
 export function PalettePreview(props: { theme: AdeaTheme; class?: string }) {
   const bands = () => [
     props.theme.colors.surface,

@@ -4,6 +4,13 @@ export type AppearanceDraft = Readonly<{
   mode: 'system' | 'light' | 'dark'
   lightThemeId: string
   darkThemeId: string
+  /**
+   * The terminal palette: `'theme'` follows the interface theme, a theme id
+   * pins that theme's terminal colours. Optional so a host without a terminal
+   * preference renders no terminal row — the row's presence is this field's
+   * presence, not a second prop that could disagree with the draft.
+   */
+  terminalThemeId?: string
   /** Theme default, a canonical preset id, or the host's custom accent draft. */
   accent: string
   surface: 'theme' | 'frosted' | 'opaque'

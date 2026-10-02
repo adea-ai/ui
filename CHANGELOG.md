@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.97.4](https://github.com/adea-ai/ui/compare/v0.97.3...v0.97.4) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** carry foreground ink on themed dialog and help surfaces ([#245](https://github.com/adea-ai/ui/issues/245)) ([9d91ed6](https://github.com/adea-ai/ui/commit/9d91ed6ca4b23136216f96ea366bf2f6356473f1))
+
+
+### CI
+
+* rename the Pages guard ref output to clear cache-poisoning alerts ([#247](https://github.com/adea-ai/ui/issues/247)) ([d4f06b8](https://github.com/adea-ai/ui/commit/d4f06b8866f45097499c25a725557bd65479ef10))
+
+## [0.97.3](https://github.com/adea-ai/ui/compare/v0.97.2...v0.97.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** carry foreground ink in the About dialog's body text ([#242](https://github.com/adea-ai/ui/issues/242)) ([0f9d81a](https://github.com/adea-ai/ui/commit/0f9d81a8469ca8e4844583a773de9f7295342fca))
+
+## [0.97.2](https://github.com/adea-ai/ui/compare/v0.97.1...v0.97.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** isolate account menu tooltip positioning ([#238](https://github.com/adea-ai/ui/issues/238)) ([467f61a](https://github.com/adea-ai/ui/commit/467f61a9c43da4c10746195f89291b8c7d8d90ba))
+
+
+### Maintenance
+
+* declare Renovate as the managed dependency updater ([#237](https://github.com/adea-ai/ui/issues/237)) ([1f88b18](https://github.com/adea-ai/ui/commit/1f88b18675a35dc03036df376947d558ab296ce3))
+
 ## [0.97.1](https://github.com/adea-ai/ui/compare/v0.97.0...v0.97.1) (2026-10-02)
 
 

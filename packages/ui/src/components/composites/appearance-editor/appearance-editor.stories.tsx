@@ -9,6 +9,7 @@ const defaults: AppearanceDraft = {
   mode: 'system',
   lightThemeId: 'adea-light',
   darkThemeId: 'adea-dark',
+  terminalThemeId: 'theme',
   accent: 'theme',
   surface: 'theme',
   reduceTransparency: false,
