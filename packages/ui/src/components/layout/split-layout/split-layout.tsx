@@ -171,7 +171,8 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
       role="group"
       aria-label={props.label}
       data-slot="split-layout"
-      class={cn('relative size-full min-h-0 min-w-0', props.class)}
+      data-dragging={drag() ? '' : undefined}
+      class={cn('relative size-full min-h-0 min-w-0 data-[dragging]:cursor-grabbing', props.class)}
     >
       <For each={leaves().map((leaf) => leaf.id)}>
         {(id) => {
@@ -194,6 +195,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
               tabIndex={props.paneTabIndex ?? -1}
               data-pane-id={id}
               data-focused={props.state.focusedLeafId === id ? '' : undefined}
+              data-drag-source={drag()?.id === id ? '' : undefined}
               data-drop-direction={intent()?.direction}
               data-drop-placement={intent()?.placement}
               onDragOver={(event) => {
@@ -234,14 +236,16 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                 props.onMove?.(current.id, id, next)
               }}
               style={rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 })}
-              class="absolute flex min-h-0 min-w-0 flex-col overflow-hidden border border-border data-[focused]:border-primary bg-background text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+              class="absolute flex min-h-0 min-w-0 flex-col overflow-hidden border border-border transition-opacity data-[drag-source]:opacity-40 data-[focused]:border-primary bg-background text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               onFocusIn={() => props.onFocus?.(id)}
             >
               <header class="flex min-w-0 shrink-0 items-center gap-2 bg-surface px-2">
                 <span
                   data-pane-drag-handle=""
                   draggable={Boolean(props.onMove)}
-                  class="flex min-w-0 flex-1 items-center gap-2 truncate text-sm"
+                  class={cn('flex min-w-0 flex-1 items-center gap-2 truncate text-sm', {
+                    'cursor-grab': Boolean(props.onMove),
+                  })}
                   title={props.onMove ? `Drag ${props.labelForLeaf(leaf())} to move` : undefined}
                   onDragStart={(event) => {
                     if (!props.onMove || !event.dataTransfer) {
@@ -252,6 +256,18 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                     setDrag({ id, token })
                     event.dataTransfer.setData(PANE_DRAG_TYPE, token)
                     event.dataTransfer.effectAllowed = 'move'
+                    // The ghost is the pane itself, not the handle strip: the
+                    // browser snapshots the region before the drag state dims
+                    // this section, so the dragged pane stays readable while
+                    // its source visibly recedes.
+                    const source = refs.get(id)
+                    const frame = source?.getBoundingClientRect()
+                    if (source && frame && typeof event.dataTransfer.setDragImage === 'function')
+                      event.dataTransfer.setDragImage(
+                        source,
+                        Math.max(0, Math.round(event.clientX - frame.left)),
+                        Math.max(0, Math.round(event.clientY - frame.top))
+                      )
                   }}
                   onDragEnd={clearDrag}
                 >

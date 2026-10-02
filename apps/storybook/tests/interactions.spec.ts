@@ -292,3 +292,66 @@ test.describe('feedback', () => {
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '64')
   })
 })
+
+test.describe('pane drag', () => {
+  test('a drag marks its source pane, dims it live, and resolves the move', async ({ page }) => {
+    await openStory(page, 'layout-binary-split-layout--two-panes', 'adea-dark')
+
+    const handles = page.locator('[data-pane-drag-handle]')
+    await expect(handles).toHaveCount(2)
+    const source = handles.first()
+
+    // The handle borrows the grab cursor on hover: a pointer user can tell the
+    // pane header is liftable before pressing.
+    await source.hover()
+    await expect(source).toHaveClass(/cursor-grab/)
+
+    // Headless drag dispatch: the native drag-and-drop mouse choreography does
+    // not complete reliably under CDP, so the same DataTransfer is carried
+    // through the component's own dragstart/dragover/drop handlers.
+    await page.evaluate(() => {
+      const handle = document.querySelector('[data-pane-drag-handle]')
+      if (!handle) throw new Error('missing drag handle')
+      const transfer = new DataTransfer()
+      ;(window as unknown as Record<string, unknown>)['__paneDrag'] = transfer
+      handle.dispatchEvent(
+        new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: transfer })
+      )
+    })
+
+    // Mid-drag the layout names itself (grabbing cursor scope) and the dragged
+    // pane stays visible as the ghost while its source recedes.
+    await expect(page.locator('[data-slot="split-layout"][data-dragging]')).toHaveCount(1)
+    const dragSource = page.locator('[data-drag-source]')
+    await expect(dragSource).toHaveCount(1)
+    await expect(dragSource).toHaveAttribute('data-pane-id', 'editor')
+
+    await page.evaluate(() => {
+      const target = [...document.querySelectorAll('[data-pane-id]')].find(
+        (pane) => pane.getAttribute('data-pane-id') === 'terminal'
+      )
+      if (!target) throw new Error('missing target pane')
+      const rect = target.getBoundingClientRect()
+      // The trailing half picks an "after" placement: a centre drop ties to
+      // "before", which would move the pane back onto its own slot.
+      const transfer = (window as unknown as Record<string, unknown>)['__paneDrag']
+      const event = (type: string) =>
+        new DragEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: transfer as DataTransfer,
+          clientX: rect.x + rect.width * 0.75,
+          clientY: rect.y + rect.height / 2,
+        })
+      target.dispatchEvent(event('dragover'))
+      target.dispatchEvent(event('drop'))
+    })
+
+    await expect(page.locator('[data-drop-direction]')).toHaveCount(0)
+    await expect(page.locator('[data-drag-source]')).toHaveCount(0)
+    const order = await page
+      .locator('[data-pane-id]')
+      .evaluateAll((panes) => panes.map((pane) => pane.getAttribute('data-pane-id')))
+    expect(order).toEqual(['terminal', 'editor'])
+  })
+})
