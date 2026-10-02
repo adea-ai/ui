@@ -34,15 +34,23 @@ export function plainTextFromMarkdown(markdown: string): string {
  * A release date, formatted for a reader. Returns the input when it cannot be
  * parsed — a date a build tool wrote in an unusual format is still better shown
  * verbatim than dropped.
+ *
+ * A date-only value (`2026-09-24`) is a calendar day, not an instant. `new Date`
+ * reads it as UTC midnight, and formatting that instant in the reader's zone
+ * moves it to the previous day anywhere west of UTC — so a date-only value is
+ * formatted in UTC, where its midnight still falls on the day it names. A full
+ * timestamp is a real instant and keeps the reader's zone.
  */
 export function formatReleaseDate(value: string | null): string | null {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
   return new Intl.DateTimeFormat(undefined, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    ...(dateOnly ? { timeZone: 'UTC' } : {}),
   }).format(date)
 }
 
