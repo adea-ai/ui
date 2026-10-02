@@ -2,6 +2,10 @@ version: 1
 profile: monorepo
 languages: typescript
 features: validation,release
+# Dependency updates are Renovate-only: this repository hosts the org
+# Renovate runner. The updater key stops sync from re-rendering
+# .github/dependabot.yml regardless of the features selection.
+dependency_updater: renovate
 codeql: auto
 dependency_review: auto
 package_manager: bun
