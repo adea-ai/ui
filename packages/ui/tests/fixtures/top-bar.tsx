@@ -36,10 +36,10 @@ render(() => {
           <TopBarTitle class="hidden md:block">A long workspace title</TopBarTitle>
         </TopBarSection>
         <TopBarSearch
-          aria-label="Search workspace"
           placeholder="Search projects, files and sessions"
           shortcut="⌘K"
-          onClick={() => setLastAction('Search workspace')}
+          keyshortcuts="Meta+K"
+          onClick={() => setLastAction('Search projects, files and sessions')}
         />
         <TopBarSection align="end">
           <For each={['Files', 'Source control', 'Browser', 'Devices', 'Agents', 'Search']}>

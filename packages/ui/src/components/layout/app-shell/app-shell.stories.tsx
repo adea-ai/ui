@@ -130,7 +130,11 @@ export const FullShell: Story = {
             <TopBarSection>
               <TopBarTitle>{project()}</TopBarTitle>
             </TopBarSection>
-            <TopBarSearch placeholder="Search projects, files and sessions" shortcut="⌘K" />
+            <TopBarSearch
+              placeholder="Search projects, files and sessions"
+              shortcut="⌘K"
+              keyshortcuts="Meta+K"
+            />
             <TopBarSection align="end">
               <StatusBarItem tone="success" dot>
                 Connected
@@ -236,7 +240,7 @@ export const CollapsedRail: Story = {
           <TopBarSection>
             <TopBarTitle>adea</TopBarTitle>
           </TopBarSection>
-          <TopBarSearch placeholder="Search" shortcut="⌘K" />
+          <TopBarSearch placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />
           <TopBarSection align="end" />
         </TopBar>
         <AppShellMain>
@@ -285,7 +289,7 @@ export const WithoutSidebar: Story = {
           <TopBarSection>
             <TopBarTitle>Sources</TopBarTitle>
           </TopBarSection>
-          <TopBarSearch placeholder="Search documents" shortcut="⌘K" />
+          <TopBarSearch placeholder="Search documents" shortcut="⌘K" keyshortcuts="Meta+K" />
           <TopBarSection align="end">
             <Button size="sm">Sync now</Button>
           </TopBarSection>

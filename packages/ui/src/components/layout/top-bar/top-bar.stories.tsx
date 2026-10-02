@@ -42,7 +42,11 @@ export const Default: Story = {
         <TopBarSection>
           <TopBarTitle align="center">adea</TopBarTitle>
         </TopBarSection>
-        <TopBarSearch placeholder="Search projects, files and sessions" shortcut="⌘K" />
+        <TopBarSearch
+          placeholder="Search projects, files and sessions"
+          shortcut="⌘K"
+          keyshortcuts="Meta+K"
+        />
         <TopBarSection align="end">
           <Button size="sm" variant="ghost" aria-label="Play">
             <Play />
@@ -92,7 +96,7 @@ export const WithBreadcrumb: Story = {
             </span>
           </TopBarBreadcrumb>
         </TopBarSection>
-        <TopBarSearch placeholder="Search this package" shortcut="⌘K" />
+        <TopBarSearch placeholder="Search this package" shortcut="⌘K" keyshortcuts="Meta+K" />
         <TopBarSection align="end" />
       </TopBar>
     </div>
@@ -118,7 +122,7 @@ export const WithHistoryAndReadouts: Story = {
           </Button>
           <TopBarTitle>feat/m12-397-worktrees</TopBarTitle>
         </TopBarSection>
-        <TopBarSearch placeholder="Search" shortcut="⌘K" />
+        <TopBarSearch placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />
         <TopBarSection align="end">
           <TopBarPill label="main" />
           <TopBarPill label="4 worktrees" />
@@ -146,7 +150,7 @@ export const FramelessWindow: Story = {
         <TopBarSection>
           <TopBarTitle>adea</TopBarTitle>
         </TopBarSection>
-        <TopBarSearch placeholder="Search" shortcut="⌘K" />
+        <TopBarSearch placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />
         <TopBarSection align="end">
           <Button size="sm" variant="ghost" aria-label="Settings">
             <Settings />
@@ -179,7 +183,11 @@ export const SearchAffordance: Story = {
         <TopBarSection>
           <TopBarTitle>Search</TopBarTitle>
         </TopBarSection>
-        <TopBarSearch placeholder="Search projects, files and sessions" shortcut="⌘K" />
+        <TopBarSearch
+          placeholder="Search projects, files and sessions"
+          shortcut="⌘K"
+          keyshortcuts="Meta+K"
+        />
         <TopBarSection align="end" />
       </TopBar>
       <div class="flex flex-col gap-3 p-4">
