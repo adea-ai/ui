@@ -20,8 +20,6 @@ export function Kbd(props: ComponentProps<'kbd'>) {
       data-slot="kbd"
       class={cn(
         'bg-muted text-muted-foreground pointer-events-none inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-sm border border-border px-1 font-mono text-2xs font-medium select-none',
-        /* Inside a hover/selected row the key needs to recede with the row. */
-        'in-data-[slot=br-tooltip-content]:bg-background/20 in-data-[slot=br-tooltip-content]:text-scrim-foreground in-data-[slot=br-tooltip-content]:border-transparent',
         local.class
       )}
       {...rest}

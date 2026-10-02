@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 export type ActionButtonProps<T extends ValidComponent = 'button'> = ButtonProps<T> & {
   /** A short explanation, also shown on keyboard focus. The Button still needs its own name. */
   tooltip?: string
+  /** Placement of the explanation; icon actions live in bars, so it defaults below the control. */
   tooltipSide?: 'top' | 'right' | 'bottom' | 'left'
   /** Disables the action and announces the busy label through a polite status region. */
   busy?: boolean
@@ -173,7 +174,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
           >
             {contents()}
           </TooltipTrigger>
-          <TooltipContent side={local.tooltipSide}>{local.tooltip}</TooltipContent>
+          <TooltipContent side={local.tooltipSide ?? 'bottom'}>{local.tooltip}</TooltipContent>
         </Tooltip>
       </Show>
       <Show when={busy()}>

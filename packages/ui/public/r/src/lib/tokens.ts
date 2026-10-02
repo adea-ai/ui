@@ -542,6 +542,12 @@ export const densityTokens: TokenDefinition[] = [
   },
   { name: 'topbar-height', kind: 'dimension', description: '48px — the window title row.' },
   { name: 'statusbar-height', kind: 'dimension', description: '28px — the bottom readout strip.' },
+  {
+    name: 'tooltip-max-width',
+    kind: 'dimension',
+    description:
+      'The lesser of the 16rem readable measure and one viewport minus a gutter — a tip wraps before it can push its document wider than itself.',
+  },
 ]
 
 export const elevationTokens: TokenDefinition[] = [

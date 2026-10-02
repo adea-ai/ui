@@ -22,6 +22,15 @@ export const overlayScrim =
   'fixed inset-0 z-(--z-dialog) bg-scrim/50 supports-[backdrop-filter]:backdrop-blur-xs'
 
 /**
+ * The tip: the card-toned bubble an explanation shows in. The side rail draws
+ * it flush to a collapsed row and every floating tooltip composes the same
+ * fill, edge, and type, so a control never explains itself in two visual
+ * languages.
+ */
+export const tooltipTip =
+  'bg-card text-card-foreground rounded-md border border-border text-sm font-medium shadow-lg'
+
+/**
  * Entrance and exit motion, expressed as data-state classes.
  *
  * `data-expanded` / `data-closed` are Kobalte's; `data-side-*` come from its

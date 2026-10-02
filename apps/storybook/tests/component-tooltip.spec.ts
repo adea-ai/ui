@@ -44,40 +44,31 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
-test('the tooltip arrow defaults on and updates when hideArrow changes', async ({ page }) => {
-  const trigger = page.getByRole('button', { name: 'Press ArrowRight to toggle the tooltip arrow' })
+test('the tooltip never renders a caret', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
   await trigger.focus()
 
   const tooltip = page.getByRole('tooltip')
-  const arrow = tooltip.locator('[aria-hidden="true"]')
   await expect(tooltip).toBeVisible()
-  await expect(arrow).toHaveCount(1)
-  await expect(page.getByLabel('Arrow visibility')).toHaveText('shown')
-
-  await trigger.press('ArrowRight')
-  await expect(tooltip).toBeVisible()
-  await expect(page.getByLabel('Arrow visibility')).toHaveText('hidden')
-  await expect(arrow).toHaveCount(0)
-
-  await trigger.press('ArrowRight')
-  await expect(tooltip).toBeVisible()
-  await expect(page.getByLabel('Arrow visibility')).toHaveText('shown')
-  await expect(arrow).toHaveCount(1)
+  // The caret is a removed era: the tip reads as the rail's card-toned note,
+  // and an arrow anchored into gutters more than once. Nothing vector should
+  // ship inside one.
+  await expect(tooltip.locator('svg')).toHaveCount(0)
 })
 
 test('a force-mounted tooltip leaves the accessibility tree as its close animation starts', async ({
   page,
 }) => {
-  const trigger = page.getByRole('button', { name: 'Press ArrowRight to toggle the tooltip arrow' })
+  const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
   const retainedTooltip = page.locator('[role="tooltip"]').filter({
-    hasText: 'Tooltip with optional arrow',
+    hasText: 'Tooltip without a caret',
   })
 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await trigger.focus()
 
   const tooltip = page.getByRole('tooltip')
-  await expect(tooltip).toHaveText('Tooltip with optional arrow')
+  await expect(tooltip).toHaveText('Tooltip without a caret')
   await expect(trigger).toHaveAttribute('aria-describedby', /.+/)
   await expect(retainedTooltip).not.toHaveAttribute('aria-hidden', 'true')
 

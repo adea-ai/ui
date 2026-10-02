@@ -10,6 +10,7 @@ import {
   useContext,
 } from 'solid-js'
 import { isServer } from 'solid-js/web'
+import { tooltipTip } from '#lib/overlay'
 import { cn } from '#lib/utils'
 
 /**
@@ -348,16 +349,12 @@ export function TooltipTrigger(props: ComponentProps<typeof KobalteTooltip.Trigg
   )
 }
 
-export type TooltipContentProps = ComponentProps<typeof KobalteTooltip.Content> & {
-  /** Hide the caret pointing at the trigger. */
-  hideArrow?: boolean
-}
+export type TooltipContentProps = ComponentProps<typeof KobalteTooltip.Content>
 
 export function TooltipContent(props: TooltipContentProps) {
   const interaction = useContext(TooltipInteractionContext)
   const [local, rest] = splitProps(props, [
     'class',
-    'hideArrow',
     'children',
     'aria-hidden',
     'onEscapeKeyDown',
@@ -371,7 +368,11 @@ export function TooltipContent(props: TooltipContentProps) {
     <KobalteTooltip.Portal>
       <KobalteTooltip.Content
         class={cn(
-          'bg-scrim text-scrim-foreground z-(--z-tooltip) w-fit max-w-64 rounded-md px-2 py-1 text-xs',
+          tooltipTip,
+          // The max width is a token, not a fixed measure: it has to fall
+          // behind the viewport at large root font sizes or the tip — which
+          // Kobalte can shift but never shrink — forces a horizontal scroll.
+          'z-(--z-tooltip) w-fit max-w-(--tooltip-max-width) px-2 py-1',
           'origin-(--kb-tooltip-content-transform-origin) text-balance',
           'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
           'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
@@ -390,7 +391,6 @@ export function TooltipContent(props: TooltipContentProps) {
         {...rest}
       >
         {local.children}
-        {!local.hideArrow && <KobalteTooltip.Arrow aria-hidden="true" />}
       </KobalteTooltip.Content>
     </KobalteTooltip.Portal>
   )
