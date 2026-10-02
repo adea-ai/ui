@@ -82,3 +82,29 @@ test('an unmounted menu clears its pending after-close action', async ({ page })
   await page.waitForTimeout(50)
   await expect(page.getByLabel('Cleanup callback')).toHaveText('deferred callback not fired')
 })
+
+test('a rail menu can open beside its trigger with its bottom aligned', async ({ page }) => {
+  const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
+  await opener.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect
+    .poll(async () => {
+      const trigger = await opener.boundingBox()
+      const panel = await menu.boundingBox()
+      return trigger && panel ? Math.abs(panel.x - trigger.x - trigger.width - 4) : Infinity
+    })
+    .toBeLessThan(1)
+  await expect(menu.locator(':scope > div[aria-hidden="true"] > svg')).toHaveCount(0)
+  await expect
+    .poll(async () => {
+      const trigger = await opener.boundingBox()
+      const panel = await menu.boundingBox()
+      return trigger && panel
+        ? Math.abs(panel.y + panel.height - trigger.y - trigger.height)
+        : Infinity
+    })
+    .toBeLessThan(8)
+  await page.keyboard.press('Escape')
+  await expect(opener).toBeFocused()
+})

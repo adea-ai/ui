@@ -29,6 +29,17 @@ function Fixture() {
 
   return (
     <main class="flex items-center gap-3">
+      <div class="absolute top-96 left-4">
+        <AccountMenu
+          label="Rail settings"
+          placement="right-end"
+          gutter={4}
+          hideArrow
+          authenticated={false}
+          showSession={false}
+          items={[{ id: 'settings', label: 'Settings' }]}
+        />
+      </div>
       <AccountMenu
         label="User settings"
         authenticated

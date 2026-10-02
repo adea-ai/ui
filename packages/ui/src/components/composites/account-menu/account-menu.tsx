@@ -56,6 +56,12 @@ export type AccountMenuItem = {
 
 export type AccountMenuProps = {
   class?: string
+  /** Anchor a rail menu beside its trigger, or keep the default upward placement. */
+  placement?: ComponentProps<typeof DropdownMenu>['placement']
+  /** Space between the trigger and menu, in pixels. */
+  gutter?: ComponentProps<typeof DropdownMenu>['gutter']
+  /** Hide the menu pointer when aligning it beside a compact rail. */
+  hideArrow?: boolean
   /** The trigger size. Icon-only menus default to the standard icon size. */
   size?: ButtonProps['size']
   /** The entries above the separator. */
@@ -88,6 +94,9 @@ const FALLBACK_ICONS: Record<string, typeof Settings2> = {
 export function AccountMenu(props: AccountMenuProps) {
   const [local, rest] = splitProps(props, [
     'class',
+    'placement',
+    'gutter',
+    'hideArrow',
     'size',
     'items',
     'platform',
@@ -122,6 +131,8 @@ export function AccountMenu(props: AccountMenuProps) {
     <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
       <DropdownMenu
         modal={false}
+        placement={local.placement ?? 'top-start'}
+        gutter={local.gutter}
         onOpenChange={(open) => {
           setMenuOpen(open)
           if (open) setTooltipOpen(false)
@@ -142,7 +153,7 @@ export function AccountMenu(props: AccountMenuProps) {
         </TooltipTrigger>
         <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
         <DropdownMenuContent
-          placement="top-start"
+          hideArrow={local.hideArrow}
           class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
           onCloseAutoFocus={(event) => {
             const selection = pendingAfterClose

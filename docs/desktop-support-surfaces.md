@@ -8,3 +8,5 @@ Adea and Cortana use the same support menu and composed dialogs. The host owns n
 - `HelpCenter` presents the host's real keyboard shortcuts and project resources. Supply platform-correct keys and native external-link handling. Feedback opens an issue template for the user to review and submit; it never sends a report automatically.
 
 Use the public `components/composites/*` subpaths in both apps. Do not recreate these dialogs, their menu labels/order, or their appearance in either consumer. Keep the workshop stories, packed consumer contracts, and Chromium/WebKit interaction tests as the shared regression gates.
+
+`AccountMenu placement="right-end" gutter={4} hideArrow` anchors a rail menu beside its trigger with its bottom aligned. Use this shared placement API when the host rail needs it; the default remains `top-start`. Do not replace the composed menu or restyle its positioning in app CSS.
