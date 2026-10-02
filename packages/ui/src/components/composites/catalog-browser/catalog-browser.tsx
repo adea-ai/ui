@@ -131,7 +131,7 @@ export function CatalogBrowser<Value>(props: CatalogBrowserProps<Value>) {
                     <div class="flex min-w-0 shrink-0 flex-wrap items-center gap-2 px-4 pt-2">
                       {props.filterControl}
                       <InputGroup class="min-w-0 flex-1 sm:max-w-md">
-                        <InputGroupAddon>
+                        <InputGroupAddon class="text-primary">
                           <Search aria-hidden="true" />
                         </InputGroupAddon>
                         <InputGroupInput
@@ -143,7 +143,10 @@ export function CatalogBrowser<Value>(props: CatalogBrowserProps<Value>) {
                           onInput={(event) => props.onQueryChange(event.currentTarget.value)}
                         />
                       </InputGroup>
-                      <span class="text-muted-foreground ms-auto text-sm" role="status">
+                      <span
+                        class="text-primary ms-auto text-sm font-medium tabular-nums"
+                        role="status"
+                      >
                         {countLabel()}
                       </span>
                     </div>
@@ -200,7 +203,6 @@ export function CatalogBrowser<Value>(props: CatalogBrowserProps<Value>) {
                                   previewCount={previewCount()}
                                   disabled={props.interactionDisabled ?? false}
                                   installedLabel={props.installedLabel}
-                                  publishedByLabel={props.publishedByLabel}
                                   showMoreLabel={props.showMoreLabel}
                                   showLessLabel={props.showLessLabel}
                                   renderIcon={props.renderIcon}

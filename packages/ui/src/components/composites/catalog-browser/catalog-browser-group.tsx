@@ -33,7 +33,6 @@ function CatalogBrowserRow<Value>(props: {
   entry: CatalogBrowserEntry<Value>
   groupId: string
   installedLabel: string
-  publishedByLabel: (publisher: string) => string
   disabled: boolean
   renderIcon: (value: Value) => JSX.Element
   onSelect: (entry: CatalogBrowserEntry<Value>, key: string) => void
@@ -59,7 +58,7 @@ function CatalogBrowserRow<Value>(props: {
       // unimportant `h-auto` loses the stylesheet sort and clamps this
       // multi-line row to one control line, spilling its content over the
       // neighbouring rows.
-      class="h-auto! min-h-row-lg w-full min-w-0 justify-start gap-3 whitespace-normal"
+      class="h-auto! min-h-row-lg w-full min-w-0 justify-start gap-3 py-2.5 whitespace-normal"
       disabled={props.disabled}
       onClick={() => props.onSelect(props.entry, key)}
     >
@@ -71,9 +70,18 @@ function CatalogBrowserRow<Value>(props: {
             <Badge variant="secondary">{props.installedLabel}</Badge>
           </Show>
         </span>
-        <span class="text-muted-foreground line-clamp-2 text-xs">{props.entry.description}</span>
-        <span class="text-muted-foreground truncate text-2xs">
-          {props.publishedByLabel(props.entry.publisher)} · {props.entry.category}
+        {/* Exactly one content line: the description truncates and the
+            publisher and category ride the same line as accent chips. */}
+        <span class="flex min-w-0 items-center gap-1.5 text-xs">
+          <span class="text-muted-foreground min-w-0 truncate">{props.entry.description}</span>
+          <span class="ms-auto flex shrink-0 items-center gap-1">
+            <span class="rounded bg-primary-subtle px-1.5 py-0.5 text-2xs font-medium text-primary">
+              {props.entry.publisher}
+            </span>
+            <span class="rounded bg-primary-subtle px-1.5 py-0.5 text-2xs font-medium text-primary">
+              {props.entry.category}
+            </span>
+          </span>
         </span>
       </span>
       <ChevronRight aria-hidden="true" />
@@ -87,7 +95,6 @@ export function CatalogBrowserGroup<Value>(props: {
   previewCount: number
   disabled: boolean
   installedLabel: string
-  publishedByLabel: (publisher: string) => string
   showMoreLabel: (entries: readonly CatalogBrowserEntry<Value>[], remainingCount: number) => string
   showLessLabel: string
   renderIcon: (value: Value) => JSX.Element
@@ -108,7 +115,12 @@ export function CatalogBrowserGroup<Value>(props: {
         <h3 id={headingId} class="min-w-0 flex-1 truncate text-sm font-semibold">
           {props.group.label}
         </h3>
-        <Badge variant="outline">{props.group.entries.length}</Badge>
+        <Badge
+          variant="outline"
+          class="border-primary/25 bg-primary-subtle tabular-nums text-primary"
+        >
+          {props.group.entries.length}
+        </Badge>
       </header>
       <div id={listId} class="grid min-w-0 grid-cols-1 gap-2 md:grid-cols-2">
         <For each={rows()}>
@@ -117,7 +129,6 @@ export function CatalogBrowserGroup<Value>(props: {
               entry={row.item()}
               groupId={props.group.id}
               installedLabel={props.installedLabel}
-              publishedByLabel={props.publishedByLabel}
               disabled={props.disabled}
               renderIcon={props.renderIcon}
               onSelect={props.onSelect}

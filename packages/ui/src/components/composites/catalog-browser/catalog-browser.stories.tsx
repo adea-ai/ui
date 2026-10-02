@@ -213,7 +213,6 @@ function MarketplaceExample() {
       backLabel="Back to catalog"
       detailRegionLabel="Application details"
       installedLabel="Installed"
-      publishedByLabel={(publisher) => `Published by ${publisher}`}
       showMoreLabel={(hidden) =>
         `See ${hidden
           .slice(0, 2)
