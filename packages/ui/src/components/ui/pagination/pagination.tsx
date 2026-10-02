@@ -55,7 +55,14 @@ export function Pagination(props: PaginationProps) {
         ((itemProps) => <PaginationItem page={itemProps.page}>{itemProps.page}</PaginationItem>)
       }
       ellipsisComponent={local.ellipsisComponent ?? (() => <PaginationEllipsis />)}
-      class={cn('flex w-full items-center justify-center gap-1', local.class)}
+      // Kobalte renders the root as a `<nav>` wrapping a `<ul>`, and every control —
+      // previous, the page run, next — is an `<li>` inside that list. The row has to be
+      // declared on the list: on the `<nav>` alone it lays out one child and the
+      // controls stack vertically.
+      class={cn(
+        'flex w-full items-center justify-center [&>ul]:m-0 [&>ul]:flex [&>ul]:list-none [&>ul]:items-center [&>ul]:gap-1 [&>ul]:p-0',
+        local.class
+      )}
       {...rest}
     >
       <Show when={local.children} fallback={<DefaultPaginationControls />}>
