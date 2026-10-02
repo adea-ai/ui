@@ -36,8 +36,12 @@ export const Default: Story = {
         <MenubarTrigger>File</MenubarTrigger>
         <MenubarContent>
           <MenubarLabel>Session</MenubarLabel>
-          <MenubarItem shortcut="⌘N">New session</MenubarItem>
-          <MenubarItem shortcut="⌘O">Open project…</MenubarItem>
+          <MenubarItem shortcut="⌘N" keyshortcuts="Meta+N">
+            New session
+          </MenubarItem>
+          <MenubarItem shortcut="⌘O" keyshortcuts="Meta+O">
+            Open project…
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem variant="destructive">Close workspace</MenubarItem>
         </MenubarContent>
@@ -46,10 +50,16 @@ export const Default: Story = {
       <MenubarMenu value="edit">
         <MenubarTrigger>Edit</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem shortcut="⌘Z">Undo</MenubarItem>
-          <MenubarItem shortcut="⇧⌘Z">Redo</MenubarItem>
+          <MenubarItem shortcut="⌘Z" keyshortcuts="Meta+Z">
+            Undo
+          </MenubarItem>
+          <MenubarItem shortcut="⇧⌘Z" keyshortcuts="Shift+Meta+Z">
+            Redo
+          </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem shortcut="⌘F">Find in files…</MenubarItem>
+          <MenubarItem shortcut="⌘F" keyshortcuts="Meta+F">
+            Find in files…
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 

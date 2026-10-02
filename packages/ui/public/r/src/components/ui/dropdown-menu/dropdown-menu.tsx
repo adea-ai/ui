@@ -80,9 +80,22 @@ export function DropdownMenuItem(
     variant?: 'default' | 'destructive'
     /** Draw a shortcut hint at the trailing edge of the row. */
     shortcut?: string
+    /**
+     * The parseable chord behind `shortcut`, e.g. `Meta+E`. The drawn glyph is
+     * `aria-hidden` — reading it out would pollute the item's accessible name —
+     * so this is what assistive technology announces instead. Supply it
+     * whenever `shortcut` is drawn.
+     */
+    keyshortcuts?: string
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'variant', 'shortcut', 'children'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'variant',
+    'shortcut',
+    'keyshortcuts',
+    'children',
+  ])
 
   return (
     <KobalteDropdownMenu.Item
@@ -93,11 +106,15 @@ export function DropdownMenuItem(
         },
         local.class
       )}
+      aria-keyshortcuts={local.keyshortcuts}
       {...rest}
     >
       {local.children}
       {local.shortcut ? (
-        <span class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest">
+        <span
+          aria-hidden="true"
+          class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest"
+        >
           {local.shortcut}
         </span>
       ) : null}
@@ -111,12 +128,17 @@ export function DropdownMenuItem(
  * A component as well as the `shortcut` prop on an item, because a caller composing
  * a row by hand needs the same treatment — and because the alternative is every
  * caller inventing the same mono-and-dimmed span.
+ *
+ * The glyphs are decorative: the span is `aria-hidden` and the parseable chord
+ * belongs in the row's `aria-keyshortcuts`, so the item's accessible name stays
+ * exactly its label.
  */
 export function DropdownMenuShortcut(props: ComponentProps<'span'>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
     <span
       data-slot="dropdown-menu-shortcut"
+      aria-hidden="true"
       class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', local.class)}
       {...rest}
     />

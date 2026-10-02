@@ -46,6 +46,12 @@ export type AccountMenuItem = {
   icon?: JSX.Element
   /** A chord drawn at the trailing edge, e.g. `⌘,`. */
   shortcut?: string
+  /**
+   * The parseable chord behind `shortcut`, e.g. `Meta+,`. The glyph is
+   * `aria-hidden` so the item's accessible name stays exactly its label —
+   * same contract as `SideRailItem`. Supply it whenever `shortcut` is drawn.
+   */
+  keyshortcuts?: string
   disabled?: boolean
   /** Render only on this platform. Omit to always render. */
   platform?: 'desktop' | 'web'
@@ -180,6 +186,7 @@ export function AccountMenu(props: AccountMenuProps) {
                     item.onSelect?.()
                   }}
                   shortcut={item.shortcut}
+                  keyshortcuts={item.keyshortcuts}
                 >
                   {item.icon ?? renderFallbackIcon(item.id)}
                   <span>{item.label}</span>

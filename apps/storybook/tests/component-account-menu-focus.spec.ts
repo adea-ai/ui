@@ -83,6 +83,15 @@ test('an unmounted menu clears its pending after-close action', async ({ page })
   await expect(page.getByLabel('Cleanup callback')).toHaveText('deferred callback not fired')
 })
 
+test('a shortcut glyph stays out of the item accessible name', async ({ page }) => {
+  await page.getByRole('button', { name: 'Shortcut menu' }).click()
+
+  const settings = page.getByRole('menuitem', { name: 'Settings', exact: true })
+  await expect(settings).toBeVisible()
+  await expect(settings).toHaveAttribute('aria-keyshortcuts', 'Meta+,')
+  await expect(settings.locator('[aria-hidden="true"]').last()).toHaveText('⌘,')
+})
+
 test('a rail menu can open beside its trigger with its bottom aligned', async ({ page }) => {
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   await opener.click()
