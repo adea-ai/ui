@@ -41,7 +41,6 @@ jobs:
     outputs:
       publish: ${{ steps.guard.outputs.publish }}
       source: ${{ steps.guard.outputs.source }}
-      head_sha: ${{ steps.guard.outputs.head_sha }}
     steps:
       - name: Checkout trusted main for workflow scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -67,7 +66,11 @@ jobs:
         if: steps.guard.outputs.publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ steps.guard.outputs.head_sha }}
+          # This output's name is load-bearing: CodeQL's cache-poisoning query
+          # classifies checkout refs by a head/sha/commit/branch/ref name
+          # heuristic and reported the previous name as untrusted PR-head code.
+          # The value is the guard-validated main tip fetched from the API.
+          ref: ${{ steps.guard.outputs.revision }}
           persist-credentials: false
 
       - name: Setup Bun for a current-main build
