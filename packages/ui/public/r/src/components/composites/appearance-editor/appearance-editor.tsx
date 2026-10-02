@@ -47,7 +47,7 @@ import {
 } from '../../ui/popover/popover'
 import type { AppearanceEditorProps, AppearancePopoverProps } from './appearance-types'
 import { ModeChoices, AccentChoices, GlassChoices } from './appearance-choices'
-import { SettingsRow, ThemeRow } from './appearance-rows'
+import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
 
 /**
  * A live editor whose persistence and preview authority belong to its host.
@@ -99,6 +99,18 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
           disabled={props.saving}
           onSelect={(darkThemeId) => props.onChange({ darkThemeId })}
         />
+        {/* The row exists only when the host carries a terminal preference:
+            the draft field is the show/hide switch, so the editor can never
+            render a terminal row that writes nothing. */}
+        <Show when={props.draft.terminalThemeId !== undefined}>
+          <TerminalRow
+            selectedId={props.draft.terminalThemeId ?? 'theme'}
+            preview={props.resolvedAppearance === 'dark' ? props.darkTheme : props.lightTheme}
+            themes={props.themes}
+            disabled={props.saving}
+            onSelect={(terminalThemeId) => props.onChange({ terminalThemeId })}
+          />
+        </Show>
         <SettingsRow title="Accent" icon={<SlidersHorizontal />} description={accentDescription()}>
           <AccentChoices {...props} />
         </SettingsRow>
