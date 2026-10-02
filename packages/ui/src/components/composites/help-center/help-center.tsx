@@ -13,6 +13,8 @@ export type HelpCenterProps = {
   shortcuts: readonly HelpShortcut[]
   links: readonly HelpLink[]
   openExternal?: (url: string) => Promise<void>
+  /** Hides the page heading and introduction when a host dialog supplies them. */
+  showHeader?: boolean
   class?: string
 }
 
@@ -33,12 +35,14 @@ export function HelpCenter(props: HelpCenterProps) {
   }
   return (
     <div class={cn('flex min-w-0 flex-col gap-5', props.class)}>
-      <div class="flex flex-col gap-2">
-        <h1 class="text-xl font-semibold tracking-tight">Help Center</h1>
-        <p class="text-sm text-muted-foreground">
-          Keyboard shortcuts and resources for {props.appName}.
-        </p>
-      </div>
+      <Show when={props.showHeader !== false}>
+        <div class="flex flex-col gap-2">
+          <h1 class="text-xl font-semibold tracking-tight">Help Center</h1>
+          <p class="text-sm text-muted-foreground">
+            Keyboard shortcuts and resources for {props.appName}.
+          </p>
+        </div>
+      </Show>
       <Card>
         <CardHeader>
           <h2 class="text-base font-semibold text-primary">Keyboard shortcuts</h2>

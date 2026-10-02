@@ -95,6 +95,26 @@ test('help exposes keyboard keys and opens resources through its native adapter'
   await page.getByRole('link', { name: 'Project documentation' }).click()
   await expect(page.getByLabel('Opened URL')).toHaveText('https://example.com/docs')
 })
+test('Help Center embeds without duplicating its dialog heading or introduction', async ({
+  page,
+}) => {
+  const opener = page.getByRole('button', { name: 'Open embedded help', exact: true })
+  await opener.focus()
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Help Center' })
+  await expect
+    .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true)
+  await expect(dialog.getByRole('heading', { name: 'Help Center', exact: true })).toHaveCount(1)
+  await expect(
+    dialog.getByText('Keyboard shortcuts and resources for Cortana.', { exact: true })
+  ).toHaveCount(1)
+  const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+  expect(results.violations).toEqual([])
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(opener).toBeFocused()
+})
 test('updates retain all historical versions, poll progress, and cancel native work', async ({
   page,
 }) => {

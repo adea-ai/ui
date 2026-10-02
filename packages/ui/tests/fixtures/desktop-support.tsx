@@ -2,6 +2,7 @@ import { createSignal, onCleanup, onMount } from 'solid-js'
 import { render } from 'solid-js/web'
 import { AboutDialog } from '../../src/components/composites/about-dialog'
 import { HelpCenter } from '../../src/components/composites/help-center'
+import { ModalDialog } from '../../src/components/ui/modal-dialog'
 import { AccountMenu, createAppMenuItems } from '../../src/components/composites/account-menu'
 import {
   UpdateDialog,
@@ -19,6 +20,7 @@ declare global {
 
 function Fixture() {
   const [about, setAbout] = createSignal(false)
+  const [helpDialog, setHelpDialog] = createSignal(false)
   const [updates, setUpdates] = createSignal(false)
   const [copied, setCopied] = createSignal('')
   const [opened, setOpened] = createSignal('')
@@ -94,6 +96,7 @@ function Fixture() {
         Open about
       </Button>
       <Button onClick={() => setUpdates(true)}>Open updates</Button>
+      <Button onClick={() => setHelpDialog(true)}>Open embedded help</Button>
       <Button onClick={() => setDenyCopy(true)}>Deny clipboard</Button>
       <Button onClick={() => setDeferCancellation(true)}>Defer cancellation</Button>
       <AccountMenu
@@ -131,6 +134,20 @@ function Fixture() {
         links={[{ label: 'Project documentation', url: 'https://example.com/docs' }]}
         openExternal={openExternal}
       />
+      <ModalDialog
+        open={helpDialog()}
+        onClose={() => setHelpDialog(false)}
+        title="Help Center"
+        description="Keyboard shortcuts and resources for Cortana."
+      >
+        <HelpCenter
+          appName="Cortana"
+          shortcuts={[{ label: 'Open settings', keys: ['⌘', ','] }]}
+          links={[{ label: 'Project documentation', url: 'https://example.com/docs' }]}
+          openExternal={openExternal}
+          showHeader={false}
+        />
+      </ModalDialog>
       <output aria-label="Copied payload">{copied()}</output>
       <output aria-label="Opened URL">{opened()}</output>
       <output aria-label="Cancel requests">{cancelCalls()}</output>
