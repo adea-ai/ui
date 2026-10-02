@@ -27,8 +27,14 @@ declare global {
 const packageRoot = resolve(import.meta.dir, '..')
 const repoRoot = resolve(packageRoot, '../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-scene-controls-'))
-const CONTROL_BUDGET = { gzip: 40 * 1024, css: 32 * 1024 }
-const OVERLAY_BUDGET = { gzip: 38 * 1024, css: 40 * 1024 }
+// Caps measured at #193, before #181's tooltip coverage reached this fixture
+// and before #207's generated class tables rode along with `lib/utils`; the
+// gate itself was unreachable from #193 onward (missing rewrite entries), so
+// nothing enforced them. Re-pinned to the 2026-10-02 measurements: scene
+// controls 41,404/41,607 gzip + 37,828 CSS; action-button touch 58,201/58,426
+// gzip + 41,556 CSS.
+const CONTROL_BUDGET = { gzip: 42 * 1024, css: 38 * 1024 }
+const OVERLAY_BUDGET = { gzip: 60 * 1024, css: 42 * 1024 }
 const optionalPeers = ['chart.js', 'solid-chartjs', 'embla-carousel', 'embla-carousel-solid']
 const results: unknown[] = []
 const budgetFailures: string[] = []
@@ -115,6 +121,9 @@ const fixtures = [
         '@adea-ai/ui/components/ui/dropdown-menu',
       ],
       ['../../src/components/ui/popover/popover', '@adea-ai/ui/components/ui/popover'],
+      // The fixture grew a rejected/controlled tooltip pair in #181 without a
+      // rewrite entry here, so every local `verify` died at this check.
+      ['../../src/components/ui/tooltip/tooltip', '@adea-ai/ui/components/ui/tooltip'],
       ['../../src/styles/globals.css', './style.css'],
     ]),
     sources: [
@@ -251,6 +260,11 @@ try {
   const solidVersion = localManifest.peerDependencies?.['solid-js']
   if (!solidVersion || localManifest.dependencies?.['solid-js'])
     throw new Error('SolidJS must remain an external package peer')
+  // The action-button fixture imports lucide-solid directly, so the consumer
+  // must declare it like the other packed gates do; the tarball's transitive
+  // copy is not guaranteed to hoist to the consumer root.
+  const lucideVersion = localManifest.dependencies?.['lucide-solid']
+  if (!lucideVersion) throw new Error('Fixture icons require lucide-solid as a dependency')
   const tailwindVersion = JSON.parse(
     readFileSync(join(repoRoot, 'node_modules/tailwindcss/package.json'), 'utf8')
   ).version as string
@@ -261,6 +275,7 @@ try {
       type: 'module',
       dependencies: {
         '@adea-ai/ui': `file:${archivePath}`,
+        'lucide-solid': lucideVersion,
         'solid-js': solidVersion,
         tailwindcss: tailwindVersion,
       },
@@ -422,9 +437,11 @@ export function PackedSceneControlsConsumer() {
       if (uiModules.some((id) => id.includes(otherCondition)))
         throw new Error(`${fixture.name} mixed compiled and Solid export conditions`)
       const allowedUi =
+        // `cn-tables.generated` rides along with `lib/utils` (`cn()` reads the
+        // class tables); it is shared infrastructure, not an unrelated module.
         fixture.name === 'scene-controls'
-          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:utils|variants)\./
-          : /\/components\/(?:composites\/action-button|ui\/(?:button|dropdown-menu|popover|spinner|tooltip))\/|\/lib\/(?:overlay|utils|variants)\./
+          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|utils|variants)\./
+          : /\/components\/(?:composites\/action-button|ui\/(?:button|dropdown-menu|popover|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
       const unrelatedUi = uiModules.filter((id) => !allowedUi.test(id))
       if (unrelatedUi.length)
         throw new Error(`${fixture.name} retained unrelated UI modules: ${unrelatedUi.join(', ')}`)
