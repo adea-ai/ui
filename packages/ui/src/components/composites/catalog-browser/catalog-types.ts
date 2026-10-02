@@ -73,7 +73,8 @@ export type CatalogBrowserProps<Value> = Readonly<{
   backLabel: string
   detailRegionLabel: string
   installedLabel: string
-  publishedByLabel: (publisher: string) => string
+  /** Optional legacy label: rows now show the bare publisher as an accent chip. */
+  publishedByLabel?: (publisher: string) => string
   showMoreLabel: (entries: readonly CatalogBrowserEntry<Value>[], remainingCount: number) => string
   showLessLabel: string
   /** Temporarily disables catalog controls while a host menu owns interaction. */

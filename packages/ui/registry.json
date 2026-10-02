@@ -1896,7 +1896,6 @@
       "registryDependencies": [
         "@adea-ai/ui/badge",
         "@adea-ai/ui/button",
-        "@adea-ai/ui/card",
         "@adea-ai/ui/empty",
         "@adea-ai/ui/input-group",
         "@adea-ai/ui/scroll-area",
