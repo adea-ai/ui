@@ -131,6 +131,14 @@ export function ContextMenuRadioItem(props: ComponentProps<typeof KobalteContext
   )
 }
 
+/**
+ * The caption of a `ContextMenuGroup`, and that group's accessible name. It must be a
+ * child of the group it names: Kobalte reads the group from context, so a label
+ * placed directly in the content throws `useMenuGroupContext must be used within
+ * a Menu.Group` the moment the menu opens. For an ungrouped caption, wrap the
+ * label and its items in a group anyway — the grouping is what a screen reader
+ * announces.
+ */
 export function ContextMenuLabel(props: ComponentProps<typeof KobalteContextMenu.GroupLabel>) {
   const [local, rest] = splitProps(props, ['class'])
   return <KobalteContextMenu.GroupLabel class={cn(menuLabel, local.class)} {...rest} />
