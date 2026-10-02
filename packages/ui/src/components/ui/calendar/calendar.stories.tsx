@@ -21,10 +21,24 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/**
+ * The month the selection stories open on. corvu opens on today's month by
+ * default, so without it a fixed selection scrolls out of view as the calendar
+ * moves on and the story stops showing a selected day at all.
+ */
+const SEPTEMBER_2026 = new Date(2026, 8, 1)
+
 export const Single: Story = {
   render: () => {
     const [day, setDay] = createSignal<Date | null>(new Date(2026, 8, 25))
-    return <CalendarSurface mode="single" value={day()} onValueChange={setDay} />
+    return (
+      <CalendarSurface
+        mode="single"
+        initialMonth={SEPTEMBER_2026}
+        value={day()}
+        onValueChange={setDay}
+      />
+    )
   },
 }
 
@@ -34,14 +48,28 @@ export const Range: Story = {
       from: new Date(2026, 8, 10),
       to: new Date(2026, 8, 18),
     })
-    return <CalendarSurface mode="range" value={range()} onValueChange={setRange} />
+    return (
+      <CalendarSurface
+        mode="range"
+        initialMonth={SEPTEMBER_2026}
+        value={range()}
+        onValueChange={setRange}
+      />
+    )
   },
 }
 
 export const Multiple: Story = {
   render: () => {
     const [days, setDays] = createSignal<Date[]>([new Date(2026, 8, 4), new Date(2026, 8, 11)])
-    return <CalendarSurface mode="multiple" value={days()} onValueChange={setDays} />
+    return (
+      <CalendarSurface
+        mode="multiple"
+        initialMonth={SEPTEMBER_2026}
+        value={days()}
+        onValueChange={setDays}
+      />
+    )
   },
 }
 

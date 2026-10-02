@@ -59,8 +59,11 @@
   }
 }
 
+/* Presence, like the variants above: corvu and Kobalte mark a selected item
+   with an empty attribute (`data-selected=""`), while cmdk writes `"true"` and
+   `"false"`. Matching only `'true'` left every corvu calendar day unfilled. */
 @custom-variant data-selected {
-  &:where([data-selected='true']) {
+  &:where([data-selected]:not([data-selected='false'])) {
     @slot;
   }
 }
