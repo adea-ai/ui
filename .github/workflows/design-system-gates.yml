@@ -30,6 +30,14 @@ concurrency:
 # behind it rather than an assertion.
 # Draft edits run these gates locally. The ready transition allocates validation
 # runners; returning to draft cancels the prior run through the concurrency group.
+#
+# Pushes to main run only the change classifier and the workshop build that
+# publishes the Pages artifact: every push here is a squash merge whose content
+# already passed these gates on its pull request, so re-running eleven test
+# lanes on the merged tree doubled the fleet's largest runner cost without
+# blocking anything. The library build is re-proven on main by the publish
+# workflow, and Pages falls back to a current-main build when no artifact is
+# fresh. Direct pushes to main are barred by branch protection.
 jobs:
   changes:
     name: Gate scope
@@ -60,7 +68,7 @@ jobs:
   registry-core:
     name: Registry core
     needs: changes
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false')
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -123,7 +131,7 @@ jobs:
   packed-conversation:
     name: Packed conversation
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -166,7 +174,7 @@ jobs:
   packed-layout:
     name: Packed layout
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -209,7 +217,7 @@ jobs:
   packed-layout-renderer:
     name: Packed layout renderer
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -249,7 +257,7 @@ jobs:
   packed-appearance:
     name: Packed appearance
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -293,7 +301,7 @@ jobs:
   packed-modal-dialog:
     name: Packed modal dialog
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -333,7 +341,7 @@ jobs:
   packed-native-select:
     name: Packed native select
     needs: [changes, registry-core]
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.registry != 'false') && needs.registry-core.result == 'success'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
@@ -384,7 +392,7 @@ jobs:
       - packed-appearance
       - packed-modal-dialog
       - packed-native-select
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -482,7 +490,7 @@ jobs:
   # one slice no longer takes the whole lane with it.
   workshop:
     name: Workshop (${{ matrix.shard }})
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && needs.workshop-build.result == 'success' && (needs.changes.result != 'success' || needs.changes.outputs.workshop != 'false')
     needs: [changes, workshop-build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -547,7 +555,7 @@ jobs:
   components:
     name: Component interactions (${{ matrix.shard }})
     needs: changes
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (needs.changes.result != 'success' || needs.changes.outputs.components != 'false')
     runs-on: ubuntu-latest
     # Shards are sized to keep every job near the five-minute iteration bar:
     # four shards left the slowest with a ~5-minute test step on its own, and
@@ -604,7 +612,7 @@ jobs:
   # replacing required contexts in the repository ruleset again.
   workshop-gate:
     name: Workshop
-    if: always() && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    if: always() && github.event_name != 'push' && vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     needs: [changes, workshop-build, workshop, components]
     runs-on: ubuntu-latest
     timeout-minutes: 5

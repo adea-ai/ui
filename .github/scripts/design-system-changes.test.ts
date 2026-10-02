@@ -466,6 +466,22 @@ test('Pages publishes the exact successful main build and keeps registry install
     "(github.event_name == 'push' && needs.changes.outputs.pages != 'false')"
   )
   expect(gates.jobs['workshop-build'].if).toContain("github.event_name == 'push'")
+  for (const lane of [
+    'registry-core',
+    'packed-conversation',
+    'packed-layout',
+    'packed-layout-renderer',
+    'packed-appearance',
+    'packed-modal-dialog',
+    'packed-native-select',
+    'registry',
+    'workshop',
+    'components',
+    'workshop-gate',
+  ])
+    expect(gates.jobs[lane].if).toContain("github.event_name != 'push'")
+  expect(gates.jobs['workshop-build'].if).not.toContain("github.event_name != 'push'")
+  expect(gates.jobs['changes'].if).not.toContain("github.event_name != 'push'")
   expect(gates.jobs['workshop'].if).toContain("needs.changes.outputs.workshop != 'false'")
   expect(gates.jobs['components'].if).toContain("needs.changes.outputs.components != 'false'")
   expect(gates.jobs['registry-core'].if).toContain("needs.changes.outputs.registry != 'false'")
