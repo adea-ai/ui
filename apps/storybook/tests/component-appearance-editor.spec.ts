@@ -20,6 +20,11 @@ for (const fontSize of ['100%', '200%']) {
     const description = section.getByText("Theme default · Uses the palette's intended color.", {
       exact: true,
     })
+    // WebKit in the packed-solid lane measured mid font-swap: the fallback
+    // face's wider text shoves the wrapped description below the floor the
+    // settled layout clears. The assertion is about the layout, so measure
+    // after the faces the stylesheet declares have landed.
+    await page.evaluate(() => document.fonts.ready)
     const metrics = await description.evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
@@ -180,11 +185,11 @@ test('the terminal row follows the interface theme and offers the full catalogue
   const options = menu.getByRole('menuitemradio')
   // The UI-theme default plus every catalogue record — both appearances,
   // because the terminal paints one fixed palette rather than a light/dark axis.
-  await expect(options).toHaveCount(5)
+  await expect(options).toHaveCount(15)
   await expect(menu.getByRole('menuitemradio', { name: 'UI theme', exact: true })).toBeVisible()
   // Each option carries a compact theme preview and a one-line description;
   // the description stays visual so the accessible name is just the theme.
-  await expect(menu.locator('[data-theme-menu-preview]')).toHaveCount(5)
+  await expect(menu.locator('[data-theme-menu-preview]')).toHaveCount(15)
   await expect(menu.getByText('Uses the interface theme.', { exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(trigger).toBeFocused()
@@ -301,7 +306,7 @@ test('a pending save disables theme choices when the menu is already open', asyn
   await trigger.click()
   const menu = page.getByRole('menu')
   const themes = menu.getByRole('menuitemradio')
-  await expect(themes).toHaveCount(2)
+  await expect(themes).toHaveCount(9)
 
   await page.evaluate(() => {
     document.body.dataset['pendingSave'] = 'true'
@@ -323,15 +328,15 @@ test('theme menu radios retain Home/End, arrow, typeahead, and selection behavio
   await trigger.click()
   const menu = page.getByRole('menu')
   const themes = menu.getByRole('menuitemradio')
-  await expect(themes).toHaveCount(2)
+  await expect(themes).toHaveCount(9)
   await expect(menu).toBeFocused()
   await expect(menu.getByRole('menuitemradio', { checked: true })).toBeVisible()
   await page.keyboard.press('Home')
   await expect(themes.nth(0)).toBeFocused()
   await page.keyboard.press('End')
-  await expect(themes.nth(1)).toBeFocused()
+  await expect(themes.nth(8)).toBeFocused()
   await page.keyboard.press('ArrowUp')
-  await expect(themes.nth(0)).toBeFocused()
+  await expect(themes.nth(7)).toBeFocused()
   await page.keyboard.press('d')
   await expect(menu.getByRole('menuitemradio', { name: 'Dracula', exact: true })).toBeFocused()
   await page.keyboard.press('Enter')
@@ -613,3 +618,34 @@ for (const width of [320, 768, 1024, 1440]) {
     await page.screenshot({ path: testInfo.outputPath(`appearance-${width}.png`) })
   })
 }
+
+test('theme menus scroll inside a fixed cap and the accent row starts at the theme default', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+
+  await dialog.getByRole('button', { name: 'Dark theme', exact: true }).click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  // The cap is fixed, not the popper's measured available height: an adaptive
+  // menu made the host sidebar scroll to reveal it. The menu owns the overflow
+  // instead — five visible rows, the rest one wheel away.
+  await expect(menu).toHaveCSS('max-height', '320px')
+  expect(await menu.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
+
+  const checked = menu.getByRole('menuitemradio', { checked: true })
+  await expect(checked).toBeVisible()
+  // The selected row's indicator reads in the accent, like every other
+  // selected state — the component default, not a caller's styling.
+  await expect(checked.locator('[data-slot="dropdown-menu-indicator"]')).toHaveClass(/text-primary/)
+  await page.keyboard.press('Escape')
+  await expect(menu).toHaveCount(0)
+
+  const accentGroup = dialog.getByRole('radiogroup', { name: 'Accent', exact: true })
+  const themeDefault = accentGroup.getByRole('radio', { name: 'Theme default' })
+  await expect(themeDefault).toBeChecked()
+  // The theme's own accent is the first swatch — the old dedicated chip is
+  // folded into the grid rather than sitting beside it as a second control.
+  expect(await accentGroup.getByRole('radio').first().getAttribute('value')).toBe('theme')
+})

@@ -43,8 +43,11 @@ function inspectPackedBundle(
   )
   if (forbidden.length) throw new Error(`Unrelated renderer modules: ${forbidden.join(', ')}`)
   const themeRecords = modules.filter((id) => id.includes('@adea-ai/themes/dist/generated/themes/'))
-  if (themeRecords.length !== 4)
-    throw new Error('Expected exactly four explicitly imported host theme records')
+  // The fixture carries a catalogue long enough to overflow the theme menus'
+  // fixed cap, so the internal scroll is under test; the pin proves the
+  // renderer still bundles exactly the records the host imports.
+  if (themeRecords.length !== 14)
+    throw new Error('Expected exactly fourteen explicitly imported host theme records')
   const roots = new Set(
     modules
       .filter((id) => id.includes('/node_modules/solid-js/'))

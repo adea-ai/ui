@@ -210,10 +210,14 @@ function ThemeSelectMenu(props: {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           portalMount={portalMount()}
-          // Sized to content (at least the trigger width, never wider than the
+          // A fixed height with its own scroll: an adaptive cap measured the
+          // host panel instead, and opening a long theme list scrolled the
+          // sidebar to reveal the menu. The content scrolls internally at the
+          // cap, so the panel around the trigger never moves. Width still
+          // follows content (at least the trigger width, never wider than the
           // popper allows) so long theme names render in full with padding for
           // the selection indicator instead of truncating at the anchor width.
-          class="max-h-(--kb-popper-content-available-height) w-max min-w-(--kb-popper-anchor-width) max-w-(--kb-popper-content-available-width) overflow-x-hidden overflow-y-auto"
+          class="max-h-80 w-max min-w-(--kb-popper-anchor-width) max-w-(--kb-popper-content-available-width) overflow-x-hidden overflow-y-auto"
           onInteractOutside={(event) => {
             if (event.detail.originalEvent.type !== 'pointerdown') return
             const parentDialog = portalMount()?.closest<HTMLElement>('[role="dialog"]')

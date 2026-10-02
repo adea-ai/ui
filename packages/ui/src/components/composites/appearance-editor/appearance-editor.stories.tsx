@@ -4,7 +4,25 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { AppearanceEditor, AppearancePopover } from './appearance-editor'
 import type { AppearanceDraft } from './appearance-types'
 
-const themes = ['adea-light', 'adea-dark', 'dracula', 'catppuccin-latte'].map((id) => getTheme(id)!)
+// A catalogue long enough that the theme menus exercise their internal
+// scroll: a two-row list never overflows the fixed cap, so a regression to
+// adaptive sizing would be invisible in the workshop.
+const themes = [
+  'adea-light',
+  'adea-dark',
+  'ayu',
+  'ayu-light',
+  'ayu-mirage',
+  'catppuccin-frappe',
+  'catppuccin-latte',
+  'catppuccin-macchiato',
+  'catppuccin-mocha',
+  'dracula',
+  'everforest-dark',
+  'everforest-light',
+  'gruvbox-dark',
+  'gruvbox-light',
+].map((id) => getTheme(id)!)
 const defaults: AppearanceDraft = {
   mode: 'system',
   lightThemeId: 'adea-light',

@@ -153,7 +153,10 @@ export function DropdownMenuCheckboxItem(
   return (
     <KobalteDropdownMenu.CheckboxItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
       {local.children}
-      <KobalteDropdownMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center">
+      <KobalteDropdownMenu.ItemIndicator
+        data-slot="dropdown-menu-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Check class="size-4" />
       </KobalteDropdownMenu.ItemIndicator>
     </KobalteDropdownMenu.CheckboxItem>
@@ -172,7 +175,12 @@ export function DropdownMenuRadioItem(props: ComponentProps<typeof KobalteDropdo
   return (
     <KobalteDropdownMenu.RadioItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
       {local.children}
-      <KobalteDropdownMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center">
+      {/* The indicator reads in the accent, like every other selected state in
+          the system — a canvas-colored dot on a checked row reads as decoration. */}
+      <KobalteDropdownMenu.ItemIndicator
+        data-slot="dropdown-menu-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Circle class="size-2 fill-current" />
       </KobalteDropdownMenu.ItemIndicator>
     </KobalteDropdownMenu.RadioItem>
