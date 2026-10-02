@@ -33,7 +33,7 @@ const standardItems: AccountMenuItem[] = [
   { id: 'help', label: 'Help Center', disabled: true },
   { id: 'feedback', label: 'Send Feedback', disabled: true },
   { id: 'updates', label: 'Updates', platform: 'desktop' },
-  { id: 'settings', label: 'Settings', shortcut: '⌘,' },
+  { id: 'settings', label: 'Settings', shortcut: '⌘,', keyshortcuts: 'Meta+,' },
 ]
 
 /** The standard menu, signed in. */
@@ -97,7 +97,7 @@ export const CustomItems: Story = {
             </Badge>
           ),
         },
-        { id: 'settings', label: 'Settings', shortcut: '⌘,' },
+        { id: 'settings', label: 'Settings', shortcut: '⌘,', keyshortcuts: 'Meta+,' },
         { id: 'about', label: 'About' },
       ]}
     />

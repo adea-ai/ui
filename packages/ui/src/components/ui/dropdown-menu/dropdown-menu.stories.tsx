@@ -46,11 +46,11 @@ export const Default: Story = {
         Actions
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuItem shortcut="⌘E">
+        <DropdownMenuItem shortcut="⌘E" keyshortcuts="Meta+E">
           <Pencil />
           Rename
         </DropdownMenuItem>
-        <DropdownMenuItem shortcut="⌘D">
+        <DropdownMenuItem shortcut="⌘D" keyshortcuts="Meta+D">
           <Copy />
           Duplicate
         </DropdownMenuItem>
@@ -59,7 +59,7 @@ export const Default: Story = {
           Share
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" shortcut="⌘⌫">
+        <DropdownMenuItem variant="destructive" shortcut="⌘⌫" keyshortcuts="Meta+Backspace">
           <Trash2 />
           Delete
         </DropdownMenuItem>

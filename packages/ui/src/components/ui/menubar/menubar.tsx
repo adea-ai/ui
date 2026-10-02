@@ -91,9 +91,22 @@ export function MenubarItem(
   props: ComponentProps<typeof KobalteMenubar.Item> & {
     variant?: 'default' | 'destructive'
     shortcut?: string
+    /**
+     * The parseable chord behind `shortcut`, e.g. `Meta+N`. The drawn glyph is
+     * `aria-hidden` — reading it out would pollute the item's accessible name —
+     * so this is what assistive technology announces instead. Supply it
+     * whenever `shortcut` is drawn.
+     */
+    keyshortcuts?: string
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'variant', 'shortcut', 'children'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'variant',
+    'shortcut',
+    'keyshortcuts',
+    'children',
+  ])
   return (
     <KobalteMenubar.Item
       class={cn(
@@ -103,11 +116,15 @@ export function MenubarItem(
         },
         local.class
       )}
+      aria-keyshortcuts={local.keyshortcuts}
       {...rest}
     >
       {local.children}
       {local.shortcut ? (
-        <span class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest">
+        <span
+          aria-hidden="true"
+          class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest"
+        >
           {local.shortcut}
         </span>
       ) : null}

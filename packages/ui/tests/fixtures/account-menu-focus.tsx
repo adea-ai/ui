@@ -62,6 +62,12 @@ function Fixture() {
           },
         ]}
       />
+      <AccountMenu
+        label="Shortcut menu"
+        authenticated={false}
+        showSession={false}
+        items={[{ id: 'settings', label: 'Settings', shortcut: '⌘,', keyshortcuts: 'Meta+,' }]}
+      />
       <Show when={cleanupMenuMounted()}>
         <AccountMenu
           label="Unmount test menu"
