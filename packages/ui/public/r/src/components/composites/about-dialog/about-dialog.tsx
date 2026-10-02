@@ -117,7 +117,11 @@ export function AboutDialog(props: AboutDialogProps) {
         <div class="flex flex-col items-center gap-3 px-6 py-8 text-center">
           <img src={props.appIcon} alt="" class="size-16" aria-hidden="true" />
           <DialogTitle>{props.appName}</DialogTitle>
-          <p class="text-sm text-primary">{versionLabel()}</p>
+          {/* Body text on the dialog's themed surface: primary ink measures
+              below AA against the lighter dialog backgrounds across schemes,
+              so the version and the source link carry foreground ink and keep
+              primary as the link's underline accent (the text-link treatment). */}
+          <p class="text-sm text-foreground">{versionLabel()}</p>
           <p class="text-xs text-muted-foreground">{props.copyright}</p>
           <div class="flex flex-wrap items-center justify-center gap-3">
             <ActionButton
@@ -134,6 +138,7 @@ export function AboutDialog(props: AboutDialogProps) {
               as="a"
               variant="link"
               size="sm"
+              class="text-foreground decoration-primary"
               href={props.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
