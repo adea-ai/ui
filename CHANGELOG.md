@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.97.7](https://github.com/adea-ai/ui/compare/v0.97.6...v0.97.7) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** keep menu shortcut glyphs out of the accessible name ([#251](https://github.com/adea-ai/ui/issues/251)) ([7a42085](https://github.com/adea-ai/ui/commit/7a4208545f7bcaad98b499a7d91ed44fce1f04bc))
+
+
+### Tests
+
+* **tree:** reach trailing row actions with the WebKit-safe Tab key ([#249](https://github.com/adea-ai/ui/issues/249)) ([77acdbb](https://github.com/adea-ai/ui/commit/77acdbb270db30f9b3359f6e6abf928349b5e8db))
+
 ## [0.97.6](https://github.com/adea-ai/ui/compare/v0.97.5...v0.97.6) (2026-10-02)
 
 
