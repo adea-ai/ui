@@ -42,7 +42,7 @@ export const Default: Story = {
       <DrawerTrigger as={Button} variant="outline">
         Open drawer
       </DrawerTrigger>
-      <DrawerContent withHandle side="bottom">
+      <DrawerContent withHandle>
         <DrawerHeader>
           <DrawerTitle>Lane summary</DrawerTitle>
           <DrawerDescription>
@@ -68,11 +68,13 @@ export const Default: Story = {
 /** From the side, which is the shape an inspector takes on a narrow window. */
 export const FromTheSide: Story = {
   render: () => (
-    <Drawer>
+    // The side belongs to the root: corvu computes the drag axis and the
+    // `data-side` hook from it there, and the content only reflects it.
+    <Drawer side="right">
       <DrawerTrigger as={Button} variant="outline">
         Open inspector
       </DrawerTrigger>
-      <DrawerContent side="right">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Worktree</DrawerTitle>
           <DrawerDescription>feat/m12-397-worktrees</DrawerDescription>
