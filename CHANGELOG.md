@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.97.6](https://github.com/adea-ai/ui/compare/v0.97.5...v0.97.6) (2026-10-02)
+
+
+### Performance
+
+* **ci:** run only the Pages producer on main pushes ([#250](https://github.com/adea-ai/ui/issues/250)) ([9d95819](https://github.com/adea-ai/ui/commit/9d958194321fa82050bf0eca329a37104b5a2186))
+
 ## [0.97.5](https://github.com/adea-ai/ui/compare/v0.97.4...v0.97.5) (2026-10-02)
 
 
