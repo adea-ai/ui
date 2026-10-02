@@ -109,6 +109,15 @@ test('Help Center embeds without duplicating its dialog heading or introduction'
   await expect(
     dialog.getByText('Keyboard shortcuts and resources for Cortana.', { exact: true })
   ).toHaveCount(1)
+  // CI runners can reach the audit within the dialog's enter animation; a
+  // mid-fade opacity skews axe's contrast math, so settle first.
+  await dialog.evaluate((element) =>
+    Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => undefined))
+    )
+  )
   const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(results.violations).toEqual([])
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
@@ -136,6 +145,14 @@ test('About and Help remain accessible without narrow-screen overflow', async ({
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true)
   await page.getByRole('button', { name: 'Open about', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'About Cortana' })
+  await dialog.evaluate((element) =>
+    Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => undefined))
+    )
+  )
   const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(results.violations).toEqual([])
 })
