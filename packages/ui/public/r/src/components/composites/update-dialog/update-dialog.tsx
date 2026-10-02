@@ -8,9 +8,19 @@ import {
   splitProps,
 } from 'solid-js'
 import type { Accessor } from 'solid-js'
-import { Check, Download, ExternalLink, LoaderCircle, RefreshCw, Sparkles } from 'lucide-solid'
+import {
+  Check,
+  CircleStop,
+  Download,
+  ExternalLink,
+  LoaderCircle,
+  Monitor,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-solid'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
+import { ActionButton } from '../action-button'
 import {
   Dialog,
   DialogClose,
@@ -79,6 +89,9 @@ export type UpdatePhase =
   | 'downloading'
   | 'installing'
   | 'installed'
+  | 'cancelling'
+  | 'cancelled'
+  | 'unavailable'
   | 'failed'
 
 /** A snapshot of the updater. Every field the dialog renders, and nothing else. */
@@ -124,6 +137,12 @@ export type UpdateAdapter = Readonly<{
    * wrong one.
    */
   install(expectedVersion: string): Promise<UpdateState>
+  /** Optional native cancellation, available only while work is in flight. */
+  cancel?(): Promise<UpdateState>
+  /** Enable status polling during native work; omit for push-driven adapters. */
+  pollIntervalMs?: number
+  /** Route external links through the native shell when needed. */
+  openExternal?(url: string): Promise<void>
   /** False in a browser build, where there is no installer to drive. */
   isDesktopRuntime(): boolean
 }>
@@ -132,6 +151,10 @@ export type UpdateDialogProps = {
   adapter: UpdateAdapter
   /** The application's name, used in the title and the copy. */
   appName?: string
+  /** The actual desktop application icon, supplied by its host. */
+  appIcon?: string
+  /** Complete build-time history, also available before the native status arrives. */
+  changelog?: string
   /** Shown before the first status arrives, so the dialog is never blank. */
   fallbackVersion?: string
   /** Copy for the adapter's non-desktop case. */
@@ -181,7 +204,10 @@ function errorMessage(caught: unknown, fallback: string): string {
  */
 function isBusy(state: UpdateState | null): boolean {
   return (
-    state?.phase === 'checking' || state?.phase === 'downloading' || state?.phase === 'installing'
+    state?.phase === 'checking' ||
+    state?.phase === 'downloading' ||
+    state?.phase === 'installing' ||
+    state?.phase === 'cancelling'
   )
 }
 
@@ -189,6 +215,8 @@ export function UpdateDialog(props: UpdateDialogProps) {
   const [local] = splitProps(props, [
     'adapter',
     'appName',
+    'appIcon',
+    'changelog',
     'fallbackVersion',
     'desktopOnlyMessage',
     'open',
@@ -216,6 +244,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal('')
   const [checkFailed, setCheckFailed] = createSignal(false)
+  const [cancelPending, setCancelPending] = createSignal(false)
   let lifecycleEpoch = 0
   let activeOpenEpoch: number | undefined
   let disposed = false
@@ -309,6 +338,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
    */
   createEffect(() => {
     if (!open() || !desktop()) {
+      setCancelPending(false)
       if (activeOpenEpoch !== undefined) {
         activeOpenEpoch = undefined
         lifecycleEpoch += 1
@@ -329,6 +359,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
     })
     setError('')
     setCheckFailed(false)
+    setCancelPending(false)
     setBusy(true)
     void (async () => {
       try {
@@ -357,10 +388,17 @@ export function UpdateDialog(props: UpdateDialogProps) {
     if (!version || !isCurrent()) return
     setBusy(true)
     setError('')
+    setState((current) =>
+      current ? { ...current, phase: 'downloading', downloadedBytes: 0, totalBytes: null } : current
+    )
     try {
       const next = await local.adapter.install(version)
       if (!isCurrent()) return
-      setState(next)
+      setState(
+        cancelPending() && ['downloading', 'installing'].includes(next.phase)
+          ? { ...next, phase: 'cancelling' }
+          : next
+      )
       // A refused install answers with a normal payload whose phase is `failed`.
       // Without this the click looked like nothing happened.
       if (next.phase === 'failed') {
@@ -377,12 +415,87 @@ export function UpdateDialog(props: UpdateDialogProps) {
     }
   }
 
-  const changelog = createMemo(() => plainTextFromMarkdown(state()?.changelog ?? ''))
+  // Poll only an open, active native operation. Epoch ownership prevents a late
+  // status response from replacing a reopened dialog's newer snapshot.
+  createEffect(() => {
+    const phase = state()?.phase
+    if (
+      !open() ||
+      !desktop() ||
+      !local.adapter.pollIntervalMs ||
+      !['downloading', 'installing', 'cancelling'].includes(phase ?? '')
+    )
+      return
+    const epoch = activeOpenEpoch
+    let active = true
+    let requestInFlight = false
+    const timer = window.setInterval(
+      () => {
+        if (requestInFlight) return
+        requestInFlight = true
+        void (async () => {
+          try {
+            const next = await local.adapter.getStatus()
+            if (!active || disposed || !open() || activeOpenEpoch !== epoch) return
+            setState(
+              cancelPending() && ['downloading', 'installing'].includes(next.phase)
+                ? { ...next, phase: 'cancelling' }
+                : next
+            )
+            if (next.phase === 'failed')
+              setError(errorMessage(next.error, 'Update installation failed'))
+          } catch (caught) {
+            if (active && !disposed && activeOpenEpoch === epoch)
+              setError(errorMessage(caught, 'Update progress is unavailable'))
+          } finally {
+            requestInFlight = false
+          }
+        })()
+      },
+      Math.max(250, local.adapter.pollIntervalMs)
+    )
+    onCleanup(() => {
+      active = false
+      window.clearInterval(timer)
+    })
+  })
+
+  const cancel = async () => {
+    if (!local.adapter.cancel || cancelPending() || state()?.phase === 'cancelling') return
+    const epoch = activeOpenEpoch
+    setError('')
+    setCancelPending(true)
+    setState((current) => (current ? { ...current, phase: 'cancelling' } : current))
+    try {
+      const next = await local.adapter.cancel()
+      if (!disposed && open() && activeOpenEpoch === epoch) setState(next)
+    } catch (caught) {
+      if (!disposed && open() && activeOpenEpoch === epoch) {
+        setError(errorMessage(caught, 'Could not cancel the update'))
+        await loadStatus(() => !disposed && open() && activeOpenEpoch === epoch)
+      }
+    } finally {
+      if (!disposed && open() && activeOpenEpoch === epoch) setCancelPending(false)
+    }
+  }
+
+  const openRelease = async (url: string) => {
+    try {
+      if (local.adapter.openExternal) await local.adapter.openExternal(url)
+      else window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (caught) {
+      if (!disposed) setError(errorMessage(caught, 'Could not open the release page'))
+    }
+  }
+
+  const changelog = createMemo(() =>
+    plainTextFromMarkdown(state()?.changelog || local.changelog || '')
+  )
   const notes = () => {
     const value = state()?.releaseNotes
     return value ? plainTextFromMarkdown(value) : ''
   }
-  const working = () => busy() || isBusy(state())
+  const working = () => busy() || cancelPending() || isBusy(state())
   const isCurrent = () => state()?.phase === 'current' && !error() && !checkFailed() && !working()
 
   const triggerLabel = () => {
@@ -432,14 +545,32 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
       <DialogContent
         class={cn('max-w-3xl', local.class)}
-        onOpenAutoFocus={focusRestoration.onOpenAutoFocus}
+        onKeyDown={(event: KeyboardEvent) => {
+          // An explanatory tooltip must not consume the popup's close shortcut,
+          // including while its exit animation still owns Kobalte's top layer.
+          if (event.key === 'Escape' && !event.defaultPrevented) {
+            event.preventDefault()
+            setOpen(false)
+          }
+        }}
+        onOpenAutoFocus={(event) => {
+          focusRestoration.onOpenAutoFocus(event)
+          // Start at the readable panel rather than opening an action's tooltip.
+          if (!event.defaultPrevented && event.currentTarget instanceof HTMLElement) {
+            event.preventDefault()
+            event.currentTarget.focus({ preventScroll: true })
+          }
+        }}
         onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
       >
         <DialogHeader>
           <div class="flex items-center gap-3">
-            <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Sparkles class="size-5" aria-hidden="true" />
-            </span>
+            <Show
+              when={local.appIcon}
+              fallback={<Monitor class="size-10 text-primary" aria-hidden="true" />}
+            >
+              {(icon) => <img src={icon()} alt="" class="size-10" aria-hidden="true" />}
+            </Show>
             <div>
               <DialogTitle>Version &amp; updates</DialogTitle>
               <DialogDescription>
@@ -459,7 +590,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 <p class="text-2xs font-semibold tracking-widest text-muted-foreground uppercase">
                   Installed version
                 </p>
-                <p class="text-xl font-semibold tracking-tight">
+                <p class="text-xl font-semibold tracking-tight text-primary">
                   v{state()?.currentVersion || local.fallbackVersion || '0.1.0'}
                 </p>
                 <p class="text-sm text-muted-foreground">
@@ -469,10 +600,14 @@ export function UpdateDialog(props: UpdateDialogProps) {
                       <Show
                         when={state()?.phase === 'available' && state()?.availableVersion}
                         fallback={
-                          desktop()
-                            ? 'Check the release channel for the latest signed build.'
-                            : (local.desktopOnlyMessage ??
-                              `Open this dialog inside the desktop app to check for updates.`)
+                          state()?.phase === 'unavailable'
+                            ? 'No signed package is published for this platform.'
+                            : state()?.phase === 'cancelled'
+                              ? 'Update cancelled. You can retry when ready.'
+                              : desktop()
+                                ? 'Check the release channel for the latest signed build.'
+                                : (local.desktopOnlyMessage ??
+                                  `Open this dialog inside the desktop app to check for updates.`)
                         }
                       >
                         {`A newer release, v${state()?.availableVersion}, is ready.`}
@@ -483,10 +618,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   </Show>
                 </p>
               </div>
-              <Button
+              <ActionButton
                 type="button"
                 variant="outline"
                 size="sm"
+                tooltip="Check the release channel for the latest signed app version."
                 disabled={!desktop() || working()}
                 onClick={() => void check()}
               >
@@ -494,11 +630,17 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   <LoaderCircle class="animate-spin" aria-hidden="true" />
                 </Show>
                 {checkFailed() ? 'Retry update check' : 'Check latest version'}
-              </Button>
+              </ActionButton>
             </div>
           </section>
 
-          <Show when={state()?.phase === 'available' && state()?.availableVersion}>
+          <Show
+            when={
+              state()?.availableVersion &&
+              state()?.phase !== 'installed' &&
+              state()?.phase !== 'unavailable'
+            }
+          >
             <section
               class="rounded-xl border border-primary/35 bg-primary-subtle p-4"
               aria-label="Available update"
@@ -507,7 +649,10 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 <div class="flex flex-col gap-1">
                   <p class="flex items-center gap-2 text-sm font-semibold">
                     <Sparkles class="size-4 text-primary" aria-hidden="true" />
-                    Version {state()?.availableVersion} is ready
+                    Version {state()?.availableVersion}{' '}
+                    {['downloading', 'installing', 'cancelling'].includes(state()?.phase ?? '')
+                      ? 'is being prepared'
+                      : 'is ready'}
                   </p>
                   <p class="text-sm text-muted-foreground">
                     The signed installer is verified before {appName()} restarts.
@@ -518,12 +663,18 @@ export function UpdateDialog(props: UpdateDialogProps) {
                     )}
                   </Show>
                 </div>
-                <Button type="button" size="sm" disabled={working()} onClick={() => void install()}>
+                <ActionButton
+                  type="button"
+                  size="sm"
+                  tooltip={`Download the signed update and restart ${appName()}.`}
+                  disabled={working()}
+                  onClick={() => void install()}
+                >
                   <Show when={working()} fallback={<Download aria-hidden="true" />}>
                     <LoaderCircle class="animate-spin" aria-hidden="true" />
                   </Show>
                   Install and restart
-                </Button>
+                </ActionButton>
               </div>
             </section>
           </Show>
@@ -532,7 +683,13 @@ export function UpdateDialog(props: UpdateDialogProps) {
             Progress with both numbers: a bar alone does not distinguish a stalled
             download from a slow one, and "12.4 MB of 48.1 MB" does.
           */}
-          <Show when={state()?.phase === 'downloading' || state()?.phase === 'installing'}>
+          <Show
+            when={
+              state()?.phase === 'downloading' ||
+              state()?.phase === 'installing' ||
+              state()?.phase === 'cancelling'
+            }
+          >
             <section class="grid gap-2" aria-label="Update progress">
               <Progress
                 value={progressValue() ?? undefined}
@@ -554,6 +711,21 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   Applying the update…
                 </Show>
               </p>
+              <Show when={local.adapter.cancel}>
+                <ActionButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  tooltip="Stop the current update download or installation."
+                  disabled={cancelPending() || state()?.phase === 'cancelling'}
+                  onClick={() => void cancel()}
+                >
+                  <CircleStop aria-hidden="true" />
+                  {cancelPending() || state()?.phase === 'cancelling'
+                    ? 'Cancelling…'
+                    : 'Cancel update'}
+                </ActionButton>
+              </Show>
             </section>
           </Show>
 
@@ -585,7 +757,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
           <Show when={notes()}>
             <div class="flex flex-col gap-2">
               <div class="flex items-center gap-2">
-                <h2 id="update-release-notes" class="text-sm font-semibold">
+                <h2 id="update-release-notes" class="text-sm font-semibold text-primary">
                   What changed in this release
                 </h2>
                 <Badge variant="subtle" size="sm">
@@ -608,11 +780,11 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
           <Show when={changelog()}>
             <div class="flex flex-col gap-2">
-              <h2 id="update-changelog" class="text-sm font-semibold">
+              <h2 id="update-changelog" class="text-sm font-semibold text-primary">
                 Installed changelog
               </h2>
               <p class="text-xs text-muted-foreground">
-                A plain-text history of the installed release channel.
+                All versions and updates included with this installation.
               </p>
               {/* A long text block with no focusable descendant: it needs its own tab
                   stop, named by the heading above it, or a keyboard user cannot
@@ -632,17 +804,18 @@ export function UpdateDialog(props: UpdateDialogProps) {
         <DialogFooter>
           <Show when={state()?.releaseUrl}>
             {(url) => (
-              <Button
+              <ActionButton
                 type="button"
                 variant="ghost"
                 size="sm"
+                tooltip="Open the release history in your browser."
                 // `noopener,noreferrer` because the release page is a different
                 // origin and must not get a handle on this window.
-                onClick={() => window.open(url(), '_blank', 'noopener,noreferrer')}
+                onClick={() => void openRelease(url())}
               >
                 <ExternalLink aria-hidden="true" />
                 View releases
-              </Button>
+              </ActionButton>
             )}
           </Show>
           <DialogClose as={Button} variant="outline" size="sm">

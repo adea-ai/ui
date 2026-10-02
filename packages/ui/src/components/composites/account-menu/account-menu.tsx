@@ -64,6 +64,8 @@ export type AccountMenuProps = {
   platform?: 'desktop' | 'web'
   /** Whether a session exists. Decides the sign-in/sign-out row. */
   authenticated: boolean
+  /** Local-only applications can omit the session actions altogether. */
+  showSession?: boolean
   /** Disable the session row while a sign-in or sign-out is in flight. */
   busy?: boolean
   /** The name shown on the trigger's accessible label. */
@@ -90,6 +92,7 @@ export function AccountMenu(props: AccountMenuProps) {
     'items',
     'platform',
     'authenticated',
+    'showSession',
     'busy',
     'label',
     'onSignIn',
@@ -174,22 +177,71 @@ export function AccountMenu(props: AccountMenuProps) {
               )}
             </For>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              disabled={local.busy}
-              onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
-            >
-              <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
-                <LogOut aria-hidden="true" />
-              </Show>
-              <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          <Show when={local.showSession !== false}>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={local.busy}
+                onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
+              >
+                <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
+                  <LogOut aria-hidden="true" />
+                </Show>
+                <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </Show>
         </DropdownMenuContent>
       </DropdownMenu>
     </Tooltip>
   )
+}
+
+/** The common support menu, with one app-specific entry before the shared items. */
+export function createAppMenuItems(options: {
+  primaryItem?: AccountMenuItem
+  settingsShortcut?: string
+  onAbout?: AccountMenuItem['onSelectAfterClose']
+  onHelp?: AccountMenuItem['onSelectAfterClose']
+  onFeedback?: AccountMenuItem['onSelectAfterClose']
+  onUpdates?: AccountMenuItem['onSelectAfterClose']
+  onSettings?: AccountMenuItem['onSelectAfterClose']
+}): AccountMenuItem[] {
+  return [
+    ...(options.primaryItem ? [options.primaryItem] : []),
+    {
+      id: 'about',
+      label: 'About',
+      disabled: !options.onAbout,
+      onSelectAfterClose: options.onAbout,
+    },
+    {
+      id: 'help',
+      label: 'Help Center',
+      disabled: !options.onHelp,
+      onSelectAfterClose: options.onHelp,
+    },
+    {
+      id: 'feedback',
+      label: 'Send Feedback',
+      disabled: !options.onFeedback,
+      onSelectAfterClose: options.onFeedback,
+    },
+    {
+      id: 'updates',
+      label: 'Updates',
+      platform: 'desktop',
+      disabled: !options.onUpdates,
+      onSelectAfterClose: options.onUpdates,
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      shortcut: options.settingsShortcut,
+      disabled: !options.onSettings,
+      onSelectAfterClose: options.onSettings,
+    },
+  ]
 }
 
 function AccountMenuButton(props: ComponentProps<typeof Button>) {

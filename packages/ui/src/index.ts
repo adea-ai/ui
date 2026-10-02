@@ -108,6 +108,8 @@ export * from './components/composites/scene-controls'
 export * from './components/composites/stat'
 export * from './components/composites/appearance-editor'
 export * from './components/composites/update-dialog'
+export * from './components/composites/about-dialog'
+export * from './components/composites/help-center'
 export * from './components/composites/workspace-mark'
 
 /* --- Library ------------------------------------------------------------- */
