@@ -15,7 +15,7 @@ bun add @adea-ai/ui
 
 The palette itself lives in **`@adea-ai/themes`**, which arrives as a dependency of
 `@adea-ai/ui`. You do not install it separately, and you do not normally import it —
-but it is a published package with its own versions, which is what lets the 27 themes
+but it is a published package with its own versions, which is what lets the 34 themes
 and the accent presets be corrected without republishing this one.
 
 In the app's stylesheet, after Tailwind:
