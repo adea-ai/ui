@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.97.1](https://github.com/adea-ai/ui/compare/v0.97.0...v0.97.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** support rail placement in shared account menus ([#235](https://github.com/adea-ai/ui/issues/235)) ([a26212a](https://github.com/adea-ai/ui/commit/a26212abf2344820bf0035baf367c7b0e57435ec))
+
 ## [0.97.0](https://github.com/adea-ai/ui/compare/v0.96.0...v0.97.0) (2026-10-02)
 
 
