@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.97.2](https://github.com/adea-ai/ui/compare/v0.97.1...v0.97.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** isolate account menu tooltip positioning ([#238](https://github.com/adea-ai/ui/issues/238)) ([467f61a](https://github.com/adea-ai/ui/commit/467f61a9c43da4c10746195f89291b8c7d8d90ba))
+
+
+### Maintenance
+
+* declare Renovate as the managed dependency updater ([#237](https://github.com/adea-ai/ui/issues/237)) ([1f88b18](https://github.com/adea-ai/ui/commit/1f88b18675a35dc03036df376947d558ab296ce3))
+
 ## [0.97.1](https://github.com/adea-ai/ui/compare/v0.97.0...v0.97.1) (2026-10-02)
 
 
