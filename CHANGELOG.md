@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.97.5](https://github.com/adea-ai/ui/compare/v0.97.4...v0.97.5) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** avoid duplicate embedded help headings ([#240](https://github.com/adea-ai/ui/issues/240)) ([c4637aa](https://github.com/adea-ai/ui/commit/c4637aaf1c3ee2974e273efdbfd553ee78986ed0))
+
 ## [0.97.4](https://github.com/adea-ai/ui/compare/v0.97.3...v0.97.4) (2026-10-02)
 
 
