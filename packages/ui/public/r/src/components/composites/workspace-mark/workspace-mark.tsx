@@ -49,12 +49,22 @@ export function WorkspaceMark(props: WorkspaceMarkProps) {
     >
       <Show
         when={local.children}
-        fallback={<span aria-hidden="true">{local.name.charAt(0).toUpperCase()}</span>}
+        fallback={
+          <span data-slot="workspace-mark-initial" aria-hidden="true">
+            {local.name.charAt(0).toUpperCase()}
+          </span>
+        }
       >
         {local.children}
       </Show>
+      {/* The badge is centred on the corner rather than tucked inside it. Inset
+          by an edge offset, a count badge is wider than the space between the
+          corner and the monogram, so it sat on the letter; centred on the corner,
+          a dot, a one-digit and a two-digit count all clear the letter's box. */}
       <Show when={local.badge}>
-        <span class="absolute -end-0.5 -top-0.5 flex items-center justify-center">
+        <span
+          data-slot="workspace-mark-badge"
+          class="absolute end-0 top-0 flex translate-x-1/2 -translate-y-1/2 items-center justify-center rtl:-translate-x-1/2">
           {local.badge}
         </span>
       </Show>

@@ -25,6 +25,7 @@ const meta = {
         'warning',
         'destructive',
         'info',
+        'notification',
       ],
       description: 'Status meaning. The `-subtle` fill uses readable body text on any surface.',
     },
@@ -95,6 +96,26 @@ export const Counts: Story = {
       <Badge variant="secondary">12</Badge>
       <Badge variant="secondary">99+</Badge>
       <Badge variant="destructive">3</Badge>
+    </div>
+  ),
+}
+
+/**
+ * The `notification` count: the one solid destructive badge. It is for a count
+ * pinned to the corner of another control — a workspace mark, a rail icon — where
+ * a tint at 2xs disappears into the surface behind it. In a row of statuses, use
+ * the tinted `destructive` instead.
+ */
+export const Notification: Story = {
+  render: () => (
+    <div class="flex items-center gap-2">
+      <Badge size="sm" variant="notification">
+        2
+      </Badge>
+      <Badge size="sm" variant="notification">
+        12
+      </Badge>
+      <Badge variant="notification">99+</Badge>
     </div>
   ),
 }
