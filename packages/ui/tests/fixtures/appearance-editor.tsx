@@ -1,7 +1,17 @@
 import adeaLight from '@adea-ai/themes/themes/adea-light'
 import adeaDark from '@adea-ai/themes/themes/adea-dark'
-import dracula from '@adea-ai/themes/themes/dracula'
+import ayu from '@adea-ai/themes/themes/ayu'
+import ayuLight from '@adea-ai/themes/themes/ayu-light'
+import ayuMirage from '@adea-ai/themes/themes/ayu-mirage'
+import catppuccinFrappe from '@adea-ai/themes/themes/catppuccin-frappe'
 import catppuccinLatte from '@adea-ai/themes/themes/catppuccin-latte'
+import catppuccinMacchiato from '@adea-ai/themes/themes/catppuccin-macchiato'
+import catppuccinMocha from '@adea-ai/themes/themes/catppuccin-mocha'
+import dracula from '@adea-ai/themes/themes/dracula'
+import everforestDark from '@adea-ai/themes/themes/everforest-dark'
+import everforestLight from '@adea-ai/themes/themes/everforest-light'
+import gruvboxDark from '@adea-ai/themes/themes/gruvbox-dark'
+import gruvboxLight from '@adea-ai/themes/themes/gruvbox-light'
 import { createEffect, createMemo, createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import {
@@ -20,7 +30,25 @@ import '../../src/styles/globals.css'
 
 // A disposable host adapter demonstrates the editor's ports. Product persistence
 // and native capability acceptance require the real application composition.
-const themes = [adeaLight, adeaDark, dracula, catppuccinLatte]
+// The catalogue is long enough that a theme menu overflows its fixed cap, so
+// the internal scroll the appearance preferences promise is under test, not a
+// two-row list that never overflows anything.
+const themes = [
+  adeaLight,
+  adeaDark,
+  ayu,
+  ayuLight,
+  ayuMirage,
+  catppuccinFrappe,
+  catppuccinLatte,
+  catppuccinMacchiato,
+  catppuccinMocha,
+  dracula,
+  everforestDark,
+  everforestLight,
+  gruvboxDark,
+  gruvboxLight,
+]
 const defaults: AppearanceDraft = {
   mode: 'system',
   lightThemeId: 'adea-light',

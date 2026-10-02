@@ -83,6 +83,11 @@ export function ModeChoices(props: AppearanceEditorProps) {
 }
 
 export function AccentChoices(props: AppearanceEditorProps) {
+  // The resolved appearance decides which side of a preset pair — and which
+  // theme accent — the swatches paint, so the row previews each choice as the
+  // user will see it.
+  const resolvedAppearance = () =>
+    props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
   const custom = () =>
     props.draft.accent !== 'theme' &&
     !props.accentOptions.some((option) => option.id === props.draft.accent)
@@ -93,9 +98,9 @@ export function AccentChoices(props: AppearanceEditorProps) {
       disabled={props.saving}
       orientation="horizontal"
       aria-label="Accent"
-      // Two chips in a column beside a 3x2 swatch grid: one line of six
-      // swatches plus chips overflows the settings sidebar's control column,
-      // and the column keeps both rows of the pair balanced (2 x 28px + gap).
+      // One chip (custom) beside a capped swatch grid: a chip-per-state column
+      // beside a full-width swatch line overflowed the settings sidebar's
+      // control column, so the pair stays a narrow chip plus a wrapped grid.
       class="flex items-center gap-3"
       onChange={(accent) =>
         props.onChange({
@@ -103,21 +108,29 @@ export function AccentChoices(props: AppearanceEditorProps) {
         })
       }
     >
-      <div class="flex flex-col gap-2">
-        <Radio.Item value="theme">
+      <div class="grid grid-cols-4 gap-2">
+        {/* The theme's own accent is the first swatch. Picking it is the same
+            act the old dedicated "Theme default" chip performed, without a
+            second control for the state the row starts in. */}
+        <Radio.Item
+          value="theme"
+          class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
+        >
           <Radio.ItemInput />
-          <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-            Theme default
+          <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+            <span
+              class="block size-full rounded-full"
+              aria-hidden="true"
+              style={{
+                'background-color':
+                  resolvedAppearance() === 'light'
+                    ? props.lightTheme.colors.accent
+                    : props.darkTheme.colors.accent,
+              }}
+            />
+            <span class="sr-only">Theme default</span>
           </Radio.ItemLabel>
         </Radio.Item>
-        <Radio.Item value="custom">
-          <Radio.ItemInput />
-          <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-            Custom
-          </Radio.ItemLabel>
-        </Radio.Item>
-      </div>
-      <div class="grid grid-cols-3 gap-2">
         <For each={props.accentOptions}>
           {(option) => (
             <Radio.Item
@@ -131,11 +144,7 @@ export function AccentChoices(props: AppearanceEditorProps) {
                   aria-hidden="true"
                   style={{
                     'background-color':
-                      (props.draft.mode === 'system'
-                        ? props.resolvedAppearance
-                        : props.draft.mode) === 'light'
-                        ? option.light
-                        : option.dark,
+                      resolvedAppearance() === 'light' ? option.light : option.dark,
                   }}
                 />
                 <span class="sr-only">{option.label}</span>
@@ -144,6 +153,12 @@ export function AccentChoices(props: AppearanceEditorProps) {
           )}
         </For>
       </div>
+      <Radio.Item value="custom">
+        <Radio.ItemInput />
+        <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+          Custom
+        </Radio.ItemLabel>
+      </Radio.Item>
     </Radio>
   )
 }
