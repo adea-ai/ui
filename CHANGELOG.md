@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.99.0](https://github.com/adea-ai/ui/compare/v0.98.0...v0.99.0) (2026-10-02)
+
+
+### Features
+
+* **ui:** one card-toned tooltip everywhere, shown below icon actions ([#254](https://github.com/adea-ai/ui/issues/254)) ([d26f0d5](https://github.com/adea-ai/ui/commit/d26f0d5e736f342234de6491066b0cd24625a710))
+
+
+### Bug Fixes
+
+* **ui:** keep the top-bar search chord out of the accessible name ([#258](https://github.com/adea-ai/ui/issues/258)) ([fe6faaa](https://github.com/adea-ai/ui/commit/fe6faaa0f9f7b2c004929ce0a759d4d41a1783d9))
+
+
+### Maintenance
+
+* **code-foundry:** upgrade to v1.41.0 ([#257](https://github.com/adea-ai/ui/issues/257)) ([dd4c5a8](https://github.com/adea-ai/ui/commit/dd4c5a8b48068e2467d4a3caa6e3664651e0a2ab))
+
 ## [0.98.0](https://github.com/adea-ai/ui/compare/v0.97.7...v0.98.0) (2026-10-02)
 
 
