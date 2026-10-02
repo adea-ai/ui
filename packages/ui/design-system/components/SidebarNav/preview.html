@@ -1,0 +1,63 @@
+<!-- @dsCard group="Shell" height=400 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, For, Icons, Badge, Button, SidebarNav, SidebarNavHeader, SidebarNavTitle, SidebarNavContent, SidebarNavSection, SidebarNavItem, SidebarNavFooter, SidebarNavButton } = window.AdeaUI;
+  const projects = [
+    { name: 'adea', count: 41 },
+    { name: 'cortana', count: 12 },
+    { name: 'control-plane', count: 7 },
+    { name: 'plugins', count: 3 },
+  ];
+  const [active, setActive] = createSignal('adea');
+  const frame = 'display:flex;height:368px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background)';
+  render(() => html`
+<div style="display:flex;gap:16px">
+  <div style=${frame}>
+    <${SidebarNav} aria-label="Projects">
+      <${SidebarNavHeader}>
+        <${SidebarNavTitle}>Projects<//>
+        <${Button} size="icon-sm" variant="ghost" aria-label="New project"><${Icons.Plus} /><//>
+      <//>
+      <${SidebarNavContent}>
+        <${SidebarNavSection} label="Recent" count=${projects.length}>
+          <${For} each=${projects}>${(project) => html`
+            <${SidebarNavItem} as="button" type="button" active=${() => active() === project.name} onClick=${(event) => setActive(project.name)} trailing=${html`<${Badge} size="sm" variant="secondary">${project.count}<//>`}><${Icons.Folder} />${project.name}<//>
+          `}<//>
+        <//>
+      <//>
+      <${SidebarNavFooter}>
+        <${Button} size="sm" variant="ghost" style="width:100%;justify-content:flex-start;gap:8px"><${Icons.Settings} />Settings<//>
+      <//>
+    <//>
+  </div>
+  <div style=${frame}>
+    <${SidebarNav} aria-label="Workspace">
+      <${SidebarNavHeader}><${SidebarNavTitle}>Workspace<//><//>
+      <${SidebarNavContent}>
+        <${SidebarNavSection} label="Pinned" collapsible=${true} defaultOpen=${true} count=${2}>
+          <${SidebarNavItem} as="button" type="button" active=${true}><${Icons.Star} />adea<//>
+          <${SidebarNavItem} as="button" type="button"><${Icons.Star} />cortana<//>
+        <//>
+        <${SidebarNavSection} label="Archived" collapsible=${true} defaultOpen=${false} count=${3} action=${html`<${Button} size="icon-2xs" variant="ghost" aria-label="Manage archived projects"><${Icons.Trash2} /><//>`}>
+          <${SidebarNavItem} as="button" type="button"><${Icons.Layers} />adea-mkt-wt<//>
+        <//>
+      <//>
+    <//>
+  </div>
+  <div style=${frame}>
+    <${SidebarNav} aria-label="Worktrees">
+      <${SidebarNavHeader}><${SidebarNavTitle}>Worktrees<//><//>
+      <${SidebarNavContent}>
+        <${SidebarNavItem} as="button" type="button"><${Icons.GitBranch} />main<//>
+        <${SidebarNavItem} as="button" type="button" nested=${true}><${Icons.FileText} />feat/solid-tanstack-start<//>
+        <${SidebarNavItem} as="button" type="button" nested=${true} active=${true}><${Icons.FileText} />feat/m12-397-worktrees<//>
+        <${SidebarNavItem} as="button" type="button"><${Icons.GitBranch} />release/0.55<//>
+      <//>
+      <${SidebarNavFooter}>
+        <${SidebarNavButton}><${Icons.Plus} />New worktree<//>
+      <//>
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

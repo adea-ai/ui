@@ -1,0 +1,23 @@
+<!-- @dsCard group="Forms" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, InputOtp } = window.AdeaUI;
+  const caption = 'margin:0 0 6px;font-size:12px;color:var(--muted-foreground)';
+  const [code, setCode] = createSignal('482');
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:16px">
+  <div>
+    <p style=${caption}>Verification code, part entered</p>
+    <${InputOtp} class="relative inline-flex" aria-label="Verification code" length=${6} groups=${[3, 3]} value=${code} onValueChange=${setCode} />
+  </div>
+  <div>
+    <p style=${caption}>Recovery code</p>
+    <${InputOtp} class="relative inline-flex" aria-label="Recovery code" length=${8} groups=${[4, 4]} />
+  </div>
+  <div>
+    <p style=${caption}>Disabled while the code is verified</p>
+    <${InputOtp} class="relative inline-flex" aria-label="Verification code" length=${6} disabled=${true} />
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

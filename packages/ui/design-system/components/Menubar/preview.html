@@ -1,0 +1,44 @@
+<!-- @dsCard group="Navigation" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarGroup, MenubarLabel, MenubarItem, MenubarSeparator } = window.AdeaUI;
+  render(() => html`
+<div>
+<${Menubar}>
+  <${MenubarMenu} value="file">
+    <${MenubarTrigger} id="ds-menubar-file">File<//>
+    <${MenubarContent}>
+      <${MenubarGroup}>
+        <${MenubarLabel}>Session<//>
+        <${MenubarItem} shortcut="⌘N" keyshortcuts="Meta+N">New session<//>
+        <${MenubarItem} shortcut="⌘O" keyshortcuts="Meta+O">Open project…<//>
+      <//>
+      <${MenubarSeparator} />
+      <${MenubarItem} variant="destructive">Close workspace<//>
+    <//>
+  <//>
+  <${MenubarMenu} value="edit">
+    <${MenubarTrigger}>Edit<//>
+    <${MenubarContent}>
+      <${MenubarItem} shortcut="⌘Z" keyshortcuts="Meta+Z">Undo<//>
+      <${MenubarItem} shortcut="⇧⌘Z" keyshortcuts="Shift+Meta+Z">Redo<//>
+      <${MenubarSeparator} />
+      <${MenubarItem} shortcut="⌘F" keyshortcuts="Meta+F">Find in files…<//>
+    <//>
+  <//>
+  <${MenubarMenu} value="view">
+    <${MenubarTrigger}>View<//>
+    <${MenubarContent}>
+      <${MenubarItem}>Toggle rail<//>
+      <${MenubarItem}>Toggle terminal<//>
+    <//>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+  // The bar's defaultValue does not open a menu on mount, so open File the way a pointer would.
+  requestAnimationFrame(() => {
+    const trigger = document.getElementById('ds-menubar-file');
+    trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0, pointerType: 'mouse' }));
+  });
+</script>

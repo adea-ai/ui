@@ -1,0 +1,24 @@
+<!-- @dsCard group="Composites" height=950 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, UpdateDialog } = window.AdeaUI;
+  const CHANGELOG = '# 0.55.0\n\n### Features\n* **appearance:** move the appearance view into settings\n* **dev-view:** copy-on-write worktree materialisation\n\n### Bug Fixes\n* **soak:** fail on a stalled stream, not on a slow machine\n';
+  const NOTES = '### What changed\n\n- The worktree materialisation now uses a copy-on-write clone.\n- The soak lane fails on a stalled stream rather than a slow machine.\n\nSee the [release notes](https://example.com) for the full list.\n';
+  const available = {
+    phase: 'available',
+    currentVersion: '0.55.0',
+    changelog: CHANGELOG,
+    availableVersion: '0.56.0',
+    releaseDate: '2026-09-24',
+    releaseNotes: NOTES,
+    releaseUrl: 'https://example.com/releases',
+  };
+  // A static adapter: every call answers with the same snapshot, so nothing leaves the page.
+  const adapter = {
+    getStatus: async () => available,
+    check: async () => available,
+    install: async () => available,
+    isDesktopRuntime: () => true,
+  };
+  render(() => html`<${UpdateDialog} adapter=${adapter} appName="Adea" defaultOpen=${true} />`, document.getElementById('root'));
+</script>

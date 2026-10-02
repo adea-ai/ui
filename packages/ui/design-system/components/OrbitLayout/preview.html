@@ -1,0 +1,33 @@
+<!-- @dsCard group="Shell" height=384 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, For, Button, OrbitLayout, OrbitItem } = window.AdeaUI;
+  // Index 0 sits at three o'clock and the order runs clockwise, so the labels follow that.
+  const points = ['East', 'South', 'West', 'North'];
+  const caption = 'font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)';
+  render(() => html`
+<div style="display:flex;gap:40px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <code style=${caption}>mode="radial"</code>
+    <${OrbitLayout} radius="calc(50% - 4rem)" role="list" aria-label="Four points around a circle" class="size-80 rounded-lg border border-border">
+      <${For} each=${points}>${(point, index) => html`
+        <${OrbitItem} index=${index()} count=${points.length} role="listitem">
+          <${Button} size="icon-lg" variant="outline" aria-label=${point}>${point.slice(0, 1)}<//>
+        <//>
+      `}<//>
+    <//>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;width:320px">
+    <code style=${caption}>mode="flow"</code>
+    <${OrbitLayout} mode="flow" role="list" aria-label="Responsive point grid" class="grid-cols-1 sm:grid-cols-2">
+      <${For} each=${points}>${(point, index) => html`
+        <${OrbitItem} index=${index()} count=${points.length} role="listitem">
+          <${Button} variant="outline" class="w-full" aria-label=${point}>${point}<//>
+        <//>
+      `}<//>
+    <//>
+    <p style="margin:0;font-size:14px;color:var(--muted-foreground)">The same items in source order. Keyboard and screen-reader order never change between modes; only the geometry does.</p>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

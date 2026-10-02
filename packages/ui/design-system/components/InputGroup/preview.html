@@ -1,0 +1,23 @@
+<!-- @dsCard group="Forms" height=96 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } =
+    window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px;width:320px">
+        <${InputGroup}
+          ><${InputGroupAddon}><${Icons.Search} /><//
+          ><${InputGroupInput} placeholder="Search projects…" aria-label="Search projects"
+        /><//>
+        <${InputGroup}
+          ><${InputGroupAddon}><${Icons.Search} /><//
+          ><${InputGroupInput} value="worktree evidence" aria-label="Search" /><${InputGroupButton}
+            aria-label="Clear search"
+            ><${Icons.X} /><//
+        ><//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

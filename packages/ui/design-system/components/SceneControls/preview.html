@@ -1,0 +1,17 @@
+<!-- @dsCard group="Composites" height=170 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 560px"></div>
+<script>
+  const { render, html, SceneControls } = window.AdeaUI
+  const noop = (_) => {}
+  render(
+    () => html`
+      <${SceneControls}
+        onMovementChange=${noop}
+        onJumpChange=${noop}
+        onZoomIn=${noop}
+        onZoomOut=${noop}
+      />
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,63 @@
+<!-- @dsCard group="Theming" height=1380 -->
+<style>
+  /* Workaround, remove when fixed in source: ThemePicker's option button keeps both
+     h-control-sm and h-auto after cn(), h-control-sm wins, and each ThemePreview is squashed. */
+  [data-slot='theme-picker'] > [role='radio'] { height: auto; }
+</style>
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, ThemeProvider, AppearancePanel, themeById, defaultThemeSelection } = window.AdeaUI;
+
+  // ThemeProvider writes the active theme onto <html>: every colour role as an inline
+  // property, plus data-theme, data-appearance and the .dark class. Two adjustments keep
+  // it in step with this page rather than fighting it:
+  //  - it starts from the variant that matches the page's own data-theme, so the first
+  //    paint is identical to every other card;
+  //  - data-theme is mapped back to the page's ids ('adea-dark' -> 'dark', any other
+  //    variant -> its appearance), so tokens the provider does not write still resolve,
+  //    and a theme switch by the host page is passed on to the provider.
+  // The provider reads and writes localStorage, and touching it throws where storage is
+  // denied (an opaque-origin frame). An in-memory stand-in keeps the card rendering there.
+  try {
+    window.localStorage.length;
+  } catch {
+    const memory = new Map();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key) => (memory.has(key) ? memory.get(key) : null),
+        setItem: (key, value) => memory.set(key, String(value)),
+        removeItem: (key) => memory.delete(key),
+      },
+    });
+  }
+  const root = document.documentElement;
+  const selectionFor = (theme) => {
+    const appearance = theme.startsWith('dark') ? 'dark' : 'light';
+    const id = themeById(`adea-${theme}`) ? `adea-${theme}` : appearance === 'dark' ? defaultThemeSelection.darkThemeId : defaultThemeSelection.lightThemeId;
+    return appearance === 'dark' ? { appearance, darkThemeId: id } : { appearance, lightThemeId: id };
+  };
+  let pageTheme = root.dataset.theme || 'light';
+  const [host, setHost] = createSignal({ ...defaultThemeSelection, ...selectionFor(pageTheme) });
+  const sync = () => {
+    const theme = root.dataset.theme;
+    if (!theme || theme === pageTheme) return;
+    if (themeById(theme)) {
+      pageTheme = theme.startsWith('adea-') ? theme.slice(5) : root.dataset.appearance || 'light';
+      root.dataset.theme = pageTheme;
+    } else {
+      pageTheme = theme;
+      setHost(selectionFor(theme));
+    }
+  };
+  new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  render(() => html`
+<${ThemeProvider} storageKey="adea-design-system-preview" initial=${host()} selection=${() => host()}>
+  <div style="position:relative;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--background);padding:24px;box-sizing:border-box">
+    <${AppearancePanel} />
+  </div>
+<//>
+`, document.getElementById('root'));
+  sync();
+</script>

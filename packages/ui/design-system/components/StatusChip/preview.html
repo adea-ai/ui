@@ -1,0 +1,29 @@
+<!-- @dsCard group="Feedback" height=200 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, StatusChip } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:grid;gap:12px">
+        <${StatusChip} tone="neutral" label="Idle" />
+        <${StatusChip}
+          tone="success"
+          label="Ready"
+          detail="Every local prerequisite is satisfied."
+        />
+        <${StatusChip}
+          tone="warning"
+          label="Degraded"
+          detail="One of three sources is slow to respond."
+        />
+        <${StatusChip}
+          tone="danger"
+          label="Blocked"
+          detail="The workspace key could not be read."
+        />
+        <${StatusChip} tone="info" label="In progress" detail="Started 4 minutes ago." />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

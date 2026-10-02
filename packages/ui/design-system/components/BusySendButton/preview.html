@@ -1,0 +1,21 @@
+<!-- @dsCard group="Conversation" height=240 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:row;align-items:flex-end;gap:48px;min-height:208px;box-sizing:border-box"></div>
+<script>
+  const { render, html, createSignal, BusySendButton } = window.AdeaUI;
+  const root = document.getElementById('root');
+  render(() => {
+    const [mode, setMode] = createSignal('steer');
+    return html`
+<div data-open-me>
+  <${BusySendButton} mode=${() => mode()} onModeChange=${(next) => setMode(next)} onFire=${(_e) => {}} alternateActionHint="Ctrl+Enter uses the other action" />
+</div>
+<${BusySendButton} mode="steer" onModeChange=${(_m) => {}} onFire=${(_e) => {}} disabled=${true} />
+<${BusySendButton} mode="queue" onModeChange=${(_m) => {}} onFire=${(_e) => {}} unavailable=${{ queue: 'This runtime does not support queueing' }} />
+<${BusySendButton} mode="steer" onModeChange=${(_m) => {}} onFire=${(_e) => {}} selectionDisabled=${true} unavailable=${{ steer: 'Input authority belongs to another surface' }} />`;
+  }, root);
+  // The mode menu owns its open state, so the card opens the first one the way a pointer would.
+  const trigger = root.querySelector('[data-open-me] [aria-label="Send options"]');
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+  trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }));
+  trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+</script>

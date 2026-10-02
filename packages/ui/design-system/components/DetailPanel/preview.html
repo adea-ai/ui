@@ -1,0 +1,42 @@
+<!-- @dsCard group="Layout" height=352 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, DetailPanel, DetailPanelHeader, DetailPanelBody, DetailPanelSection, DetailPanelField, Button, Badge } = window.AdeaUI;
+  const frame = 'height:320px;width:320px;border:1px solid var(--border)';
+  render(() => html`
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+  <div style=${frame}>
+    <${DetailPanel} label="Task details">
+      <${DetailPanelHeader}
+        eyebrow="Task"
+        title="Ship the appearance view"
+        actions=${html`<${Button} variant="outline" size="xs">Open<//>`}
+        onDismiss=${(_event) => undefined}
+      />
+      <${DetailPanelBody} class="grid gap-4">
+        <${DetailPanelSection} title="State">
+          <${DetailPanelField} name="Lifecycle" value="In progress" />
+          <${DetailPanelField} name="Priority" value=${html`<${Badge} variant="warning" size="sm">High<//>`} />
+        <//>
+        <${DetailPanelSection} title="Assignment">
+          <${DetailPanelField} name="Agent" value="release-agent" />
+          <${DetailPanelField} name="Room" muted=${true} value="—" />
+        <//>
+      <//>
+    <//>
+  </div>
+  <div style=${frame}>
+    <${DetailPanel} label="Example artifact">
+      <${DetailPanelHeader} eyebrow="Artifact" title="build-report.json" onDismiss=${(_event) => undefined} />
+      <${DetailPanelBody}>
+        <${DetailPanelSection} title="File">
+          <${DetailPanelField} name="Media type" value="application/json" />
+          <${DetailPanelField} name="Size" value="4,182 bytes" />
+          <${DetailPanelField} name="Availability" value="On device" />
+        <//>
+      <//>
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

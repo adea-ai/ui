@@ -1,0 +1,37 @@
+<!-- @dsCard group="Forms" height=240 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Combobox, ComboboxControl, ComboboxInput, ComboboxTrigger, ComboboxContent, ComboboxItem } = window.AdeaUI;
+  const branches = [
+    'main',
+    'feat/solid-tanstack-start',
+    'feat/m12-397-worktrees',
+    'feat/m12-422-browser',
+    'fix/soak-stalled-stream',
+    'chore/release-0.55.0',
+    'release/0.54',
+  ];
+  render(() => html`
+<div style="width:288px">
+<${Combobox}
+  options=${branches}
+  defaultFilter=${(value, input) => value.toLowerCase().includes(input.toLowerCase())}
+  placeholder="Search branches"
+  itemComponent=${(props) => html`<${ComboboxItem} item=${props.item}>${props.item.rawValue}<//>`}
+>
+  <${ComboboxControl} style="width:288px">
+    <${ComboboxInput} id="ds-combobox-input" aria-label="Branch" placeholder="Search branches" />
+    <${ComboboxTrigger} aria-label="Show branches" />
+  <//>
+  <${ComboboxContent} />
+<//>
+</div>
+`, document.getElementById('root'));
+  // Type a query the way a user would, so the card shows the filtered list.
+  requestAnimationFrame(() => {
+    const input = document.getElementById('ds-combobox-input');
+    input.focus();
+    input.value = 'feat';
+    input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: 'feat' }));
+  });
+</script>

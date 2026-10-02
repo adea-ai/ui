@@ -1,0 +1,32 @@
+<!-- @dsCard group="Actions" height=72 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, ToggleGroup, ToggleGroupItem } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:16px;align-items:center">
+        <${ToggleGroup} attached=${true} defaultValue=${['left']} aria-label="Alignment">
+          <${ToggleGroupItem} value="left" size="icon-sm" aria-label="Align left"
+            ><${Icons.AlignLeft}
+          /><//>
+          <${ToggleGroupItem} value="center" size="icon-sm" aria-label="Align centre"
+            ><${Icons.AlignCenter}
+          /><//>
+          <${ToggleGroupItem} value="right" size="icon-sm" aria-label="Align right"
+            ><${Icons.AlignRight}
+          /><//>
+        <//>
+        <${ToggleGroup} multiple=${true} defaultValue=${['bold']} aria-label="Formatting">
+          <${ToggleGroupItem} value="bold" size="icon-sm" aria-label="Bold"><${Icons.Bold} /><//>
+          <${ToggleGroupItem} value="italic" size="icon-sm" aria-label="Italic"
+            ><${Icons.Italic}
+          /><//>
+          <${ToggleGroupItem} value="underline" size="icon-sm" aria-label="Underline"
+            ><${Icons.Underline}
+          /><//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

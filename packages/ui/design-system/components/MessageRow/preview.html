@@ -1,0 +1,26 @@
+<!-- @dsCard group="Conversation" height=720 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, MessageRow, MessageBody, MessageDayDivider, AttachmentCard, Avatar, AvatarFallback, Button } = window.AdeaUI;
+  const ada = () => html`<${Avatar} size="sm"><${AvatarFallback} name="Ada Lovelace" /><//>`;
+  const noop = (_) => {};
+  render(() => html`
+<div style="display:flex;width:704px;max-width:100%;flex-direction:column;gap:4px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:8px">
+  <${MessageDayDivider} label="Today" />
+  <${MessageRow} senderKind="user" senderName="You" time="09:14" dateTime="2026-09-25T09:14:00Z">
+    <${MessageBody} text="The event cursor test is flaky on CI. Can you find out why?" />
+  <//>
+  <${MessageRow} senderKind="agent" senderName="Ada Lovelace" time="09:16" dateTime="2026-09-25T09:16:00Z" avatar=${ada()} onOpenThread=${noop}
+    attachments=${html`<${AttachmentCard} name="cursor-trace.json" detail="application/json · 24,120 bytes" icon=${html`<${Icons.File} />`} />`}
+  >
+    <${MessageBody} text=${'The cursor advances before the event commits, so a slow write lets the test read past it. Moving the advance after the commit fixes it:\n\n```ts\nawait log.commit(event)\ncursor.advance(event.id)\n```\n\nThe `keyedRows` helper keeps the rows alive across the retry.'} />
+  <//>
+  <${MessageRow} senderKind="system" senderName="Adea" time="09:18" dateTime="2026-09-25T09:18:00Z">
+    <${MessageBody} text="Lane 'event cursor' finished in 2m 14s. 3 passed, 1 skipped." />
+  <//>
+  <${MessageRow} senderKind="user" senderName="You" time="09:19" pending=${true}>
+    <${MessageBody} text="Ship it, and add the slow-write case as a regression test." />
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

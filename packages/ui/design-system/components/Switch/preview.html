@@ -1,0 +1,22 @@
+<!-- @dsCard group="Forms" height=150 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Switch, SwitchLabel, SwitchDescription } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <${Switch} defaultChecked=${true}
+          ><${SwitchLabel}>Frosted surfaces<//
+          ><${SwitchDescription}>Translucent panels over the canvas.<//><//
+        >
+        <div style="display:flex;gap:16px">
+          <${Switch} aria-label="Off" /><${Switch}
+            aria-label="On"
+            defaultChecked=${true}
+          /><${Switch} aria-label="Disabled" disabled=${true} />
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,22 @@
+<!-- @dsCard group="Overlays" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Button, HoverCard, HoverCardTrigger, HoverCardContent, Avatar, AvatarFallback } = window.AdeaUI;
+  render(() => html`
+<div style="padding-left:96px">
+<${HoverCard} defaultOpen=${true} placement="bottom-start">
+  <${HoverCardTrigger} as=${Button} variant="link">@ada<//>
+  <${HoverCardContent}>
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <${Avatar} size="lg"><${AvatarFallback} name="Ada Lovelace" /><//>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:14px;font-weight:500">Ada Lovelace</div>
+        <div style="font-size:12px;color:var(--muted-foreground)">@ada · joined 2026</div>
+        <p style="margin:4px 0 0;font-size:14px;color:var(--muted-foreground)">Maintains the design system. Holds the strongest opinions about line-height.</p>
+      </div>
+    </div>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+</script>

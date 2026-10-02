@@ -1,0 +1,54 @@
+<!-- @dsCard group="Shell" height=480 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, For, Icons, Badge, SideRail, SideRailHeader, SideRailContent, SideRailFooter, SideRailItem, SideRailSection } = window.AdeaUI;
+  const items = [
+    { label: 'Home', icon: Icons.House, shortcut: '⌘1', keyshortcuts: 'Meta+1' },
+    { label: 'Dev view', icon: Icons.Terminal, shortcut: '⌘2', keyshortcuts: 'Meta+2' },
+    { label: 'Files', icon: Icons.Folder, shortcut: '⌘3', keyshortcuts: 'Meta+3' },
+    { label: 'Worktrees', icon: Icons.GitBranch, shortcut: '⌘4', keyshortcuts: 'Meta+4' },
+    { label: 'Agents', icon: Icons.Users, shortcut: '⌘5', keyshortcuts: 'Meta+5' },
+    { label: 'Artifacts', icon: Icons.Layers, shortcut: '⌘6', keyshortcuts: 'Meta+6' },
+  ];
+  const mark = 'display:flex;width:24px;height:24px;flex-shrink:0;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--primary);color:var(--primary-foreground);font-size:11px;font-weight:600';
+  const caption = 'font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)';
+  const frame = 'align-self:flex-start;height:400px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg)';
+  const row = (item, index) => html`
+    <${SideRailItem} as="button" type="button" active=${index() === 0} label=${item.label} shortcut=${item.shortcut} keyshortcuts=${item.keyshortcuts}><${item.icon} /><//>
+  `;
+  render(() => html`
+<div style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <code style=${caption}>collapsed · 56px</code>
+    <div style=${frame}>
+      <${SideRail} collapsed=${true} aria-label="Primary, collapsed">
+        <${SideRailHeader}><span style=${mark}>A</span><//>
+        <${SideRailContent}><${For} each=${items}>${row}<//><//>
+        <${SideRailFooter}>
+          <${SideRailItem} as="button" type="button" label="Artifacts" badge=${html`<span style="display:block;width:8px;height:8px;border-radius:9999px;background:var(--destructive)"></span>`}><${Icons.Layers} /><//>
+          <${SideRailItem} as="button" type="button" label="Settings"><${Icons.Settings} /><//>
+        <//>
+      <//>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <code style=${caption}>expanded · 236px</code>
+    <div style=${frame}>
+      <${SideRail} aria-label="Primary, expanded">
+        <${SideRailHeader}><span style=${mark}>A</span><span style="font-size:14px;font-weight:600">Adea</span><//>
+        <${SideRailContent}>
+          <${SideRailSection} label="Workspace"><${For} each=${items.slice(0, 4)}>${row}<//><//>
+          <${SideRailSection} label="Discover">
+            <${SideRailItem} as="button" type="button" label="App library" trailing=${html`<${Badge} size="sm" variant="secondary">12<//>`}><${Icons.Sparkles} /><//>
+          <//>
+        <//>
+        <${SideRailFooter}>
+          <${SideRailItem} as="button" type="button" label="Search" trailing=${html`<span style="font-family:var(--font-mono);font-size:11px">⌘K</span>`}><${Icons.Search} /><//>
+          <${SideRailItem} as="button" type="button" label="Settings"><${Icons.Settings} /><//>
+        <//>
+      <//>
+    </div>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

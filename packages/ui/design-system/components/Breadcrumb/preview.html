@@ -1,0 +1,27 @@
+<!-- @dsCard group="Navigation" height=56 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Breadcrumb,
+    BreadcrumbList,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbSeparator,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <${Breadcrumb}
+        ><${BreadcrumbList}>
+          <${BreadcrumbItem}><${BreadcrumbLink} href="#">Workspace<//><//
+          ><${BreadcrumbSeparator} /> <${BreadcrumbItem}><${BreadcrumbLink} href="#">Projects<//><//
+          ><${BreadcrumbSeparator} />
+          <${BreadcrumbItem}><${BreadcrumbLink} current=${true}>packages/ui<//><//>
+        <//><//
+      >
+    `,
+    document.getElementById('root')
+  )
+</script>

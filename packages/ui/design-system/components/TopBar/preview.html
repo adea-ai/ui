@@ -1,0 +1,47 @@
+<!-- @dsCard group="Shell" height=216 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, Badge, Button, TopBar, TopBarSection, TopBarTitle, TopBarSearch, TopBarBreadcrumb, TopBarPill } = window.AdeaUI;
+  const frame = 'overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background)';
+  const muted = 'color:var(--muted-foreground)';
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:16px">
+  <div style=${frame}>
+    <${TopBar}>
+      <${TopBarSection}><${TopBarTitle}>adea<//><//>
+      <${TopBarSearch} placeholder="Search projects, files and sessions" shortcut="⌘K" keyshortcuts="Meta+K" />
+      <${TopBarSection} align="end">
+        <${Button} size="sm" variant="ghost" aria-label="Play"><${Icons.Play} /><//>
+        <${Button} size="sm" variant="ghost" aria-label="Notifications"><${Icons.Bell} /><//>
+      <//>
+    <//>
+  </div>
+  <div style=${frame}>
+    <${TopBar}>
+      <${TopBarSection}>
+        <${TopBarBreadcrumb}>
+          <a href="#" style=${muted}>adea</a>
+          <span style=${muted} aria-hidden="true">/</span>
+          <a href="#" style=${muted}>packages</a>
+          <span style=${muted} aria-hidden="true">/</span>
+          <span aria-current="page" style="font-weight:500">ui</span>
+        <//>
+      <//>
+      <${TopBarSearch} placeholder="Search this package" shortcut="⌘K" keyshortcuts="Meta+K" />
+      <${TopBarSection} align="end" />
+    <//>
+  </div>
+  <div style=${frame}>
+    <${TopBar}>
+      <${TopBarSection}><${TopBarTitle}>feat/m12-397-worktrees<//><//>
+      <${TopBarSearch} placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />
+      <${TopBarSection} align="end">
+        <${TopBarPill} label="main" />
+        <${TopBarPill} label="4 worktrees" />
+        <${Badge} variant="success" size="md">Passing<//>
+      <//>
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

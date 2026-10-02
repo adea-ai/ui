@@ -1,0 +1,41 @@
+<!-- @dsCard group="Navigation" height=140 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, NavigationMenu, NavigationMenuMenu, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuGroup, NavigationMenuGroupLabel, NavigationMenuItem, NavigationMenuSeparator } = window.AdeaUI;
+  const icon = (Glyph) => html`<${Glyph} aria-hidden="true" class="size-4" />`;
+  // Shown closed: opening a panel currently throws (the built-in viewport renders a
+  // Content outside any Menu), so the card shows the bar and its three entries.
+  render(() => html`
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:8px">
+  <${NavigationMenu} label="Documentation">
+    <${NavigationMenuMenu}>
+      <${NavigationMenuTrigger}>Guides<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuGroup}>
+          <${NavigationMenuGroupLabel}>Getting started<//>
+          <${NavigationMenuItem} href="#install" icon=${icon(Icons.FileText)}>Installation<//>
+          <${NavigationMenuItem} href="#themes" icon=${icon(Icons.Layers)} description="The accent, font and appearance axes.">Theming<//>
+        <//>
+        <${NavigationMenuSeparator} />
+        <${NavigationMenuItem} href="#support" icon=${icon(Icons.CircleHelp)}>Support<//>
+      <//>
+    <//>
+    <${NavigationMenuMenu}>
+      <${NavigationMenuTrigger}>Components<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuItem} href="#button">Button<//>
+        <${NavigationMenuItem} href="#dialog">Dialog<//>
+        <${NavigationMenuItem} href="#board">Board<//>
+      <//>
+    <//>
+    <${NavigationMenuMenu}>
+      <${NavigationMenuTrigger}>Settings<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuItem} href="#general" icon=${icon(Icons.Settings)}>General<//>
+      <//>
+    <//>
+  <//>
+  <p style="margin:0;font-size:12px;color:var(--muted-foreground)">Each entry opens a panel of links.</p>
+</div>
+`, document.getElementById('root'));
+</script>

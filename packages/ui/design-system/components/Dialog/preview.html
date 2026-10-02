@@ -1,0 +1,44 @@
+<!-- @dsCard group="Overlays" height=360 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Button,
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    Label,
+    Input,
+  } = window.AdeaUI
+  const description =
+    'The new name is visible to everyone who has access. Existing links keep working.'
+  render(
+    () => html`
+      <div>
+        <${Dialog} defaultOpen=${true}>
+          <${DialogTrigger} as=${Button}>Rename workspace<//>
+          <${DialogContent}>
+            <${DialogHeader}>
+              <${DialogTitle}>Rename workspace<//>
+              <${DialogDescription}>${description}<//>
+            <//>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <${Label} for="dialog-workspace-name">Name<//>
+              <${Input} id="dialog-workspace-name" value="Adea" />
+            </div>
+            <${DialogFooter}>
+              <${Button} variant="ghost">Cancel<//>
+              <${Button}>Save<//>
+            <//>
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

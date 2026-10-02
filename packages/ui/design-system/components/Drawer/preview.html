@@ -1,0 +1,29 @@
+<!-- @dsCard group="Overlays" height=380 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Button, Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerBody, DrawerFooter } = window.AdeaUI;
+  render(() => html`
+<div>
+<${Drawer} initialOpen=${true} side="bottom">
+  <${DrawerTrigger} as=${Button} variant="outline">Open drawer<//>
+  <${DrawerContent} withHandle=${true}>
+    <${DrawerHeader}>
+      <${DrawerTitle}>Lane summary<//>
+      <${DrawerDescription}>The last four runs. Drag the sheet down, or use the button.<//>
+    <//>
+    <${DrawerBody}>
+      <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px">
+        <li>soak · 24h 00m · passed</li>
+        <li>endurance · 6h 12m · passed</li>
+        <li>preview-perf · 30m · passed</li>
+        <li>soak · 0h 47m · failed</li>
+      </ul>
+    <//>
+    <${DrawerFooter}>
+      <${Button} size="sm">View full report<//>
+    <//>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+</script>

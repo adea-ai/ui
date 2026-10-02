@@ -19,6 +19,7 @@
     "test:interactions": "playwright test tests/interactions.spec.ts",
     "test:layout": "playwright test --config=playwright.layout.config.ts",
     "test:components": "playwright test --config=playwright.components.config.ts",
+    "test:design-system": "playwright test --config=playwright.design-system.config.ts",
     "test:vitest": "vitest run"
   },
   "dependencies": {

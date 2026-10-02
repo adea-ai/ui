@@ -1,0 +1,58 @@
+<!-- @dsCard group="Shell" height=380 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, Badge, Button, Panel, PanelActions, PanelBody, PanelCard, PanelDescription, PanelFooter, PanelHeader, PanelPlaceholder, PanelTitle, PanelToolbar } = window.AdeaUI;
+  const frame = 'display:flex;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--background)';
+  render(() => html`
+<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;height:348px">
+  <div style=${frame}>
+    <${Panel}>
+      <${PanelHeader}>
+        <${PanelTitle}>Terminal<//>
+        <${PanelDescription}>bash · adea/feat-m12-397<//>
+        <${PanelActions}>
+          <${Button} size="icon-sm" variant="ghost" aria-label="Restart"><${Icons.RefreshCw} /><//>
+          <${Button} size="icon-sm" variant="ghost" aria-label="More actions">⋯<//>
+        <//>
+      <//>
+      <${PanelToolbar}>
+        <${Badge} variant="success" size="sm">live<//>
+        <span style="font-size:12px;color:var(--muted-foreground)">zsh</span>
+      <//>
+      <${PanelBody} bare=${true}>
+        <pre style="margin:0;padding:12px;font-family:var(--font-mono);font-size:12px;line-height:1.6">$ bun test packages/ui/tests
+
+ 37 pass
+ 0 fail
+ 103 expect() calls</pre>
+      <//>
+      <${PanelFooter}>
+        <span style="font-size:12px;color:var(--muted-foreground)">Exited 0</span>
+        <${Button} size="xs" variant="outline" style="margin-inline-start:auto"><${Icons.Play} />Re-run<//>
+      <//>
+    <//>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+    <div style=${frame + ';flex:1'}>
+      <${Panel}>
+        <${PanelHeader}><${PanelTitle}>Artifacts<//><//>
+        <${PanelBody}>
+          <${PanelPlaceholder}>
+            <span>Nothing has been produced in this session yet.</span>
+            <${Button} size="xs" variant="outline">Run a lane<//>
+          <//>
+        <//>
+      <//>
+    </div>
+    <div style="flex:1;display:flex;overflow:hidden;border-radius:var(--radius-xl);background:var(--surface-sunken)">
+      <${PanelCard}>
+        <${PanelHeader}><${PanelTitle}>Floating panel<//><//>
+        <${PanelBody}>
+          <p style="margin:0;font-size:14px;color:var(--muted-foreground)">PanelCard adds the surface, the radius, the border and the margin, for a panel that sits on a canvas.</p>
+        <//>
+      <//>
+    </div>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

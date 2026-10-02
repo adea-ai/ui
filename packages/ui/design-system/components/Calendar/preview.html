@@ -1,0 +1,14 @@
+<!-- @dsCard group="Forms" height=264 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, CalendarSurface } = window.AdeaUI;
+  const september = new Date(2026, 8, 1);
+  const [day, setDay] = createSignal(new Date(2026, 8, 25));
+  const [range, setRange] = createSignal({ from: new Date(2026, 8, 10), to: new Date(2026, 8, 18) });
+  render(() => html`
+<div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+  <${CalendarSurface} mode="single" initialMonth=${september} value=${day} onValueChange=${setDay} />
+  <${CalendarSurface} mode="range" initialMonth=${september} value=${range} onValueChange=${setRange} />
+</div>
+`, document.getElementById('root'));
+</script>

@@ -1,0 +1,14 @@
+<!-- @dsCard group="Forms" height=150 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, RadioGroup, RadioGroupItem } = window.AdeaUI
+  render(
+    () => html`
+      <${RadioGroup} defaultValue="md" aria-label="Density">
+        <${RadioGroupItem} value="sm" label="Compact" description="28px rows." />
+        <${RadioGroupItem} value="md" label="Comfortable" description="32px rows. The default." />
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

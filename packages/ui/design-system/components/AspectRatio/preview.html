@@ -1,0 +1,30 @@
+<!-- @dsCard group="Layout" height=260 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, AspectRatio } = window.AdeaUI
+  // AspectRatio sets aspect-ratio through its own style prop, so a caller's style would replace it: style by class.
+  const box = 'bg-surface-sunken overflow-hidden rounded-lg border border-border'
+  const fill =
+    'display:flex;align-items:center;justify-content:center;text-align:center;padding:0 16px;font-size:14px;color:var(--muted-foreground)'
+  render(
+    () => html`
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="width:384px">
+          <${AspectRatio} ratio=${16 / 9} class=${box}>
+            <div style=${fill}>A 16:9 box, held whether or not anything has loaded</div>
+          <//>
+        </div>
+        <div style="width:240px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${[1, 2, 3, 4, 5, 6].map(
+      (n) => html`
+        <${AspectRatio} ratio=${1} class=${box}>
+          <div style=${fill + ';font-size:12px'}>${n}</div>
+        <//>
+      `
+    )}
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

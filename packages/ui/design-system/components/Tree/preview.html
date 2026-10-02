@@ -1,0 +1,68 @@
+<!-- @dsCard group="Composites" height=230 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Tree, TreeRow, For, createSignal, createMemo } = window.AdeaUI
+  const nodes = [
+    { id: 'workspace', parentId: null, level: 1, expandable: true, label: 'workspace' },
+    { id: 'src', parentId: 'workspace', level: 2, expandable: true, label: 'src' },
+    { id: 'files', parentId: 'src', level: 3, expandable: false, label: 'files-pane.tsx' },
+    { id: 'styles', parentId: 'src', level: 3, expandable: false, label: 'files-pane.css' },
+    { id: 'tests', parentId: 'workspace', level: 2, expandable: true, label: 'tests' },
+    { id: 'tree-test', parentId: 'tests', level: 3, expandable: false, label: 'tree.test.ts' },
+    { id: 'readme', parentId: 'workspace', level: 2, expandable: false, label: 'README.md' },
+  ]
+  render(() => {
+    const [activeId, setActiveId] = createSignal('src')
+    const [selectedId, setSelectedId] = createSignal('files')
+    const [expandedIds, setExpandedIds] = createSignal(new Set(['workspace', 'src']))
+    const visibleItems = createMemo(() => {
+      const expanded = expandedIds()
+      return nodes
+        .filter((item) => item.parentId === null || expanded.has(item.parentId))
+        .map((item) => ({
+          id: item.id,
+          parentId: item.parentId,
+          level: item.level,
+          expandable: item.expandable,
+          expanded: expanded.has(item.id),
+        }))
+    })
+    const setExpanded = (id, expanded) =>
+      setExpandedIds((current) => {
+        const next = new Set(current)
+        if (expanded) next.add(id)
+        else next.delete(id)
+        return next
+      })
+    return html` <div
+      style="width:320px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:8px"
+    >
+      <${Tree}
+        aria-label="Workspace files"
+        visibleItems=${() => visibleItems()}
+        activeId=${() => activeId()}
+        selectionMode="single"
+        onActiveIdChange=${(id) => setActiveId(id)}
+        onExpand=${setExpanded}
+        onActivate=${(id) => {
+      const item = nodes.find((node) => node.id === id)
+      if (item && item.expandable) setExpanded(id, !expandedIds().has(id))
+      else setSelectedId(id)
+    }}
+        onSelectItem=${(id) => setSelectedId(id)}
+      >
+        <${For} each=${() => visibleItems()}
+          >${(item) => {
+      const node = nodes.find((candidate) => candidate.id === item.id)
+      return html`<${TreeRow}
+        item=${item}
+        selected=${() => selectedId() === item.id}
+        leading=${item.expandable ? html`<${Icons.Folder} aria-hidden="true" style="color:var(--muted-foreground)" />` : html`<${Icons.FileText} aria-hidden="true" style="color:var(--muted-foreground)" />`}
+        >${node.label}<//
+      >`
+    }}<//
+        >
+      <//>
+    </div>`
+  }, document.getElementById('root'))
+</script>

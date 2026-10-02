@@ -1,0 +1,20 @@
+<!-- @dsCard group="Data display" height=80 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Kbd, KbdGroup } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="display:flex;gap:16px;align-items:center">
+          <${KbdGroup}><${Kbd}>⌘<//><${Kbd}>K<//><//
+          ><span>Command palette</span>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <${KbdGroup}><${Kbd}>⌘<//><${Kbd}>⇧<//><${Kbd}>P<//><//
+          ><span>Run a command</span>
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

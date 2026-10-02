@@ -1,0 +1,40 @@
+<!-- @dsCard group="Layout" height=240 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardAction,
+    CardContent,
+    CardFooter,
+    Button,
+    Badge,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <${Card} style="width:384px">
+          <${CardHeader}>
+            <${CardTitle}>Release 0.55.0<//>
+            <${CardDescription}>Cut from main on 24 September.<//>
+            <${CardAction}><${Badge} variant="success">Published<//><//>
+          <//>
+          <${CardContent}
+            ><p style="margin:0;font-size:14px;color:var(--muted-foreground)">
+              Twelve fixes and two new composites: the help centre and the update dialog.
+            </p><//
+          >
+          <${CardFooter} style="gap:8px"
+            ><${Button} size="sm">View notes<//><${Button} size="sm" variant="ghost">Dismiss<//><//
+          >
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

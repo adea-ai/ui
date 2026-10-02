@@ -1,0 +1,63 @@
+<!-- @dsCard group="Data display" height=384 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, ChartFrame, LineChart, BarChart } = window.AdeaUI;
+  // Chart.js draws on a canvas, which cannot resolve var(--…), and the component's
+  // defaults name --chart-grid/--chart-axis/--chart-label, which no theme defines;
+  // so this card resolves real tokens and passes them
+  // through the public `color` and `options` props.
+  // A probe resolves a token that is itself a var() alias down to a colour.
+  const probe = document.createElement('span');
+  document.body.append(probe);
+  const token = (name) => {
+    probe.style.color = `var(--${name})`;
+    return getComputedStyle(probe).color;
+  };
+  const axis = { color: token('muted-foreground'), font: { size: 10 } };
+  const grid = { color: token('border'), drawTicks: false };
+  const options = (extra = {}) => ({
+    animation: false,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: extra.legend ?? true,
+        labels: { color: token('muted-foreground'), boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } },
+      },
+    },
+    scales: {
+      x: { stacked: extra.stacked, border: { color: token('border') }, grid, ticks: axis },
+      y: { stacked: extra.stacked, border: { display: false }, grid, ticks: axis },
+    },
+  });
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  render(() => html`
+<div style="display:flex;gap:16px;align-items:stretch;flex-wrap:wrap">
+  <div style="width:500px">
+    <${ChartFrame} class="grid-cols-1" title="Sessions per month" description="Rolling six months.">
+      <${LineChart}
+        labels=${months}
+        series=${[
+          { label: 'Desktop', data: [12, 19, 14, 22, 28, 31], color: token('chart-1') },
+          { label: 'Web', data: [8, 9, 13, 11, 15, 17], color: token('chart-2') },
+        ]}
+        options=${options()}
+      />
+    <//>
+  </div>
+  <div style="width:380px">
+    <${ChartFrame} class="grid-cols-1" title="Turns by harness">
+      <${BarChart}
+        stacked=${true}
+        labels=${['M12', 'M13', 'M14', 'M15']}
+        series=${[
+          { label: 'Pi', data: [40, 52, 61, 70], color: token('chart-1') },
+          { label: 'Codex', data: [22, 31, 28, 34], color: token('chart-2') },
+        ]}
+        options=${options({ stacked: true })}
+      />
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

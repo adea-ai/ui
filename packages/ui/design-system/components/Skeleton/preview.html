@@ -1,0 +1,23 @@
+<!-- @dsCard group="Feedback" height=120 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Skeleton } = window.AdeaUI
+  render(
+    () => html`
+      <div
+        style="display:flex;flex-direction:column;gap:8px;width:320px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-xl)"
+      >
+        <div style="display:flex;gap:10px;align-items:center">
+          <${Skeleton} style="width:32px;height:32px;border-radius:9999px" />
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+            <${Skeleton} style="height:12px;width:128px" /><${Skeleton}
+              style="height:10px;width:80px"
+            />
+          </div>
+        </div>
+        <${Skeleton} style="height:12px;width:256px" />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

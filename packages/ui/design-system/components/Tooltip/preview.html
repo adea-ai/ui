@@ -1,0 +1,16 @@
+<!-- @dsCard group="Overlays" height=140 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Tooltip, TooltipTrigger, TooltipContent, Button } = window.AdeaUI
+  render(
+    () => html`
+      <div style="padding-top:48px">
+        <${Tooltip} open=${true}
+          ><${TooltipTrigger} as=${Button} variant="outline">Start soak<//
+          ><${TooltipContent}>Runs the soak lane with a 24-hour budget.<//><//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

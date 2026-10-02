@@ -1,0 +1,29 @@
+<!-- @dsCard group="Conversation" height=390 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:16px;max-width:704px"></div>
+<script>
+  const { render, html, createSignal, ChatComposer, Button } = window.AdeaUI;
+  render(() => {
+    const [draft, setDraft] = createSignal('Add a regression test for the cursor commit, then rerun the soak lane.');
+    const [collapsed, setCollapsed] = createSignal(false);
+    const [busyDraft, setBusyDraft] = createSignal('Also check the ACL case');
+    const [mode, setMode] = createSignal('steer');
+    return html`
+<${ChatComposer}
+  value=${() => draft()}
+  onValueChange=${(next) => setDraft(next)}
+  onSubmit=${(_input) => setDraft('')}
+  collapse=${() => ({ value: collapsed(), onChange: setCollapsed })}
+  knowledge=${html`<p style="margin:0;font-size:12px;color:var(--muted-foreground)">Selected knowledge context stays distinct from the draft.</p>`}
+  followUps=${html`<${Button} type="button" variant="secondary" size="sm" onClick=${(_event) => setDraft('Show the supporting evidence')}>Show supporting evidence<//>`}
+  attachments=${html`<p style="margin:0;padding:8px 16px;font-size:12px;color:var(--muted-foreground)">Staged: implementation-plan.md</p>`}
+  context=${html`<${Button} type="button" variant="ghost" size="sm">Agent: Ada<//><${Button} type="button" variant="ghost" size="sm">Model: selected by host<//>`}
+/>
+<${ChatComposer}
+  value=${() => busyDraft()}
+  onValueChange=${(next) => setBusyDraft(next)}
+  onSubmit=${(_input) => setBusyDraft('')}
+  busy=${() => ({ mode: mode(), onModeChange: setMode, unavailable: { queue: 'This harness has no queue operation' } })}
+  blockedReason="Reconnect to send this draft"
+/>`;
+  }, document.getElementById('root'));
+</script>
