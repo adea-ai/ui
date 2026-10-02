@@ -13,6 +13,7 @@ export function renderAppearance() {
         mode: 'system',
         lightThemeId: light.id,
         darkThemeId: dark.id,
+        terminalThemeId: 'theme',
         accent: 'theme',
         surface: 'theme',
         reduceTransparency: false,

@@ -43,6 +43,7 @@ test('the composed editor server-renders without a browser or application global
   expect(html).toContain('Appearance mode')
   expect(html).toContain('Light theme')
   expect(html).toContain('Dark theme')
+  expect(html).toContain('Terminal')
   expect(html).toContain("Uses the palette's intended color.")
 })
 
@@ -91,13 +92,19 @@ test('the popup and nested controls retain their shared CSS contract', async ({ 
     return {
       background: style.backgroundColor,
       overflowX: style.overflowX,
-      minWidth: Number.parseFloat(style.minWidth),
       rem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
     }
   })
   expect(menuStyle.background).not.toBe('rgba(0, 0, 0, 0)')
   expect(menuStyle.overflowX).toBe('hidden')
-  expect(menuStyle.minWidth).toBeCloseTo(menuStyle.rem * 8, 1)
+  // The menu may grow with its content (long theme names render in full) but
+  // never narrower than its trigger: the dark theme row's `sm:w-52` button.
+  // The content's `duration-200` leaves transition-property at its `all`
+  // initial value, so the anchor-width floor interpolates for 200ms after
+  // opening — assert the settled contract, never a mid-transition frame.
+  await expect
+    .poll(() => menu.evaluate((element) => Number.parseFloat(getComputedStyle(element).minWidth)))
+    .toBeCloseTo(menuStyle.rem * 13, 1)
   await page.keyboard.press('Escape')
   await page.getByText('Custom', { exact: true }).click()
   const input = await page.getByRole('textbox', { name: 'Custom accent' }).evaluate((element) => {
@@ -161,6 +168,26 @@ test('mode previews and both theme rows remain available through keyboard change
   await expect(page.getByRole('radio', { name: 'Light', exact: true })).toBeChecked()
   await expect(page.getByRole('button', { name: /^Dark theme/ })).toBeVisible()
   await expect(page.getByText('Typeface', { exact: true })).toHaveCount(0)
+})
+
+test('the terminal row follows the interface theme and offers the full catalogue', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Terminal', exact: true })
+  await expect(trigger).toBeVisible()
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  const options = menu.getByRole('menuitemradio')
+  // The UI-theme default plus every catalogue record — both appearances,
+  // because the terminal paints one fixed palette rather than a light/dark axis.
+  await expect(options).toHaveCount(5)
+  await expect(menu.getByRole('menuitemradio', { name: 'UI theme', exact: true })).toBeVisible()
+  // Each option carries a compact theme preview and a one-line description;
+  // the description stays visual so the accessible name is just the theme.
+  await expect(menu.locator('[data-theme-menu-preview]')).toHaveCount(5)
+  await expect(menu.getByText('Uses the interface theme.', { exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(trigger).toBeFocused()
 })
 
 test('donor helper copy distinguishes palette defaults and explicit overrides', async ({
@@ -425,11 +452,9 @@ test('theme menu Tab exits to the next or previous control in its dialog', async
 
     await page.keyboard.press('Tab')
     await expect(menu).toHaveCount(0)
-    await expect(
-      dialog
-        .getByRole('radiogroup', { name: 'Accent' })
-        .getByRole('radio', { name: 'Theme default' })
-    ).toBeFocused()
+    // Tab walks DOM order: the terminal row sits between the theme rows and
+    // the accent choices, so it is the stop after the dark theme trigger.
+    await expect(dialog.getByRole('button', { name: 'Terminal', exact: true })).toBeFocused()
 
     await trigger.click()
     const previousMenu = dialog.getByRole('menu')
@@ -461,9 +486,7 @@ test('inline AppearanceEditor Tab closes the menu and focuses the next control',
   await page.keyboard.press('Tab')
 
   await expect(menu).toHaveCount(0)
-  await expect(
-    page.getByRole('radiogroup', { name: 'Accent' }).getByRole('radio', { name: 'Theme default' })
-  ).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Terminal', exact: true })).toBeFocused()
 })
 
 test('inline AppearanceEditor Shift+Tab closes the menu and focuses the previous control', async ({
