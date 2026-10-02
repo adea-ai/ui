@@ -94,6 +94,12 @@ const coreSamples: PackedSample[] = [
     source: 'composites/about-dialog',
   },
   {
+    name: 'account-menu-rail',
+    imports: "import { AccountMenu } from '@adea-ai/ui/components/composites/account-menu'",
+    jsx: '<AccountMenu placement="right-end" gutter={4} hideArrow authenticated={false} showSession={false} items={[{ id: "settings", label: "Settings" }]} />',
+    source: 'composites/account-menu',
+  },
+  {
     name: 'help-center',
     imports: "import { HelpCenter } from '@adea-ai/ui/components/composites/help-center'",
     jsx: '<HelpCenter appName="Adea" shortcuts={[{ label: "Settings", keys: ["⌘", ","] }]} links={[{ label: "Project", url: "https://github.com/adea-ai/adea" }]} />',
