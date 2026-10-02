@@ -75,6 +75,12 @@ export type TabsListProps = ComponentProps<typeof KobalteTabs.List> & {
   appearance?: 'underline' | 'segmented'
 }
 
+/**
+ * The underline appearance's rule is the baseline a horizontal row of tabs sits
+ * on. A vertical list has no baseline — its triggers stack — so the rule is
+ * dropped there; otherwise it draws as a stray line under the last trigger,
+ * spanning only the list's width (the SettingsLayout rail showed exactly that).
+ */
 export function TabsList(props: TabsListProps) {
   const [local, rest] = splitProps(props, ['class', 'appearance'])
 
@@ -84,7 +90,7 @@ export function TabsList(props: TabsListProps) {
         'inline-flex w-fit shrink-0 items-center justify-center',
         local.appearance === 'segmented'
           ? 'gap-0.5 rounded-lg bg-surface-hover p-0.5'
-          : 'gap-1 rounded-none border-b border-border',
+          : 'gap-1 rounded-none border-b border-border data-[orientation=vertical]:border-b-0',
         'data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch',
         local.class
       )}

@@ -81,7 +81,7 @@ export const Segmented: Story = {
 export const Vertical: Story = {
   render: () => (
     <Tabs defaultValue="general" orientation="vertical" class="flex gap-6">
-      <TabsList orientation="vertical" class="border-b-0">
+      <TabsList orientation="vertical">
         <TabsTrigger orientation="vertical" value="general">
           General
         </TabsTrigger>
