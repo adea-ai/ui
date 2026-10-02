@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.99.2](https://github.com/adea-ai/ui/compare/v0.99.1...v0.99.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ui:** lay the pagination controls out in one row ([#263](https://github.com/adea-ai/ui/issues/263)) ([b559962](https://github.com/adea-ai/ui/commit/b55996263a8fd7bfad76b7f95a52983179d98dfc))
+
+
+### Documentation
+
+* correct theme provenance, counts, contrast and type weights ([#264](https://github.com/adea-ai/ui/issues/264)) ([0fed274](https://github.com/adea-ai/ui/commit/0fed274dc9b10bd25d55310f483a58f6152f67e6))
+
+
+### Maintenance
+
+* **code-foundry:** upgrade to v1.42.0 ([#262](https://github.com/adea-ai/ui/issues/262)) ([8cc7fac](https://github.com/adea-ai/ui/commit/8cc7fac6ab86d23f34841cb983902e98d792136b))
+
 ## [0.99.1](https://github.com/adea-ai/ui/compare/v0.99.0...v0.99.1) (2026-10-02)
 
 
