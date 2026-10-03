@@ -21,6 +21,8 @@ type FixtureWindow = Window & {
     rejectCheck(index: number, reason: unknown): Promise<void>
     resolveInstall(index: number, state: UpdateState): Promise<void>
     rejectInstall(index: number, message: string): Promise<void>
+    resolveChannelSave(index: number): Promise<void>
+    rejectChannelSave(index: number, reason: unknown): Promise<void>
   }
 }
 
@@ -224,6 +226,114 @@ test('a failed auto-check preserves active download progress', async ({ page }) 
   await expect(page.getByRole('alert')).toHaveText('The release feed could not be reached.')
   await expect(page.getByRole('region', { name: 'Update progress' })).toContainText('25%')
   await expect(page.getByText('Adea is up to date.', { exact: true })).toHaveCount(0)
+})
+
+test('changing the release channel clears the old offer until save and recheck finish', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toBeEnabled()
+
+  const channel = page.getByRole('combobox', { name: 'Update channel' })
+  await channel.selectOption('dev')
+  await expect(page.getByLabel('Channel saves')).toHaveText('1')
+  await expect(channel).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Check latest version' })).toBeDisabled()
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+
+  await page.evaluate(async () => {
+    await (window as FixtureWindow).updateDialogLifecycle!.resolveChannelSave(0)
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await expect(channel).toBeDisabled()
+  await resolveCheck(page, 1, { phase: 'current', currentVersion: '0.72.0' })
+
+  await expect(channel).toBeEnabled()
+  await expect(channel).toHaveValue('dev')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+})
+
+test('a failed channel save keeps the old offer cleared and skips its check', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+
+  const channel = page.getByRole('combobox', { name: 'Update channel' })
+  await channel.selectOption('dev')
+  await expect(page.getByLabel('Channel saves')).toHaveText('1')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+  await page.evaluate(async () => {
+    await (window as FixtureWindow).updateDialogLifecycle!.rejectChannelSave(
+      0,
+      'The channel could not be saved.'
+    )
+  })
+
+  await expect(page.getByRole('alert')).toHaveText('The channel could not be saved.')
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await expect(channel).toBeEnabled()
+  await expect(channel).toHaveValue('stable')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+})
+
+test('a failed channel check keeps the successfully saved selection', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+
+  const channel = page.getByRole('combobox', { name: 'Update channel' })
+  await channel.selectOption('dev')
+  await expect(page.getByLabel('Channel saves')).toHaveText('1')
+  await page.evaluate(async () => {
+    await (window as FixtureWindow).updateDialogLifecycle!.resolveChannelSave(0)
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await rejectCheck(page, 1, 'The dev feed is temporarily unavailable.')
+
+  await expect(page.getByRole('alert')).toHaveText('The dev feed is temporarily unavailable.')
+  await expect(channel).toHaveValue('dev')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Retry update check' }).click()
+  await expect(page.getByLabel('Update checks')).toHaveText('3')
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await rejectCheck(page, 2, 'The dev feed is still unavailable.')
+  await expect(page.getByRole('alert')).toHaveText('The dev feed is still unavailable.')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
 })
 
 test('a failed manual check cannot discard an available snapshot during status reload', async ({
