@@ -171,7 +171,12 @@ function CalendarGrid(props: {
                               // Styled from data states, so a day can be a range
                               // end and today at once without a prop per pair.
                               'data-selected:bg-primary data-selected:text-primary-foreground',
-                              'data-in-range:bg-primary-subtle',
+                              // corvu marks every day of a range selected, so the
+                              // span between the ends steps back to the subtle
+                              // fill and the ends take the solid one again.
+                              'data-in-range:bg-primary-subtle data-in-range:text-foreground',
+                              'data-range-start:bg-primary data-range-start:text-primary-foreground',
+                              'data-range-end:bg-primary data-range-end:text-primary-foreground',
                               'data-range-start:rounded-r-none data-range-end:rounded-l-none',
                               'data-today:ring-1 data-today:ring-ring',
                               'data-disabled:text-muted-foreground data-disabled:line-through',

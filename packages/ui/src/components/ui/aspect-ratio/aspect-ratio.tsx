@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 
@@ -22,13 +22,24 @@ export type AspectRatioProps = ComponentProps<'div'> & {
   ratio?: number
 }
 
+/**
+ * The caller's style with the ratio laid over it. A spread `style` replaces the
+ * element's rather than merging, so passing any style used to drop the ratio and
+ * collapse the box to zero height. `ratio` is the API for the ratio, so it wins.
+ */
+function withRatio(style: AspectRatioProps['style'], ratio: number): JSX.CSSProperties | string {
+  const value = String(ratio)
+  if (typeof style === 'string') return `${style};aspect-ratio:${value}`
+  return { ...style, 'aspect-ratio': value }
+}
+
 export function AspectRatio(props: AspectRatioProps) {
-  const [local, rest] = splitProps(props, ['class', 'ratio', 'children'])
+  const [local, rest] = splitProps(props, ['class', 'ratio', 'style', 'children'])
 
   return (
     <div
       data-slot="aspect-ratio"
-      style={{ 'aspect-ratio': String(local.ratio ?? 16 / 9) }}
+      style={withRatio(local.style, local.ratio ?? 16 / 9)}
       class={cn('relative w-full [&>*]:absolute [&>*]:inset-0 [&>*]:size-full', local.class)}
       {...rest}
     >

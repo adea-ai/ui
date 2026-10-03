@@ -38,7 +38,17 @@ export function InputOtp(props: InputOtpProps) {
   return (
     <OtpField
       maxLength={length()}
-      class={cn('flex items-center gap-2', local.class)}
+      class={cn(
+        'flex items-center gap-2',
+        // corvu positions the field itself, but its hidden input is 40px wider
+        // than the field so a password manager's badge lands outside the boxes
+        // (`shiftPWManagers`). `clip-path` only hides that overhang; it still
+        // counts as overflow, and a full-width field scrolled the page sideways.
+        // `overflow-hidden` contains it, and `p-1` keeps the edge boxes' focus
+        // ring (`ring-3`) inside the clip.
+        'overflow-hidden p-1',
+        local.class
+      )}
       {...rest}
       children={(field) => (
         <>
@@ -72,7 +82,9 @@ export function InputOtp(props: InputOtpProps) {
                             'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50'
                           )}
                           data-active={field.activeSlots.includes(slot)}
-                          data-disabled={props.disabled}
+                          // Present-or-absent, never `"false"`: `data-[disabled]`
+                          // matches any value, so `disabled={false}` dimmed the boxes.
+                          data-disabled={props.disabled ? '' : undefined}
                         >
                           {field.value[slot] ?? ''}
                         </span>

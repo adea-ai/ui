@@ -14,14 +14,24 @@ import { Presence as MotionPresence } from 'solid-motionone'
  * this for mounting and unmounting, which is the split that keeps the common case
  * free of a runtime while making the rare case correct.
  *
- *   <Show when={open()}>
- *     <Presence initial={{ opacity: 0, scale: 0.96 }} exit={{ opacity: 0, scale: 0.96 }}>
- *       <div>…</div>
- *     </Presence>
- *   </Show>
+ *   <Presence exitBeforeEnter>
+ *     <Show when={open()}>
+ *       <Motion.div
+ *         initial={{ opacity: 0, scale: 0.96 }}
+ *         animate={{ opacity: 1, scale: 1 }}
+ *         exit={{ opacity: 0, scale: 0.96 }}
+ *       >
+ *         …
+ *       </Motion.div>
+ *     </Show>
+ *   </Presence>
  *
- * `Presence` keeps the child mounted until its exit finishes, so the `<Show>` above
- * can stay the only condition in the tree.
+ * `Presence` goes *outside* the condition: it has to outlive the `<Show>`'s child
+ * to keep that child mounted until its exit finishes. It takes only two booleans —
+ * `initial={false}` skips the enter animation on first render, `exitBeforeEnter`
+ * holds a replacement back until the outgoing element has left. The animation
+ * itself lives on the `Motion.*` element, which must be the direct child of the
+ * condition for its `exit` to run.
  */
 export type PresenceProps = ComponentProps<typeof MotionPresence> & {
   children?: JSX.Element
