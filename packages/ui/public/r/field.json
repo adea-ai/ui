@@ -9,6 +9,7 @@
   "registryDependencies": [
     "@adea-ai/ui/input",
     "@adea-ai/ui/label",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Typography" height=440 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 16px"></div>
+<script>
+  const { render, html, Heading, Text } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <${Heading} size="display">Nothing here yet<//>
+        <${Heading} size="title" numeric=${true}>1,284 runs this week<//>
+        <${Heading} size="page">Workspace settings<//>
+        <${Heading} size="section">Members<//>
+        <${Heading} size="card">Delete this thread?<//>
+        <${Heading} size="subsection">Recent activity<//>
+      </div>
+      <div
+        style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--border)"
+      >
+        <${Text}>Choose the theme both apps open with.<//>
+        <${Text} variant="label">Workspace name<//>
+        <${Text} variant="strong">Two checks failed<//>
+        <${Text} variant="caption" tone="muted">Updated 3 minutes ago<//>
+        <${Text} variant="micro" tone="muted">Ln 42, Col 7<//>
+        <${Text} variant="code">bun add @adea-ai/ui<//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -2,6 +2,7 @@ import type { ComponentProps, JSX } from 'solid-js'
 import { createUniqueId, Show, splitProps } from 'solid-js'
 import { createFormFieldContext, FormFieldContext } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
+import { Heading } from '../../ui/typography'
 
 /**
  * SettingsSection and SettingsRow.
@@ -43,7 +44,9 @@ export function SettingsSection(
     >
       <div class="flex items-start justify-between gap-4">
         <div class="flex min-w-0 flex-col gap-0.5">
-          <h2 class="text-base font-semibold tracking-tight">{local.title}</h2>
+          <Heading as="h2" size="card">
+            {local.title}
+          </Heading>
           <Show when={local.description}>
             <p class="max-w-prose text-sm text-muted-foreground text-pretty">{local.description}</p>
           </Show>

@@ -7,6 +7,7 @@ import type { ComponentProps } from 'solid-js'
 import { createEffect, createSignal, splitProps } from 'solid-js'
 import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '#lib/overlay'
 import { cn } from '#lib/utils'
+import { headingVariants } from '../typography'
 
 /**
  * AlertDialog.
@@ -117,7 +118,7 @@ export function AlertDialogTitle(props: ComponentProps<typeof KobalteAlertDialog
   const [local, rest] = splitProps(props, ['class'])
   return (
     <KobalteAlertDialog.Title
-      class={cn('text-base leading-none font-semibold tracking-tight', local.class)}
+      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
       {...rest}
     />
   )

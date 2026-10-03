@@ -34,6 +34,7 @@ const GROUPS = new Set([
   'Conversation',
   'Theming',
   'Motion',
+  'Typography',
 ])
 
 describe('design-system inventory', () => {

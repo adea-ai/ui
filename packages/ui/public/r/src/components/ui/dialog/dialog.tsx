@@ -9,6 +9,7 @@ import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { createRenderEffect, onCleanup, Show, splitProps } from 'solid-js'
 import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
+import { headingVariants } from '../typography'
 
 type FocusCycle = {
   content: HTMLElement
@@ -327,7 +328,7 @@ export function DialogTitle(props: ComponentProps<typeof KobalteDialog.Title>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
     <KobalteDialog.Title
-      class={cn('text-base leading-none font-semibold tracking-tight', local.class)}
+      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
       {...rest}
     />
   )

@@ -1,6 +1,7 @@
 import type { ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
+import { Heading, headingVariants } from '../../ui/typography'
 
 /**
  * PageHeader.
@@ -44,7 +45,7 @@ export function PageHeaderTitle(props: ComponentProps<'h1'>) {
   return (
     <h1
       data-slot="page-header-title"
-      class={cn('text-xl font-semibold tracking-tight', local.class)}
+      class={cn(headingVariants({ size: 'page' }), local.class)}
       {...rest}
     />
   )
@@ -92,7 +93,7 @@ export function PageSection(
       <Show when={local.title}>
         <div class="flex items-baseline justify-between gap-3">
           <div class="flex min-w-0 flex-col gap-0.5">
-            <h2 class="text-base font-semibold tracking-tight">{local.title}</h2>
+            <Heading size="section">{local.title}</Heading>
             <Show when={local.description}>
               <p class="max-w-prose text-sm text-muted-foreground text-pretty">
                 {local.description}

@@ -24,8 +24,10 @@ Three decisions make an interface recognisably this system: **a tinted canvas wi
 
 - **Space Grotesk** (`sans`) is the interface face. **JetBrains Mono** (`mono`) is for code, terminals, ids and paths. Typeface is a user preference (`data-font` = system, geist, geist-mono or jetbrains-mono). When the UI font is mono, `--ui-tracking` and `--ui-word-spacing` tighten chrome labels.
 - **14px (`text-sm`) is the default**, not 16px: body at 400, labels and control text at 500 (`text-sm-label`), emphasis at 600 (`text-sm-strong`).
-- `text-base` at 600 for card, dialog and settings-section titles; `text-xl` at 600 for a page title and a stat value; `text-xs` for metadata (500 on badges); `text-2xs` at 500 for keyboard keys and the status bar.
-- `text-lg`, `text-2xl` and `text-3xl` exist on the ladder, but no shared component sets them yet; `text-3xl` is for an app-level headline, once per app at most.
+- **Use `Heading` and `Text`; never hand-write a size and a weight.** A call site names a role and the rung, weight, leading and tracking follow from it.
+- `Heading` sizes, all at 600: `display` (`text-3xl`, an app-level headline, once per app at most), `title` (`text-2xl`, a landing title or headline figure), `page` (`text-xl`, a page title and a stat value), `section` (`text-lg`, a section heading inside a page), `card` (`text-base`, card, dialog and settings-section titles), `subsection` (`text-sm`, a sheet or compact panel heading).
+- `Text` variants: `body` (`text-sm` 400), `label` (500), `strong` (600), `caption` (`text-xs` metadata), `micro` (`text-2xs` 500, keyboard keys and the status bar), `code` (mono `text-xs`). `tone="muted"` for secondary text.
+- Size is visual and the element is the outline: each `Heading` size has a default element (`h1` for display/title/page, `h2` section, `h3` card, `h4` subsection); pass `as` when the outline differs.
 - Weights stop at **600**. On a dark surface a bold word blooms.
 - The fonts ship with the package (`@adea-ai/ui/fonts.css`, self-hosted variable faces), so an app never fetches a font at runtime or reflows after first paint.
 

@@ -1,0 +1,24 @@
+{
+  "name": "typography",
+  "type": "registry:ui",
+  "title": "Typography",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14"
+  ],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/typography/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/typography/index.ts"
+    },
+    {
+      "path": "src/components/ui/typography/typography.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/typography/typography.tsx"
+    }
+  ]
+}

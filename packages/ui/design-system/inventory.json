@@ -367,6 +367,12 @@
         "group": "Overlays"
       }
     ],
+    "typography": [
+      {
+        "card": "Typography",
+        "group": "Typography"
+      }
+    ],
     "app-shell": [
       {
         "card": "AppShell",

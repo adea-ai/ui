@@ -1,6 +1,7 @@
 import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
+import { headingVariants } from '../typography'
 
 /**
  * Card.
@@ -41,7 +42,7 @@ export function CardTitle(props: ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      class={cn('text-base leading-none font-semibold tracking-tight', local.class)}
+      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
       {...rest}
     />
   )

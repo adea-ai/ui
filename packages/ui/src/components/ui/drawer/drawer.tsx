@@ -2,6 +2,7 @@ import DrawerPrimitive from '@corvu/drawer'
 import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
+import { headingVariants } from '../typography'
 
 /**
  * Drawer.
@@ -96,7 +97,7 @@ export function DrawerTitle(props: ComponentProps<typeof DrawerPrimitive.Label>)
   const [local, rest] = splitProps(props, ['class'])
   return (
     <DrawerPrimitive.Label
-      class={cn('text-base leading-none font-semibold tracking-tight', local.class)}
+      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
       {...rest}
     />
   )

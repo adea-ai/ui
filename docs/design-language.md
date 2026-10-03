@@ -139,19 +139,26 @@ floating words without negative word spacing, while its glyphs carry more sidebe
 and tolerate a tighter track.
 
 Eight rungs, each with its own line-height because the ratio is not constant. The
-weight column is what the shared components set; a rung with no component use yet is
-marked as such rather than given an invented weight.
+weight column is what `Heading` and `Text` set; a call site names the role in the
+last column and never writes the size and weight classes itself.
 
-| Token       | Size | Leading | Weight                               | Use                                                               |
-| ----------- | ---- | ------- | ------------------------------------ | ----------------------------------------------------------------- |
-| `text-3xl`  | 30px | 1.2     | — (no shared component uses it)      | An app-level empty-state headline. Once per app, at most.         |
-| `text-2xl`  | 24px | 1.25    | — (no shared component uses it)      | A display figure larger than `Stat`'s.                            |
-| `text-xl`   | 20px | 1.35    | 600                                  | A page title (`PageTitle`), a stat value (`Stat`).                |
-| `text-lg`   | 18px | 1.4     | — (no shared component uses it)      | A section heading inside a page.                                  |
-| `text-base` | 16px | 1.5     | 600                                  | Card, dialog and settings-section titles.                         |
-| `text-sm`   | 14px | 1.55    | 400 body · 500 labels · 600 emphasis | **The default.** Body copy, labels, controls, empty-state titles. |
-| `text-xs`   | 12px | 1.5     | 400 · 500 for badges                 | Metadata, badges, secondary rows, code.                           |
-| `text-2xs`  | 11px | 1.45    | 500                                  | The floor: keyboard keys, the status bar.                         |
+| Token       | Size | Leading | Weight                               | Use                                                                                                                                     |
+| ----------- | ---- | ------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `text-3xl`  | 30px | 1.2     | 600                                  | `Heading size="display"`: an app-level headline, such as a first-run or empty-app screen. Once per app, at most.                        |
+| `text-2xl`  | 24px | 1.25    | 600                                  | `Heading size="title"`: a landing title, or a headline figure larger than `Stat`'s.                                                     |
+| `text-xl`   | 20px | 1.35    | 600                                  | `Heading size="page"`: a page title (`PageHeaderTitle`, `HelpCenter`), a stat value (`Stat`), the installed version (`UpdateDialog`).   |
+| `text-lg`   | 18px | 1.4     | 600                                  | `Heading size="section"`: a section heading inside a page (`PageSection`).                                                              |
+| `text-base` | 16px | 1.5     | 600                                  | `Heading size="card"`: card, dialog, alert-dialog, drawer and settings-section titles, and a field-set legend.                          |
+| `text-sm`   | 14px | 1.55    | 400 body · 500 labels · 600 emphasis | **The default.** `Text` `body`, `label` and `strong`; `Heading size="subsection"` (600) for a sheet title or a compact panel's heading. |
+| `text-xs`   | 12px | 1.5     | 400 · 500 for badges                 | `Text variant="caption"`: metadata, secondary rows, units. `Text variant="code"` in the mono face. Badges set 500 themselves.           |
+| `text-2xs`  | 11px | 1.45    | 500                                  | `Text variant="micro"`: the floor — keyboard keys, the status bar.                                                                      |
+
+**Size is visual; the element is the document outline.** `Heading`'s `size` decides
+how a heading looks and nothing else. Each size has a conventional default element —
+`display`, `title` and `page` render an `h1`, `section` an `h2`, `card` an `h3`,
+`subsection` an `h4` — but that default is a convenience: a card-sized settings
+section that is the first heading under the page title is an `h2`, so it passes
+`as="h2"`. Never choose a size to get a heading level, or an element to get a size.
 
 Weights stop at 600. On a dark surface a bold word blooms, and with a variable face
 the step from 500 to 600 is already a clear one — 700 buys attention by making the

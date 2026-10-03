@@ -1,5 +1,5 @@
 {
-  "$comment": "The weight and sample for each type rung, as docs/design-language.md records them. Sizes and leading come from theme.css; a rung no shared component sets a weight for shows 400.",
+  "$comment": "The weight and sample for each type rung, as docs/design-language.md records them. Sizes and leading come from theme.css; the weights are the ones Heading and Text set.",
   "families": {
     "sans": "font-family-space-grotesk",
     "mono": "font-family-jetbrains-mono",
@@ -19,10 +19,10 @@
       "name": "Interface",
       "family": "sans",
       "styles": [
-        { "token": "text-3xl", "weight": 400, "sample": "Nothing here yet" },
-        { "token": "text-2xl", "weight": 400, "sample": "1,284 runs" },
+        { "token": "text-3xl", "weight": 600, "sample": "Nothing here yet" },
+        { "token": "text-2xl", "weight": 600, "sample": "1,284 runs" },
         { "token": "text-xl", "weight": 600, "sample": "Workspace settings" },
-        { "token": "text-lg", "weight": 400, "sample": "Appearance" },
+        { "token": "text-lg", "weight": 600, "sample": "Appearance" },
         { "token": "text-base", "weight": 600, "sample": "Delete this thread?" },
         {
           "name": "text-sm",

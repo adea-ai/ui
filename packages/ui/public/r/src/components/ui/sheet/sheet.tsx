@@ -10,6 +10,7 @@ import { Show, splitProps } from 'solid-js'
 import { cva, type VariantProps } from '../../../lib/variants'
 import { cn } from '../../../lib/utils'
 import { createDialogFocusRestoration, DialogOverlay } from '../dialog/dialog'
+import { headingVariants } from '../typography'
 
 /**
  * Sheet.
@@ -152,7 +153,10 @@ export function SheetFooter(props: ComponentProps<'div'>) {
 export function SheetTitle(props: ComponentProps<typeof KobalteDialog.Title>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
-    <KobalteDialog.Title class={cn('text-sm leading-none font-semibold', local.class)} {...rest} />
+    <KobalteDialog.Title
+      class={cn(headingVariants({ size: 'subsection', leading: 'none' }), local.class)}
+      {...rest}
+    />
   )
 }
 

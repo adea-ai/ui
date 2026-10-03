@@ -11,6 +11,7 @@
     "@adea-ai/ui/radio-group",
     "@adea-ai/ui/toggle-group",
     "@adea-ai/ui/tooltip",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

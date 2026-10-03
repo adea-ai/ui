@@ -225,12 +225,13 @@ describe('registry', () => {
   }, 30_000)
 
   test('settings composites declare their reused navigation dependencies', () => {
-    // SettingsLayout composes the sidebar row recipe and Tabs; it does not pull
-    // in any of the page's optional controls such as Switch or Input.
+    // SettingsLayout composes the sidebar row recipe and Tabs, and the section
+    // title is a Heading; it does not pull in any of the page's optional controls
+    // such as Switch or Input.
     const settings = registryItems.find((item) => item.name === 'settings')
     const peers = (settings?.registryDependencies ?? []).filter((name) => name !== 'lib')
 
-    expect(peers).toEqual(['@adea-ai/ui/sidebar-nav', '@adea-ai/ui/tabs'])
+    expect(peers).toEqual(['@adea-ai/ui/sidebar-nav', '@adea-ai/ui/tabs', '@adea-ai/ui/typography'])
   })
 
   test('every component that needs the helpers declares the lib peer', () => {
