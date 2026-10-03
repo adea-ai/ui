@@ -278,12 +278,15 @@ export function UpdateDialog(props: UpdateDialogProps) {
       const previous = state()
       const hasActionableSnapshot = (candidate: UpdateState | null) =>
         candidate?.phase === 'available' || isBusy(candidate)
+      const ignoresUnconfirmedChannelSnapshot =
+        channelCheckUnconfirmed && hasActionableSnapshot(status)
       const preservesSnapshot =
         previous?.phase === 'available'
           ? status.phase === 'available' || isBusy(status)
           : isBusy(previous) && isBusy(status)
       if (
         isCurrent() &&
+        !ignoresUnconfirmedChannelSnapshot &&
         !(checkFailed() && hasActionableSnapshot(previous) && !preservesSnapshot)
       ) {
         setState(status)
@@ -411,11 +414,31 @@ export function UpdateDialog(props: UpdateDialogProps) {
       try {
         const current = await local.adapter.getStatus()
         if (!isCurrent()) return
-        setState(current)
+        const discardStaleOffer = channelCheckUnconfirmed
+        setState(
+          discardStaleOffer
+            ? { phase: 'checking', currentVersion: current.currentVersion }
+            : current
+        )
         const checked = await local.adapter.check()
-        if (isCurrent()) applyCheckResult(checked)
+        if (isCurrent()) {
+          applyCheckResult(checked, !discardStaleOffer)
+          if (discardStaleOffer && checked.phase !== 'failed') channelCheckUnconfirmed = false
+        }
       } catch (caught) {
-        if (isCurrent()) failCheck(caught, 'Could not check for updates')
+        if (isCurrent()) {
+          if (channelCheckUnconfirmed) {
+            const message = errorMessage(caught, 'Could not check for updates')
+            setState({
+              phase: 'failed',
+              currentVersion: state()?.currentVersion ?? '',
+              error: message,
+            })
+            failCheck(message, 'Could not check for updates')
+          } else {
+            failCheck(caught, 'Could not check for updates')
+          }
+        }
       } finally {
         if (isCurrent()) setBusy(false)
       }

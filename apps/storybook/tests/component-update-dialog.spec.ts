@@ -336,6 +336,53 @@ test('a failed channel check keeps the successfully saved selection', async ({ p
   await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
 })
 
+test('reopening after a failed channel check does not restore the cached offer', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Open version and updates' })
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('2')
+  await resolveStatus(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('1')
+  await resolveCheck(page, 0, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByRole('region', { name: 'Available update' })).toBeVisible()
+
+  await page.getByRole('combobox', { name: 'Update channel' }).selectOption('dev')
+  await expect(page.getByLabel('Channel saves')).toHaveText('1')
+  await page.evaluate(async () => {
+    await (window as FixtureWindow).updateDialogLifecycle!.resolveChannelSave(0)
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('2')
+  await rejectCheck(page, 1, 'The dev feed is temporarily unavailable.')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await trigger.click()
+  await expect(page.getByLabel('Status requests')).toHaveText('3')
+  await resolveStatus(page, 1, {
+    phase: 'available',
+    currentVersion: '0.72.0',
+    availableVersion: '0.73.0',
+  })
+  await expect(page.getByLabel('Update checks')).toHaveText('3')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toHaveCount(0)
+
+  await rejectCheck(page, 2, 'The dev feed is still unavailable.')
+  await expect(page.getByRole('alert')).toHaveText('The dev feed is still unavailable.')
+  await expect(page.getByRole('region', { name: 'Available update' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Install and restart' })).toHaveCount(0)
+})
+
 test('a failed manual check cannot discard an available snapshot during status reload', async ({
   page,
 }) => {
