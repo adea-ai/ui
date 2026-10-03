@@ -66,6 +66,35 @@ Rules:
   or a `data:` URI), no `<iframe>`.
 - **Real copy, in the product's voice:** sentence case, short, no lorem ipsum, no emoji.
 
+## Gotchas
+
+Each of these cost a debugging session while the first previews were written.
+
+- **Give every handler a parameter.** In `solid-js/html` templates a zero-argument
+  function passed as a component prop is treated as a reactive getter, not a value:
+  `onClick=${() => setOpen(true)}` runs during render (and can recurse if it writes a
+  signal the render reads). Write `onClick=${(_event) => setOpen(true)}` — the
+  parameter is what marks it as a handler.
+- **No straight double quotes in template text.** A `"` inside text in an `html`
+  template can end an attribute the parser thinks is still open, and the card renders
+  garbage or nothing. Use curly quotes (“ ”), or move long copy into a JS constant
+  and interpolate it with `${…}`.
+- **Leave the formatter off the previews.** `.oxfmtrc.json` ignores
+  `packages/ui/design-system/components/**/*.html` because oxfmt rewrites the
+  `html` template literals into something the template parser reads differently. Do
+  not remove that ignore, and do not run the formatter on a preview by path.
+- **Set the card height to cover its content.** Rows on the design-system page use
+  `content-visibility: auto`, so anything below the viewport renders blank in a
+  screenshot. A card whose content overflows its declared `height` loses the
+  overflow in the shot; size the `@dsCard` `height` to the content (portals
+  included).
+- **Components with no open prop are opened by the preview script.** `AccountMenu`,
+  `ContextMenu` and `Menubar` own their open state, so the preview dispatches the
+  pointer events a user would (`pointerdown`/`pointerup`/`click`, or `contextmenu`
+  for a context menu) after render, then calls `document.activeElement.blur()` so the
+  synthetic open does not leave a keyboard focus ring in the card. See their
+  `preview.html` for the exact sequence.
+
 ## Checking
 
 ```sh

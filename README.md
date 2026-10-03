@@ -58,9 +58,11 @@ decision lives in one place.
 - **Dark-first**, with light as an equal — not a lesser inversion.
 - **The shell is a component.** Side rail, sidebar, top bar, status bar, panels and
   their geometry are tokens, so the two applications cannot drift apart by pixels.
-- **Tree-shaking is measured, not claimed.** Importing one component costs 18–32 kB
-  gzipped against 275 kB for the library, and the gate fails if that stops being
-  true. The chart splits from itself: one chart type is 10 kB cheaper than seven.
+- **Tree-shaking is measured, not claimed.** Importing one component costs a small
+  fraction of the library, the chart splits from itself so one chart type is cheaper
+  than seven, and the gate fails if either stops being true. The per-component
+  figures are [written by that gate](docs/consumption.md#what-one-component-costs),
+  so they cannot go stale.
 - **Storybook 10** with per-story accessibility checks, MDX documentation and token
   galleries. The [published Storybook](https://adea-ai.github.io/ui/) is the review
   surface; if a component is not in it, it is not done.
