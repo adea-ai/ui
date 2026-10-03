@@ -825,3 +825,7 @@ own their preference provider and storage. Pass `mode` and `onModeChange`; the
 control owns roving keyboard focus, pressed state and explanatory tooltips. It
 does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
 existing provider-bound API.
+
+Catalog detail summaries place actions and feedback beneath identity on narrow
+screens, preserving readable title/description flow. Grouped field sections keep
+their content at the top while sharing the outline and dividers.

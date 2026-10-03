@@ -13,7 +13,7 @@ const sectionsVariants = cva('grid min-w-0', {
     },
   },
 })
-const sectionVariants = cva('grid min-w-0 gap-1.5 wrap-anywhere', {
+const sectionVariants = cva('grid min-w-0 content-start gap-1.5 wrap-anywhere', {
   variants: {
     layout: {
       stacked: 'rounded-xl border border-border p-3',
@@ -41,11 +41,14 @@ export function CatalogDetail(props: {
 }) {
   return (
     <article class="grid min-w-0 gap-2" data-catalog-detail>
-      <div class="flex min-w-0 items-start gap-3 rounded-xl border border-border p-3">
+      <div
+        data-catalog-detail-header
+        class="flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-border p-3 sm:flex-nowrap"
+      >
         <Show when={props.leading}>
           <span class="shrink-0">{props.leading}</span>
         </Show>
-        <div class="grid min-w-0 flex-1 gap-1">
+        <div data-catalog-detail-identity class="grid min-w-0 flex-1 gap-1 wrap-anywhere">
           <div class="flex min-w-0 flex-wrap items-center gap-1.5">
             <Show when={props.eyebrow}>
               <Badge variant="outline">{props.eyebrow}</Badge>
@@ -58,7 +61,10 @@ export function CatalogDetail(props: {
           <p class="text-muted-foreground text-xs">{props.publishedByLabel(props.publisher)}</p>
         </div>
         <Show when={props.action || props.status}>
-          <div class="flex shrink-0 flex-col items-end gap-2">
+          <div
+            data-catalog-detail-actions
+            class="flex min-w-0 basis-full flex-col items-start gap-2 wrap-anywhere sm:max-w-xs sm:basis-auto sm:items-end"
+          >
             {props.action}
             {props.status}
           </div>
@@ -89,7 +95,7 @@ export function CatalogDetailSection(props: { title: string; children?: JSX.Elem
       >
         {props.title}
       </h3>
-      <div class="grid min-w-0 gap-1.5">{props.children}</div>
+      <div class="grid min-w-0 content-start gap-1.5">{props.children}</div>
     </section>
   )
 }
