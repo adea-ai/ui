@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
-test('the tooltip never renders a caret', async ({ page }) => {
+test('the tooltip never renders a caret and never takes the pointer', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
   await trigger.focus()
 
@@ -54,6 +54,9 @@ test('the tooltip never renders a caret', async ({ page }) => {
   // and an arrow anchored into gutters more than once. Nothing vector should
   // ship inside one.
   await expect(tooltip.locator('svg')).toHaveCount(0)
+  // A tip is informational: while it is open it must stay out of the pointer
+  // path, or it blocks the control beside the one it describes.
+  await expect(tooltip).toHaveCSS('pointer-events', 'none')
 })
 
 test('a force-mounted tooltip leaves the accessibility tree as its close animation starts', async ({

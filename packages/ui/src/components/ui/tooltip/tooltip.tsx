@@ -367,6 +367,9 @@ export function TooltipContent(props: TooltipContentProps) {
   return (
     <KobalteTooltip.Portal>
       <KobalteTooltip.Content
+        /* The slot is what base.css's pointer-transparency rule keys on; every
+           tip carries it, so no consumer has to remember to pass it. */
+        data-slot="tooltip-content"
         class={cn(
           tooltipTip,
           // The max width is a token, not a fixed measure: it has to fall
