@@ -829,3 +829,14 @@ existing provider-bound API.
 Catalog detail summaries place actions and feedback beneath identity on narrow
 screens, preserving readable title/description flow. Grouped field sections keep
 their content at the top while sharing the outline and dividers.
+
+### Small split-layout tree imports
+
+Scoped persistence decoders can import `MAX_LAYOUT_LEAVES`, `MAX_LAYOUT_DEPTH`,
+`MIN_SPLIT_RATIO`, `MAX_SPLIT_RATIO`, `listLeaves`, `countLeaves`, `layoutDepth`,
+and the opaque tree types from
+`@adea-ai/ui/components/layout/split-layout/tree`. This read-only entry has no
+UI runtime, renderer, or pane-editing dependencies. The existing `/model` entry
+re-exports the same functions and types for compatibility. Use `/model` for
+split, close, move, resize, and undo operations; use the component entry when
+rendering the layout.
