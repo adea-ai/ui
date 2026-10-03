@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.106.2](https://github.com/adea-ai/ui/compare/v0.106.1...v0.106.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* preserve appearance typography within CSS budget ([#314](https://github.com/adea-ai/ui/issues/314)) ([e04c6be](https://github.com/adea-ai/ui/commit/e04c6be5a94fcaee709a3ff54287786cdfc3442d))
+
 ## [0.106.1](https://github.com/adea-ai/ui/compare/v0.106.0...v0.106.1) (2026-10-03)
 
 
