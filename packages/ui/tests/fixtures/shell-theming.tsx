@@ -14,6 +14,8 @@ import '../../src/styles/globals.css'
  * Shell and theming regressions, one fixture.
  *
  *   - ThemeProvider mounts and switches where reading `localStorage` throws.
+ *   - ThemeProvider reads every stored axis back, density included, and keeps it
+ *     through a change to another axis.
  *   - ThemePicker options are as tall as their content, carry no side padding, and
  *     keep a wrapped row's previews on one line.
  *   - SideRailItem's badge trails the label expanded and sits on the icon's corner
