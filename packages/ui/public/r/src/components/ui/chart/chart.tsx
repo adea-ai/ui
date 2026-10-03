@@ -1,4 +1,4 @@
-import { For, splitProps, type JSX } from 'solid-js'
+import { For, Show, createSignal, onCleanup, onMount, splitProps, type JSX } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { Bar, Bubble, Doughnut, Line, Pie, PolarArea, Radar, Scatter } from 'solid-chartjs'
 import {
@@ -17,6 +17,13 @@ import {
 } from 'chart.js'
 import type { ChartOptions, ChartType } from 'chart.js'
 import { cn } from '../../../lib/utils'
+import {
+  chartOptions,
+  chartSeriesColors,
+  mergeChartOptions,
+  resolveCssVariables,
+  type ChartScaleShape,
+} from './chart-options'
 
 /**
  * Chart.
@@ -46,11 +53,16 @@ import { cn } from '../../../lib/utils'
  *
  * ## Theming
  *
- * Colours resolve from `--chart-1` through `--chart-5`, which every theme
- * defines, plus `--chart-grid`, `--chart-axis` and `--chart-label`. That means a
- * chart follows the accent axis, the appearance, and the font axis with no
- * per-chart configuration — and a caller that wants a specific series colour
- * passes it explicitly rather than reaching into the theme.
+ * Colours come from `--chart-1` through `--chart-5`, which every theme
+ * defines, and the grid, ticks and labels from `--border` and
+ * `--muted-foreground`. That means a chart follows the accent axis and the
+ * appearance with no per-chart configuration — and a caller that wants a
+ * specific series colour passes it explicitly, as a colour or as `var(--token)`.
+ *
+ * A canvas cannot read a custom property, so the options and datasets carry
+ * `var(--token)` strings and each chart resolves them against its own element
+ * when it renders, and again whenever the root's attributes change — the
+ * `.dark` class, `data-accent`, an inline override. See `createThemeResolver`.
  */
 
 /**
@@ -78,68 +90,72 @@ ChartJs.register(
   Legend
 )
 
-/** The five series colours, in the order a multi-series chart should use them. */
-export const chartSeriesColors = [
-  'var(--chart-1)',
-  'var(--chart-2)',
-  'var(--chart-3)',
-  'var(--chart-4)',
-  'var(--chart-5)',
-] as const
+export { chartOptions, chartSeriesColors }
 
 /**
- * The theme's defaults as Chart.js options.
+ * One pixel to paint a colour on, shared by every chart.
  *
- * Exported so a caller can spread it and change one thing, rather than
- * restating every colour. Everything a chart draws that is not data — grid,
- * ticks, legend, tooltip — is decided here once, which is what makes two charts
- * in one application look like they came from the same place.
+ * The canvas *paints* `oklch()`, but Chart.js also *parses* colours — to derive a
+ * hover shade and to animate between two colours — and its parser reads only
+ * rgb, hsl, hex and names. Painting the computed value and reading the pixel
+ * back gives the sRGB colour the canvas would have drawn anyway, in a form both
+ * understand, whatever syntax a theme uses (`oklch()`, `color-mix()`, …).
  */
-export function chartOptions(overrides?: ChartOptions): ChartOptions {
+let swatch: CanvasRenderingContext2D | null | undefined
+
+function toCanvasColor(value: string): string {
+  if (typeof CSS === 'undefined' || !CSS.supports('color', value)) return value
+  if (swatch === undefined) {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
+    swatch = canvas.getContext('2d', { willReadFrequently: true })
+  }
+  if (!swatch) return value
+  swatch.globalCompositeOperation = 'copy'
+  swatch.fillStyle = value
+  swatch.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = swatch.getImageData(0, 0, 1, 1).data
+  return `rgba(${r}, ${g}, ${b}, ${Math.round(((a ?? 255) / 255) * 1000) / 1000})`
+}
+
+/**
+ * Resolves `var(--token)` strings against a chart's element, and re-resolves
+ * them when the theme changes.
+ *
+ * The element rather than the root, so a chart inside a subtree with its own
+ * inline tokens takes those. The observer watches every attribute on `<html>`,
+ * because that is where both applications switch appearance, accent and theme
+ * (`.dark`, `data-accent`, `data-theme`, inline variables); a theme axis added
+ * later is covered without touching this. It is released with the chart.
+ */
+function createThemeResolver() {
+  let element: HTMLElement | undefined
+  const [revision, invalidate] = createSignal(undefined, { equals: false })
+
+  onMount(() => {
+    const observer = new MutationObserver(() => invalidate())
+    observer.observe(document.documentElement, { attributes: true })
+    onCleanup(() => observer.disconnect())
+  })
+
   return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'nearest', intersect: false },
-    plugins: {
-      legend: {
-        labels: {
-          color: 'var(--chart-label)',
-          boxWidth: 8,
-          boxHeight: 8,
-          usePointStyle: true,
-          pointStyle: 'circle',
-          font: { size: 11 },
-        },
-      },
-      tooltip: {
-        backgroundColor: 'var(--popover)',
-        titleColor: 'var(--popover-foreground)',
-        bodyColor: 'var(--popover-foreground)',
-        borderColor: 'var(--border)',
-        borderWidth: 1,
-        padding: 8,
-        cornerRadius: 6,
-        displayColors: true,
-        boxWidth: 8,
-        boxHeight: 8,
-        usePointStyle: true,
-        titleFont: { size: 11, weight: 600 },
-        bodyFont: { size: 11 },
-      },
+    ref: (el: HTMLElement) => {
+      element = el
     },
-    scales: {
-      x: {
-        border: { color: 'var(--chart-grid)' },
-        grid: { color: 'var(--chart-grid)', drawTicks: false },
-        ticks: { color: 'var(--chart-axis)', font: { size: 10 } },
-      },
-      y: {
-        border: { display: false },
-        grid: { color: 'var(--chart-grid)', drawTicks: false },
-        ticks: { color: 'var(--chart-axis)', font: { size: 10 } },
-      },
+    resolve<T>(value: T): T {
+      revision()
+      if (!element || typeof getComputedStyle === 'undefined') return value
+      const style = getComputedStyle(element)
+      const resolved = new Map<string, string | undefined>()
+      return resolveCssVariables(value, (name) => {
+        if (!resolved.has(name)) {
+          const raw = style.getPropertyValue(name).trim()
+          resolved.set(name, raw ? toCanvasColor(raw) : undefined)
+        }
+        return resolved.get(name)
+      })
     },
-    ...overrides,
   }
 }
 
@@ -163,7 +179,9 @@ export function ChartFrame(props: ChartFrameProps) {
       <figcaption class="flex items-start justify-between gap-3">
         <div>
           <h3 class="text-sm font-semibold text-foreground">{local.title}</h3>
-          {local.description}
+          <Show when={local.description}>
+            <p class="text-xs text-muted-foreground">{local.description}</p>
+          </Show>
         </div>
         {local.actions}
       </figcaption>
@@ -177,7 +195,7 @@ type SeriesChartProps = {
   labels: readonly string[]
   /** One entry per series. `data` is aligned to `labels`. */
   series: readonly { label: string; data: readonly number[]; color?: string }[]
-  /** Chart.js options, merged over the theme's defaults. */
+  /** Chart.js options, merged deeply over the theme's defaults. */
   options?: ChartOptions
   /** Stack the series. */
   stacked?: boolean
@@ -206,26 +224,31 @@ function datasetsFor(series: SeriesChartProps['series'], filled: boolean) {
   }))
 }
 
-function seriesOptions(props: SeriesChartProps, extra?: ChartOptions): ChartOptions {
-  return chartOptions({
-    ...extra,
-    ...(props.stacked
-      ? { scales: { ...extra?.scales, x: { stacked: true }, y: { stacked: true } } }
-      : {}),
-    ...props.options,
-  })
+function seriesOptions(
+  props: SeriesChartProps,
+  extra?: ChartOptions,
+  shape: ChartScaleShape = 'cartesian'
+): ChartOptions {
+  // Stacking is a cartesian idea; a radar has no x or y to stack, and naming
+  // them would make Chart.js draw them.
+  const stacked =
+    props.stacked && shape === 'cartesian'
+      ? { scales: { x: { stacked: true }, y: { stacked: true } } }
+      : undefined
+  return chartOptions(mergeChartOptions(extra, stacked, props.options), shape)
 }
 
 /** A line chart. The default for a series over time. */
 export function LineChart(props: SeriesChartProps & { area?: boolean }) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Line
-        data={{
+        data={theme.resolve({
           labels: [...props.labels],
           datasets: datasetsFor(props.series, props.area ?? false),
-        }}
-        options={seriesOptions(props)}
+        })}
+        options={theme.resolve(seriesOptions(props))}
       />
     </div>
   )
@@ -233,18 +256,19 @@ export function LineChart(props: SeriesChartProps & { area?: boolean }) {
 
 /** A bar chart. `stacked` for parts of a whole over categories. */
 export function BarChart(props: SeriesChartProps & { horizontal?: boolean }) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Bar
-        data={{
+        data={theme.resolve({
           labels: [...props.labels],
           datasets: datasetsFor(props.series, true).map((dataset) => ({
             ...dataset,
             borderWidth: 0,
             borderRadius: 3,
           })),
-        }}
-        options={seriesOptions(props, { indexAxis: props.horizontal ? 'y' : 'x' })}
+        })}
+        options={theme.resolve(seriesOptions(props, { indexAxis: props.horizontal ? 'y' : 'x' }))}
       />
     </div>
   )
@@ -256,10 +280,11 @@ export function ScatterChart(props: {
   options?: ChartOptions
   class?: string
 }) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Scatter
-        data={{
+        data={theme.resolve({
           datasets: props.series.map((entry, index) => ({
             label: entry.label,
             data: entry.data.map((point) => ({ ...point })),
@@ -267,8 +292,8 @@ export function ScatterChart(props: {
             pointRadius: 3,
             pointHoverRadius: 5,
           })),
-        }}
-        options={chartOptions(props.options)}
+        })}
+        options={theme.resolve(chartOptions(props.options))}
       />
     </div>
   )
@@ -284,17 +309,18 @@ export function BubbleChart(props: {
   options?: ChartOptions
   class?: string
 }) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Bubble
-        data={{
+        data={theme.resolve({
           datasets: props.series.map((entry, index) => ({
             label: entry.label,
             data: entry.data.map((point) => ({ ...point })),
             backgroundColor: entry.color ?? chartSeriesColors[index % chartSeriesColors.length],
           })),
-        }}
-        options={chartOptions(props.options)}
+        })}
+        options={theme.resolve(chartOptions(props.options))}
       />
     </div>
   )
@@ -302,27 +328,39 @@ export function BubbleChart(props: {
 
 /** A radar chart, for a profile across fixed axes. */
 export function RadarChart(props: SeriesChartProps) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Radar
-        data={{ labels: [...props.labels], datasets: datasetsFor(props.series, true) }}
-        options={seriesOptions(props, { scales: { r: { grid: { color: 'var(--chart-grid)' } } } })}
+        data={theme.resolve({
+          labels: [...props.labels],
+          datasets: datasetsFor(props.series, true),
+        })}
+        options={theme.resolve(seriesOptions(props, undefined, 'radial'))}
       />
     </div>
   )
 }
 
-/** A polar area chart: radial bars, for a composition. */
+/**
+ * A polar area chart: radial bars, for a composition.
+ *
+ * Its scale is left to Chart.js's polar-area defaults (`'none'` rather than
+ * `'radial'`): `solid-chartjs` deletes `options.scales.r` for every chart type
+ * but radar when it first creates the chart, so radial styling here would apply
+ * only after the first theme change — a chart that restyles itself on a toggle.
+ */
 export function PolarAreaChart(props: {
   labels: readonly string[]
   data: readonly number[]
   options?: ChartOptions
   class?: string
 }) {
+  const theme = createThemeResolver()
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <PolarArea
-        data={{
+        data={theme.resolve({
           labels: [...props.labels],
           datasets: [
             {
@@ -332,8 +370,8 @@ export function PolarAreaChart(props: {
               borderWidth: 2,
             },
           ],
-        }}
-        options={chartOptions(props.options)}
+        })}
+        options={theme.resolve(chartOptions(props.options, 'none'))}
       />
     </div>
   )
@@ -356,14 +394,15 @@ export function DonutChart(props: {
   options?: ChartOptions
   class?: string
 }) {
+  const theme = createThemeResolver()
   // `Dynamic` rather than a local component accessor: Solid's JSX types require
   // a component reference, and an accessor returning one is a call in disguise.
   const component = () => (props.cutout === 0 ? Pie : Doughnut)
   return (
-    <div class={cn('h-64', props.class)}>
+    <div ref={theme.ref} class={cn('h-64', props.class)}>
       <Dynamic
         component={component()}
-        data={{
+        data={theme.resolve({
           labels: [...props.labels],
           datasets: [
             {
@@ -375,11 +414,20 @@ export function DonutChart(props: {
               borderWidth: 2,
             },
           ],
-        }}
-        options={chartOptions({
-          ...props.options,
-          ...(props.cutout === 0 ? {} : { cutout: `${props.cutout ?? 60}%` }),
         })}
+        options={theme.resolve(
+          chartOptions(
+            mergeChartOptions(
+              props.cutout === 0
+                ? undefined
+                : ({
+                    cutout: `${props.cutout ?? 60}%`,
+                  } satisfies ChartOptions<'doughnut'> as ChartOptions),
+              props.options
+            ),
+            'none'
+          )
+        )}
       />
     </div>
   )

@@ -121,11 +121,23 @@ export function useTheme(): ThemeContextValue {
   return value
 }
 
+/**
+ * The preference store, or nothing.
+ *
+ * Only ever called inside a `try`: where storage is blocked — a sandboxed iframe, a
+ * privacy mode, a denied site-data permission — merely *reading* the `localStorage`
+ * global throws ("Access is denied", `SecurityError`), so even the `typeof` guard
+ * has to sit inside the `try` rather than in front of it. Without a store the
+ * preference lives only in the provider's signal for the session.
+ */
+function preferenceStore(): Storage | undefined {
+  return typeof localStorage === 'undefined' ? undefined : localStorage
+}
+
 /** The stored preference, validated against the catalogue. */
 function readSelection(storageKey: string): ThemeSelection {
-  if (typeof localStorage === 'undefined') return defaultThemeSelection
   try {
-    const raw = localStorage.getItem(storageKey)
+    const raw = preferenceStore()?.getItem(storageKey)
     if (!raw) return defaultThemeSelection
     const parsed = JSON.parse(raw) as Partial<ThemeSelection>
     return {
@@ -268,13 +280,11 @@ export function ThemeProvider(props: ThemeProviderProps) {
     setSelection(patch) {
       const next = { ...selection(), ...patch }
       setSelectionState(next)
-      if (typeof localStorage !== 'undefined') {
-        try {
-          localStorage.setItem(storageKey(), JSON.stringify(next))
-        } catch {
-          // A full or unavailable store must not break the switch: the preference
-          // simply does not survive the reload.
-        }
+      try {
+        preferenceStore()?.setItem(storageKey(), JSON.stringify(next))
+      } catch {
+        // A full, blocked or unavailable store must not break the switch: the
+        // preference simply does not survive the reload.
       }
     },
   }

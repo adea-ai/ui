@@ -53,52 +53,54 @@ test('orbit items occupy measured cardinal positions and retain accessible sourc
 }) => {
   const host = page.locator('[data-orbit-host]')
   const hostBox = (await host.boundingBox())!
-  const centers = await page.locator('[data-orbit-item]').evaluateAll((items) =>
-    items.map((item) => {
-      const box = item.getBoundingClientRect()
-      return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-    })
-  )
   const center = { x: hostBox.x + hostBox.width / 2, y: hostBox.y + hostBox.height / 2 }
-
-  expect(centers[0]!.x - center.x).toBeCloseTo(68, 0)
-  expect(centers[0]!.y - center.y).toBeCloseTo(0, 0)
-  expect(centers[1]!.x - center.x).toBeCloseTo(0, 0)
-  expect(centers[1]!.y - center.y).toBeCloseTo(68, 0)
-  expect(centers[2]!.x - center.x).toBeCloseTo(-68, 0)
-  expect(centers[2]!.y - center.y).toBeCloseTo(0, 0)
-  expect(centers[3]!.x - center.x).toBeCloseTo(0, 0)
-  expect(centers[3]!.y - center.y).toBeCloseTo(-68, 0)
+  // Each compass label must land on its own direction: index 0 is three o'clock
+  // and the order runs clockwise, so a North-first list would put every label a
+  // quarter turn early.
+  const offsetOf = async (label: string) => {
+    const box = (await host.locator(`[data-orbit-item="${label}"]`).boundingBox())!
+    return { x: box.x + box.width / 2 - center.x, y: box.y + box.height / 2 - center.y }
+  }
+  for (const [label, dx, dy] of [
+    ['East', 68, 0],
+    ['South', 0, 68],
+    ['West', -68, 0],
+    ['North', 0, -68],
+  ] as const) {
+    const offset = await offsetOf(label)
+    expect(offset.x, `${label} x`).toBeCloseTo(dx, 0)
+    expect(offset.y, `${label} y`).toBeCloseTo(dy, 0)
+  }
   await expect(page.getByRole('listitem')).toHaveCount(6)
 
   const buttons = host.getByRole('button')
   const buttonNames = await buttons.evaluateAll((buttonElements) =>
     buttonElements.map((button) => button.getAttribute('aria-label'))
   )
-  expect(buttonNames).toEqual(['North', 'East', 'South', 'West'])
+  expect(buttonNames).toEqual(['East', 'South', 'West', 'North'])
 
   await page.getByRole('button', { name: 'Add orbit point' }).click()
   await expect(host.locator('[data-slot="orbit-item"]')).toHaveCount(5)
   await expect(page.getByRole('listitem')).toHaveCount(7)
-  const east = host.locator('[data-orbit-item="East"]')
-  const eastBox = (await east.boundingBox())!
+  const second = host.locator('[data-orbit-item="South"]')
+  const secondBox = (await second.boundingBox())!
   const hostAfterAppend = (await host.boundingBox())!
   const centerAfterAppend = {
     x: hostAfterAppend.x + hostAfterAppend.width / 2,
     y: hostAfterAppend.y + hostAfterAppend.height / 2,
   }
-  expect(eastBox.x + eastBox.width / 2 - centerAfterAppend.x).toBeCloseTo(
+  expect(secondBox.x + secondBox.width / 2 - centerAfterAppend.x).toBeCloseTo(
     68 * Math.cos((2 * Math.PI) / 5),
     0
   )
-  expect(eastBox.y + eastBox.height / 2 - centerAfterAppend.y).toBeCloseTo(
+  expect(secondBox.y + secondBox.height / 2 - centerAfterAppend.y).toBeCloseTo(
     68 * Math.sin((2 * Math.PI) / 5),
     0
   )
 
   await page.setViewportSize({ width: 200, height: 720 })
-  const eastAtNarrowWidth = (await east.boundingBox())!
-  expect(eastAtNarrowWidth.x + eastAtNarrowWidth.width / 2 - centerAfterAppend.x).toBeCloseTo(
+  const secondAtNarrowWidth = (await second.boundingBox())!
+  expect(secondAtNarrowWidth.x + secondAtNarrowWidth.width / 2 - centerAfterAppend.x).toBeCloseTo(
     58 * Math.cos((2 * Math.PI) / 5),
     0
   )

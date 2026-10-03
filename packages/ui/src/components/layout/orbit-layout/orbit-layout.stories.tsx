@@ -3,7 +3,12 @@ import { createSignal, For } from 'solid-js'
 import { OrbitItem, OrbitLayout } from './orbit-layout'
 import { Button } from '../../ui/button'
 
-const points = ['North', 'East', 'South', 'West']
+/*
+ * In OrbitItem's order: index 0 sits at three o'clock and the sequence runs
+ * clockwise, so East leads. Listed North-first, every label landed a quarter turn
+ * early — "North" at three o'clock, "West" at twelve.
+ */
+const points = ['East', 'South', 'West', 'North']
 
 const meta = {
   title: 'Layout/Orbit layout',

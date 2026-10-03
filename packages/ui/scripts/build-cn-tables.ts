@@ -24,10 +24,18 @@ try {
       'Design-system class merger must compile the full config without source scanning'
     )
 
-  for (const group of ['ds-height', 'ds-width', 'ds-size']) {
-    if (!(group in result.fullConfig.classGroups))
-      throw new Error(`Generated cn config is missing custom group ${group}`)
+  // The design-system utilities live inside Tailwind's own groups (see
+  // cn.config.ts), so the guard is that those groups actually carry them.
+  for (const [group, token] of [
+    ['h', 'control-sm'],
+    ['w', 'rail'],
+    ['size', 'control-sm'],
+  ] as const) {
+    if (!JSON.stringify(result.fullConfig.classGroups[group] ?? []).includes(`"${token}"`))
+      throw new Error(`Generated cn config is missing ${group}-${token} in group ${group}`)
   }
+  if (!JSON.stringify(result.fullConfig.theme['spacing'] ?? []).includes('"control-sm"'))
+    throw new Error('Generated cn config is missing the control rungs on the spacing scale')
 
   const generatedSource = `${cnTablesHeader}${result.source}`
   let previousSource: string | null = null

@@ -326,6 +326,11 @@
       ],
       "files": [
         {
+          "path": "src/components/ui/chart/chart-options.ts",
+          "type": "registry:ui",
+          "target": "components/ui/chart/chart-options.ts"
+        },
+        {
           "path": "src/components/ui/chart/chart.tsx",
           "type": "registry:ui",
           "target": "components/ui/chart/chart.tsx"
