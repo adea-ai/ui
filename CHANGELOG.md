@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.104.0](https://github.com/adea-ai/ui/compare/v0.103.1...v0.104.0) (2026-10-03)
+
+
+### Features
+
+* group catalog detail fields in shared outlined cards ([#302](https://github.com/adea-ai/ui/issues/302)) ([8dbd1d0](https://github.com/adea-ai/ui/commit/8dbd1d02a0485db0dbd3bdbcb1df34e74cf0499f))
+
+
+### Bug Fixes
+
+* **ui:** show floating pane previews during drag ([#299](https://github.com/adea-ai/ui/issues/299)) ([5af2766](https://github.com/adea-ai/ui/commit/5af2766f47c6e1042183f789f531a329d0866741))
+
 ## [0.103.1](https://github.com/adea-ai/ui/compare/v0.103.0...v0.103.1) (2026-10-03)
 
 
