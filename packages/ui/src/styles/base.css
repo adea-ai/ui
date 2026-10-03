@@ -244,6 +244,17 @@
   }
 }
 
+/**
+ * A label set on its side, reading top to bottom (turned 90° clockwise). For a
+ * collapsed lane or rail section that must stay named while it is only as wide
+ * as a line of text. Letters keep their orientation for the reader's head tilt
+ * rather than stacking, which is unreadable past a few characters.
+ */
+@utility text-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

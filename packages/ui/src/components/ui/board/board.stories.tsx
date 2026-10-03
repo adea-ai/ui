@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js'
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { Badge } from '../badge'
-import { Board, BoardCardBody, BoardCardTitle, type BoardColumn } from './board'
+import { Board, BoardCardBody, BoardCardTitle, BoardCardTrigger, type BoardColumn } from './board'
 
 type Task = Readonly<{ id: string; title: string; priority: 'low' | 'normal' | 'urgent' }>
 
@@ -162,4 +162,75 @@ export const LongLanes: Story = {
       {(task) => <BoardCardBody>{task.title}</BoardCardBody>}
     </Board>
   ),
+}
+
+const pipeline: readonly BoardColumn[] = [
+  { id: 'planned', label: 'Planned', tone: 'neutral', collapsible: false },
+  { id: 'queued', label: 'Queued', tone: 'chart-2' },
+  { id: 'in_progress', label: 'In progress', tone: 'chart-1' },
+  { id: 'in_review', label: 'In review', tone: 'chart-5' },
+  { id: 'done', label: 'Completed', tone: 'chart-4' },
+  { id: 'cancelled', label: 'Cancelled', tone: 'chart-6' },
+]
+
+const pipelineLegal: Record<string, readonly string[]> = {
+  planned: ['queued', 'in_progress', 'done', 'cancelled'],
+  queued: ['in_progress', 'done', 'cancelled'],
+  in_progress: ['in_review', 'done', 'cancelled'],
+  in_review: ['in_progress', 'done', 'cancelled'],
+  done: [],
+  cancelled: [],
+}
+
+function PipelineExample(props: { placement: Record<string, string> }) {
+  const [placement, setPlacement] = createSignal({ ...props.placement })
+  const [opened, setOpened] = createSignal('')
+  const counted = () =>
+    pipeline.map((column) => ({
+      ...column,
+      count: initial.filter((task) => placement()[task.id] === column.id).length,
+    }))
+  return (
+    <div class="h-96">
+      <Board
+        columns={counted()}
+        items={initial.filter((task) => placement()[task.id])}
+        itemId={(task) => task.id}
+        itemColumn={(task) => placement()[task.id] ?? 'planned'}
+        canDrop={(_task, from, to) => (pipelineLegal[from] ?? []).includes(to)}
+        onMove={(move) => setPlacement((current) => ({ ...current, [move.itemId]: move.to }))}
+        collapseEmpty
+        class="h-full"
+      >
+        {(task) => (
+          <BoardCardBody>
+            <BoardCardTrigger onClick={() => setOpened(task.title)}>{task.title}</BoardCardTrigger>
+            <Badge variant={priorityVariant[task.priority]} size="sm">
+              {task.priority}
+            </Badge>
+          </BoardCardBody>
+        )}
+      </Board>
+      <output class="text-xs text-muted-foreground">{opened() ? `Opened ${opened()}` : ''}</output>
+    </div>
+  )
+}
+
+/**
+ * A full pipeline: each lane has a tone and an accent count, the board has a
+ * height so lanes scroll on their own, and lanes with no cards fold to a
+ * sideways label. Drag a card onto a folded lane — it stays a full-height target.
+ * Each card opens from anywhere on it through `BoardCardTrigger`.
+ */
+export const CollapsedEmptyLanes: Story = {
+  render: () => (
+    <PipelineExample
+      placement={{ t1: 'in_progress', t2: 'planned', t3: 'planned', t4: 'in_review' }}
+    />
+  ),
+}
+
+/** Every lane empty: the board keeps its shape instead of giving way to an empty state. */
+export const EmptyPipeline: Story = {
+  render: () => <PipelineExample placement={{}} />,
 }

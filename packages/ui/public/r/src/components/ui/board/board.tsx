@@ -1,8 +1,10 @@
 import {
+  type ComponentProps,
   createEffect,
   createMemo,
   createSignal,
   For,
+  Index,
   onCleanup,
   Show,
   splitProps,
@@ -10,6 +12,8 @@ import {
 } from 'solid-js'
 import { cva, type VariantProps } from '../../../lib/variants'
 import { cn } from '../../../lib/utils'
+import { badgeVariants } from '../badge/badge'
+import { headingVariants, textVariants } from '../typography'
 
 /**
  * Board.
@@ -37,13 +41,48 @@ import { cn } from '../../../lib/utils'
  * of drag props. That is deliberate: a card's contents are domain — a title, a
  * priority tag, an assignee — and a board that rendered them itself could only
  * ever serve one product.
+ *
+ * `collapseEmpty` folds a column with no cards to a strip one line of text wide,
+ * its label turned on its side. A board of seven lanes where three are empty
+ * otherwise spends half its width on nothing, and the lanes with work in them
+ * are the ones that need the room. A folded lane is still a full-height drop
+ * target and still accepts a keyboard move, so nothing about operating the
+ * board changes; it does not unfold under a drag, because a lane that grows
+ * under the pointer moves every lane after it and the drop lands somewhere else.
+ *
+ * Give the board a height (`class="h-full"`) and each lane scrolls on its own;
+ * leave it unconstrained and lanes grow with their cards and the page scrolls.
  */
+
+/**
+ * A lane's identifying colour, drawn as a dot before its label. The chart hues,
+ * in the order the token set gives them, because a lane colour tells lanes apart
+ * like a series does; it carries no status. `neutral` is for a lane that should
+ * not draw the eye — a backlog, an archive.
+ */
+export type BoardTone =
+  | 'neutral'
+  | 'chart-1'
+  | 'chart-2'
+  | 'chart-3'
+  | 'chart-4'
+  | 'chart-5'
+  | 'chart-6'
 
 export type BoardColumn = Readonly<{
   id: string
   label: string
-  /** A count or a limit, shown beside the label. */
+  /** The number of cards, shown as an accent count beside the label. */
+  count?: number
+  /** A limit or any other note, shown after the count. */
   meta?: JSX.Element
+  /** The lane's dot colour. Omitted, the header has no dot. */
+  tone?: BoardTone
+  /**
+   * `false` keeps this lane open when it is empty under `collapseEmpty` — the
+   * inbox lane new cards arrive in, which should always show where they land.
+   */
+  collapsible?: boolean
   /** Dim the column and refuse drops — a lane that is closed or read-only. */
   disabled?: boolean
 }>
@@ -70,6 +109,8 @@ export type BoardProps<T> = {
   emptyColumn?: (column: BoardColumn) => JSX.Element
   /** The board's accessible name. Defaults to "Board". */
   label?: string
+  /** Fold columns with no cards to a narrow strip with a sideways label. */
+  collapseEmpty?: boolean
   class?: string
 }
 
@@ -77,6 +118,40 @@ const cardDragState = {
   idle: '',
   dragging: 'opacity-40',
 } as const
+
+const toneDot: Record<BoardTone, string> = {
+  neutral: 'bg-muted-foreground',
+  'chart-1': 'bg-chart-1',
+  'chart-2': 'bg-chart-2',
+  'chart-3': 'bg-chart-3',
+  'chart-4': 'bg-chart-4',
+  'chart-5': 'bg-chart-5',
+  'chart-6': 'bg-chart-6',
+}
+
+function BoardColumnDot(props: { tone?: BoardTone }) {
+  return (
+    <Show when={props.tone}>
+      {(tone) => (
+        <span aria-hidden="true" class={cn('size-2 shrink-0 rounded-full', toneDot[tone()])} />
+      )}
+    </Show>
+  )
+}
+
+function BoardColumnCount(props: { count?: number }) {
+  return (
+    <Show when={props.count !== undefined}>
+      {/* The Badge's classes, not the component: Board stays free of Kobalte. */}
+      <span
+        class={cn(badgeVariants({ variant: 'subtle', size: 'sm' }), 'tabular-nums')}
+        data-slot="board-column-count"
+      >
+        {props.count}
+      </span>
+    </Show>
+  )
+}
 
 export function Board<T>(props: BoardProps<T>) {
   const [local] = splitProps(props, [
@@ -89,6 +164,7 @@ export function Board<T>(props: BoardProps<T>) {
     'children',
     'emptyColumn',
     'label',
+    'collapseEmpty',
     'class',
   ])
 
@@ -135,9 +211,15 @@ export function Board<T>(props: BoardProps<T>) {
     })
   })
 
-  const prepareFocus = (item: T, columnId: string, source?: HTMLElement) => {
+  /**
+   * `always` is for a pointer drop: dragging a card is a direct act on it, so it
+   * ends focused wherever focus was. Chromium also blurs a focused control
+   * inside a draggable once the native drag starts, so "was focus in the card"
+   * cannot be read at drop time.
+   */
+  const prepareFocus = (item: T, columnId: string, source?: HTMLElement, always = false) => {
     const card = source ?? cardElements.get(local.itemId(item))
-    if (card?.contains(card.ownerDocument.activeElement)) {
+    if (card && (always || card.contains(card.ownerDocument.activeElement))) {
       setPendingFocus({ itemId: local.itemId(item), columnId, source: card })
     }
   }
@@ -163,7 +245,7 @@ export function Board<T>(props: BoardProps<T>) {
     setDragging(null)
     setOverColumn(null)
     if (!item || !from || from === column.id || !accepted) return
-    prepareFocus(item, column.id)
+    prepareFocus(item, column.id, undefined, true)
     local.onMove({ itemId: local.itemId(item), from, to: column.id })
   }
 
@@ -198,97 +280,144 @@ export function Board<T>(props: BoardProps<T>) {
       with more columns than fit, has nothing focusable to scroll from.
     */
     <div
-      class={cn('flex min-h-0 gap-4 overflow-x-auto pb-2', local.class)}
+      class={cn('flex min-h-0 gap-3 overflow-x-auto pb-2', local.class)}
       role="region"
       aria-label={local.label ?? 'Board'}
       tabindex="0"
     >
-      <For each={local.columns}>
+      {/*
+        Index, not For: callers derive columns (a count, a tone) and hand over
+        fresh objects whenever a card moves. Keyed by identity, every lane would
+        remount on each move and take the moved card's restored focus with it.
+      */}
+      <Index each={local.columns}>
         {(column) => {
-          const items = () => byColumn().get(column.id) ?? []
+          const items = () => byColumn().get(column().id) ?? []
+          const collapsed = () =>
+            Boolean(local.collapseEmpty) && column().collapsible !== false && items().length === 0
+          const over = () => overColumn() === column().id
           return (
             <section
               class={cn(
-                'flex w-72 shrink-0 flex-col gap-2 rounded-lg border border-border bg-muted/40 p-2',
-                accepts(column) && 'border-ring bg-muted',
-                overColumn() === column.id && !accepts(column) && 'border-dashed opacity-60',
-                column.disabled && 'opacity-50'
+                'flex shrink-0 flex-col rounded-lg border border-border bg-muted/40 transition-colors',
+                {
+                  'w-72': !collapsed(),
+                  'w-10 items-center': collapsed(),
+                  'border-dashed border-ring': accepts(column()) && !over(),
+                  'border-ring bg-primary-subtle': accepts(column()) && over(),
+                  'border-dashed opacity-60': over() && !accepts(column()),
+                  'opacity-50': column().disabled,
+                }
               )}
-              aria-label={column.label}
+              aria-label={column().label}
+              data-collapsed={collapsed() ? '' : undefined}
               onDragOver={(event) => {
-                setOverColumn(column.id)
-                if (accepts(column)) event.preventDefault()
+                setOverColumn(column().id)
+                if (accepts(column())) event.preventDefault()
               }}
-              onDragLeave={() =>
-                setOverColumn((current) => (current === column.id ? null : current))
-              }
+              onDragLeave={(event) => {
+                // Leaving for a child is not leaving the lane.
+                if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+                setOverColumn((current) => (current === column().id ? null : current))
+              }}
               onDrop={(event) => {
                 event.preventDefault()
-                drop(column)
+                drop(column())
               }}
             >
-              <header class="flex items-center justify-between gap-2 px-1 py-0.5">
-                <h3 class="text-xs font-semibold text-foreground">{column.label}</h3>
-                <Show when={column.meta}>
-                  <span class="text-2xs text-muted-foreground">{column.meta}</span>
-                </Show>
-              </header>
-              <div class="flex min-h-16 flex-col gap-2">
-                <For each={items()}>
-                  {(item) => {
-                    const isDragging = () => {
-                      const current = dragging()
-                      return Boolean(current && local.itemId(current) === local.itemId(item))
-                    }
-                    return (
-                      <article
-                        ref={(element) => {
-                          const id = local.itemId(item)
-                          cardElements.set(id, element)
-                          onCleanup(() => {
-                            if (cardElements.get(id) === element) cardElements.delete(id)
-                          })
-                        }}
-                        class={cn(
-                          'rounded-md border border-border bg-card text-sm shadow-xs',
-                          cardDragState[isDragging() ? 'dragging' : 'idle']
-                        )}
-                        // A board card is a control that can be moved, so it is
-                        // focusable and carries the chord it responds to.
-                        tabindex="0"
-                        aria-roledescription="Draggable card"
-                        draggable={true}
-                        onDragStart={() => setDragging(() => item)}
-                        onDragEnd={() => {
-                          setDragging(null)
-                          setOverColumn(null)
-                        }}
-                        onKeyDown={(event) => {
-                          if (!(event.ctrlKey || event.metaKey)) return
-                          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-                          event.preventDefault()
-                          moveByKeyboard(
-                            item,
-                            event.key === 'ArrowRight' ? 1 : -1,
-                            event.currentTarget
-                          )
-                        }}
-                      >
-                        {local.children(item, { dragging: isDragging() })}
-                      </article>
-                    )
-                  }}
-                </For>
-                <Show when={items().length === 0}>
-                  <p class="rounded-md border border-dashed border-border px-2 py-4 text-center text-2xs text-muted-foreground">
-                    {local.emptyColumn?.(column) ?? 'Nothing here'}
-                  </p>
-                </Show>
-              </div>
+              <Show
+                when={!collapsed()}
+                fallback={
+                  <header class="flex flex-col items-center gap-2 py-3">
+                    <BoardColumnDot tone={column().tone} />
+                    <BoardColumnCount count={column().count} />
+                    <h3
+                      class={cn(
+                        headingVariants({ size: 'subsection', leading: 'none', tone: 'muted' }),
+                        'text-vertical'
+                      )}
+                    >
+                      {column().label}
+                    </h3>
+                  </header>
+                }
+              >
+                <header class="flex h-10 shrink-0 items-center gap-2 px-3">
+                  <BoardColumnDot tone={column().tone} />
+                  <h3
+                    class={cn(
+                      headingVariants({ size: 'subsection', leading: 'none', tone: 'foreground' }),
+                      'truncate'
+                    )}
+                  >
+                    {column().label}
+                  </h3>
+                  <BoardColumnCount count={column().count} />
+                  <Show when={column().meta}>
+                    <span class="ms-auto text-2xs text-muted-foreground">{column().meta}</span>
+                  </Show>
+                </header>
+                <div class="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
+                  <For each={items()}>
+                    {(item) => {
+                      const isDragging = () => {
+                        const current = dragging()
+                        return Boolean(current && local.itemId(current) === local.itemId(item))
+                      }
+                      return (
+                        <article
+                          ref={(element) => {
+                            const id = local.itemId(item)
+                            cardElements.set(id, element)
+                            onCleanup(() => {
+                              if (cardElements.get(id) === element) cardElements.delete(id)
+                            })
+                          }}
+                          class={cn(
+                            'relative shrink-0 cursor-grab rounded-md border border-border bg-card text-sm shadow-xs outline-none transition-colors hover:bg-surface-hover focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle active:cursor-grabbing',
+                            cardDragState[isDragging() ? 'dragging' : 'idle']
+                          )}
+                          // A board card is a control that can be moved, so it is
+                          // focusable and carries the chord it responds to.
+                          tabindex="0"
+                          aria-roledescription="Draggable card"
+                          draggable={true}
+                          onDragStart={(event) => {
+                            event.dataTransfer?.setData('text/plain', local.itemId(item))
+                            if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+                            setDragging(() => item)
+                          }}
+                          onDragEnd={() => {
+                            setDragging(null)
+                            setOverColumn(null)
+                          }}
+                          onKeyDown={(event) => {
+                            if (!(event.ctrlKey || event.metaKey)) return
+                            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+                            event.preventDefault()
+                            moveByKeyboard(
+                              item,
+                              event.key === 'ArrowRight' ? 1 : -1,
+                              event.currentTarget
+                            )
+                          }}
+                        >
+                          {local.children(item, { dragging: isDragging() })}
+                        </article>
+                      )
+                    }}
+                  </For>
+                  <Show when={items().length === 0}>
+                    <p class="rounded-md border border-dashed border-border px-2 py-4 text-center text-2xs text-muted-foreground">
+                      {local.emptyColumn?.(column()) ?? 'Nothing here'}
+                    </p>
+                  </Show>
+                </div>
+              </Show>
             </section>
           )
         }}
-      </For>
+      </Index>
       {/*
         The keyboard move's result, announced. A drag speaks for itself — the card
         visibly moves — while a keyboard move happens with the focus elsewhere.
@@ -319,4 +448,29 @@ export function BoardCardTitle(props: BoardCardTitleProps) {
 /** A card's padding, so every card in an application is the same shape. */
 export function BoardCardBody(props: { class?: string; children: JSX.Element }) {
   return <div class={cn('grid gap-1.5 p-2.5', props.class)}>{props.children}</div>
+}
+
+/**
+ * The card's open action: its title, as a real button whose hit area stretches
+ * over the whole card. A card is one target to a pointer — clicking anywhere on
+ * it opens it — while assistive technology still meets a named button rather
+ * than a clickable `article`. Other controls on the card sit above the stretched
+ * area by being positioned (`class="relative"`), so they keep their own click.
+ */
+export function BoardCardTrigger(props: ComponentProps<'button'>) {
+  const [local, rest] = splitProps(props, ['class', 'type'])
+  return (
+    <button
+      type={local.type ?? 'button'}
+      data-slot="board-card-trigger"
+      class={cn(
+        textVariants({ variant: 'label', tone: 'foreground' }),
+        'min-w-0 flex-1 truncate rounded-sm text-start outline-none',
+        'after:absolute after:inset-0 after:rounded-md',
+        'focus-visible:ring-3 focus-visible:ring-primary-subtle',
+        local.class
+      )}
+      {...rest}
+    />
+  )
 }
