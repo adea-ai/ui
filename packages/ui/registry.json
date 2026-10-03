@@ -1956,6 +1956,7 @@
       "title": "Catalog Browser",
       "description": "",
       "dependencies": [
+        "class-variance-authority@^0.7.1",
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [

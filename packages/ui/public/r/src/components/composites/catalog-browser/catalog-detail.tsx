@@ -1,5 +1,27 @@
-import { createUniqueId, Show, type JSX } from 'solid-js'
+import { createContext, createUniqueId, Show, useContext, type JSX } from 'solid-js'
 import { Badge } from '../../ui/badge'
+import { cva } from 'class-variance-authority'
+
+type SectionsLayout = 'stacked' | 'columns'
+const SectionsLayoutContext = createContext<() => SectionsLayout>((): SectionsLayout => 'stacked')
+const sectionsVariants = cva('grid min-w-0', {
+  variants: {
+    layout: {
+      stacked: 'gap-2',
+      columns:
+        'gap-4 rounded-xl border border-border p-3 md:auto-cols-fr md:grid-flow-col md:gap-0',
+    },
+  },
+})
+const sectionVariants = cva('grid min-w-0 gap-1.5 wrap-anywhere', {
+  variants: {
+    layout: {
+      stacked: 'rounded-xl border border-border p-3',
+      columns:
+        'md:border-s md:border-border md:px-3 md:first:border-s-0 md:first:ps-0 md:last:pe-0',
+    },
+  },
+})
 
 /** Shared item summary and action frame for catalog-owned detail content. */
 export function CatalogDetail(props: {
@@ -13,6 +35,8 @@ export function CatalogDetail(props: {
   badges?: JSX.Element
   action?: JSX.Element
   status?: JSX.Element
+  /** Groups related fields in one padded card; stacks them on narrow screens. */
+  sectionsLayout?: SectionsLayout
   children?: JSX.Element
 }) {
   return (
@@ -40,19 +64,25 @@ export function CatalogDetail(props: {
           </div>
         </Show>
       </div>
-      <div class="grid min-w-0 gap-2">{props.children}</div>
+      <SectionsLayoutContext.Provider value={() => props.sectionsLayout ?? 'stacked'}>
+        <div
+          data-catalog-detail-sections
+          data-layout={props.sectionsLayout ?? 'stacked'}
+          class={sectionsVariants({ layout: props.sectionsLayout ?? 'stacked' })}
+        >
+          {props.children}
+        </div>
+      </SectionsLayoutContext.Provider>
     </article>
   )
 }
 
 /** A shared compact row for host-specific fields, permissions, and copy. */
 export function CatalogDetailSection(props: { title: string; children?: JSX.Element }) {
+  const layout = useContext(SectionsLayoutContext)
   const headingId = `catalog-detail-section-${createUniqueId()}`
   return (
-    <section
-      class="grid min-w-0 gap-1.5 rounded-xl border border-border p-3"
-      aria-labelledby={headingId}
-    >
+    <section class={sectionVariants({ layout: layout() })} aria-labelledby={headingId}>
       <h3
         id={headingId}
         class="text-2xs font-semibold tracking-wider text-muted-foreground uppercase"

@@ -122,6 +122,10 @@ host-specific permissions or metadata a shared section surface. Supply
 `resultsRegionLabel` and `detailRegionLabel` to name their keyboard-focusable,
 shared `ScrollArea` regions. The results area scrolls notices along with loading,
 empty, and error states even when those states contain no interactive control.
+Use `CatalogDetail sectionsLayout="columns"` for related detail fields in a single
+padded, outlined card. Its sections share dividers on wide screens and stack on
+narrow screens; hosts should pass `CatalogDetailSection` children directly and
+use no local padding or border overrides. The default keeps separate section cards.
 
 ```tsx
 import {
