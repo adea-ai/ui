@@ -191,8 +191,9 @@ if (plan.componentShards.length > 0) {
 }
 
 // --- typecheck: turbo-cached, the changed workspaces and their dependents ----
-// `--only` keeps turbo from building dependencies first: the typecheck configs
-// resolve workspace packages to source, so a library build would be wasted work.
+// `typecheck` has no turbo dependencies — the typecheck configs resolve workspace
+// packages to source, so a library build would be wasted work. `--only` keeps it
+// that way should one be added.
 const { workspaces: typed, uncovered } = plan.typecheck
 if (typed === 'all' || typed.length > 0) {
   const filters = typed === 'all' ? [] : typed.map((name) => `--filter=...${name}`)
