@@ -619,19 +619,30 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   </Show>
                 </p>
               </div>
-              <ActionButton
-                type="button"
-                variant="outline"
-                size="sm"
-                tooltip="Check the release channel for the latest signed app version."
-                disabled={!desktop() || working()}
-                onClick={() => void check()}
-              >
-                <Show when={working()} fallback={<RefreshCw aria-hidden="true" />}>
-                  <LoaderCircle class="animate-spin" aria-hidden="true" />
+              <div class="flex flex-col items-end gap-2">
+                <ActionButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  tooltip="Check the release channel for the latest signed app version."
+                  disabled={!desktop() || working()}
+                  onClick={() => void check()}
+                >
+                  <Show when={working()} fallback={<RefreshCw aria-hidden="true" />}>
+                    <LoaderCircle class="animate-spin" aria-hidden="true" />
+                  </Show>
+                  {checkFailed() ? 'Retry update check' : 'Check latest version'}
+                </ActionButton>
+                {/* The up-to-date confirmation reads as the button's outcome,
+                    so it sits directly beneath it rather than floating as a
+                    full-width row between sections. */}
+                <Show when={isCurrent()}>
+                  <p class="text-foreground flex items-center gap-2 text-sm" role="status">
+                    <Check class="size-4 text-success" aria-hidden="true" />
+                    {appName()} is up to date.
+                  </p>
                 </Show>
-                {checkFailed() ? 'Retry update check' : 'Check latest version'}
-              </ActionButton>
+              </div>
             </div>
           </section>
 
@@ -730,13 +741,6 @@ export function UpdateDialog(props: UpdateDialogProps) {
             </section>
           </Show>
 
-          <Show when={isCurrent()}>
-            <p class="text-foreground flex items-center gap-2 text-sm" role="status">
-              <Check class="size-4 text-success" aria-hidden="true" />
-              {appName()} is up to date.
-            </p>
-          </Show>
-
           <Show when={state()?.phase === 'installed'}>
             <p class="text-foreground flex items-center gap-2 text-sm" role="status">
               <Check class="size-4 text-success" aria-hidden="true" />
@@ -781,9 +785,16 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
           <Show when={changelog()}>
             <div class="flex flex-col gap-2">
-              <h2 id="update-changelog" class="text-sm font-semibold text-foreground">
-                Installed changelog
-              </h2>
+              <div class="flex items-center gap-2">
+                <h2 id="update-changelog" class="text-sm font-semibold text-foreground">
+                  Installed changelog
+                </h2>
+                {/* The version pill identifies which build's history this is —
+                    the same treatment the available-update heading carries. */}
+                <Badge variant="subtle" size="sm">
+                  v{state()?.currentVersion || local.fallbackVersion || '0.1.0'}
+                </Badge>
+              </div>
               <p class="text-xs text-muted-foreground">
                 All versions and updates included with this installation.
               </p>
