@@ -8,28 +8,25 @@
  */
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
-import {
-  publicRegistryDir,
-  registry,
-  registryItems,
-  registryPath,
-  writeServedTree,
-} from './registry-core'
+import { dirname, relative } from 'node:path'
+import { publicRegistryDir, registryItems, registryOutputs, registryPath } from './registry-core'
 
-writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`)
-
-rmSync(publicRegistryDir, { recursive: true, force: true })
-mkdirSync(publicRegistryDir, { recursive: true })
-for (const item of registryItems) {
-  writeFileSync(join(publicRegistryDir, `${item.name}.json`), `${JSON.stringify(item, null, 2)}\n`)
-}
-writeFileSync(join(publicRegistryDir, 'registry.json'), `${JSON.stringify(registry, null, 2)}\n`)
-
+// One map of path → bytes is both what this writes and what `registry:validate`
+// compares the committed tree with, so the two cannot disagree about a file.
+//
 // The payloads point at files, so the files have to exist before the payloads are
 // worth anything. A payload whose `files[].path` 404s is a registry that appears to
 // work and installs nothing, which is the state this repository was in.
-const served = writeServedTree(registryItems)
+const outputs = registryOutputs()
+
+rmSync(publicRegistryDir, { recursive: true, force: true })
+for (const [path, content] of outputs) {
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, content)
+}
+const served = [...outputs.keys()].filter(
+  (path) => path !== registryPath && !path.endsWith('.json')
+)
 
 const withDeps = registryItems.filter((item) => item.dependencies.length > 0).length
 const withPeers = registryItems.filter((item) => item.registryDependencies.length > 0).length

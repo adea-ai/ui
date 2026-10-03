@@ -10,8 +10,8 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { designTokens } from '../src/lib/tokens'
-import { publicRegistryDir, registryItems } from '../scripts/registry-core'
-import { validateRegistry } from '../scripts/validate-registry'
+import { publicRegistryDir, registryItems, registryOutputs } from '../scripts/registry-core'
+import { staleOutputs, validateRegistry } from '../scripts/validate-registry'
 
 /**
  * The registry is the distribution contract.
@@ -299,5 +299,45 @@ describe('token manifest shape', () => {
 
     const duplicates = names.filter((name, index) => names.indexOf(name) !== index)
     expect(duplicates).toEqual([])
+  })
+})
+
+describe('registry staleness', () => {
+  // CI rebuilds the registry and fails on any change to registry.json or public/r.
+  // The validator has to make the same byte-level claim, or "valid" locally means
+  // less than "passes" in CI — which is how stale served copies kept reaching PRs.
+  test('reports served files that differ, are missing, or are not produced', () => {
+    const root = mkdtempSync(join(tmpdir(), 'registry-stale-'))
+    const served = join(root, 'public', 'r')
+    mkdirSync(join(served, 'src'), { recursive: true })
+    writeFileSync(join(root, 'registry.json'), '{}\n')
+    writeFileSync(join(served, 'src', 'a.ts'), 'stale\n')
+    writeFileSync(join(served, 'orphan.json'), '{}\n')
+
+    const expected = new Map([
+      [join(root, 'registry.json'), '{}\n'],
+      [join(served, 'src', 'a.ts'), 'fresh\n'],
+      [join(served, 'button.json'), '{}\n'],
+    ])
+    const findings = staleOutputs(expected, served, root)
+
+    expect(findings).toHaveLength(3)
+    expect(findings[0]).toContain('differ from what the build produces: public/r/src/a.ts')
+    expect(findings[1]).toContain('are not committed: public/r/button.json')
+    expect(findings[2]).toContain('not produced by the build: public/r/orphan.json')
+  })
+
+  test('names at most five paths per finding', () => {
+    const root = mkdtempSync(join(tmpdir(), 'registry-stale-'))
+    const expected = new Map(
+      Array.from({ length: 7 }, (_, index) => [join(root, `p${index}.json`), ''] as const)
+    )
+    const [finding] = staleOutputs(expected, join(root, 'public', 'r'), root)
+    expect(finding).toContain('7 registry file(s)')
+    expect(finding).toContain('and 2 more')
+  })
+
+  test('the committed tree is exactly what the build writes', () => {
+    expect(staleOutputs(registryOutputs())).toEqual([])
   })
 })
