@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.104.3](https://github.com/adea-ai/ui/compare/v0.104.2...v0.104.3) (2026-10-03)
+
+
+### Performance
+
+* expose a pure read-only split layout tree entry ([#308](https://github.com/adea-ai/ui/issues/308)) ([9e495e9](https://github.com/adea-ai/ui/commit/9e495e9e034baff5b6f705d4ef1e160f7dbb526f))
+
 ## [0.104.2](https://github.com/adea-ai/ui/compare/v0.104.1...v0.104.2) (2026-10-03)
 
 
