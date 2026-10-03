@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.100.2](https://github.com/adea-ai/ui/compare/v0.100.1...v0.100.2) (2026-10-03)
+
+
+### Maintenance
+
+* **code-foundry:** upgrade to v1.44.0 ([#282](https://github.com/adea-ai/ui/issues/282)) ([0c80a98](https://github.com/adea-ai/ui/commit/0c80a981e6273d7437ace7ee20af2a7a66266432))
+
 ## [0.100.1](https://github.com/adea-ai/ui/compare/v0.100.0...v0.100.1) (2026-10-03)
 
 
