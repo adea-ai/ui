@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.104.2](https://github.com/adea-ai/ui/compare/v0.104.1...v0.104.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* keep catalog detail summaries readable on narrow screens ([#306](https://github.com/adea-ai/ui/issues/306)) ([cca2d1d](https://github.com/adea-ai/ui/commit/cca2d1d6aa7ba58c78fcfc86b136c22ba786a058))
+
 ## [0.104.1](https://github.com/adea-ai/ui/compare/v0.104.0...v0.104.1) (2026-10-03)
 
 
