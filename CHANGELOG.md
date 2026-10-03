@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.100.0](https://github.com/adea-ai/ui/compare/v0.99.4...v0.100.0) (2026-10-03)
+
+
+### Features
+
+* **design-system:** build the design-system artifact from the source ([#266](https://github.com/adea-ai/ui/issues/266)) ([1266ba9](https://github.com/adea-ai/ui/commit/1266ba9de1d351ae878eb878df092bd6028ed0f9))
+
+
+### Bug Fixes
+
+* **ui:** a closing tooltip stops intercepting the pointer ([#273](https://github.com/adea-ai/ui/issues/273)) ([d2d8d0d](https://github.com/adea-ai/ui/commit/d2d8d0da4258bd7ffd32b42f8988e4214d1a88ce))
+
+
+### Tests
+
+* **sheet:** wait for open autofocus before driving the focus trap ([#278](https://github.com/adea-ai/ui/issues/278)) ([5eb1925](https://github.com/adea-ai/ui/commit/5eb192580fac9f4bfeefd31e6a6c9098177a5f03))
+
+
+### Maintenance
+
+* add change-aware verify:changed gate and byte-exact registry validation ([#277](https://github.com/adea-ai/ui/issues/277)) ([4009fd4](https://github.com/adea-ai/ui/commit/4009fd4902abb23bbe44e53adf7c9e14cdcd5f82))
+
 ## [0.99.4](https://github.com/adea-ai/ui/compare/v0.99.3...v0.99.4) (2026-10-03)
 
 
