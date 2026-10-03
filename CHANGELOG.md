@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.105.0](https://github.com/adea-ai/ui/compare/v0.104.3...v0.105.0) (2026-10-03)
+
+
+### Features
+
+* **ui:** add a compact Kbd rung and the KbdChord composition ([#310](https://github.com/adea-ai/ui/issues/310)) ([ab3f10a](https://github.com/adea-ai/ui/commit/ab3f10ab7c478ac01d2b3c0f34b4450c9d714354))
+
 ## [0.104.3](https://github.com/adea-ai/ui/compare/v0.104.2...v0.104.3) (2026-10-03)
 
 
