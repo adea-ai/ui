@@ -615,7 +615,8 @@ export function UpdateDialog(props: UpdateDialogProps) {
       </Show>
 
       <DialogContent
-        class={cn('max-w-3xl', local.class)}
+        positioner="inset"
+        class={cn('flex max-h-full min-h-0 max-w-3xl flex-col overflow-hidden', local.class)}
         onKeyDown={(event: KeyboardEvent) => {
           // An explanatory tooltip must not consume the popup's close shortcut,
           // including while its exit animation still owns Kobalte's top layer.
@@ -634,7 +635,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
         }}
         onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
       >
-        <DialogHeader>
+        <DialogHeader class="shrink-0">
           <div class="flex items-center gap-3">
             <Show
               when={local.appIcon}
@@ -651,7 +652,10 @@ export function UpdateDialog(props: UpdateDialogProps) {
           </div>
         </DialogHeader>
 
-        <div class="flex min-h-0 flex-col gap-5 overflow-y-auto p-6">
+        <div
+          data-slot="update-dialog-scroll-region"
+          class="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto p-6"
+        >
           <section
             class="rounded-xl border border-border bg-background/45 p-4"
             aria-label="Version status"

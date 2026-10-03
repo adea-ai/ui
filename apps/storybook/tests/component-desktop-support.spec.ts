@@ -139,6 +139,58 @@ test('updates retain all historical versions, poll progress, and cancel native w
   )
   await expect(page.getByRole('button', { name: 'Check latest version' })).toBeEnabled()
 })
+test('UpdateDialog and its channel selector stay inside a 320px viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.getByRole('button', { name: 'Open updates', exact: true }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Version & updates' })
+  await expect(dialog).toBeVisible()
+  await dialog.evaluate((element) =>
+    Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => undefined))
+    )
+  )
+
+  const dialogBounds = await dialog.boundingBox()
+  const closeBounds = await dialog.getByRole('button', { name: 'Close', exact: true }).boundingBox()
+  const channel = dialog.getByRole('combobox', { name: 'Update channel' })
+  const channelBounds = await channel.boundingBox()
+  const footerBounds = await dialog.locator('[data-slot="dialog-footer"]').boundingBox()
+  const scrollMetrics = await dialog
+    .locator('[data-slot="update-dialog-scroll-region"]')
+    .evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+      scrollHeight: element.scrollHeight,
+    }))
+  expect(dialogBounds).not.toBeNull()
+  expect(closeBounds).not.toBeNull()
+  expect(channelBounds).not.toBeNull()
+  expect(footerBounds).not.toBeNull()
+  expect(dialogBounds!.x).toBeGreaterThanOrEqual(0)
+  expect(dialogBounds!.x + dialogBounds!.width).toBeLessThanOrEqual(320)
+  expect(dialogBounds!.y).toBeGreaterThanOrEqual(0)
+  expect(dialogBounds!.y + dialogBounds!.height).toBeLessThanOrEqual(720)
+  expect(closeBounds!.x).toBeGreaterThanOrEqual(dialogBounds!.x)
+  expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(
+    dialogBounds!.x + dialogBounds!.width
+  )
+  expect(channelBounds!.x).toBeGreaterThanOrEqual(dialogBounds!.x)
+  expect(channelBounds!.x + channelBounds!.width).toBeLessThanOrEqual(
+    dialogBounds!.x + dialogBounds!.width
+  )
+  expect(footerBounds!.y).toBeGreaterThanOrEqual(dialogBounds!.y)
+  expect(footerBounds!.y + footerBounds!.height).toBeLessThanOrEqual(
+    dialogBounds!.y + dialogBounds!.height
+  )
+  expect(scrollMetrics.overflowY).toBe('auto')
+  expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight)
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true)
+})
 test('About and Help remain accessible without narrow-screen overflow', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await expect
@@ -153,8 +205,21 @@ test('About and Help remain accessible without narrow-screen overflow', async ({
         .map((animation) => animation.finished.catch(() => undefined))
     )
   )
+  const dialogBounds = await dialog.boundingBox()
+  const closeBounds = await dialog.getByRole('button', { name: 'Close', exact: true }).boundingBox()
+  expect(dialogBounds).not.toBeNull()
+  expect(closeBounds).not.toBeNull()
+  expect(dialogBounds!.x).toBeGreaterThanOrEqual(0)
+  expect(dialogBounds!.x + dialogBounds!.width).toBeLessThanOrEqual(320)
+  expect(closeBounds!.x).toBeGreaterThanOrEqual(dialogBounds!.x)
+  expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(
+    dialogBounds!.x + dialogBounds!.width
+  )
+  expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(320)
   const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(results.violations).toEqual([])
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
 })
 
 test('stale progress cannot re-enable cancellation before its native acknowledgement', async ({
