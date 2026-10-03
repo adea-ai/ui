@@ -94,6 +94,7 @@ export function AboutDialog(props: AboutDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent
+        class="w-96"
         onKeyDown={(event: KeyboardEvent) => {
           // Tooltip help on the identity actions cannot trap Escape in this popup.
           if (event.key === 'Escape' && !event.defaultPrevented) {
@@ -114,8 +115,8 @@ export function AboutDialog(props: AboutDialogProps) {
         }}
         onCloseAutoFocus={focus.onCloseAutoFocus}
       >
-        <div class="flex flex-col items-center gap-3 px-6 py-8 text-center">
-          <img src={props.appIcon} alt="" class="size-16" aria-hidden="true" />
+        <div class="flex flex-col items-center gap-2 text-center">
+          <img src={props.appIcon} alt="" class="size-14" aria-hidden="true" />
           <DialogTitle>{props.appName}</DialogTitle>
           {/* Body text on the dialog's themed surface: primary ink measures
               below AA against the lighter dialog backgrounds across schemes,

@@ -13,6 +13,7 @@ import type { ComponentProps, JSX } from 'solid-js'
 import { For, Show, createSignal, onCleanup, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button, type ButtonProps } from '../../ui/button/button'
+import { SideRailButton } from '../../layout/side-rail/side-rail'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +71,13 @@ export type AccountMenuProps = {
   hideArrow?: boolean
   /** The trigger size. Icon-only menus default to the standard icon size. */
   size?: ButtonProps['size']
+  /**
+   * Render the trigger as a `SideRailButton` row instead of a bare icon
+   * button: same geometry, hover treatment, and flush collapsed-rail tip as
+   * every other entry in the surrounding rail. The component's own tooltip
+   * is skipped — the rail row owns its help.
+   */
+  railTrigger?: boolean
   /** The entries above the separator. */
   items: readonly AccountMenuItem[]
   /** Which platform this is rendered on, for items that declare one. */
@@ -104,6 +112,7 @@ export function AccountMenu(props: AccountMenuProps) {
     'gutter',
     'hideArrow',
     'size',
+    'railTrigger',
     'items',
     'platform',
     'authenticated',
@@ -133,83 +142,109 @@ export function AccountMenu(props: AccountMenuProps) {
   const visible = () =>
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
-  return (
-    <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
-      <DropdownMenu
-        modal={false}
-        placement={local.placement ?? 'top-start'}
-        gutter={local.gutter}
-        onOpenChange={(open) => {
-          setMenuOpen(open)
-          if (open) setTooltipOpen(false)
-        }}
+  const menu = (
+    <DropdownMenu
+      modal={false}
+      placement={local.placement ?? 'top-start'}
+      gutter={local.gutter}
+      onOpenChange={(open) => {
+        setMenuOpen(open)
+        if (open) setTooltipOpen(false)
+      }}
+    >
+      <Show
+        when={local.railTrigger}
+        fallback={
+          <TooltipTrigger
+            as={AccountMenuButton}
+            ref={(element: HTMLButtonElement) => (trigger = element)}
+            variant="ghost"
+            size={local.size ?? 'icon-md'}
+            class={cn('text-muted-foreground', local.class)}
+            aria-label={local.label ?? 'Account and settings'}
+            onFocus={() => local.onIntent?.()}
+            onPointerEnter={() => local.onIntent?.()}
+            {...rest}
+          >
+            <UserRound aria-hidden="true" />
+          </TooltipTrigger>
+        }
       >
-        <TooltipTrigger
-          as={AccountMenuButton}
+        {/* Rail parity: the trigger is a SideRailButton row — the same
+            geometry and flush collapsed-rail tip as every other rail entry —
+            so the composite's own tooltip stays out of the way. */}
+        <DropdownMenuTrigger
+          as={SideRailButton}
           ref={(element: HTMLButtonElement) => (trigger = element)}
-          variant="ghost"
-          size={local.size ?? 'icon-md'}
-          class={cn('text-muted-foreground', local.class)}
-          aria-label={local.label ?? 'Account and settings'}
+          label={local.label ?? 'Account and settings'}
+          class={local.class}
           onFocus={() => local.onIntent?.()}
           onPointerEnter={() => local.onIntent?.()}
           {...rest}
         >
           <UserRound aria-hidden="true" />
-        </TooltipTrigger>
-        <DropdownMenuContent
-          hideArrow={local.hideArrow}
-          class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
-          onCloseAutoFocus={(event) => {
-            const selection = pendingAfterClose
-            pendingAfterClose = undefined
-            if (!selection) return
+        </DropdownMenuTrigger>
+      </Show>
+      <DropdownMenuContent
+        hideArrow={local.hideArrow}
+        class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
+        onCloseAutoFocus={(event) => {
+          const selection = pendingAfterClose
+          pendingAfterClose = undefined
+          if (!selection) return
 
-            event.preventDefault()
-            scheduledAfterClose = selection
-            queueMicrotask(() => {
-              if (scheduledAfterClose !== selection) return
-              scheduledAfterClose = undefined
-              selection.callback(trigger)
-            })
-          }}
-        >
-          <DropdownMenuGroup>
-            <For each={visible()}>
-              {(item) => (
-                <DropdownMenuItem
-                  disabled={item.disabled}
-                  onSelect={() => {
-                    pendingAfterClose = item.onSelectAfterClose
-                      ? { callback: item.onSelectAfterClose }
-                      : undefined
-                    item.onSelect?.()
-                  }}
-                  shortcut={item.shortcut}
-                  keyshortcuts={item.keyshortcuts}
-                >
-                  {item.icon ?? renderFallbackIcon(item.id)}
-                  <span>{item.label}</span>
-                </DropdownMenuItem>
-              )}
-            </For>
-          </DropdownMenuGroup>
-          <Show when={local.showSession !== false}>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
+          event.preventDefault()
+          scheduledAfterClose = selection
+          queueMicrotask(() => {
+            if (scheduledAfterClose !== selection) return
+            scheduledAfterClose = undefined
+            selection.callback(trigger)
+          })
+        }}
+      >
+        <DropdownMenuGroup>
+          <For each={visible()}>
+            {(item) => (
               <DropdownMenuItem
-                disabled={local.busy}
-                onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
+                disabled={item.disabled}
+                onSelect={() => {
+                  pendingAfterClose = item.onSelectAfterClose
+                    ? { callback: item.onSelectAfterClose }
+                    : undefined
+                  item.onSelect?.()
+                }}
+                shortcut={item.shortcut}
+                keyshortcuts={item.keyshortcuts}
               >
-                <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
-                  <LogOut aria-hidden="true" />
-                </Show>
-                <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
+                {item.icon ?? renderFallbackIcon(item.id)}
+                <span>{item.label}</span>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </Show>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )}
+          </For>
+        </DropdownMenuGroup>
+        <Show when={local.showSession !== false}>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={local.busy}
+              onSelect={() => (local.authenticated ? local.onSignOut?.() : local.onSignIn?.())}
+            >
+              <Show when={local.authenticated} fallback={<LogIn aria-hidden="true" />}>
+                <LogOut aria-hidden="true" />
+              </Show>
+              <span>{local.authenticated ? 'Sign out' : 'Sign in'}</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </Show>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
+  if (local.railTrigger) return menu
+
+  return (
+    <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
+      {menu}
       {/* Both overlays own a Popper context; the tooltip must stay outside the menu root. */}
       <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
     </Tooltip>

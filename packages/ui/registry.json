@@ -1825,6 +1825,7 @@
       "registryDependencies": [
         "@adea-ai/ui/button",
         "@adea-ai/ui/dropdown-menu",
+        "@adea-ai/ui/side-rail",
         "@adea-ai/ui/tooltip",
         "lib"
       ],
