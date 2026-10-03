@@ -50,8 +50,11 @@ const MAX_GZIP_BYTES = 50 * 1024
 // coarse-pointer touch rung: atomic measured 43,355 against main's 42,717
 // (+638 bytes of base CSS — the same delta that re-baselined the packed
 // consumer's list-row cap from 32 to 34 KiB).
-const MAX_CSS_BYTES = 43 * 1024
-// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 43 KiB cap.
+// Re-baselined 43 → 44 KiB (2026-10) for the appearance font settings: the
+// runtime font projection CSS now ships inside every pilot's globals
+// (atomic measured 44,171; every other pilot holds under the new cap).
+const MAX_CSS_BYTES = 44 * 1024
+// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 44 KiB cap.
 // Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
 const MAX_BUSY_GZIP_BYTES = 60 * 1024
 const results: unknown[] = []
@@ -82,6 +85,8 @@ function Pilot() {
   let readingPosition;
   return <main class="flex h-96 flex-col gap-2 p-4">
     <h1>Shared conversation pilot</h1>
+    <p data-default-content-role class="font-content text-content">Default content role</p>
+    <code data-default-code-role class="font-code text-code">defaultCode()</code>
     <Show when={mounted()}><ConversationSurface role="log" aria-label="Transcript"
       initialReadingPosition={readingPosition} onReadingPositionChange={position=>{readingPosition=position}}>
       <For each={Array.from({length: 30}, (_, i) => i)}>{i => <p>Retained event {i}: readable earlier content in the transcript.</p>}</For>
@@ -490,6 +495,7 @@ void textarea
       writeFileSync(
         join(dir, 'style.css'),
         "@import 'tailwindcss';\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
+          (pilot === 'conversation' ? "@source './main.tsx';\n" : '') +
           (pilot === 'conversation' || pilot === 'composer-fields'
             ? [
                 'components/conversation/message-composer.tsx',
@@ -1305,6 +1311,29 @@ void textarea
           if (!(await scroller.evaluate((element) => document.activeElement === element)))
             throw new Error('Packed jump lost keyboard focus')
           if (pilot === 'conversation') {
+            const roleStyles = await page.evaluate(() => {
+              const content = document.querySelector<HTMLElement>('[data-default-content-role]')
+              const codePreview = document.querySelector<HTMLElement>('[data-default-code-role]')
+              if (!content || !codePreview)
+                throw new Error('Packed conversation role fixture is missing')
+              return {
+                bodyFamily: getComputedStyle(document.body).fontFamily,
+                bodySize: Number.parseFloat(getComputedStyle(document.body).fontSize),
+                contentFamily: getComputedStyle(content).fontFamily,
+                contentSize: Number.parseFloat(getComputedStyle(content).fontSize),
+                codeFamily: getComputedStyle(codePreview).fontFamily,
+                codeSize: Number.parseFloat(getComputedStyle(codePreview).fontSize),
+              }
+            })
+            if (
+              roleStyles.contentFamily !== roleStyles.bodyFamily ||
+              roleStyles.contentSize !== roleStyles.bodySize ||
+              roleStyles.codeSize !== 12 ||
+              !/monospace/i.test(roleStyles.codeFamily)
+            )
+              throw new Error(
+                `Packed default content/code roles drifted: ${JSON.stringify(roleStyles)}`
+              )
             const cached = page.getByRole('region', { name: 'Cached channel transcript' })
             const switchChannel = page.getByRole('button', { name: 'Switch channel' })
             await cached.evaluate((element) => {
@@ -1337,6 +1366,7 @@ void textarea
               'native-ime-default',
               'ime-commit-latch',
               'reader-intent',
+              ...(pilot === 'conversation' ? ['default-content-ui-code-monospace-12px'] : []),
               'jump-focus',
               ...(pilot === 'conversation' ? ['cached-channel-restoration'] : []),
               'tailwind-style',

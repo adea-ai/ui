@@ -166,7 +166,7 @@ export function TopBarSearch(props: TopBarSearchProps) {
       <Show when={local.shortcut}>
         <kbd
           aria-hidden="true"
-          class="bg-muted ms-auto hidden h-5 shrink-0 items-center rounded-sm border border-border px-1.5 font-mono text-2xs sm:flex"
+          class="bg-muted ms-auto hidden h-5 shrink-0 items-center rounded-sm border border-border px-1.5 font-code text-code sm:flex"
         >
           {local.shortcut}
         </kbd>

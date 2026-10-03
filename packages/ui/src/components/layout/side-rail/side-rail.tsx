@@ -301,7 +301,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
         <Show when={local.shortcut && local.trailing === undefined}>
           <span
             aria-hidden="true"
-            class="text-sidebar-muted-foreground shrink-0 font-mono text-2xs leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
+            class="text-sidebar-muted-foreground shrink-0 font-code text-code leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
           >
             {local.shortcut}
           </span>
@@ -337,7 +337,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
               </span>
               {local.label}
               <Show when={local.shortcut}>
-                <span class="text-muted-foreground shrink-0 font-mono text-2xs leading-none">
+                <span class="text-muted-foreground shrink-0 font-code text-code leading-none">
                   {local.shortcut}
                 </span>
               </Show>
@@ -399,7 +399,7 @@ export function SideRailButton(
         <Show when={local.shortcut}>
           <span
             aria-hidden="true"
-            class="text-sidebar-muted-foreground shrink-0 font-mono text-2xs leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
+            class="text-sidebar-muted-foreground shrink-0 font-code text-code leading-none opacity-0 transition-opacity group-hover/rail-item:opacity-100 group-focus-visible/rail-item:opacity-100 group-data-[collapsed=true]/rail:hidden"
           >
             {local.shortcut}
           </span>

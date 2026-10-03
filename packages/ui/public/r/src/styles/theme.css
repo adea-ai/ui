@@ -525,6 +525,14 @@
   --font-family-geist-mono: 'Geist Mono Variable', 'Geist Mono', monospace;
   --font-family-system: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-family-system-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* Lightweight role defaults keep conversation and code components useful for
+     consumers that have not opted into independent Appearance font settings. */
+  --font-content: var(--font-sans);
+  --font-code: var(--font-mono);
+  --text-content: var(--text-sm);
+  --text-content--line-height: var(--text-sm--line-height);
+  --text-code: 0.75rem;
+  --text-code--line-height: 1.5;
 
   /* Width compensation for the mono UI fonts. `normal` on the proportional face,
      tightened by the `[data-font]` blocks above when the UI font is monospace. */
@@ -776,6 +784,8 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-content: var(--font-content);
+  --font-code: var(--font-code);
   --font-family-space-grotesk: var(--font-family-space-grotesk);
   --font-family-jetbrains-mono: var(--font-family-jetbrains-mono);
   --font-family-geist: var(--font-family-geist);
@@ -799,6 +809,10 @@
   --text-2xl--line-height: var(--text-2xl--line-height);
   --text-3xl: var(--text-3xl);
   --text-3xl--line-height: var(--text-3xl--line-height);
+  --text-content: var(--text-content);
+  --text-content--line-height: var(--text-content--line-height);
+  --text-code: var(--text-code);
+  --text-code--line-height: var(--text-code--line-height);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);

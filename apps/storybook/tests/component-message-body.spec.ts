@@ -58,3 +58,71 @@ test('a code block is spaced from the paragraph after it as from the one before'
   expect(Math.abs(gapBelow - gapAbove)).toBeLessThanOrEqual(4)
   await expect(paragraphs.nth(1)).toHaveText(/^After the fence\./)
 })
+
+test('real transcript prose and fenced code retain independent readable roles at 200% text', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  const sizes = await page.evaluate(() => {
+    const prose = document.querySelector<HTMLElement>('#fenced > p')
+    const code = document.querySelector<HTMLElement>('#fenced pre code')
+    if (!prose || !code) throw new Error('Expected transcript prose and fenced code')
+    return {
+      root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      prose: Number.parseFloat(getComputedStyle(prose).fontSize),
+      code: Number.parseFloat(getComputedStyle(code).fontSize),
+      proseFamily: getComputedStyle(prose).fontFamily,
+      codeFamily: getComputedStyle(code).fontFamily,
+    }
+  })
+  expect(sizes.root).toBe(32)
+  expect(sizes.prose).toBe(28)
+  expect(sizes.code).toBe(24)
+  expect(sizes.proseFamily).toContain('system-ui')
+  expect(sizes.codeFamily).toContain('ui-monospace')
+})
+
+test('selected Content and Code families reach transcript prose and fenced code', async ({
+  page,
+}) => {
+  await page.evaluate(
+    (settings) => {
+      const setAppearanceFontSettings = (
+        window as typeof window & { setAppearanceFontSettings?: (value: unknown) => void }
+      ).setAppearanceFontSettings
+      if (!setAppearanceFontSettings) throw new Error('Font settings runtime is not available')
+      setAppearanceFontSettings(settings)
+    },
+    {
+      ui: { family: 'system', size: 14 },
+      content: { family: 'geist', size: 18 },
+      code: { family: 'jetbrains-mono', size: 16 },
+    }
+  )
+
+  const roles = await page.evaluate(() => {
+    const root = document.documentElement
+    const prose = document.querySelector<HTMLElement>('#fenced > p')
+    const code = document.querySelector<HTMLElement>('#fenced pre code')
+    if (!prose || !code) throw new Error('Expected transcript prose and fenced code')
+    return {
+      root: Number.parseFloat(getComputedStyle(root).fontSize),
+      contentSize: Number.parseFloat(getComputedStyle(prose).fontSize),
+      codeSize: Number.parseFloat(getComputedStyle(code).fontSize),
+      contentFamily: getComputedStyle(prose).fontFamily,
+      codeFamily: getComputedStyle(code).fontFamily,
+      contentToken: root.style.getPropertyValue('--font-content').trim(),
+      codeToken: root.style.getPropertyValue('--font-code').trim(),
+    }
+  })
+
+  expect(roles.root).toBe(16)
+  expect(roles.contentSize).toBe(18)
+  expect(roles.codeSize).toBe(16)
+  expect(roles.contentToken).toBe('var(--font-family-geist)')
+  expect(roles.codeToken).toBe('var(--font-family-jetbrains-mono)')
+  expect(roles.contentFamily).toContain('Geist Variable')
+  expect(roles.codeFamily).toContain('JetBrains Mono Variable')
+})

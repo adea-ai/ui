@@ -152,7 +152,7 @@ export function diffTargetPath(patch: string): string | null {
   return null
 }
 
-export const diffLineVariants = cva('flex items-baseline font-mono text-xs', {
+export const diffLineVariants = cva('flex items-baseline font-code text-code', {
   variants: {
     kind: {
       add: 'bg-success-subtle text-foreground',
@@ -201,10 +201,10 @@ export function DiffBlock(props: DiffBlockProps) {
     >
       <div class="flex items-center justify-between gap-2 border-b border-border px-3 py-1">
         <span class="flex min-w-0 items-baseline gap-2">
-          <span class="truncate font-mono text-xs text-foreground">{name()}</span>
+          <span class="truncate font-code text-code text-foreground">{name()}</span>
           {/* The counts are text, so the summary survives greyscale and a reader
               who cannot separate the two line tones still gets the shape of it. */}
-          <span class="shrink-0 font-mono text-2xs text-muted-foreground">
+          <span class="shrink-0 font-code text-code text-muted-foreground">
             <span class="text-foreground">+{stats().added}</span>{' '}
             <span class="text-foreground">−{stats().removed}</span>
           </span>
@@ -223,13 +223,13 @@ export function DiffBlock(props: DiffBlockProps) {
               <div class={diffLineVariants({ kind: line.kind })}>
                 <Show when={numbered(line, local.showLineNumbers)}>
                   <span
-                    class="w-10 shrink-0 pr-2 text-right text-2xs text-muted-foreground tabular-nums select-none"
+                    class="w-10 shrink-0 pr-2 text-right text-code text-muted-foreground tabular-nums select-none"
                     aria-hidden="true"
                   >
                     {line.oldLine ?? ''}
                   </span>
                   <span
-                    class="w-10 shrink-0 pr-2 text-right text-2xs text-muted-foreground tabular-nums select-none"
+                    class="w-10 shrink-0 pr-2 text-right text-code text-muted-foreground tabular-nums select-none"
                     aria-hidden="true"
                   >
                     {line.newLine ?? ''}
@@ -271,13 +271,13 @@ export function DiffSummary(props: { patch: string; class?: string; onSelect?: (
     <button
       type="button"
       class={cn(
-        'flex w-full items-baseline justify-between gap-3 rounded-md px-2 py-1 text-left font-mono text-xs hover:bg-muted',
+        'flex w-full items-baseline justify-between gap-3 rounded-md px-2 py-1 text-left font-code text-code hover:bg-muted',
         props.class
       )}
       onClick={() => props.onSelect?.()}
     >
       <span class="truncate text-foreground">{name()}</span>
-      <span class="shrink-0 text-2xs">
+      <span class="shrink-0 text-code">
         <span class="text-foreground">+{stats().added}</span>{' '}
         <span class="text-foreground">−{stats().removed}</span>
       </span>

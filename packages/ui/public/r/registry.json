@@ -1920,9 +1920,15 @@
         "@adea-ai/ui/input",
         "@adea-ai/ui/popover",
         "@adea-ai/ui/switch",
+        "@adea-ai/ui/theme",
         "lib"
       ],
       "files": [
+        {
+          "path": "src/components/composites/appearance-editor/accent-swatch-groups.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/accent-swatch-groups.tsx"
+        },
         {
           "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
           "type": "registry:ui",
@@ -1942,6 +1948,11 @@
           "path": "src/components/composites/appearance-editor/appearance-types.ts",
           "type": "registry:ui",
           "target": "components/composites/appearance-editor/appearance-types.ts"
+        },
+        {
+          "path": "src/components/composites/appearance-editor/font-settings-group.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/font-settings-group.tsx"
         },
         {
           "path": "src/components/composites/appearance-editor/index.ts",
@@ -2358,9 +2369,11 @@
       "description": "",
       "dependencies": [
         "@adea-ai/themes@^0.9.6",
+        "@kobalte/core@^0.13.14",
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/appearance-editor",
         "@adea-ai/ui/button",
         "@adea-ai/ui/radio-group",
         "@adea-ai/ui/toggle-group",
@@ -2453,6 +2466,11 @@
           "target": "styles/base.css"
         },
         {
+          "path": "src/styles/appearance-font-settings.css",
+          "type": "registry:style",
+          "target": "styles/appearance-font-settings.css"
+        },
+        {
           "path": "src/styles/fonts.css",
           "type": "registry:style",
           "target": "styles/fonts.css"
@@ -2472,6 +2490,11 @@
       "registryDependencies": [],
       "files": [
         {
+          "path": "src/lib/appearance-font-settings.ts",
+          "type": "registry:lib",
+          "target": "lib/appearance-font-settings.ts"
+        },
+        {
           "path": "src/lib/clipboard.ts",
           "type": "registry:lib",
           "target": "lib/clipboard.ts"
@@ -2487,6 +2510,11 @@
           "target": "lib/download.ts"
         },
         {
+          "path": "src/lib/font-catalog.ts",
+          "type": "registry:lib",
+          "target": "lib/font-catalog.ts"
+        },
+        {
           "path": "src/lib/form-field.ts",
           "type": "registry:lib",
           "target": "lib/form-field.ts"
@@ -2500,6 +2528,11 @@
           "path": "src/lib/overlay.ts",
           "type": "registry:lib",
           "target": "lib/overlay.ts"
+        },
+        {
+          "path": "src/lib/safe-script.ts",
+          "type": "registry:lib",
+          "target": "lib/safe-script.ts"
         },
         {
           "path": "src/lib/theme-accents.ts",

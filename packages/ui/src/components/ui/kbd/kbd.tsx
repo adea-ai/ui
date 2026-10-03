@@ -20,7 +20,7 @@ import { cn } from '#lib/utils'
  * needs a gap between them that is a layout concern, not punctuation.
  */
 export const kbdVariants = cva(
-  'bg-muted text-muted-foreground pointer-events-none inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-sm border border-border px-1 font-mono text-2xs font-medium select-none',
+  'bg-muted text-muted-foreground pointer-events-none inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-sm border border-border px-1 font-code text-code font-medium select-none',
   {
     variants: {
       size: {

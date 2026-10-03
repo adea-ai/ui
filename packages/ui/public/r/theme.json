@@ -28,6 +28,11 @@
       "target": "styles/base.css"
     },
     {
+      "path": "src/styles/appearance-font-settings.css",
+      "type": "registry:style",
+      "target": "styles/appearance-font-settings.css"
+    },
+    {
       "path": "src/styles/fonts.css",
       "type": "registry:style",
       "target": "styles/fonts.css"
