@@ -127,6 +127,10 @@ export function classifyDesignSystemChanges(paths) {
       result.pages = true
     } else if (path.startsWith('packages/ui/') && path.endsWith('.md')) {
       result.registry = true
+    } else if (path === 'docs/consumption.md') {
+      // Its size table is checked against fresh bundles by check:tree-shaking,
+      // which runs in the registry gate.
+      result.registry = true
     } else if (path.endsWith('.md') && !path.startsWith('packages/ui/')) {
       // Markdown documentation is not part of the Storybook source glob (MDX is).
       continue

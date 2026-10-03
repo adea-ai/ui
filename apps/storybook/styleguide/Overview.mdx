@@ -223,79 +223,14 @@ focused, a `ResizableHandle` with no name, `AlertDialog` announcing both its but
 
 `bun run check:tree-shaking` builds real bundles against the built package and fails if
 the numbers regress. Importing one component from the package root does not pull in the
-library:
+library: `Button` is a small fraction of the whole, and the chart splits from itself — one
+chart type is cheaper than seven, because the controllers are imported per component while
+the shared scales register once. Budgets cap both a single component and the heaviest one.
 
-<table>
-  <thead>
-    <tr>
-      <th scope="col">Import</th>
-      <th scope="col">Gzipped</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <code>Button</code>
-      </td>
-      <td>19.8 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>Board</code>
-      </td>
-      <td>18.4 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>CodeBlock</code>
-      </td>
-      <td>23.5 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>MessageRow</code>
-      </td>
-      <td>24.7 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>CalendarSurface</code>
-      </td>
-      <td>27.4 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>Carousel</code>
-      </td>
-      <td>32.1 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>NavigationMenu</code>
-      </td>
-      <td>54.2 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <code>LineChart</code>
-      </td>
-      <td>86.2 kB</td>
-    </tr>
-    <tr>
-      <td>
-        <em>the whole library</em>
-      </td>
-      <td>
-        <em>275.2 kB</em>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-`Button` is 7.2% of the library, and the chart splits from itself — one chart type is
-10.3 kB cheaper than seven, because the controllers are imported per component while the
-shared scales register once. Two budgets are enforced: a single component under 40 kB,
-and no component over 180 kB.
+The per-component figures live in
+[the consumption guide](https://github.com/adea-ai/ui/blob/main/docs/consumption.md#what-one-component-costs),
+where the same script writes them and the gate fails if they drift — so they are never
+quoted here, where they could go stale.
 
 `chart.js`, `solid-chartjs` and the two `embla-carousel` packages are **optional peer
 dependencies**. An application that uses neither the chart nor the carousel does not

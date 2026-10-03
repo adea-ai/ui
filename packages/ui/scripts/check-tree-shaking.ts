@@ -20,17 +20,35 @@
  *    That is a claim about chart.js's registration model, and it is only true if
  *    it is measured — one `register(...)` of everything would break it silently.
  *
- * Run: bun run --cwd packages/ui check:tree-shaking
+ * It also owns the size table in `docs/consumption.md`: the block between the
+ * `tree-shaking:start` and `tree-shaking:end` markers is rendered from these
+ * measurements, and a committed block that has drifted from them fails the check
+ * (see `tree-shaking-docs.ts` for the tolerance and why it is needed).
+ *
+ * Run: bun run --cwd packages/ui check:tree-shaking            (check)
+ *      bun run --cwd packages/ui check:tree-shaking -- --write  (regenerate the table)
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build } from 'vite'
+import {
+  compareSizeBlocks,
+  extractSizeBlock,
+  kb,
+  renderSizeBlock,
+  replaceSizeBlock,
+  type SizeReport,
+} from './tree-shaking-docs'
 
 const PACKAGE_ROOT = new URL('..', import.meta.url).pathname
 const DIST = join(PACKAGE_ROOT, 'dist')
+/** The consumer guide whose size table this script owns. */
+const DOC = join(PACKAGE_ROOT, '../../docs/consumption.md')
+/** `--write` regenerates the table; without it, a drifted table is a finding. */
+const WRITE = process.argv.includes('--write')
 
 /**
  * Budgets, in gzipped bytes, for a production build with esbuild's minifier —
@@ -59,61 +77,89 @@ const BUDGETS = {
  * The components worth a published number, each imported through its documented
  * public entry — so a barrel that stops shaking
  * shows up here and not only in the one-component check.
+ *
+ * `brings` is the reader-facing column of the table in `docs/consumption.md`; a
+ * sample without it is measured and gated but not published. The table follows
+ * this order.
  */
-const SAMPLES: readonly { name: string; names: readonly string[]; note: string; entry?: string }[] =
-  [
-    { name: 'Button', names: ['Button'], note: 'the floor: no dependency of its own' },
-    { name: 'Board', names: ['Board'], note: 'no dependency' },
-    { name: 'CodeBlock', names: ['CodeBlock'], note: 'lucide icons' },
-    { name: 'DiffBlock', names: ['DiffBlock'], note: 'lucide icons' },
-    { name: 'MessageRow', names: ['MessageRow'], note: 'conversation layer, no dependency' },
-    {
-      name: 'ListRow',
-      names: ['ListRow'],
-      note: 'rich row with optional tooltip',
-      entry: '/components/composites/list-row',
-    },
-    {
-      name: 'ListRowControl',
-      names: ['ListRowControl'],
-      note: 'plain row without tooltip dependency',
-      entry: '/components/composites/list-row',
-    },
-    { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog' },
-    { name: 'NavigationMenu', names: ['NavigationMenu'], note: 'Kobalte navigation menu' },
-    { name: 'CalendarSurface', names: ['CalendarSurface'], note: 'corvu calendar' },
-    {
-      name: 'Carousel',
-      names: ['Carousel'],
-      note: 'embla optional subpath',
-      entry: '/components/ui/carousel',
-    },
-    {
-      name: 'LineChart',
-      names: ['LineChart'],
-      note: 'chart.js optional subpath, line controller only',
-      entry: '/components/ui/chart',
-    },
-    {
-      name: 'AllCharts',
-      entry: '/components/ui/chart',
-      names: [
-        'LineChart',
-        'BarChart',
-        'RadarChart',
-        'PolarAreaChart',
-        'DonutChart',
-        'ScatterChart',
-        'BubbleChart',
-      ],
-      note: 'every chart controller',
-    },
-  ]
-
-/** Bytes as a human-readable size, for the report and the findings. */
-function kb(bytes: number): string {
-  return `${(bytes / 1024).toFixed(1)} kB`
-}
+const SAMPLES: readonly {
+  name: string
+  names: readonly string[]
+  note: string
+  entry?: string
+  brings?: string
+}[] = [
+  {
+    name: 'Button',
+    names: ['Button'],
+    note: 'the floor: no dependency of its own',
+    brings: 'the floor — Solid, `clsx`, `tw-merge`',
+  },
+  { name: 'Board', names: ['Board'], note: 'no dependency', brings: 'nothing' },
+  {
+    name: 'ListRowControl',
+    names: ['ListRowControl'],
+    note: 'plain row without tooltip dependency',
+    entry: '/components/composites/list-row',
+    brings: 'nothing — the row without its tooltip',
+  },
+  { name: 'DiffBlock', names: ['DiffBlock'], note: 'lucide icons', brings: 'lucide icons' },
+  { name: 'CodeBlock', names: ['CodeBlock'], note: 'lucide icons', brings: 'lucide icons' },
+  {
+    name: 'MessageRow',
+    names: ['MessageRow'],
+    note: 'conversation layer, no dependency',
+    brings: 'nothing',
+  },
+  {
+    name: 'CalendarSurface',
+    names: ['CalendarSurface'],
+    note: 'corvu calendar',
+    brings: 'corvu calendar',
+  },
+  { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog', brings: 'Kobalte dialog' },
+  {
+    name: 'Carousel',
+    names: ['Carousel'],
+    note: 'embla optional subpath',
+    entry: '/components/ui/carousel',
+    brings: 'embla',
+  },
+  {
+    name: 'ListRow',
+    names: ['ListRow'],
+    note: 'rich row with optional tooltip',
+    entry: '/components/composites/list-row',
+    brings: 'Kobalte tooltip',
+  },
+  {
+    name: 'NavigationMenu',
+    names: ['NavigationMenu'],
+    note: 'Kobalte navigation menu',
+    brings: 'Kobalte navigation menu',
+  },
+  {
+    name: 'LineChart',
+    names: ['LineChart'],
+    note: 'chart.js optional subpath, line controller only',
+    entry: '/components/ui/chart',
+    brings: 'chart.js, the line controller only',
+  },
+  {
+    name: 'AllCharts',
+    entry: '/components/ui/chart',
+    names: [
+      'LineChart',
+      'BarChart',
+      'RadarChart',
+      'PolarAreaChart',
+      'DonutChart',
+      'ScatterChart',
+      'BubbleChart',
+    ],
+    note: 'every chart controller',
+  },
+]
 
 type BundleSize = { raw: number; gzip: number; chunks: number; code: string }
 
@@ -261,6 +307,43 @@ try {
       'importing one chart type costs as much as importing all of them. The chart controllers are being ' +
         'registered from one module, so chart.js cannot drop the unused ones.'
     )
+  }
+
+  const report: SizeReport = {
+    rows: SAMPLES.filter((sample) => sample.brings !== undefined).map((sample) => ({
+      entry: `@adea-ai/ui${sample.entry ?? ''}`,
+      name: sample.names[0]!,
+      brings: sample.brings!,
+      gzip: sizes.get(sample.name)!.gzip,
+    })),
+    whole: whole.gzip,
+    one: one.gzip,
+    lineChart: line.gzip,
+    allCharts: allCharts.gzip,
+    budgets: BUDGETS,
+  }
+  const block = renderSizeBlock(report)
+  const doc = readFileSync(DOC, 'utf8')
+  if (WRITE) {
+    writeFileSync(DOC, replaceSizeBlock(doc, block))
+    console.log('\n  docs           wrote the size table in docs/consumption.md')
+  } else {
+    const committed = extractSizeBlock(doc)
+    if (committed === undefined) {
+      findings.push(
+        'docs/consumption.md has no tree-shaking:start/end markers around its size table.'
+      )
+    } else {
+      const drift = compareSizeBlocks(committed, block)
+      if (drift.length > 0) {
+        findings.push(
+          'the size table in docs/consumption.md no longer matches what was measured ' +
+            `(${drift.join('; ')}). Run bun run --cwd packages/ui check:tree-shaking -- --write and commit it.`
+        )
+      } else {
+        console.log('\n  docs           the size table in docs/consumption.md matches')
+      }
+    }
   }
 
   if (findings.length > 0) {

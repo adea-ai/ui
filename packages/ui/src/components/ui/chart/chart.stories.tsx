@@ -22,7 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'A thin wrapper over Chart.js, themed through the same custom properties as everything else. Chart.js was chosen for its registration model: nothing is bundled until a controller is registered, so importing `LineChart` does not carry the radar or polar-area controllers. Measured by `check:tree-shaking`: 86.2 kB for one chart type against 96.5 kB for all seven. `chart.js`, `solid-chartjs` and `embla` are optional peer dependencies — an application that uses neither the chart nor the carousel does not install them.',
+          'A thin wrapper over Chart.js, themed through the same custom properties as everything else. Chart.js was chosen for its registration model: nothing is bundled until a controller is registered, so importing `LineChart` does not carry the radar or polar-area controllers. Measured by `check:tree-shaking`, which fails if one chart type stops being cheaper than all seven; the current figures are in `docs/consumption.md`. `chart.js`, `solid-chartjs` and `embla` are optional peer dependencies — an application that uses neither the chart nor the carousel does not install them.',
       },
     },
   },

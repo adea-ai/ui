@@ -20,6 +20,13 @@ test('documentation skips expensive gates, but distribution notices do not', () 
     pages: false,
     pagesBuild: false,
   })
+  expect(classifyDesignSystemChanges(['docs/consumption.md'])).toEqual({
+    registry: true,
+    workshop: false,
+    components: false,
+    pages: false,
+    pagesBuild: false,
+  })
   expect(classifyDesignSystemChanges(['NOTICE'])).toEqual({
     registry: true,
     workshop: false,
