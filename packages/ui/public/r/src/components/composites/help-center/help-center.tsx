@@ -5,6 +5,7 @@ import { ActionButton } from '../action-button'
 import { Alert, AlertDescription } from '../../ui/alert'
 import { Card, CardContent, CardHeader } from '../../ui/card'
 import { Kbd, KbdGroup } from '../../ui/kbd'
+import { Heading } from '../../ui/typography'
 
 export type HelpShortcut = { label: string; keys: readonly string[] }
 export type HelpLink = { label: string; description?: string; url: string }
@@ -37,7 +38,7 @@ export function HelpCenter(props: HelpCenterProps) {
     <div class={cn('flex min-w-0 flex-col gap-5', props.class)}>
       <Show when={props.showHeader !== false}>
         <div class="flex flex-col gap-2">
-          <h1 class="text-xl font-semibold tracking-tight">Help Center</h1>
+          <Heading size="page">Help Center</Heading>
           <p class="text-sm text-muted-foreground">
             Keyboard shortcuts and resources for {props.appName}.
           </p>

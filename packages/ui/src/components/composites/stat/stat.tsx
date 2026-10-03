@@ -3,6 +3,7 @@ import type { ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { cn } from '#lib/utils'
+import { Heading, Text } from '../../ui/typography'
 
 /**
  * Stat.
@@ -53,9 +54,13 @@ export function Stat(props: StatProps) {
     >
       <div class="text-muted-foreground truncate text-xs font-medium">{local.label}</div>
       <div class="flex items-baseline gap-1">
-        <span class="text-xl font-semibold tabular-nums tracking-tight">{local.value}</span>
+        <Heading as="span" size="page" numeric>
+          {local.value}
+        </Heading>
         <Show when={local.unit}>
-          <span class="text-muted-foreground text-xs">{local.unit}</span>
+          <Text variant="caption" tone="muted">
+            {local.unit}
+          </Text>
         </Show>
       </div>
       <Show when={local.delta}>

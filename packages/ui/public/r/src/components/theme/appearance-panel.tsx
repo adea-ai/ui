@@ -7,6 +7,7 @@ import { Button } from '../ui/button/button'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group/radio-group'
 import { ThemePicker } from './theme-picker'
 import { useTheme } from './theme-provider'
+import { Heading } from '../ui/typography'
 
 /**
  * AppearancePanel.
@@ -43,7 +44,9 @@ export function AppearancePanel(props: AppearancePanelProps) {
       {/* --- 1. Appearance ------------------------------------------------- */}
       <section class="flex flex-col gap-3">
         <header class="flex flex-col gap-0.5">
-          <h2 class="text-base font-semibold tracking-tight">Appearance</h2>
+          <Heading as="h2" size="card">
+            Appearance
+          </Heading>
           <p class="max-w-prose text-sm text-muted-foreground">
             Follow the system, or pin one. The theme below is chosen per appearance, so switching at
             sunset does not make you choose again.
@@ -87,7 +90,9 @@ export function AppearancePanel(props: AppearancePanelProps) {
       {/* --- 3. Accent ------------------------------------------------------ */}
       <section class="flex flex-col gap-3">
         <header class="flex flex-col gap-0.5">
-          <h2 class="text-base font-semibold tracking-tight">Accent</h2>
+          <Heading as="h2" size="card">
+            Accent
+          </Heading>
           <p class="max-w-prose text-sm text-muted-foreground">
             Colours the interactive roles — the primary button, the focus ring, a selected row — on
             top of the theme above. Every preset is measured against the surface it lands on, so
@@ -130,7 +135,9 @@ export function AppearancePanel(props: AppearancePanelProps) {
       {/* --- 4. Font -------------------------------------------------------- */}
       <section class="flex flex-col gap-3">
         <header class="flex flex-col gap-0.5">
-          <h2 class="text-base font-semibold tracking-tight">Typeface</h2>
+          <Heading as="h2" size="card">
+            Typeface
+          </Heading>
           <p class="max-w-prose text-sm text-muted-foreground">
             The interface face. Every option is self-hosted, so nothing is fetched at runtime and
             the choice survives going offline.
@@ -166,7 +173,9 @@ function ThemeSection(props: {
   return (
     <section class="flex flex-col gap-3">
       <header class="flex flex-col gap-0.5">
-        <h2 class="text-base font-semibold tracking-tight">{props.title}</h2>
+        <Heading as="h2" size="card">
+          {props.title}
+        </Heading>
         <p class="max-w-prose text-sm text-muted-foreground">{props.description}</p>
       </header>
       <ThemePicker

@@ -33,6 +33,7 @@ import {
 } from '../../ui/dialog'
 import { createDialogFocusRestoration } from '../../ui/dialog/dialog'
 import { Progress } from '../../ui/progress'
+import { Heading } from '../../ui/typography'
 import { cn } from '#lib/utils'
 import { formatBytes, formatReleaseDate, plainTextFromMarkdown } from '#lib/version-notes'
 
@@ -590,9 +591,9 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 <p class="text-2xs font-semibold tracking-widest text-muted-foreground uppercase">
                   Installed version
                 </p>
-                <p class="text-xl font-semibold tracking-tight text-foreground">
+                <Heading as="p" size="page" tone="foreground">
                   v{state()?.currentVersion || local.fallbackVersion || '0.1.0'}
-                </p>
+                </Heading>
                 <p class="text-sm text-muted-foreground">
                   <Show
                     when={isCurrent()}

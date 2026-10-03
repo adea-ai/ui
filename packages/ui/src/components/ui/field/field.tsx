@@ -4,6 +4,7 @@ import { createUniqueId, Show, splitProps } from 'solid-js'
 import { Label } from '../label/label'
 import { createFormFieldContext, FormFieldContext } from '#lib/form-field'
 import { cn } from '#lib/utils'
+import { headingVariants } from '../typography'
 
 /**
  * Field.
@@ -199,9 +200,7 @@ export function FieldLegend(props: ComponentProps<'legend'> & { variant?: 'legen
     <legend
       class={cn(
         'mb-1',
-        local.variant === 'label'
-          ? 'text-sm font-medium'
-          : 'text-base font-semibold tracking-tight',
+        local.variant === 'label' ? 'text-sm font-medium' : headingVariants({ size: 'card' }),
         local.class
       )}
       {...rest}

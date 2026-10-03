@@ -8,6 +8,7 @@
     "lucide-solid@^1.48.0"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

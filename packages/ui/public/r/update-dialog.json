@@ -12,6 +12,7 @@
     "@adea-ai/ui/button",
     "@adea-ai/ui/dialog",
     "@adea-ai/ui/progress",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

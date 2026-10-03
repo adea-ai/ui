@@ -11,6 +11,7 @@
     "@adea-ai/ui/alert",
     "@adea-ai/ui/card",
     "@adea-ai/ui/kbd",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

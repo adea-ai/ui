@@ -7,6 +7,7 @@
     "@corvu/drawer@^0.2.4"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [
