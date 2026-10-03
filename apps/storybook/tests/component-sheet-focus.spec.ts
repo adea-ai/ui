@@ -151,6 +151,11 @@ test('repeated Sheet cycles keep focus trapped and return to the external opener
     await opener.focus()
     await page.keyboard.press('Enter')
     await expect(sheet).toBeVisible()
+    // Kobalte moves focus into the sheet from a zero-delay timer after mount.
+    // On a loaded renderer input outranks timers, so keys sent before that
+    // timer runs are undone when it lands on the first action. Wait for the
+    // open autofocus to settle before driving focus by hand.
+    await expect(firstAction).toBeFocused()
 
     await firstAction.focus()
     await page.keyboard.press('Shift+Tab')
