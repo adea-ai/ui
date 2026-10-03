@@ -382,6 +382,12 @@ export function TooltipContent(props: TooltipContentProps) {
           'data-expanded:duration-150 data-closed:duration-100',
           local.class
         )}
+        // A tooltip is never interactive: the content is plain text, and the
+        // placement draws the tip below its action — where a hit-testing tip
+        // would hold the next control hostage, open or departing. Kobalte
+        // inlines pointer-events auto, so this is forced after its merge; the
+        // pointer belongs to the control underneath.
+        style={{ 'pointer-events': 'none' }}
         aria-hidden={context.isOpen() ? local['aria-hidden'] : true}
         onEscapeKeyDown={(event) => {
           invokeEventHandler(local.onEscapeKeyDown, event)

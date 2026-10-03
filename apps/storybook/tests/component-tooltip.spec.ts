@@ -108,3 +108,21 @@ test('a controlled tooltip hides caller-visible content only while closed', asyn
   await expect(page.getByRole('tooltip', { name: 'Controlled tooltip description' })).toHaveCount(0)
   await expect(trigger).not.toHaveAttribute('aria-describedby', /.+/)
 })
+
+test('a closing tooltip stops intercepting the pointer', async ({ page }) => {
+  const trigger = page.getByRole('button', {
+    name: 'Focus to open the force-mounted tooltip',
+  })
+  const next = page.getByRole('button', { name: 'Next action' })
+
+  await trigger.hover()
+  const tip = page.getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  // A tooltip is never interactive, and the placement draws it below its
+  // action — where a hit-testing tip would hold the next control hostage.
+  // The pointer belongs to the control underneath, open or departing.
+  await expect(tip).toHaveCSS('pointer-events', 'none')
+  await next.hover()
+  await next.click()
+  await expect(next).toBeFocused()
+})
