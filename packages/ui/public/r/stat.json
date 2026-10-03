@@ -4,7 +4,7 @@
   "title": "Stat",
   "description": "",
   "dependencies": [
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/typography",

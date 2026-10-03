@@ -5,7 +5,7 @@
   "description": "",
   "dependencies": [
     "@corvu/calendar@^0.1.2",
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/button",

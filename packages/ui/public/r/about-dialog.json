@@ -4,7 +4,7 @@
   "title": "About Dialog",
   "description": "Shared app identity and version support dialog.",
   "dependencies": [
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/action-button",

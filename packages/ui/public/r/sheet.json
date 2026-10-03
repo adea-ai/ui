@@ -5,7 +5,7 @@
   "description": "",
   "dependencies": [
     "@kobalte/core@^0.13.14",
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/dialog",

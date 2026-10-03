@@ -4,7 +4,7 @@
   "title": "Native Select",
   "description": "A themed wrapper around the browser's native `<select>` element.",
   "dependencies": [
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "lib"

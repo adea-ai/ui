@@ -4,8 +4,8 @@
   "title": "Theming",
   "description": "",
   "dependencies": [
-    "@adea-ai/themes@^0.9.5",
-    "lucide-solid@^1.48.0"
+    "@adea-ai/themes@^0.9.6",
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/button",

@@ -1,7 +1,11 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import ts from 'typescript'
+// The config-resolution guard needs the classic JS API (`ts.sys`,
+// `readConfigFile`, `resolveModuleName`), which TypeScript 7's native compiler
+// removed. The `typescript6` alias keeps exactly that API for this test while
+// the toolchain itself runs TypeScript 7.
+import ts from 'typescript6'
 
 /*
  * `typecheck` runs without a library build first (turbo.json gives it no
