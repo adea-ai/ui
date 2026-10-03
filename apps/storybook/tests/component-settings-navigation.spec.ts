@@ -211,3 +211,57 @@ test('the vertical settings rail draws no underline rule beneath its last row', 
     '1px'
   )
 })
+
+test('a vertical underline list marks its selected trigger with an inline-start bar', async ({
+  page,
+}) => {
+  const edges = (selector: string) =>
+    page.locator(selector).evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        orientation: element.getAttribute('data-orientation'),
+        bottom: style.borderBottomWidth,
+        start: style.borderInlineStartWidth,
+        startColor: style.borderInlineStartColor,
+        justify: style.justifyContent,
+      }
+    })
+  const primary = await page.evaluate(() => {
+    const probe = document.createElement('span')
+    probe.style.color = 'var(--primary)'
+    document.body.append(probe)
+    const color = getComputedStyle(probe).color
+    probe.remove()
+    return color
+  })
+
+  // The selected vertical trigger carries no bottom underline: the mark is a
+  // leading bar in the primary colour, and the label aligns to that edge.
+  const vertical = await edges(
+    '[role="tablist"][aria-label="Vertical tab root"] [role="tab"][aria-selected="true"]'
+  )
+  expect(vertical).toEqual({
+    orientation: 'vertical',
+    bottom: '0px',
+    start: '2px',
+    startColor: primary,
+    justify: 'flex-start',
+  })
+  // An unselected vertical trigger reserves the bar's width without drawing it.
+  const idle = await page
+    .locator('[role="tablist"][aria-label="Vertical tab root"] [role="tab"][aria-selected="false"]')
+    .evaluate((element) => getComputedStyle(element).borderInlineStartColor)
+  expect(idle).toBe('rgba(0, 0, 0, 0)')
+
+  // A horizontal underline trigger keeps its bottom bar on the list's baseline.
+  const horizontal = await edges(
+    '[role="tablist"][aria-label="Independent tab root"] [role="tab"][aria-selected="true"]'
+  )
+  expect(horizontal).toMatchObject({ orientation: 'horizontal', bottom: '2px', start: '0px' })
+
+  // SettingsNavigation's filled row replaces the mark entirely: neither bar.
+  const rail = await edges(
+    '[role="tablist"][aria-label="Settings sections"] [role="tab"][aria-selected="true"]'
+  )
+  expect(rail).toMatchObject({ orientation: 'vertical', bottom: '0px', start: '0px' })
+})

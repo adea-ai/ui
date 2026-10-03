@@ -75,6 +75,53 @@ for (const [scenario, trigger, item] of [
   })
 }
 
+test('navigation-menu-default: the panel shares the menu surface geometry', async ({ page }) => {
+  const errors = await mount(page, 'navigation-menu-default')
+  await page.getByRole('menuitem', { name: 'Guides' }).click()
+  const viewport = page.locator('[data-slot="navigation-menu-viewport"]')
+  await expect(viewport.getByRole('menuitem', { name: 'Installation' })).toBeVisible()
+  // The panel enters with a zoom; measure the settled box, not a scaled frame.
+  await viewport.evaluate((surface) =>
+    Promise.all(surface.getAnimations({ subtree: true }).map((animation) => animation.finished))
+  )
+
+  const geometry = await viewport.evaluate((surface) => {
+    const frame = surface.getBoundingClientRect()
+    const style = getComputedStyle(surface)
+    const item = surface.querySelector('[role="menuitem"]')!.getBoundingClientRect()
+    const rule = surface.querySelector('[role="separator"], hr')!.getBoundingClientRect()
+    const border = parseFloat(style.borderLeftWidth)
+    return {
+      radius: style.borderRadius,
+      border: style.borderLeftWidth,
+      itemInset: Math.round(item.left - frame.left - border),
+      ruleBleed: Math.round(rule.left - frame.left - border),
+      ruleShortfall: frame.width - border * 2 - rule.width,
+    }
+  })
+  // The same p-1 inset, rounded-xl frame and hairline as DropdownMenu and
+  // Popover; the separator bleeds to the frame the way a menu's does.
+  expect(geometry).toMatchObject({ radius: '14px', border: '1px', itemInset: 4, ruleBleed: 0 })
+  // Within a pixel: the panel's measured width is fractional, the frame's is not.
+  expect(Math.abs(geometry.ruleShortfall)).toBeLessThanOrEqual(1)
+  expect(errors).toEqual([])
+})
+
+test('navigation-menu-descriptions: a description sits under its label without an icon', async ({
+  page,
+}) => {
+  const errors = await mount(page, 'navigation-menu-descriptions')
+  await page.getByRole('menuitem', { name: 'Products' }).click()
+  const item = page.getByRole('menuitem', { name: /Agent HQ/ })
+  await expect(item).toBeVisible()
+  const [label, description] = await item
+    .locator(':scope > span')
+    .evaluateAll((spans) => spans.map((span) => span.getBoundingClientRect().toJSON()))
+  expect(description!.top).toBeGreaterThanOrEqual(label!.bottom - 1)
+  expect(Math.round(description!.left)).toBe(Math.round(label!.left))
+  expect(errors).toEqual([])
+})
+
 test('navigation-menu-default: moving between entries swaps the panel without an error', async ({
   page,
 }) => {
@@ -166,5 +213,21 @@ test('toaster: each region sits in its documented corner', async ({ page }) => {
     if (horizontal === 'left') expect(card.x).toBeLessThan(viewport.width / 2)
     else expect(card.x + card.width).toBeGreaterThan(viewport.width / 2)
   }
+  expect(errors).toEqual([])
+})
+
+test('toaster: a caller class lands on the region the props describe', async ({ page }) => {
+  const errors = await mount(page, 'toasters')
+  const viewport = page.viewportSize()
+  if (!viewport) throw new Error('The page must have a viewport')
+  const region = page.getByTestId('toaster-classed')
+  await expect(region).toHaveClass(/\bmb-12\b/)
+  // The list is the region's private child; it never receives caller classes.
+  await expect(region.locator('ol')).not.toHaveClass(/\bmb-12\b/)
+  // A layout class on the fixed region moves the stack: lifted 48px off the
+  // bottom edge, clear of something like a status bar.
+  const box = await region.boundingBox()
+  if (!box) throw new Error('The classed region must have a box')
+  expect(Math.round(box.y + box.height)).toBe(viewport.height - 48)
   expect(errors).toEqual([])
 })

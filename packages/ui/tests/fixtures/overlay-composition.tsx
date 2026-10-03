@@ -28,11 +28,6 @@ function story(entry: StoryLike): () => JSX.Element {
   return entry.render as () => JSX.Element
 }
 
-function decorated(meta: { decorators?: unknown }): () => JSX.Element {
-  const [decorator] = meta.decorators as [() => JSX.Element]
-  return decorator
-}
-
 // The side is the root's: corvu ignores it on the content, so the type refuses it
 // rather than letting a drawer silently open from the bottom.
 // @ts-expect-error `side` belongs on `Drawer`, not `DrawerContent`.
@@ -59,12 +54,13 @@ function Toasters() {
           </>
         )}
       </For>
+      <Toaster region="classed" class="mb-12" data-testid="toaster-classed" />
     </section>
   )
 }
 
 const scenarios: Record<string, () => JSX.Element> = {
-  'navigation-menu-default': decorated(navigationMenuStories.default),
+  'navigation-menu-default': story(navigationMenuStories.Default),
   'navigation-menu-single': story(navigationMenuStories.SingleEntry),
   'navigation-menu-descriptions': story(navigationMenuStories.WithDescriptions),
   'dropdown-menu-grouped': story(dropdownMenuStories.Grouped),

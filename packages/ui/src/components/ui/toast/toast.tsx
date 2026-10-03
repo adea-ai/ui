@@ -180,6 +180,10 @@ export type ToasterProps = ComponentProps<typeof KobalteToast.Region> & {
 }
 
 /**
+ * `class` lands on the region too: the props describe the region, and the
+ * region is the element a caller lays out (an inset clear of a status bar, a
+ * narrower stack). The list inside it is an implementation detail.
+ *
  * The corner is set on the region, not the list. The region is the `fixed`
  * element: an inset on the list inside it positions nothing, and the region falls
  * back to wherever it happens to sit in the document flow.
@@ -217,16 +221,13 @@ export function Toaster(props: ToasterProps) {
        */
       class={cn(
         'pointer-events-none fixed z-(--z-toast) flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-sm',
-        toasterPosition[local.position ?? 'bottom-right']
+        toasterPosition[local.position ?? 'bottom-right'],
+        local.class
       )}
       {...rest}
     >
       <KobalteToast.List
-        class={cn(
-          'flex flex-col gap-2',
-          toasterAlignment[local.position ?? 'bottom-right'],
-          local.class
-        )}
+        class={cn('flex flex-col gap-2', toasterAlignment[local.position ?? 'bottom-right'])}
       />
     </KobalteToast.Region>
   )
