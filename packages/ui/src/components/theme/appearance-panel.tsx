@@ -1,9 +1,12 @@
 import type { ComponentProps } from 'solid-js'
-import { For, Show, splitProps } from 'solid-js'
-import { accentPresets, fontOptions } from '#lib/tokens'
+import { Show, splitProps } from 'solid-js'
+import { RadioGroup as Radio } from '@kobalte/core/radio-group'
+import { accentPresets } from '#lib/tokens'
 import { themesForAppearance } from '#lib/themes'
+import { DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS } from '#lib/appearance-font-settings'
 import { cn } from '#lib/utils'
-import { Button } from '../ui/button/button'
+import { AccentSwatchGroups } from '../composites/appearance-editor/accent-swatch-groups'
+import { AppearanceFontSettingsGroup } from '../composites/appearance-editor/font-settings-group'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group/radio-group'
 import { ThemePicker } from './theme-picker'
 import { useTheme } from './theme-provider'
@@ -26,7 +29,7 @@ import { Heading } from '../ui/typography'
  *      setting that keeps changing.
  *   3. **Accent** — adea's presets, then the accents the selected theme pair
  *      carries itself, layered on whichever theme is active.
- *   4. **Font** — the interface face.
+ *   4. **Fonts** — separate families and sizes for interface, content and code.
  *
  * The panel reads and writes the provider's preference and keeps no state of its
  * own, so it cannot disagree with what is applied.
@@ -39,6 +42,11 @@ const DARK_THEMES = themesForAppearance('dark')
 export function AppearancePanel(props: AppearancePanelProps) {
   const [local, rest] = splitProps(props, ['class'])
   const { selection, setSelection, resolvedAppearance, themeAccents } = useTheme()
+  const selectedAccent = () =>
+    accentPresets.some((option) => option.id === selection().accent) ||
+    themeAccents().some((option) => option.id === selection().accent)
+      ? selection().accent
+      : 'theme'
 
   return (
     <div data-slot="appearance-panel" class={cn('flex flex-col gap-8', local.class)} {...rest}>
@@ -101,96 +109,39 @@ export function AppearancePanel(props: AppearancePanelProps) {
             unreadable.
           </p>
         </header>
-        <div role="radiogroup" aria-label="Accent" class="flex flex-wrap gap-2">
-          <For each={accentPresets}>
-            {(preset) => (
-              <AccentOption
-                id={preset.id}
-                label={preset.label}
-                checked={selection().accent === preset.id}
-                swatch={
-                  preset.id === 'theme'
-                    ? 'var(--primary)'
-                    : `var(--accent-${preset.id}, ${preset.dark})`
-                }
-                onSelect={() => setSelection({ accent: preset.id })}
-              />
-            )}
-          </For>
-          {/* The theme's own accents follow the presets. Their values are the
-              theme pair's, so the swatch shows the side that is active now. */}
-          <For each={themeAccents()}>
-            {(accent) => (
-              <AccentOption
-                id={accent.id}
-                label={`Theme ${accent.label.toLowerCase()}`}
-                checked={selection().accent === accent.id}
-                swatch={resolvedAppearance() === 'dark' ? accent.dark : accent.light}
-                onSelect={() => setSelection({ accent: accent.id })}
-              />
-            )}
-          </For>
-        </div>
+        <Radio
+          value={selectedAccent()}
+          onChange={(accent) => setSelection({ accent })}
+          orientation="horizontal"
+          aria-label="Accent"
+          class="flex flex-col items-start gap-3"
+        >
+          <AccentSwatchGroups
+            accentOptions={accentPresets}
+            themeAccentOptions={themeAccents()}
+            resolvedAppearance={resolvedAppearance()}
+            themeDefaultColor="var(--primary)"
+          />
+        </Radio>
       </section>
 
-      {/* --- 4. Font -------------------------------------------------------- */}
+      {/* --- 4. Fonts ------------------------------------------------------- */}
       <section class="flex flex-col gap-3">
         <header class="flex flex-col gap-0.5">
           <Heading as="h2" size="card">
-            Typeface
+            Fonts
           </Heading>
           <p class="max-w-prose text-sm text-muted-foreground">
-            The interface face. Every option is self-hosted, so nothing is fetched at runtime and
-            the choice survives going offline.
+            Choose separate families and sizes for the interface, reading, and code. Font families
+            come from the shared catalogue and are self-hosted.
           </p>
         </header>
-        <RadioGroup
-          value={selection().font}
-          onChange={(value) => setSelection({ font: value as string })}
-          aria-label="Typeface"
-        >
-          <For each={fontOptions}>
-            {(option) => (
-              <RadioGroupItem
-                value={option.id}
-                label={option.label}
-                description={option.description}
-              />
-            )}
-          </For>
-        </RadioGroup>
+        <AppearanceFontSettingsGroup
+          settings={selection().fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
+          onChange={(fonts) => setSelection({ fonts })}
+        />
       </section>
     </div>
-  )
-}
-
-function AccentOption(props: {
-  id: string
-  label: string
-  checked: boolean
-  swatch: string
-  onSelect: () => void
-}) {
-  return (
-    <Button
-      as="button"
-      type="button"
-      variant="outline"
-      size="sm"
-      role="radio"
-      data-accent-option={props.id}
-      aria-checked={props.checked}
-      aria-label={props.label}
-      class={cn({ 'border-ring ring-3 ring-primary-subtle': props.checked })}
-      onClick={() => props.onSelect()}
-    >
-      <span
-        aria-hidden="true"
-        class="size-3 rounded-full border border-border"
-        style={{ 'background-color': props.swatch }}
-      />
-      {props.label}
-    </Button>
   )
 }
 

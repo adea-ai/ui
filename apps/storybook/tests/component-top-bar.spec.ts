@@ -166,6 +166,17 @@ test('toolbar actions remain reachable without document overflow at narrow width
           expect(tooltipBounds, 'focused action tooltip should have visible bounds').not.toBeNull()
           expect(tooltipBounds!.x).toBeGreaterThanOrEqual(0)
           expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThanOrEqual(width)
+          const actionBounds = (await button.boundingBox())!
+          const tooltipStyle = await tooltip.evaluate((element) => ({
+            className: element.className,
+            side: element.getAttribute('data-side'),
+          }))
+          expect(tooltipStyle.className).toContain('bg-card')
+          expect(tooltipStyle.className).toContain('text-card-foreground')
+          expect(tooltipStyle.className).toContain('text-sm')
+          expect(tooltipStyle.className).toContain('font-medium')
+          expect(tooltipStyle.side).toBe('bottom')
+          expect(tooltipBounds!.y).toBeGreaterThanOrEqual(actionBounds.y + actionBounds.height)
           const tooltipId = await tooltip.getAttribute('id')
           expect(tooltipId).toBeTruthy()
           expect((await button.getAttribute('aria-describedby'))?.split(/\s+/)).toContain(tooltipId)
@@ -218,4 +229,43 @@ test('the search chord stays out of the button accessible name', async ({ page }
   await expect(search).toHaveAccessibleName('Search projects, files and sessions')
   await expect(search).toHaveAttribute('aria-keyshortcuts', 'Meta+K')
   await expect(search.locator('kbd')).toHaveAttribute('aria-hidden', 'true')
+})
+
+test('top-bar action tooltip keeps the shared type and bottom-center placement at 200% text', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 844 })
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar tooltip</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+
+  const action = page.getByRole('button', { name: 'Back', exact: true })
+  await action.hover()
+  const tooltip = page.getByRole('tooltip', { name: 'Back', exact: true })
+  await expect(tooltip).toBeVisible()
+  const actionBounds = (await action.boundingBox())!
+  const tooltipBounds = (await tooltip.boundingBox())!
+  const style = await tooltip.evaluate((element) => ({
+    className: element.className,
+    side: element.getAttribute('data-side'),
+    font: getComputedStyle(element).fontFamily,
+    color: getComputedStyle(element).color,
+  }))
+  expect(style.className).toContain('bg-card')
+  expect(style.className).toContain('text-card-foreground')
+  expect(style.className).toContain('text-sm')
+  expect(style.className).toContain('font-medium')
+  expect(style.side).toBe('bottom')
+  expect(tooltipBounds.y).toBeGreaterThanOrEqual(actionBounds.y + actionBounds.height)
+  expect(tooltipBounds.x + tooltipBounds.width / 2).toBeCloseTo(
+    actionBounds.x + actionBounds.width / 2,
+    0
+  )
+  expect(style.font).toBeTruthy()
+  expect(style.color).not.toBe('rgba(0, 0, 0, 0)')
 })

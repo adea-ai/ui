@@ -175,6 +175,88 @@ test('mode previews and both theme rows remain available through keyboard change
   await expect(page.getByText('Typeface', { exact: true })).toHaveCount(0)
 })
 
+test('font controls remain keyboard accessible and all text roles scale at 200%', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 844 })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+
+  const metrics = await page.evaluate(() => {
+    const size = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector)
+      if (!element) throw new Error(`Missing ${selector} preview`)
+      return Number.parseFloat(getComputedStyle(element).fontSize)
+    }
+    return {
+      root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      body: Number.parseFloat(getComputedStyle(document.body).fontSize),
+      content: size('[data-testid="content-font-preview"]'),
+      code: size('[data-testid="code-font-preview"]'),
+    }
+  })
+  expect(metrics.root).toBe(32)
+  expect(metrics.body).toBe(28)
+  expect(metrics.content).toBe(28)
+  expect(metrics.code).toBe(24)
+
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  const family = dialog.getByRole('button', { name: 'UI font family', exact: true })
+  const size = dialog.getByRole('spinbutton', { name: 'UI font size in pixels', exact: true })
+  await expect(family).toContainText('System')
+  await expect(size).toHaveValue('14')
+  await expect(dialog.getByRole('button', { name: 'Content font family' })).toContainText('System')
+  await expect(dialog.getByRole('spinbutton', { name: 'Content font size in pixels' })).toHaveValue(
+    '14'
+  )
+  await expect(dialog.getByRole('button', { name: 'Code font family' })).toContainText('System')
+  await expect(dialog.getByRole('spinbutton', { name: 'Code font size in pixels' })).toHaveValue(
+    '12'
+  )
+  await family.focus()
+  await page.keyboard.press('Enter')
+  const menu = page.getByRole('menu')
+  const choices = menu.getByRole('menuitemradio')
+  await expect(choices).toHaveCount(5)
+  await expect(choices.first()).toHaveText('System')
+  await expect(choices.first()).toHaveAttribute('aria-checked', 'true')
+  await expect(menu.getByRole('separator')).toHaveCount(1)
+  const labels = (await choices.allTextContents()).map((label) => label.trim())
+  expect(labels).toEqual(['System', 'Space Grotesk', 'Geist', 'Geist Mono', 'JetBrains Mono'])
+
+  const geistMono = menu.getByRole('menuitemradio', { name: 'Geist Mono', exact: true })
+  await geistMono.focus()
+  await page.keyboard.press('Enter')
+  await expect(family).toContainText('Geist Mono')
+  await expect(family).toBeFocused()
+
+  await size.fill('100')
+  await expect(size).toHaveAttribute('aria-invalid', 'true')
+  await page.keyboard.press('Enter')
+  await expect(size).toHaveValue('32')
+  await expect(size).toHaveAttribute('aria-invalid', 'false')
+  const draft = page.getByLabel('Draft preference')
+  await expect(draft).toContainText('"ui":{"family":"geist-mono","size":32}')
+  await expect(draft).toContainText('"content":{"family":"system","size":14}')
+  await expect(draft).toContainText('"code":{"family":"system","size":12}')
+
+  for (const axis of ['UI', 'Content', 'Code']) {
+    const control = dialog.getByRole('spinbutton', { name: `${axis} font size in pixels` })
+    const bounds = await control.boundingBox()
+    const panel = await dialog.boundingBox()
+    expect(bounds).not.toBeNull()
+    expect(bounds!.x).toBeGreaterThanOrEqual(panel!.x)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(panel!.x + panel!.width + 1)
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze()
+  expect(
+    accessibility.violations.filter((finding) => ['serious', 'critical'].includes(finding.impact ?? ''))
+  ).toEqual([])
+})
+
 test('the terminal row follows the interface theme and offers the full catalogue', async ({
   page,
 }) => {
@@ -212,6 +294,29 @@ test('donor helper copy distinguishes palette defaults and explicit overrides', 
   await expect(
     page.getByRole('menuitemradio', { name: 'Catppuccin Latte', exact: true })
   ).toBeVisible()
+})
+
+test('the primary accent grid stays six-choice while additional and theme accents remain separate', async ({
+  page,
+}) => {
+  const accent = page.getByRole('radiogroup', { name: 'Accent', exact: true })
+  const primary = accent.locator('[data-primary-accent-grid]')
+  const ids = await primary.locator('[data-primary-accent]').evaluateAll((elements) =>
+    elements.map((element) => element.getAttribute('data-primary-accent'))
+  )
+  expect(ids).toEqual(['theme', 'blue', 'green', 'amber', 'cyan', 'pink'])
+  await expect(primary.getByRole('radio')).toHaveCount(6)
+  await expect(primary.getByRole('radio', { name: 'Theme default' })).toBeChecked()
+  await expect(accent.getByText('Additional colors', { exact: true })).toBeVisible()
+  await expect(accent.locator('[data-additional-accent="violet"]')).toBeVisible()
+  await expect(accent.getByText('Theme accents', { exact: true })).toBeVisible()
+  await expect(accent.locator('[data-theme-accent]')).toHaveCount(4)
+
+  const blue = primary.getByRole('radio', { name: 'Blue', exact: true })
+  await blue.focus()
+  await page.keyboard.press('Space')
+  await expect(blue).toBeChecked()
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"blue"')
 })
 
 test('unsaved theme selection updates live miniatures and Cancel restores the snapshot', async ({

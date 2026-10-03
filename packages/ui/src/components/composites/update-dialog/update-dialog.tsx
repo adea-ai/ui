@@ -853,7 +853,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   stop, named by the heading above it, or a keyboard user cannot
                   scroll it (`scrollable-region-focusable`). */}
               <div
-                class="max-h-52 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground"
+                class="max-h-52 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-code text-code leading-5 whitespace-pre-wrap text-muted-foreground"
                 role="region"
                 aria-labelledby="update-release-notes"
                 tabindex="0"
@@ -882,7 +882,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                   stop, named by the heading above it, or a keyboard user cannot
                   scroll it (`scrollable-region-focusable`). */}
               <div
-                class="max-h-72 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-muted-foreground"
+                class="max-h-72 overflow-y-auto rounded-xl border border-border bg-background/45 p-4 font-code text-code leading-5 whitespace-pre-wrap text-muted-foreground"
                 role="region"
                 aria-labelledby="update-changelog"
                 tabindex="0"

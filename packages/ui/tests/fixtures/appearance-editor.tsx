@@ -28,6 +28,7 @@ import {
   AppearancePopover,
   type AppearanceDraft,
 } from '../../src/components/composites/appearance-editor'
+import { Text } from '../../src/components/ui/typography/typography'
 import '../../src/styles/globals.css'
 
 // A disposable host adapter demonstrates the editor's ports. Product persistence
@@ -129,6 +130,14 @@ function Fixture() {
       </button>
       <div data-live-preview class="bg-background text-primary">
         Visible application
+      </div>
+      <div aria-label="Typography preview">
+        <Text data-testid="content-font-preview" variant="body">
+          Reading preview
+        </Text>
+        <Text data-testid="code-font-preview" variant="code">
+          const preview = true
+        </Text>
       </div>
       <AppearancePopover
         open={open()}

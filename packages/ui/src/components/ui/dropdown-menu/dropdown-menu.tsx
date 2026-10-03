@@ -113,7 +113,7 @@ export function DropdownMenuItem(
       {local.shortcut ? (
         <span
           aria-hidden="true"
-          class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest"
+          class="text-muted-foreground ms-auto font-code text-code tracking-widest"
         >
           {local.shortcut}
         </span>
@@ -139,7 +139,7 @@ export function DropdownMenuShortcut(props: ComponentProps<'span'>) {
     <span
       data-slot="dropdown-menu-shortcut"
       aria-hidden="true"
-      class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', local.class)}
+      class={cn('text-muted-foreground ms-auto font-code text-code tracking-widest', local.class)}
       {...rest}
     />
   )

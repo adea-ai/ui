@@ -235,7 +235,11 @@ provider takes an initial selection and every axis is a plain value:
     darkThemeId: 'adea-dark',
     accent: 'theme', // or 'violet' | 'blue' | 'green' | 'amber' | 'cyan' | 'pink',
     //                    or a theme-carried accent such as 'ansi-blue'
-    font: 'space-grotesk', // or 'system' | 'geist' | 'geist-mono' | 'jetbrains-mono'
+    fonts: {
+      ui: { family: 'system', size: 14 },
+      content: { family: 'system', size: 14 },
+      code: { family: 'system', size: 12 },
+    },
   }}
 >
 ```
@@ -245,7 +249,13 @@ provider takes an initial selection and every axis is a plain value:
 | Appearance | `light`, `dark`, `system`                                                                            | a `dark` class plus `color-scheme` on `<html>`                                      |
 | Theme      | any of the 34 catalogue ids                                                                          | the variant's tokens, written as custom properties on `<html>`                      |
 | Accent     | `theme` (follow the variant), one of six presets, or an accent the theme pair carries (`ansi-blue`…) | a `data-accent` attribute on `<html>`, plus the resolved roles as custom properties |
-| Typeface   | five options                                                                                         | a `data-font` attribute on `<html>`                                                 |
+| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                         | `data-ui-font`, `data-content-font`, `data-code-font` plus `--font-*-size` values   |
+
+Older single-font `font` preferences remain readable and migrate their family to
+the UI axis; new preferences store `fonts` with one family and size per axis.
+Canonical size properties stay in pixels for native editor integrations; the
+shared text tokens use rem-relative ratios so browser root-text enlargement still
+scales UI, prose, keyboard keys and code.
 
 Read and change the current selection with `useTheme()`:
 
@@ -259,8 +269,9 @@ itself (`@adea-ai/themes`' `themeAccentPresets`): the palette's own blue,
 magenta, cyan and green, offered only when both themes clear the catalogue's
 accent floors. Their ids are role-shaped, so `ansi-blue` follows a theme switch
 to the new theme's blue; a slot the new pair cannot offer falls back to the
-theme's own primary. `AppearancePanel` and `AppearanceEditor` offer them after
-the six presets.
+theme's own primary. The primary grid is the theme default plus five standard
+presets; Violet remains available under Additional colors, and theme accents
+have their own group.
 
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
@@ -299,7 +310,12 @@ Fonts are opt-in. `globals.css` does not import font assets; import
 @import '@adea-ai/ui/fonts.css'; /* omit to bring your own */
 ```
 
-`--font-sans` and `--font-mono` are the two variables everything reads.
+`--font-ui`, `--font-content` and `--font-code` are the three family axes.
+`--font-sans` and `--font-mono` remain compatibility aliases for UI and code.
+The shared projection and prepaint helpers are exported from
+`@adea-ai/ui/lib/appearance-font-settings`; hosts can normalize persisted ids,
+apply the shared data attributes and size properties, and reuse the same
+bootstrap snippet without duplicating catalogue rules.
 
 ## Adding a component
 
@@ -317,7 +333,7 @@ Every component, every variant and the token galleries are in the workshop:
 bun run storybook
 ```
 
-The toolbar switches theme, accent, typeface and density live, which is the
+The toolbar switches theme, accent, fonts and density live, which is the
 fastest way to see how a component behaves across the catalogue rather than in
 one theme.
 

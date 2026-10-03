@@ -22,6 +22,17 @@ type PackedSample = {
 const coreSamples: PackedSample[] = [
   { name: 'baseline', imports: '', jsx: '<button>Baseline</button>', source: '' },
   {
+    name: 'appearance-font-settings',
+    imports:
+      "import { applyAppearanceFontSettings, fontSettingsBootstrapScript, normalizeAppearanceEditorFontSettings } from '@adea-ai/ui/lib/appearance-font-settings';\nconst normalizedFonts = normalizeAppearanceEditorFontSettings({ ui: { family: 'geist', size: 16 } });\nconst projectedFonts = applyAppearanceFontSettings(document.documentElement, normalizedFonts.settings);\nconst bootstrap = fontSettingsBootstrapScript('appearance');",
+    jsx: '<output>{projectedFonts.settings.ui.size} {bootstrap.length}</output>',
+    sources: [
+      'lib/appearance-font-settings.ts',
+      'lib/font-catalog.ts',
+      'lib/safe-script.ts',
+    ],
+  },
+  {
     name: 'button-root',
     imports: "import { Button } from '@adea-ai/ui'",
     jsx: '<Button>Action</Button>',
@@ -316,6 +327,14 @@ try {
             )
           )
             throw new Error(`Packed ${condition} consumer did not include UpdateDialog`)
+          if (sample.name === 'appearance-font-settings') {
+            if (!uiModules.some((id) => id.includes('/lib/appearance-font-settings')))
+              throw new Error('Packed ' + condition + ' consumer did not include the font settings API')
+            if (modules.some((id) => id.includes('/node_modules/@adea-ai/themes/')))
+              throw new Error('Packed ' + condition + ' font settings retained the theme catalogue')
+            if (uiModules.some((id) => id.includes('/lib/tokens.')))
+              throw new Error('Packed ' + condition + ' font settings retained the token manifest')
+          }
           if (sample.name.startsWith('input-control-')) {
             if (
               uiModules.some((id) => id.includes('/components/ui/input/input.tsx')) ||

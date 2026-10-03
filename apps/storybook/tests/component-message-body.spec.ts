@@ -58,3 +58,28 @@ test('a code block is spaced from the paragraph after it as from the one before'
   expect(Math.abs(gapBelow - gapAbove)).toBeLessThanOrEqual(4)
   await expect(paragraphs.nth(1)).toHaveText(/^After the fence\./)
 })
+
+test('real transcript prose and fenced code retain independent readable roles at 200% text', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  const sizes = await page.evaluate(() => {
+    const prose = document.querySelector<HTMLElement>('#fenced > p')
+    const code = document.querySelector<HTMLElement>('#fenced pre code')
+    if (!prose || !code) throw new Error('Expected transcript prose and fenced code')
+    return {
+      root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      prose: Number.parseFloat(getComputedStyle(prose).fontSize),
+      code: Number.parseFloat(getComputedStyle(code).fontSize),
+      proseFamily: getComputedStyle(prose).fontFamily,
+      codeFamily: getComputedStyle(code).fontFamily,
+    }
+  })
+  expect(sizes.root).toBe(32)
+  expect(sizes.prose).toBe(28)
+  expect(sizes.code).toBe(24)
+  expect(sizes.proseFamily).toContain('system-ui')
+  expect(sizes.codeFamily).toContain('ui-monospace')
+})
