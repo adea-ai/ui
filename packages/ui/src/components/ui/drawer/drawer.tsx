@@ -41,7 +41,14 @@ export function DrawerOverlay(props: ComponentProps<typeof DrawerPrimitive.Overl
   )
 }
 
-export type DrawerContentProps = ComponentProps<typeof DrawerPrimitive.Content> & {
+export type DrawerContentProps = Omit<ComponentProps<typeof DrawerPrimitive.Content>, 'side'> & {
+  /**
+   * Not accepted here. corvu reads the side from the root `Drawer`, which uses it
+   * for the drag axis and publishes it as `data-side`; a `side` on the content
+   * would type-check through the polymorphic props and be silently ignored,
+   * leaving the drawer on the bottom edge. Set `<Drawer side="right">` instead.
+   */
+  side?: never
   /**
    * Draw the grabber at the leading edge of the sheet.
    *

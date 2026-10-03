@@ -1,0 +1,571 @@
+{
+  "$comment": "Every registry:ui item and the design-system cards that show it. tests/design-system.test.ts holds this to the registry and to design-system/components/.",
+  "items": {
+    "accordion": [
+      {
+        "card": "Accordion",
+        "group": "Layout"
+      }
+    ],
+    "alert": [
+      {
+        "card": "Alert",
+        "group": "Feedback"
+      }
+    ],
+    "alert-dialog": [
+      {
+        "card": "AlertDialog",
+        "group": "Overlays"
+      }
+    ],
+    "aspect-ratio": [
+      {
+        "card": "AspectRatio",
+        "group": "Layout"
+      }
+    ],
+    "avatar": [
+      {
+        "card": "Avatar",
+        "group": "Data display"
+      }
+    ],
+    "badge": [
+      {
+        "card": "Badge",
+        "group": "Feedback"
+      }
+    ],
+    "board": [
+      {
+        "card": "Board",
+        "group": "Data display"
+      }
+    ],
+    "breadcrumb": [
+      {
+        "card": "Breadcrumb",
+        "group": "Navigation"
+      }
+    ],
+    "button": [
+      {
+        "card": "Button",
+        "group": "Actions"
+      }
+    ],
+    "button-group": [
+      {
+        "card": "ButtonGroup",
+        "group": "Actions"
+      }
+    ],
+    "calendar": [
+      {
+        "card": "Calendar",
+        "group": "Forms"
+      }
+    ],
+    "card": [
+      {
+        "card": "Card",
+        "group": "Layout"
+      }
+    ],
+    "carousel": [
+      {
+        "card": "Carousel",
+        "group": "Data display"
+      }
+    ],
+    "chart": [
+      {
+        "card": "Chart",
+        "group": "Data display"
+      }
+    ],
+    "checkbox": [
+      {
+        "card": "Checkbox",
+        "group": "Forms"
+      }
+    ],
+    "code-block": [
+      {
+        "card": "CodeBlock",
+        "group": "Code"
+      }
+    ],
+    "collapsible": [
+      {
+        "card": "Collapsible",
+        "group": "Layout"
+      }
+    ],
+    "combobox": [
+      {
+        "card": "Combobox",
+        "group": "Forms"
+      }
+    ],
+    "command": [
+      {
+        "card": "Command",
+        "group": "Overlays"
+      }
+    ],
+    "context-menu": [
+      {
+        "card": "ContextMenu",
+        "group": "Overlays"
+      }
+    ],
+    "detail-panel": [
+      {
+        "card": "DetailPanel",
+        "group": "Layout"
+      }
+    ],
+    "dialog": [
+      {
+        "card": "Dialog",
+        "group": "Overlays"
+      }
+    ],
+    "diff-block": [
+      {
+        "card": "DiffBlock",
+        "group": "Code"
+      }
+    ],
+    "drawer": [
+      {
+        "card": "Drawer",
+        "group": "Overlays"
+      }
+    ],
+    "dropdown-menu": [
+      {
+        "card": "DropdownMenu",
+        "group": "Overlays"
+      }
+    ],
+    "empty": [
+      {
+        "card": "Empty",
+        "group": "Feedback"
+      }
+    ],
+    "entity-icon": [
+      {
+        "card": "EntityIcon",
+        "group": "Data display"
+      }
+    ],
+    "field": [
+      {
+        "card": "Field",
+        "group": "Forms"
+      }
+    ],
+    "hover-card": [
+      {
+        "card": "HoverCard",
+        "group": "Overlays"
+      }
+    ],
+    "input": [
+      {
+        "card": "Input",
+        "group": "Forms"
+      }
+    ],
+    "input-group": [
+      {
+        "card": "InputGroup",
+        "group": "Forms"
+      }
+    ],
+    "input-otp": [
+      {
+        "card": "InputOTP",
+        "group": "Forms"
+      }
+    ],
+    "item": [
+      {
+        "card": "Item",
+        "group": "Data display"
+      }
+    ],
+    "kbd": [
+      {
+        "card": "Kbd",
+        "group": "Data display"
+      }
+    ],
+    "label": [
+      {
+        "card": "Label",
+        "group": "Forms"
+      }
+    ],
+    "menubar": [
+      {
+        "card": "Menubar",
+        "group": "Navigation"
+      }
+    ],
+    "modal-dialog": [
+      {
+        "card": "ModalDialog",
+        "group": "Overlays"
+      }
+    ],
+    "native-select": [
+      {
+        "card": "NativeSelect",
+        "group": "Forms"
+      }
+    ],
+    "navigation-menu": [
+      {
+        "card": "NavigationMenu",
+        "group": "Navigation"
+      }
+    ],
+    "pagination": [
+      {
+        "card": "Pagination",
+        "group": "Navigation"
+      }
+    ],
+    "popover": [
+      {
+        "card": "Popover",
+        "group": "Overlays"
+      }
+    ],
+    "progress": [
+      {
+        "card": "Progress",
+        "group": "Feedback"
+      }
+    ],
+    "radio-group": [
+      {
+        "card": "RadioGroup",
+        "group": "Forms"
+      }
+    ],
+    "resizable": [
+      {
+        "card": "Resizable",
+        "group": "Layout"
+      }
+    ],
+    "scroll-area": [
+      {
+        "card": "ScrollArea",
+        "group": "Layout"
+      }
+    ],
+    "select": [
+      {
+        "card": "Select",
+        "group": "Forms"
+      }
+    ],
+    "separator": [
+      {
+        "card": "Separator",
+        "group": "Layout"
+      }
+    ],
+    "sheet": [
+      {
+        "card": "Sheet",
+        "group": "Overlays"
+      }
+    ],
+    "skeleton": [
+      {
+        "card": "Skeleton",
+        "group": "Feedback"
+      }
+    ],
+    "slider": [
+      {
+        "card": "Slider",
+        "group": "Forms"
+      }
+    ],
+    "spinner": [
+      {
+        "card": "Spinner",
+        "group": "Feedback"
+      }
+    ],
+    "status-chip": [
+      {
+        "card": "StatusChip",
+        "group": "Feedback"
+      }
+    ],
+    "switch": [
+      {
+        "card": "Switch",
+        "group": "Forms"
+      }
+    ],
+    "table": [
+      {
+        "card": "Table",
+        "group": "Data display"
+      }
+    ],
+    "tabs": [
+      {
+        "card": "Tabs",
+        "group": "Navigation"
+      }
+    ],
+    "text-link": [
+      {
+        "card": "TextLink",
+        "group": "Navigation"
+      }
+    ],
+    "textarea": [
+      {
+        "card": "Textarea",
+        "group": "Forms"
+      }
+    ],
+    "toast": [
+      {
+        "card": "Toast",
+        "group": "Feedback"
+      }
+    ],
+    "toggle": [
+      {
+        "card": "Toggle",
+        "group": "Actions"
+      }
+    ],
+    "toggle-group": [
+      {
+        "card": "ToggleGroup",
+        "group": "Actions"
+      }
+    ],
+    "tooltip": [
+      {
+        "card": "Tooltip",
+        "group": "Overlays"
+      }
+    ],
+    "app-shell": [
+      {
+        "card": "AppShell",
+        "group": "Shell"
+      }
+    ],
+    "floating-preview": [
+      {
+        "card": "FloatingPreview",
+        "group": "Shell"
+      }
+    ],
+    "orbit-layout": [
+      {
+        "card": "OrbitLayout",
+        "group": "Shell"
+      }
+    ],
+    "page": [
+      {
+        "card": "Page",
+        "group": "Shell"
+      }
+    ],
+    "panel": [
+      {
+        "card": "Panel",
+        "group": "Shell"
+      }
+    ],
+    "side-rail": [
+      {
+        "card": "SideRail",
+        "group": "Shell"
+      }
+    ],
+    "sidebar-nav": [
+      {
+        "card": "SidebarNav",
+        "group": "Shell"
+      }
+    ],
+    "split-layout": [
+      {
+        "card": "SplitLayout",
+        "group": "Shell"
+      }
+    ],
+    "status-bar": [
+      {
+        "card": "StatusBar",
+        "group": "Shell"
+      }
+    ],
+    "top-bar": [
+      {
+        "card": "TopBar",
+        "group": "Shell"
+      }
+    ],
+    "virtual-window": [
+      {
+        "card": "VirtualWindow",
+        "group": "Shell"
+      }
+    ],
+    "about-dialog": [
+      {
+        "card": "AboutDialog",
+        "group": "Composites"
+      }
+    ],
+    "account-menu": [
+      {
+        "card": "AccountMenu",
+        "group": "Composites"
+      }
+    ],
+    "action-button": [
+      {
+        "card": "ActionButton",
+        "group": "Composites"
+      }
+    ],
+    "appearance-editor": [
+      {
+        "card": "AppearanceEditor",
+        "group": "Composites"
+      }
+    ],
+    "catalog-browser": [
+      {
+        "card": "CatalogBrowser",
+        "group": "Composites"
+      }
+    ],
+    "help-center": [
+      {
+        "card": "HelpCenter",
+        "group": "Composites"
+      }
+    ],
+    "list-row": [
+      {
+        "card": "ListRow",
+        "group": "Composites"
+      }
+    ],
+    "scene-controls": [
+      {
+        "card": "SceneControls",
+        "group": "Composites"
+      }
+    ],
+    "settings": [
+      {
+        "card": "Settings",
+        "group": "Composites"
+      }
+    ],
+    "stat": [
+      {
+        "card": "Stat",
+        "group": "Composites"
+      }
+    ],
+    "tree": [
+      {
+        "card": "Tree",
+        "group": "Composites"
+      }
+    ],
+    "update-dialog": [
+      {
+        "card": "UpdateDialog",
+        "group": "Composites"
+      }
+    ],
+    "workspace-mark": [
+      {
+        "card": "WorkspaceMark",
+        "group": "Composites"
+      }
+    ],
+    "conversation": [
+      {
+        "card": "ChatComposer",
+        "group": "Conversation",
+        "source": "conversation/chat-composer.tsx"
+      },
+      {
+        "card": "BusySendButton",
+        "group": "Conversation",
+        "source": "conversation/busy-send-button.tsx"
+      },
+      {
+        "card": "MessageRow",
+        "group": "Conversation",
+        "source": "conversation/message-row.tsx"
+      },
+      {
+        "card": "TranscriptComposition",
+        "group": "Conversation",
+        "source": "conversation/transcript-composition.tsx"
+      },
+      {
+        "card": "ThreadPanel",
+        "group": "Conversation",
+        "source": "conversation/thread-panel.tsx"
+      }
+    ],
+    "theming": [
+      {
+        "card": "ThemePicker",
+        "group": "Theming",
+        "source": "theme/theme-picker.tsx"
+      },
+      {
+        "card": "ThemeToggle",
+        "group": "Theming",
+        "source": "theme/theme-toggle.tsx"
+      },
+      {
+        "card": "ThemeModeToggle",
+        "group": "Theming",
+        "source": "theme/theme-mode-toggle.tsx"
+      },
+      {
+        "card": "AppearancePanel",
+        "group": "Theming",
+        "source": "theme/appearance-panel.tsx"
+      }
+    ],
+    "motion": [
+      {
+        "card": "Presence",
+        "group": "Motion",
+        "source": "motion/presence.tsx"
+      }
+    ]
+  }
+}

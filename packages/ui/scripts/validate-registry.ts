@@ -22,13 +22,14 @@
  *   served       a payload whose file is not in the published tree, or whose
  *                published copy carries an import the consumer cannot resolve —
  *                the registry looked complete and every install 404'd
- *   staleness    a committed registry.json that no longer matches the source
+ *   staleness    a committed registry.json, payload or served copy in public/r whose
+ *                bytes differ from what `registry:build` writes — the comparison
+ *                CI's rebuild-and-diff gate makes, so "valid" here means valid there
  */
 
-import { readFileSync } from 'node:fs'
-import { existsSync } from 'node:fs'
-import { dirname, join, resolve as resolvePath } from 'node:path'
-import { packageRoot, publicRegistryDir, registry, registryItems } from './registry-core'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, relative, resolve as resolvePath } from 'node:path'
+import { packageRoot, publicRegistryDir, registryItems, registryOutputs } from './registry-core'
 
 /**
  * Assert that a published file is something a consumer could actually build.
@@ -70,6 +71,65 @@ function checkServedImports(
       )
     }
   }
+}
+
+/** Every file under a directory, as absolute paths. */
+function filesUnder(dir: string): string[] {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name))
+}
+
+/** At most five paths, then a count — a finding is a pointer, not a listing. */
+function sample(paths: string[]): string {
+  const shown = paths.slice(0, 5).join(', ')
+  return paths.length > 5 ? `${shown} and ${paths.length - 5} more` : shown
+}
+
+/**
+ * Compare the committed registry, byte for byte, with what the build would write.
+ *
+ * CI rebuilds the registry and fails when `registry.json` or anything in `public/r`
+ * changes. A served copy is the source with one rewrite applied, so editing a
+ * component without rebuilding leaves its served copy stale — and a parsed-JSON
+ * comparison of `registry.json` alone could not see that. A file in `public/r` the
+ * build would not write is stale too: the build clears the directory first.
+ */
+export function staleOutputs(
+  expected: Map<string, string>,
+  servedDir: string = publicRegistryDir,
+  root: string = packageRoot
+): string[] {
+  const differs: string[] = []
+  const missing: string[] = []
+  for (const [path, content] of expected) {
+    if (!existsSync(path)) missing.push(relative(root, path))
+    else if (readFileSync(path, 'utf8') !== content) differs.push(relative(root, path))
+  }
+  const extra = filesUnder(servedDir)
+    .filter((path) => !expected.has(path))
+    .map((path) => relative(root, path))
+    .toSorted()
+
+  const fix = 'Run `bun run registry:build` and commit the result.'
+  const findings: string[] = []
+  if (differs.length > 0) {
+    findings.push(
+      `${differs.length} committed registry file(s) differ from what the build produces: ${sample(differs)}. ${fix}`
+    )
+  }
+  if (missing.length > 0) {
+    findings.push(
+      `${missing.length} registry file(s) the build produces are not committed: ${sample(missing)}. ${fix}`
+    )
+  }
+  if (extra.length > 0) {
+    findings.push(
+      `${extra.length} file(s) in public/r are not produced by the build: ${sample(extra)}. ${fix}`
+    )
+  }
+  return findings
 }
 
 const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
@@ -239,13 +299,9 @@ export function validateRegistry(): string[] {
           'Run `bun run registry:build`.'
       )
     }
-
-    if (JSON.stringify(committed) !== JSON.stringify(registry)) {
-      findings.push(
-        'registry.json differs from the registry derived from source. Run `bun run registry:build`.'
-      )
-    }
   }
+
+  findings.push(...staleOutputs(registryOutputs()))
 
   return findings
 }

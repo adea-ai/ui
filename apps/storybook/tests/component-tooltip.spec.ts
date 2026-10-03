@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
-test('the tooltip never renders a caret', async ({ page }) => {
+test('the tooltip never renders a caret and never takes the pointer', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
   await trigger.focus()
 
@@ -54,6 +54,9 @@ test('the tooltip never renders a caret', async ({ page }) => {
   // and an arrow anchored into gutters more than once. Nothing vector should
   // ship inside one.
   await expect(tooltip.locator('svg')).toHaveCount(0)
+  // A tip is informational: while it is open it must stay out of the pointer
+  // path, or it blocks the control beside the one it describes.
+  await expect(tooltip).toHaveCSS('pointer-events', 'none')
 })
 
 test('a force-mounted tooltip leaves the accessibility tree as its close animation starts', async ({
@@ -104,4 +107,22 @@ test('a controlled tooltip hides caller-visible content only while closed', asyn
   await expect(retainedTooltip).toHaveAttribute('aria-hidden', 'true')
   await expect(page.getByRole('tooltip', { name: 'Controlled tooltip description' })).toHaveCount(0)
   await expect(trigger).not.toHaveAttribute('aria-describedby', /.+/)
+})
+
+test('a closing tooltip stops intercepting the pointer', async ({ page }) => {
+  const trigger = page.getByRole('button', {
+    name: 'Focus to open the force-mounted tooltip',
+  })
+  const next = page.getByRole('button', { name: 'Next action' })
+
+  await trigger.hover()
+  const tip = page.getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  // A tooltip is never interactive, and the placement draws it below its
+  // action — where a hit-testing tip would hold the next control hostage.
+  // The pointer belongs to the control underneath, open or departing.
+  await expect(tip).toHaveCSS('pointer-events', 'none')
+  await next.hover()
+  await next.click()
+  await expect(next).toBeFocused()
 })

@@ -17,6 +17,7 @@
     "bun.lock",
     "apps/*/public/assets",
     "packages/ui/registry.json",
-    "packages/ui/public/r/**"
+    "packages/ui/public/r/**",
+    "packages/ui/design-system/components/**/*.html"
   ]
 }

@@ -1,0 +1,27 @@
+<!-- @dsCard group="Motion" height=200 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, Show, Presence, Motion, Button } = window.AdeaUI;
+  const [open, setOpen] = createSignal(true);
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;width:360px">
+  <${Button} variant="outline" size="sm" aria-expanded=${open} onClick=${(_event) => setOpen(!open())}>
+    ${() => (open() ? 'Hide summary' : 'Show summary')}
+  <//>
+  <${Presence} initial=${false}>
+    <${Show} when=${open}>
+      <${Motion.div}
+        initial=${{ opacity: 0, scale: 0.96 }}
+        animate=${{ opacity: 1, scale: 1 }}
+        exit=${{ opacity: 0, scale: 0.96 }}
+        transition=${{ duration: 0.16, easing: 'ease-out' }}
+        style=${{ width: '100%', 'box-sizing': 'border-box', border: '1px solid var(--border)', 'border-radius': 'var(--radius-xl)', background: 'var(--card)', padding: '16px' }}
+      >
+        <p style="margin:0 0 4px;font-size:14px;font-weight:600">Run summary</p>
+        <p style="margin:0;font-size:14px;color:var(--muted-foreground)">Twelve turns, two tool errors, finished in four minutes. Hide it and it fades out before it unmounts.</p>
+      <//>
+    <//>
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

@@ -1,0 +1,48 @@
+<!-- @dsCard group="Data display" height=230 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Table,
+    TableCaption,
+    TableHeader,
+    TableRow,
+    TableHead,
+    TableBody,
+    TableCell,
+    Badge,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <${Table} style="width:600px">
+        <${TableCaption}>Budget verdicts from the last three runs.<//>
+        <${TableHeader}
+          ><${TableRow}
+            ><${TableHead}>Run<//><${TableHead}>Lane<//><${TableHead}>Status<//
+            ><${TableHead} style="text-align:end">Duration<//><//
+          ><//
+        >
+        <${TableBody}>
+          <${TableRow}
+            ><${TableCell} style="font-family:var(--font-mono);font-size:12px">r-1042<//
+            ><${TableCell}>soak<//><${TableCell}><${Badge} variant="success">Passed<//><//
+            ><${TableCell} style="text-align:end">23h 41m<//><//
+          >
+          <${TableRow}
+            ><${TableCell} style="font-family:var(--font-mono);font-size:12px">r-1041<//
+            ><${TableCell}>a11y<//><${TableCell}><${Badge} variant="destructive">Failed<//><//
+            ><${TableCell} style="text-align:end">8m 12s<//><//
+          >
+          <${TableRow}
+            ><${TableCell} style="font-family:var(--font-mono);font-size:12px">r-1040<//
+            ><${TableCell}>registry<//><${TableCell}><${Badge} variant="warning">Skipped<//><//
+            ><${TableCell} style="text-align:end">—<//><//
+          >
+        <//>
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

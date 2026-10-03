@@ -86,8 +86,11 @@ export function ThreadPanel(props: ThreadPanelProps) {
         <div class="bg-muted/40 shrink-0 border-b border-border px-3 py-2">{local.root}</div>
       </Show>
 
+      {/* The replies carry their own inline padding: a row brings only `px-1`, so
+          a bubble at its widest otherwise meets the panel's edge. `px-2` plus the
+          row's `px-1` lands on the `px-3` line the header and root use. */}
       <div
-        class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2"
         role="region"
         aria-label="Thread replies"
         tabindex="0"

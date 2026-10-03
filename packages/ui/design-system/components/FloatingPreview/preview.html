@@ -1,0 +1,13 @@
+<!-- @dsCard group="Shell" height=300 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Button, FloatingPreview } = window.AdeaUI;
+  render(() => html`
+<div style="position:relative;height:268px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--surface-sunken, var(--muted));padding:16px;box-sizing:border-box">
+  <p style="margin:0;max-width:360px;font-size:14px;color:var(--muted-foreground)">The host region. The preview is bounded by it: drag the Move handle or an edge, or use the arrow keys on either.</p>
+  <${FloatingPreview} label="Preview window" source=${{ width: 1600, height: 1000 }} actions=${html`<${Button} size="xs" variant="outline">Actions<//>`}>
+    <div style="display:grid;height:100%;min-height:160px;place-items:center;font-size:14px;color:var(--muted-foreground)">Preview content is supplied by the host.</div>
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

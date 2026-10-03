@@ -39,9 +39,11 @@ bun run build            # the library build
 bun run registry:build   # regenerate the registry after adding or moving a component
 bun run registry:validate
 bun run test:storybook   # accessibility and interaction checks against the built workshop
+bun run verify:changed   # only the checks this branch's changes reach, including CI's registry drift gate
 ```
 
-Run the narrowest of these while iterating, then all of them before marking a pull
+Run the narrowest of these while iterating — `verify:changed` picks them for you
+from the diff against `origin/main` — then all of them before marking a pull
 request ready. A skipped check is not a passing check.
 
 ## What a component needs

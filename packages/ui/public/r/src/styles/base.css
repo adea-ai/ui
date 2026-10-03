@@ -592,6 +592,19 @@
       color var(--duration-normal) var(--ease-out);
   }
 
+  /* A tooltip is informational: neither its popper positioner nor its content
+     may intercept the pointer and block the control the tooltip describes —
+     or a control beside it. The layer stack writes `pointer-events: auto`
+     inline on the active layer, so the content needs `!important` to stay out
+     of the pointer path. */
+  [data-popper-positioner]:has(> [data-slot='tooltip-content']) {
+    pointer-events: none;
+  }
+
+  [data-slot='tooltip-content'] {
+    pointer-events: none !important;
+  }
+
   /* Keyboard focus only. `:focus-visible` rather than `:focus` so a pointer
      click never paints a ring. */
   :focus-visible {

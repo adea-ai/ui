@@ -1,0 +1,42 @@
+<!-- @dsCard group="Data display" height=220 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, Board, BoardCardBody, BoardCardTitle, Badge } = window.AdeaUI;
+  const columns = [
+    { id: 'planned', label: 'Planned' },
+    { id: 'in_progress', label: 'In-Progress' },
+    { id: 'done', label: 'Completed', disabled: true },
+  ];
+  // Three of the story's four lanes, so all fit the card; the board scrolls sideways past that.
+  const legal = {
+    planned: ['in_progress'],
+    in_progress: ['planned'],
+    done: [],
+  };
+  const tasks = [
+    { id: 't1', title: 'Port the appearance view', priority: 'urgent' },
+    { id: 't2', title: 'Audit the rail against KiroCrew', priority: 'normal' },
+    { id: 't3', title: 'Retire packages/ui in adea', priority: 'low' },
+    { id: 't4', title: 'Document the theme axis', priority: 'normal' },
+  ];
+  const priorityVariant = { low: 'subtle', normal: 'secondary', urgent: 'warning' };
+  const [placement, setPlacement] = createSignal({ t1: 'in_progress', t2: 'planned', t3: 'planned', t4: 'in_progress' });
+  const card = (task) => html`
+    <${BoardCardBody}>
+      <${BoardCardTitle}>${task.title}<//>
+      <${Badge} variant=${priorityVariant[task.priority]} size="sm">${task.priority}<//>
+    <//>
+  `;
+  render(() => html`
+<${Board}
+  columns=${columns}
+  items=${tasks}
+  itemId=${(task) => task.id}
+  itemColumn=${(task) => placement()[task.id] ?? 'planned'}
+  canDrop=${(_task, from, to) => (legal[from] ?? []).includes(to)}
+  onMove=${(move) => setPlacement((current) => ({ ...current, [move.itemId]: move.to }))}
+  emptyColumn=${(column) => `No tasks in ${column.label}`}
+  children=${card}
+/>
+`, document.getElementById('root'));
+</script>

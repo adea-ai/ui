@@ -445,8 +445,35 @@ export const registry = {
   items: registryItems,
 }
 
+/**
+ * Every file `registry:build` writes, keyed by absolute path, with its exact bytes.
+ *
+ * The build writes this map and the validator compares the committed tree with it,
+ * so "valid locally" and "what CI's rebuild produces" are the same claim. Before
+ * this, the validator compared `registry.json` as parsed JSON and never looked at
+ * the served copies in `public/r`, so a stale served file passed locally and failed
+ * CI's rebuild-and-diff gate.
+ */
+function registryOutputs(items: RegistryItem[] = registryItems): Map<string, string> {
+  const outputs = new Map<string, string>()
+  const catalogue = `${JSON.stringify(registry, null, 2)}\n`
+  outputs.set(REGISTRY_PATH, catalogue)
+  for (const item of items) {
+    outputs.set(join(PUBLIC_R, `${item.name}.json`), `${JSON.stringify(item, null, 2)}\n`)
+  }
+  outputs.set(join(PUBLIC_R, 'registry.json'), catalogue)
+  for (const item of items) {
+    for (const file of item.files) {
+      const source = join(PACKAGE_ROOT, file.path)
+      if (!existsSync(source)) continue
+      outputs.set(join(PUBLIC_R, file.path), servedSource(source, file.target))
+    }
+  }
+  return outputs
+}
+
 export const packageRoot = PACKAGE_ROOT
 export const registryPath = REGISTRY_PATH
 export const publicRegistryDir = PUBLIC_R
-export { writeServedTree, servedSource, libFiles, LIB_ITEM_NAME, LIB_TARGET_DIR }
+export { writeServedTree, servedSource, libFiles, registryOutputs, LIB_ITEM_NAME, LIB_TARGET_DIR }
 export type { RegistryItem }

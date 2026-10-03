@@ -1,0 +1,14 @@
+<!-- @dsCard group="Navigation" height=110 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Pagination } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px;width:576px">
+        <${Pagination} count=${84} defaultPage=${40} />
+        <${Pagination} count=${4} defaultPage=${2} />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

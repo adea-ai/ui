@@ -1,0 +1,48 @@
+<!-- @dsCard group="Navigation" height=320 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, NavigationMenu, NavigationMenuMenu, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuGroup, NavigationMenuGroupLabel, NavigationMenuItem, NavigationMenuSeparator } = window.AdeaUI;
+  const icon = (Glyph) => html`<${Glyph} aria-hidden="true" class="size-4" />`;
+  // Opens on Guides so the card shows the shared viewport with a panel in it.
+  render(() => html`
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:8px">
+  <${NavigationMenu} label="Documentation">
+    <${NavigationMenuMenu} value="guides">
+      <${NavigationMenuTrigger}>Guides<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuGroup}>
+          <${NavigationMenuGroupLabel}>Getting started<//>
+          <${NavigationMenuItem} href="#install" icon=${icon(Icons.FileText)}>Installation<//>
+          <${NavigationMenuItem} href="#themes" icon=${icon(Icons.Layers)} description="The accent, font and appearance axes.">Theming<//>
+        <//>
+        <${NavigationMenuSeparator} />
+        <${NavigationMenuItem} href="#support" icon=${icon(Icons.CircleHelp)}>Support<//>
+      <//>
+    <//>
+    <${NavigationMenuMenu} value="components">
+      <${NavigationMenuTrigger}>Components<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuItem} href="#button">Button<//>
+        <${NavigationMenuItem} href="#dialog">Dialog<//>
+        <${NavigationMenuItem} href="#board">Board<//>
+      <//>
+    <//>
+    <${NavigationMenuMenu} value="settings">
+      <${NavigationMenuTrigger}>Settings<//>
+      <${NavigationMenuContent}>
+        <${NavigationMenuItem} href="#general" icon=${icon(Icons.Settings)}>General<//>
+      <//>
+    <//>
+  <//>
+</div>
+`, document.getElementById('root'));
+  // Open Guides the way a pointer does, then drop the focus ring a mouse would not show.
+  requestAnimationFrame(() => {
+    const trigger = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Guides');
+    if (!trigger) return;
+    for (const type of ['pointerenter', 'pointermove', 'pointerdown', 'pointerup', 'click']) {
+      trigger.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'mouse', button: 0 }));
+    }
+    trigger.blur();
+  });
+</script>

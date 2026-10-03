@@ -25,6 +25,13 @@ export const badgeVariants = cva(
         destructive: 'bg-destructive-subtle text-foreground',
         info: 'bg-info-subtle text-foreground',
         subtle: 'bg-primary-subtle text-primary',
+        /**
+         * A count that asks for attention, pinned to a corner of another control
+         * (a workspace mark, a rail icon). At `sm` it is a 2xs label on whatever
+         * surface sits behind the corner, where the destructive tint all but
+         * disappears — so it takes the solid, contrast-measured action fill.
+         */
+        notification: 'bg-destructive-action text-destructive-action-foreground',
       },
       size: {
         sm: 'h-4 px-1.5 text-2xs',

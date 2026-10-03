@@ -80,7 +80,18 @@ bun run test                 # unit + registry + token tests
 bun run registry:build       # regenerate registry.json and public/r
 bun run registry:validate    # assert the registry is valid and current
 bun run test:storybook       # the accessibility and interaction lane
+bun run verify:changed       # only the checks your branch's changes reach (see below)
 ```
+
+`bun run verify:changed` diffs the working tree and commits against the merge-base
+with `origin/main` (`--base=<ref>` to change it; `--plan` to print without running)
+and runs only what that diff reaches: the registry rebuild plus the same
+`registry.json`/`public/r` drift check CI fails on, the component shard collection
+check (list only, no browser), a turbo-cached typecheck of the changed workspaces,
+the unit tests that import a changed module (a whole suite only for widely read
+files such as `lib/utils.ts`, `lib/tokens.ts` and `theme.css`), and format and lint
+on the changed files. It never drives a browser or builds Storybook, and it prints
+what it ran and skipped.
 
 `bun run lint` is zero-warning. A `--deny-warnings` run is part of the gate, so a
 warning is a failure.
@@ -105,7 +116,9 @@ warning is a failure.
 Branch from `main` with `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*` or
 `test/*`. Use Conventional Commit subjects — Release Please derives versions from
 them. Open the pull request as a **draft** and mark it ready only once the local
-suite is clean.
+suite is clean. Run `bun run verify:changed` before marking a pull request ready —
+it runs the registry-drift and component-shard gates that otherwise only fail in
+CI, and commit any registry files it reports.
 
 A change to what a token means lands in the same commit as the update to
 `theme.css`, the manifest, and the affected story.

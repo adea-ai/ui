@@ -1,0 +1,20 @@
+<!-- @dsCard group="Composites" height=360 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;justify-content:flex-end;min-height:340px;box-sizing:border-box"></div>
+<script>
+  const { render, html, AccountMenu } = window.AdeaUI;
+  const items = [
+    { id: 'mobile', label: 'Get Adea mobile', disabled: true },
+    { id: 'about', label: 'About' },
+    { id: 'help', label: 'Help Center', disabled: true },
+    { id: 'feedback', label: 'Send Feedback', disabled: true },
+    { id: 'updates', label: 'Updates', platform: 'desktop' },
+    { id: 'settings', label: 'Settings', shortcut: '⌘,', keyshortcuts: 'Meta+,' },
+  ];
+  const root = document.getElementById('root');
+  render(() => html`<div><${AccountMenu} items=${items} authenticated=${true} platform="desktop" /></div>`, root);
+  // AccountMenu owns its open state, so the card opens it the way a pointer would.
+  const trigger = root.querySelector('button');
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+  trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }));
+  trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+</script>

@@ -1,0 +1,32 @@
+<!-- @dsCard group="Feedback" height=420 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Alert, AlertTitle, AlertDescription } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:576px">
+        <${Alert}
+          ><${AlertTitle}>Heads up<//
+          ><${AlertDescription}>Sessions pause while the laptop sleeps.<//><//
+        >
+        <${Alert} variant="info"
+          ><${AlertTitle}>Update available<//
+          ><${AlertDescription}>Version 0.56.0 is ready to install.<//><//
+        >
+        <${Alert} variant="success"
+          ><${AlertTitle}>Migration complete<//
+          ><${AlertDescription}>Fourteen worktrees were materialised read-only.<//><//
+        >
+        <${Alert} variant="warning"
+          ><${AlertTitle}>Budget nearly spent<//
+          ><${AlertDescription}>92% of this month's run budget is used.<//><//
+        >
+        <${Alert} variant="destructive"
+          ><${AlertTitle}>Two checks failed<//
+          ><${AlertDescription}>The soak lane and the a11y lane reported errors.<//><//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

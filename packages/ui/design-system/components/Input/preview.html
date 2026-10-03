@@ -1,0 +1,22 @@
+<!-- @dsCard group="Forms" height=200 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Input, Label } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:14px;width:320px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <${Label} for="i1">Workspace name<//><${Input} id="i1" placeholder="Adea" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <${Label} for="i2">Read-only<//><${Input} id="i2" value="ws_01H8XYZ" readOnly=${true} />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <${Label} for="i3">Disabled<//
+          ><${Input} id="i3" value="Managed by your organisation" disabled=${true} />
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

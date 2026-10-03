@@ -1,0 +1,36 @@
+<!-- @dsCard group="Forms" height=260 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Field,
+    FieldLabel,
+    FieldInput,
+    FieldDescription,
+    FieldError,
+    FieldTextArea,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:16px;width:384px">
+        <${Field}
+          ><${FieldLabel}>Workspace name<//><${FieldInput} placeholder="Adea" /><${FieldDescription}
+            >Shown to anyone you invite.<//
+          ><//
+        >
+        <${Field} validationState="invalid"
+          ><${FieldLabel}>Base directory<//><${FieldInput} value="relative/path" /><${FieldError}
+            >Enter an absolute path beginning with /<//
+          ><//
+        >
+        <${Field}
+          ><${FieldLabel}>Objective<//
+          ><${FieldTextArea} placeholder="What should this session accomplish?" rows=${3}
+        /><//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

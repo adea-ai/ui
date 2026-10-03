@@ -1,0 +1,15 @@
+<!-- @dsCard group="Data display" height=64 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, EntityIcon } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:12px;align-items:center">
+        <${EntityIcon} name="Kitchen" /><${EntityIcon} name="Engineering" /><${EntityIcon}
+          name="Agent HQ"
+        /><${EntityIcon} name="Plugin Registry" />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

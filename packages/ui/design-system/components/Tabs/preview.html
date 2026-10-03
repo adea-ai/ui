@@ -1,0 +1,39 @@
+<!-- @dsCard group="Navigation" height=140 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Tabs, TabsList, TabsTrigger, TabsContent } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <${Tabs} defaultValue="code" style="width:480px">
+          <${TabsList}
+            ><${TabsTrigger} value="code">Code<//><${TabsTrigger} value="diff">Diff<//
+            ><${TabsTrigger} value="history">History<//><//
+          >
+          <${TabsContent} value="code"
+            ><p style="margin:8px 0 0;font-size:14px;color:var(--muted-foreground)">
+              The file as it is on this branch.
+            </p><//
+          >
+          <${TabsContent} value="diff"
+            ><p style="margin:8px 0 0;font-size:14px;color:var(--muted-foreground)">
+              Changes against the base branch.
+            </p><//
+          >
+          <${TabsContent} value="history"
+            ><p style="margin:8px 0 0;font-size:14px;color:var(--muted-foreground)">
+              Commits that touched this file.
+            </p><//
+          >
+        <//>
+        <${Tabs} defaultValue="preview" style="width:480px">
+          <${TabsList} appearance="segmented"
+            ><${TabsTrigger} value="preview" appearance="segmented">Preview<//
+            ><${TabsTrigger} value="source" appearance="segmented">Source<//><//
+          >
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

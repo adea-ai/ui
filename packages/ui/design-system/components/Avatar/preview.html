@@ -1,0 +1,17 @@
+<!-- @dsCard group="Data display" height=64 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Avatar, AvatarFallback } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:12px;align-items:center">
+        <${Avatar} size="xs"><${AvatarFallback} name="Ada Lovelace" /><//
+        ><${Avatar} size="sm"><${AvatarFallback} name="Ada Lovelace" /><//
+        ><${Avatar}><${AvatarFallback} name="Grace Hopper" /><//
+        ><${Avatar} size="lg"><${AvatarFallback} name="Alan Kay" /><//
+        ><${Avatar} size="xl"><${AvatarFallback} name="Barbara Liskov" /><//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

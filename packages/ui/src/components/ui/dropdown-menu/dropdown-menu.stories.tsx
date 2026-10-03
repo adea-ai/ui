@@ -82,8 +82,8 @@ export const Grouped: Story = {
         File
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-56">
-        <DropdownMenuLabel>This file</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuLabel>This file</DropdownMenuLabel>
           <DropdownMenuItem>
             <Pencil />
             Rename
@@ -94,8 +94,8 @@ export const Grouped: Story = {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Selection</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuLabel>Selection</DropdownMenuLabel>
           <DropdownMenuItem>
             <Download />
             Export selection

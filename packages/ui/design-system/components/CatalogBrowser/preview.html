@@ -1,0 +1,120 @@
+<!-- @dsCard group="Composites" height=590 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, For, Show, createSignal, createMemo, CatalogBrowser, CatalogDetail, CatalogDetailSection, Badge, Button } = window.AdeaUI;
+  const data = [
+    { id: 'terminal', name: 'Terminal', description: 'Run commands in project workspaces.', category: 'Developer tools', publisher: 'Adea', installed: true },
+    { id: 'github', name: 'GitHub', description: 'Review pull requests and repository activity.', category: 'Developer tools', publisher: 'Adea', installed: true },
+    { id: 'calendar', name: 'Calendar', description: 'Bring upcoming events into your workspace.', category: 'Developer tools', publisher: 'Adea', installed: false },
+    { id: 'browser', name: 'Browser', description: 'Inspect and automate browser sessions.', category: 'Developer tools', publisher: 'Adea', installed: false },
+    { id: 'docs', name: 'Documentation', description: 'Search trusted project references.', category: 'Developer tools', publisher: 'Adea', installed: false },
+    { id: 'linear', name: 'Linear', description: 'Track issues and project progress.', category: 'Developer tools', publisher: 'Adea', installed: false },
+    { id: 'figma', name: 'Figma', description: 'Explore designs and linked prototypes.', category: 'Developer tools', publisher: 'Adea', installed: false },
+    { id: 'drive', name: 'Drive', description: 'Find documents shared with your team.', category: 'Developer tools', publisher: 'Community', installed: false },
+    { id: 'mail', name: 'Mail', description: 'Review messages without leaving your workspace.', category: 'Communication', publisher: 'Adea', installed: false },
+  ].map((item) => ({ ...item, permissions: ['Read project metadata', 'Open approved workspace links'] }));
+  const entries = data.map((value) => ({
+    id: value.id, value, name: value.name, description: value.description,
+    category: value.category, publisher: value.publisher, installed: value.installed,
+  }));
+  const iconFor = (id) => id === 'calendar' ? Icons.Calendar : id === 'mail' ? Icons.MessageSquare : id === 'browser' ? Icons.Sparkles : Icons.LayoutGrid;
+
+  render(() => {
+    const [tab, setTab] = createSignal('discover');
+    const [query, setQuery] = createSignal('');
+    const [selectedId, setSelectedId] = createSignal(null);
+    const [verifiedOnly, setVerifiedOnly] = createSignal(false);
+    const [installError, setInstallError] = createSignal(undefined);
+    const visibleEntries = createMemo(() => {
+      const term = query().trim().toLowerCase();
+      return entries.filter((entry) => {
+        const inTab = tab() !== 'installed' || entry.installed;
+        const verified = !verifiedOnly() || entry.publisher === 'Adea';
+        const matches = !term || `${entry.name} ${entry.description} ${entry.category} ${entry.publisher}`.toLowerCase().includes(term);
+        return inTab && verified && matches;
+      });
+    });
+    const groups = createMemo(() => ['Developer tools', 'Communication'].flatMap((category) => {
+      const categoryEntries = visibleEntries().filter((entry) => entry.category === category);
+      return categoryEntries.length ? [{ id: category, label: category, entries: categoryEntries }] : [];
+    }));
+    return html`
+<div>
+<${CatalogBrowser}
+  open=${true}
+  tabs=${[
+    { id: 'discover', label: 'Discover' },
+    { id: 'installed', label: 'Installed' },
+    { id: 'navigation', label: 'Navigation', kind: 'supplemental' },
+  ]}
+  tab=${() => tab()}
+  tabsLabel="Catalog views"
+  onTabChange=${(next) => setTab(next)}
+  renderSupplementalView=${(_tab) => html`
+    <section style="display:grid;min-width:0;gap:8px" aria-labelledby="navigation-title">
+      <h2 id="navigation-title" style="margin:0;font-weight:600">Navigation preferences</h2>
+      <p style="margin:0;font-size:14px;color:var(--muted-foreground)">Choose which approved destinations appear in your workspace navigation.</p>
+      <${Button} variant="outline" size="sm">Review navigation targets<//>
+    </section>`}
+  query=${() => query()}
+  onQueryChange=${(next) => setQuery(next)}
+  searchLabel="Search catalog"
+  searchPlaceholder="Search applications"
+  resultsRegionLabel="Application results"
+  filterControl=${html`<${Button}
+    variant=${() => (verifiedOnly() ? 'secondary' : 'outline')}
+    size="sm"
+    aria-pressed=${() => verifiedOnly()}
+    onClick=${(_event) => setVerifiedOnly((value) => !value)}
+  >Verified publishers<//>`}
+  resultCount=${() => visibleEntries().length}
+  resultLabel=${(count) => `${count} applications`}
+  loadingLabel="Loading catalog"
+  status="ready"
+  catalogError=${{ title: 'Catalog unavailable', description: 'The catalog could not be reached. Retry to check again.' }}
+  catalogErrorAction=${html`<${Button} variant="outline">Retry<//>`}
+  installError=${() => installError()}
+  notices=${[{ id: 'catalog-integrity', role: 'status', message: 'Publisher information was verified against the active registry.' }]}
+  emptyState=${{ title: 'No applications found', description: 'Try a shorter search or switch to another catalog view.' }}
+  emptyStateAction=${html`<${Button} variant="outline" onClick=${(_event) => setQuery('')}>Clear search<//>`}
+  groups=${() => groups()}
+  entries=${entries}
+  selectedId=${() => selectedId()}
+  onSelect=${(item) => { setInstallError(undefined); setSelectedId(item.id); }}
+  onBack=${(_event) => setSelectedId(null)}
+  backLabel="Back to catalog"
+  detailRegionLabel="Application details"
+  installedLabel="Installed"
+  showMoreLabel=${(hidden) => `See ${hidden.slice(0, 2).map((entry) => entry.name).join(', ')} and more`}
+  showLessLabel="Show less"
+  renderIcon=${(item) => html`<${iconFor(item.id)} size=${20} aria-hidden="true" />`}
+  renderDetail=${(item) => html`
+    <${CatalogDetail}
+      title=${item.name}
+      description=${item.description}
+      category=${item.category}
+      publisher=${item.publisher}
+      publishedByLabel=${(publisher) => `Published by ${publisher}`}
+      leading=${html`<${Icons.LayoutGrid} size=${24} aria-hidden="true" />`}
+      eyebrow="Verified"
+      badges=${item.installed ? html`<${Badge} variant="outline">Installed<//>` : undefined}
+      action=${html`<${Button}
+        disabled=${item.installed}
+        onClick=${(_event) => setInstallError('Install request was rejected by the provider. Nothing was installed.')}
+      >${item.installed ? 'Installed' : 'Request install'}<//>`}
+      status=${html`<${Show} when=${() => installError()}><p role="alert" style="margin:0;font-size:14px;color:var(--destructive)">${() => installError()}</p><//>`}
+    >
+      <${CatalogDetailSection} title="Permissions">
+        <ul style="display:grid;gap:8px;font-size:14px;margin:0;padding-left:16px">
+          <${For} each=${item.permissions}>${(permission) => html`<li>${permission}</li>`}<//>
+        </ul>
+      <//>
+      <${CatalogDetailSection} title="Activation">
+        <${Button} disabled=${true}>Enable application<//>
+        <p style="margin:0;font-size:14px;color:var(--muted-foreground)" role="status">This application requires workspace approval before it can be enabled.</p>
+      <//>
+    <//>`}
+/>
+</div>`;
+  }, document.getElementById('root'));
+</script>

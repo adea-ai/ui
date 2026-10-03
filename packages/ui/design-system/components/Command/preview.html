@@ -1,0 +1,43 @@
+<!-- @dsCard group="Overlays" height=400 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Command,
+    CommandInput,
+    CommandList,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandSeparator,
+    CommandShortcut,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <div
+        style="width:576px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-xl)"
+      >
+        <${Command} label="Command palette">
+          <${CommandInput} placeholder="Type a command or search…" />
+          <${CommandList}>
+            <${CommandEmpty}>Nothing matches. Try “worktree”.<//>
+            <${CommandGroup} heading="Navigate">
+              <${CommandItem}><${Icons.Terminal} />Dev view<${CommandShortcut}>⌘1<//><//>
+              <${CommandItem}><${Icons.File} />Files<${CommandShortcut}>⌘2<//><//>
+              <${CommandItem}><${Icons.GitBranch} />Worktrees<${CommandShortcut}>⌘3<//><//>
+              <${CommandItem}><${Icons.Users} />Agents<${CommandShortcut}>⌘4<//><//>
+            <//>
+            <${CommandSeparator} />
+            <${CommandGroup} heading="Actions">
+              <${CommandItem}><${Icons.Plus} />New session<//>
+              <${CommandItem}><${Icons.Settings} />Open settings<${CommandShortcut}>⌘,<//><//>
+            <//>
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

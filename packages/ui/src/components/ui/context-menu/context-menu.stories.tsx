@@ -3,6 +3,7 @@ import { Copy, Download, Pencil, Trash2 } from 'lucide-solid'
 import {
   ContextMenu,
   ContextMenuContent,
+  ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
@@ -40,19 +41,21 @@ export const Default: Story = {
           <span class="font-mono text-xs">side-rail.tsx</span>
         </ContextMenuTrigger>
         <ContextMenuContent class="w-52">
-          <ContextMenuLabel>side-rail.tsx</ContextMenuLabel>
-          <ContextMenuItem>
-            <Pencil />
-            Rename
-          </ContextMenuItem>
-          <ContextMenuItem>
-            <Copy />
-            Copy path
-          </ContextMenuItem>
-          <ContextMenuItem>
-            <Download />
-            Download
-          </ContextMenuItem>
+          <ContextMenuGroup>
+            <ContextMenuLabel>side-rail.tsx</ContextMenuLabel>
+            <ContextMenuItem>
+              <Pencil />
+              Rename
+            </ContextMenuItem>
+            <ContextMenuItem>
+              <Copy />
+              Copy path
+            </ContextMenuItem>
+            <ContextMenuItem>
+              <Download />
+              Download
+            </ContextMenuItem>
+          </ContextMenuGroup>
           <ContextMenuSeparator />
           <ContextMenuItem variant="destructive">
             <Trash2 />

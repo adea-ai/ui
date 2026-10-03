@@ -1,0 +1,71 @@
+<!-- @dsCard group="Composites" height=240 -->
+<div
+  id="root"
+  style="
+    padding: 16px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+  "
+></div>
+<script>
+  const { render, html, Icons, ListRow, ListGroup, Badge, Button, Avatar, AvatarFallback } =
+    window.AdeaUI
+  render(
+    () => html`
+      <div
+        style="width:340px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:8px"
+      >
+        <${ListGroup}
+          label="Recent"
+          action=${html`<${Button} size="icon-2xs" variant="ghost" aria-label="Clear recent"><${Icons.X} /><//>`}
+        >
+          <${ListRow}
+            selected=${true}
+            leading=${html`<${Icons.Folder} />`}
+            trailing=${html`<${Badge} size="sm" variant="secondary">41<//>`}
+            >adea<//
+          >
+          <${ListRow}
+            leading=${html`<${Icons.Folder} />`}
+            trailing=${html`<${Badge} size="sm" variant="secondary">12<//>`}
+            >cortana<//
+          >
+          <${ListRow}
+            leading=${html`<${Icons.Folder} />`}
+            trailing=${html`<${Badge} size="sm" variant="secondary">7<//>`}
+            >control-plane<//
+          >
+        <//>
+        <${ListGroup} label="Archived">
+          <${ListRow} dense=${true} leading=${html`<${Icons.FileText} />`}>adea-mkt-wt<//>
+        <//>
+      </div>
+      <div
+        style="width:500px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:8px"
+      >
+        <${ListRow}
+          selected=${true}
+          leading=${html`<${Icons.FileText} />`}
+          description="Evidence from source documents"
+          trailing=${html`<time datetime="2026-09-30">Sep 30</time>`}
+          >Workspace evidence<//
+        >
+        <${ListRow}
+          leading=${html`<${Avatar} size="sm"><${AvatarFallback} name="Ada Lovelace" /><//>`}
+          description="Maintains the design system and keeps long workspace descriptions readable"
+          trailing=${html`<${Button} size="icon-2xs" variant="ghost" aria-label="More actions for Ada Lovelace"><${Icons.Settings} /><//>`}
+          >Ada Lovelace<//
+        >
+        <${ListRow}
+          leading=${html`<${Avatar} size="sm"><${AvatarFallback} name="Alan Turing" /><//>`}
+          description="Runs the soak lane"
+          >Alan Turing<//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

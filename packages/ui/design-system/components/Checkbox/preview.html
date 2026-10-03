@@ -1,0 +1,25 @@
+<!-- @dsCard group="Forms" height=150 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Checkbox, CheckboxLabel, CheckboxDescription } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <${Checkbox} defaultChecked=${true}
+          ><${CheckboxLabel}>Run the soak lane nightly<//
+          ><${CheckboxDescription}>A 24-hour budget, reported each morning.<//><//
+        >
+        <div style="display:flex;gap:16px">
+          <${Checkbox} aria-label="Unchecked" /><${Checkbox}
+            aria-label="Checked"
+            checked=${true}
+          /><${Checkbox} aria-label="Partially selected" indeterminate=${true} /><${Checkbox}
+            aria-label="Disabled"
+            disabled=${true}
+          />
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -198,3 +198,16 @@ test('a row-forced navigation keeps earlier rows reachable after a reveal pan', 
     await view.close()
   }
 })
+
+test('the vertical settings rail draws no underline rule beneath its last row', async ({
+  page,
+}) => {
+  const rail = page.getByRole('tablist', { name: 'Settings sections', exact: true })
+  await expect(rail).toHaveAttribute('data-orientation', 'vertical')
+  expect(await rail.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe('0px')
+  // A horizontal underline list keeps the baseline its triggers sit on.
+  const horizontal = page.locator('[role="tablist"][aria-label="Independent tab root"]')
+  expect(await horizontal.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe(
+    '1px'
+  )
+})

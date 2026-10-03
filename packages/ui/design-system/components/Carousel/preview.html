@@ -1,0 +1,16 @@
+<!-- @dsCard group="Data display" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Carousel, CarouselSlide } = window.AdeaUI;
+  const slides = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta'];
+  const slide = (label) => html`
+    <${CarouselSlide} slidesToShow=${2}>
+      <div class="m-1 grid h-40 place-items-center rounded-lg border border-border bg-card text-sm">${label}</div>
+    <//>
+  `;
+  render(() => html`
+<div style="width:576px">
+  <${Carousel} dots=${true}>${slides.map(slide)}<//>
+</div>
+`, document.getElementById('root'));
+</script>

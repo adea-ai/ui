@@ -1,0 +1,25 @@
+<!-- @dsCard group="Layout" height=220 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Accordion, AccordionItem, AccordionTrigger, AccordionContent } =
+    window.AdeaUI
+  render(
+    () => html`
+      <${Accordion} style="width:512px" collapsible=${true} defaultValue=${['environment']}>
+        <${AccordionItem} value="environment"
+          ><${AccordionTrigger}>Environment<//
+          ><${AccordionContent}>Paths, overrides and the shell used for new terminals.<//><//
+        >
+        <${AccordionItem} value="updates"
+          ><${AccordionTrigger}>Updates<//
+          ><${AccordionContent}>The release channel and whether to install while idle.<//><//
+        >
+        <${AccordionItem} value="telemetry"
+          ><${AccordionTrigger}>Telemetry<//
+          ><${AccordionContent}>What is reported, and where.<//><//
+        >
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -76,3 +76,22 @@ test('a narrow host keeps thread actions inside the viewport', async ({ page }) 
   await expect(panel.getByRole('button', { name: 'Mark unread' })).toBeInViewport()
   await expect(panel.getByRole('button', { name: 'Close thread' })).toBeInViewport()
 })
+
+test('reply bubbles keep the panel inline padding at the 384px story width', async ({ page }) => {
+  const panel = page.getByRole('complementary', { name: 'Thread: Synthetic thread' })
+  const box = await panel.boundingBox()
+  expect(box).not.toBeNull()
+  expect(box!.width).toBe(384)
+  const bubbles = await panel.locator('[data-slot="message-bubble"]').evaluateAll((elements) =>
+    elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      return { left: rect.left, right: rect.right }
+    })
+  )
+  expect(bubbles).toHaveLength(2)
+  // The header and root sit on a `px-3` (12px) line; the replies must too.
+  for (const bubble of bubbles) {
+    expect(bubble.right).toBeLessThanOrEqual(box!.x + box!.width - 12)
+    expect(bubble.left).toBeGreaterThanOrEqual(box!.x + 12)
+  }
+})

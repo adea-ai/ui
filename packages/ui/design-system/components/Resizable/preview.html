@@ -1,0 +1,25 @@
+<!-- @dsCard group="Layout" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, ResizablePanelGroup, ResizablePanel, ResizableHandle, Panel, PanelHeader, PanelTitle, PanelBody } = window.AdeaUI;
+  const note = 'margin:0;font-size:14px;color:var(--muted-foreground)';
+  render(() => html`
+<div style="height:224px;max-width:720px;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden">
+  <${ResizablePanelGroup}>
+    <${ResizablePanel} initialSize=${0.32} minSize=${0.15}>
+      <${Panel}>
+        <${PanelHeader}><${PanelTitle}>Files<//><//>
+        <${PanelBody}><p style=${note}>Drag the divider, or focus it and use the arrow keys.</p><//>
+      <//>
+    <//>
+    <${ResizableHandle} withHandle=${true} />
+    <${ResizablePanel} initialSize=${0.68} minSize=${0.3}>
+      <${Panel}>
+        <${PanelHeader}><${PanelTitle}>Editor<//><//>
+        <${PanelBody}><p style=${note}>The handle is widened with a pseudo-element, so the visible line stays a hairline while the hit target is comfortably grabbable.</p><//>
+      <//>
+    <//>
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

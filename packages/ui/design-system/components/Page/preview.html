@@ -1,0 +1,54 @@
+<!-- @dsCard group="Shell" height=440 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, Button, Card, CardHeader, CardTitle, CardContent, Page, PageHeader, PageHeaderActions, PageHeaderContent, PageHeaderDescription, PageHeaderTitle, PageSection } = window.AdeaUI;
+  const frame = 'display:flex;flex-direction:column;height:408px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--background)';
+  render(() => html`
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div style=${frame}>
+    <${Page}>
+      <${PageHeader}>
+        <${PageHeaderContent}>
+          <${PageHeaderTitle}>Appearance<//>
+          <${PageHeaderDescription}>Theme, typeface and density. Applied immediately, saved per workspace.<//>
+        <//>
+        <${PageHeaderActions}><${Button} size="sm" variant="outline">Reset to defaults<//><//>
+      <//>
+      <${PageSection} title="Theme" description="The design system ships dark-first, with a light theme as an equal.">
+        <${Card}>
+          <${CardHeader}><${CardTitle} style="font-size:14px">Dark<//><//>
+          <${CardContent}><p style="margin:0;font-size:14px;color:var(--muted-foreground)">The theme the design language was drawn against.</p><//>
+        <//>
+      <//>
+      <${PageSection} title="Density" description="How much of the window goes to content.">
+        <${Card}>
+          <${CardHeader}><${CardTitle} style="font-size:14px">Comfortable<//><//>
+          <${CardContent}><p style="margin:0;font-size:14px;color:var(--muted-foreground)">32px rows. The default.</p><//>
+        <//>
+      <//>
+    <//>
+  </div>
+  <div style=${frame}>
+    <${Page}>
+      <${PageHeader}>
+        <${PageHeaderContent}>
+          <${PageHeaderTitle}>Projects<//>
+          <${PageHeaderDescription}>Each project is a repository plus the worktrees and sessions you open in it.<//>
+        <//>
+        <${PageHeaderActions}><${Button} size="sm">New project<//><//>
+      <//>
+      <${PageSection}>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${['adea', 'cortana', 'control-plane'].map((project) => html`
+            <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px">
+              <span style="font-size:14px;font-weight:500">${project}</span>
+              <${Icons.Settings} style="width:16px;height:16px;color:var(--muted-foreground)" />
+            </div>
+          `)}
+        </div>
+      <//>
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

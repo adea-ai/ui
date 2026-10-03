@@ -1,0 +1,24 @@
+<!-- @dsCard group="Data display" height=240 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Item, ItemTitle, ItemDescription } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px;width:384px">
+        <${Item} variant="default" media=${html`<${Icons.FileText} />`}
+          ><${ItemTitle}>Default<//
+          ><${ItemDescription}>Bare, for a row that already has a surface.<//><//
+        >
+        <${Item} variant="outline" media=${html`<${Icons.FileText} />`}
+          ><${ItemTitle}>Outline<//
+          ><${ItemDescription}>The search-result shape: its own edge on the canvas.<//><//
+        >
+        <${Item} variant="muted" media=${html`<${Icons.FileText} />`}
+          ><${ItemTitle}>Muted<//
+          ><${ItemDescription}>Inset: a quoted message, a disabled row.<//><//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

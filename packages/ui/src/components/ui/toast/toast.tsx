@@ -179,11 +179,23 @@ export type ToasterProps = ComponentProps<typeof KobalteToast.Region> & {
   region?: string
 }
 
+/**
+ * The corner is set on the region, not the list. The region is the `fixed`
+ * element: an inset on the list inside it positions nothing, and the region falls
+ * back to wherever it happens to sit in the document flow.
+ */
 const toasterPosition = {
-  'top-left': 'top-0 left-0 items-start',
-  'top-right': 'top-0 right-0 items-end',
-  'bottom-left': 'bottom-0 left-0 items-start',
-  'bottom-right': 'bottom-0 right-0 items-end',
+  'top-left': 'top-0 left-0',
+  'top-right': 'top-0 right-0',
+  'bottom-left': 'bottom-0 left-0',
+  'bottom-right': 'bottom-0 right-0',
+}
+
+const toasterAlignment = {
+  'top-left': 'items-start',
+  'top-right': 'items-end',
+  'bottom-left': 'items-start',
+  'bottom-right': 'items-end',
 }
 
 /** Mount once, near the root. Renders the stack and owns its timing defaults. */
@@ -203,13 +215,16 @@ export function Toaster(props: ToasterProps) {
        * in-flight notification, and clicking a toast must not dismiss the
        * dialog behind it.
        */
-      class="pointer-events-none fixed z-(--z-toast) flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-sm"
+      class={cn(
+        'pointer-events-none fixed z-(--z-toast) flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-sm',
+        toasterPosition[local.position ?? 'bottom-right']
+      )}
       {...rest}
     >
       <KobalteToast.List
         class={cn(
           'flex flex-col gap-2',
-          toasterPosition[local.position ?? 'bottom-right'],
+          toasterAlignment[local.position ?? 'bottom-right'],
           local.class
         )}
       />

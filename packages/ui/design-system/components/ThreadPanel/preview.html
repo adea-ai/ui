@@ -1,0 +1,25 @@
+<!-- @dsCard group="Conversation" height=580 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, ThreadPanel, MessageRow, MessageBody, MessageComposer, Button } = window.AdeaUI;
+  const noop = (_) => {};
+  render(() => html`
+<div style="display:flex;height:540px;width:384px;max-width:100%;flex-direction:column;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl)">
+  <${ThreadPanel}
+    label="Ada Lovelace"
+    count=${2}
+    headerActions=${html`<${Button} variant="ghost" size="sm" onClick=${noop}>Mark unread<//>`}
+    onClose=${noop}
+    root=${html`<${MessageRow} senderKind="user" senderName="You" time="09:14"><${MessageBody} text="Can you check the ACL case before we commit to it?" /><//>`}
+    composer=${html`<${MessageComposer} value="" onValueChange=${noop} onSubmit=${noop} submitLabel="Reply" placeholder="Reply…" />`}
+  >
+    <${MessageRow} senderKind="agent" senderName="Ada Lovelace" time="09:16">
+      <${MessageBody} text="Checked. A bulk clone inherits ACLs that copy-on-write skips, which is why the stream loop was banned." />
+    <//>
+    <${MessageRow} senderKind="agent" senderName="Ada Lovelace" time="09:17">
+      <${MessageBody} text="The manifest digest covers it, so a later reader can tell which path produced a tree." />
+    <//>
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

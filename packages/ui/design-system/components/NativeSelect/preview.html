@@ -1,0 +1,18 @@
+<!-- @dsCard group="Forms" height=90 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, NativeSelect } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:6px;width:288px">
+        <label for="ns" style="font-size:14px;font-weight:500">Relationship</label>
+        <${NativeSelect} id="ns"
+          ><option value="all">All relationships</option>
+          <option value="explicit">Explicit</option>
+          <option value="derived">Derived</option><//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

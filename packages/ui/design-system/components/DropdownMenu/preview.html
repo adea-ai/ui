@@ -1,0 +1,21 @@
+<!-- @dsCard group="Overlays" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, Button, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } = window.AdeaUI;
+  render(() => html`
+<div>
+<${DropdownMenu} defaultOpen=${true}>
+  <${DropdownMenuTrigger} as=${Button} variant="outline">Actions<//>
+  <${DropdownMenuContent}>
+    <${DropdownMenuItem} shortcut="⌘E" keyshortcuts="Meta+E"><${Icons.Pencil} />Rename<//>
+    <${DropdownMenuItem} shortcut="⌘D" keyshortcuts="Meta+D"><${Icons.Copy} />Duplicate<//>
+    <${DropdownMenuItem}><${Icons.Share2} />Share<//>
+    <${DropdownMenuSeparator} />
+    <${DropdownMenuItem} variant="destructive" shortcut="⌘⌫" keyshortcuts="Meta+Backspace"><${Icons.Trash2} />Delete<//>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+  // Opened without a pointer, the menu takes keyboard focus and draws its ring; a clicked menu does not.
+  setTimeout(() => document.activeElement && document.activeElement.blur(), 50);
+</script>
