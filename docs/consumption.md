@@ -185,15 +185,15 @@ they were typed:
 | `@adea-ai/ui` → `CodeBlock`                                     | 25.6 kB    | lucide icons                          |
 | `@adea-ai/ui` → `MessageRow`                                    | 26.7 kB    | nothing                               |
 | `@adea-ai/ui` → `CalendarSurface`                               | 29.6 kB    | corvu calendar                        |
-| `@adea-ai/ui` → `ModalDialog`                                   | 34.9 kB    | Kobalte dialog                        |
+| `@adea-ai/ui` → `ModalDialog`                                   | 35.6 kB    | Kobalte dialog                        |
 | `@adea-ai/ui/components/ui/carousel` → `Carousel`               | 34.2 kB    | embla                                 |
 | `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.4 kB    | Kobalte tooltip                       |
 | `@adea-ai/ui` → `NavigationMenu`                                | 56.0 kB    | Kobalte navigation menu               |
-| `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 88.9 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _345.1 kB_ | — and `Button` is 6.3% of it          |
+| `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
+| _root plus chart and carousel entries_                          | _346.1 kB_ | — and `Button` is 6.3% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
-10.4 kB smaller than importing all seven chart types together (88.9 kB against 99.4 kB), because the
+10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the
 controllers are imported per component while the shared scales and plugins are
 registered once. The gate fails if that stops being true.
 
