@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.102.0](https://github.com/adea-ai/ui/compare/v0.101.1...v0.102.0) (2026-10-03)
+
+
+### Features
+
+* **board:** lane tones, accent counts, collapsible empty lanes and a card open action ([#293](https://github.com/adea-ai/ui/issues/293)) ([955fad6](https://github.com/adea-ai/ui/commit/955fad63d2fe3f045e1ff4bcef711fa67ddf844e))
+
 ## [0.101.1](https://github.com/adea-ai/ui/compare/v0.101.0...v0.101.1) (2026-10-03)
 
 
