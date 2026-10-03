@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import {
   Menubar,
   MenubarContent,
+  MenubarGroup,
   MenubarItem,
   MenubarLabel,
   MenubarSeparator,
@@ -35,13 +36,15 @@ export const Default: Story = {
       <MenubarMenu value="file">
         <MenubarTrigger>File</MenubarTrigger>
         <MenubarContent>
-          <MenubarLabel>Session</MenubarLabel>
-          <MenubarItem shortcut="⌘N" keyshortcuts="Meta+N">
-            New session
-          </MenubarItem>
-          <MenubarItem shortcut="⌘O" keyshortcuts="Meta+O">
-            Open project…
-          </MenubarItem>
+          <MenubarGroup>
+            <MenubarLabel>Session</MenubarLabel>
+            <MenubarItem shortcut="⌘N" keyshortcuts="Meta+N">
+              New session
+            </MenubarItem>
+            <MenubarItem shortcut="⌘O" keyshortcuts="Meta+O">
+              Open project…
+            </MenubarItem>
+          </MenubarGroup>
           <MenubarSeparator />
           <MenubarItem variant="destructive">Close workspace</MenubarItem>
         </MenubarContent>
