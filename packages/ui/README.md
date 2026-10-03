@@ -323,6 +323,10 @@ font assets; import `fonts.css` explicitly when those faces are wanted:
 `base.css`, then apply settings with the shared runtime or prepaint helper; the
 helper resolves catalogue ids to family tokens and writes canonical pixel sizes.
 This stylesheet does not load any font files.
+The `font-ui-size`, `font-content-size` and `font-code-size` entries in the token
+gallery are runtime-projected properties: `applyAppearanceFontSettings` and
+`fontSettingsBootstrapScript` write their pixel values from normalized font
+settings. They are not fixed declarations in the theme stylesheet.
 `--font-sans` and `--font-mono` remain compatibility aliases for UI and code.
 The shared projection and prepaint helpers are exported from
 `@adea-ai/ui/lib/appearance-font-settings`; hosts can normalize persisted ids,
