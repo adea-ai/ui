@@ -5,6 +5,7 @@ import { contrastRatio, parseColor as parseCatalogueColor } from '@adea-ai/theme
 import { alertVariants } from '../src/components/ui/alert/alert'
 import { badgeVariants } from '../src/components/ui/badge/badge'
 import { buttonVariants } from '../src/components/ui/button/button'
+import { APPEARANCE_EDITOR_FONT_AXES } from '../src/lib/appearance-font-settings'
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
 import { builtinThemes, themeCssVariables } from '../src/lib/themes'
 import { destructiveMenuItem, menuItem } from '../src/lib/overlay'
@@ -44,6 +45,11 @@ const themes: Scope[] = ['root', 'dark']
 
 const manifestNames = new Set(allTokens.map((token) => token.name))
 const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), 'utf8')
+// These host preference values are emitted by the shared runtime/bootstrap,
+// rather than declared as fixed defaults in a stylesheet.
+const runtimeAppearanceFontSizeTokens = new Set(
+  APPEARANCE_EDITOR_FONT_AXES.map((axis) => `font-${axis}-size`)
+)
 
 /* ------------------------------------------------------------------------- */
 
@@ -70,14 +76,24 @@ describe('token manifest', () => {
     ).toEqual([])
   })
 
-  test('every documented token is declared in a theme stylesheet', () => {
-    const missing = [...manifestNames].filter((name) => !declaredNames.has(name)).toSorted()
+  test('every documented token is declared in a stylesheet or shared runtime projection', () => {
+    const missing = [...manifestNames]
+      .filter((name) => !declaredNames.has(name) && !runtimeAppearanceFontSizeTokens.has(name))
+      .toSorted()
 
     expect(
       missing,
-      'src/lib/tokens.ts documents tokens no theme stylesheet declares. Either the token ' +
-        'was renamed or removed in CSS and the manifest is stale, or the manifest invented one.'
+      'src/lib/tokens.ts documents tokens with no stylesheet or runtime projection. Either the ' +
+        'token was renamed or removed and the manifest is stale, or the manifest invented one.'
     ).toEqual([])
+  })
+
+  test('shared runtime-projected font sizes remain documented', () => {
+    const missing = [...runtimeAppearanceFontSizeTokens]
+      .filter((name) => !manifestNames.has(name))
+      .toSorted()
+
+    expect(missing).toEqual([])
   })
 
   test('every colour token is themed, or explicitly theme-invariant', () => {
