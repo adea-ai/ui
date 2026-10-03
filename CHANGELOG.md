@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.100.1](https://github.com/adea-ai/ui/compare/v0.100.0...v0.100.1) (2026-10-03)
+
+
+### Maintenance
+
+* **build:** typecheck from source without a library build ([#280](https://github.com/adea-ai/ui/issues/280)) ([c1c2efb](https://github.com/adea-ai/ui/commit/c1c2efb35d5962170e1558da0e257267573aed89))
+
 ## [0.100.0](https://github.com/adea-ai/ui/compare/v0.99.4...v0.100.0) (2026-10-03)
 
 
