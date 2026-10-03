@@ -5,9 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import tailwindcss from '@tailwindcss/vite'
-import { build, type EnvironmentOptions } from 'vite'
-import solid from 'vite-plugin-solid'
+import type { EnvironmentOptions } from 'vite'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 import { findUnrelatedPackedRowModules } from './packed-row-modules'
 
@@ -42,6 +40,14 @@ if (baselineArchivePath && baselineArchiveSha256) {
       `ListRow baseline archive digest mismatch: expected ${baselineArchiveSha256}, received ${actualSha256}`
     )
 }
+
+// Invalid CI overrides must fail before loading the build toolchain. These
+// modules have a cold-start cost that can exceed the unit test's process guard.
+const [{ build }, { default: tailwindcss }, { default: solid }] = await Promise.all([
+  import('vite'),
+  import('@tailwindcss/vite'),
+  import('vite-plugin-solid'),
+])
 
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-list-row-'))
 let baselineConsumer: string | undefined
