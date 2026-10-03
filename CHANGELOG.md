@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.99.3](https://github.com/adea-ai/ui/compare/v0.99.2...v0.99.3) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ui:** overlay and menu defects found building the design-system page ([#270](https://github.com/adea-ai/ui/issues/270)) ([02c7956](https://github.com/adea-ai/ui/commit/02c795615288c307fe1351fb3c98bebc4797df17))
+
 ## [0.99.2](https://github.com/adea-ai/ui/compare/v0.99.1...v0.99.2) (2026-10-02)
 
 
