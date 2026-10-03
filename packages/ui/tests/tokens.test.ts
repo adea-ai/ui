@@ -56,7 +56,7 @@ const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), '
 const ownerOf = (name: string) => name.replace(/--line-height$/, '')
 
 describe('token manifest', () => {
-  test('every token declared in theme.css is documented', () => {
+  test('every token declared in the theme stylesheets is documented', () => {
     const undocumented = [...declaredNames]
       .map(ownerOf)
       .filter((name) => !manifestNames.has(name) && !undocumentedTokenAliases.includes(name))
@@ -64,18 +64,18 @@ describe('token manifest', () => {
 
     expect(
       undocumented,
-      'theme.css declares tokens with no entry in src/lib/tokens.ts. Add each to a group in ' +
+      'A theme stylesheet declares tokens with no entry in src/lib/tokens.ts. Add each to a group in ' +
         'the manifest (or to undocumentedTokenAliases, with a reason) so the Storybook ' +
         'galleries and the docs stay complete.'
     ).toEqual([])
   })
 
-  test('every documented token is declared in theme.css', () => {
+  test('every documented token is declared in a theme stylesheet', () => {
     const missing = [...manifestNames].filter((name) => !declaredNames.has(name)).toSorted()
 
     expect(
       missing,
-      'src/lib/tokens.ts documents tokens that theme.css does not declare. Either the token ' +
+      'src/lib/tokens.ts documents tokens no theme stylesheet declares. Either the token ' +
         'was renamed or removed in CSS and the manifest is stale, or the manifest invented one.'
     ).toEqual([])
   })

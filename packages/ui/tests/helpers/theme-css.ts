@@ -13,8 +13,13 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export const THEME_CSS_PATH = join(import.meta.dir, '../../src/styles/theme.css')
+export const APPEARANCE_FONT_CSS_PATH = join(
+  import.meta.dir,
+  '../../src/styles/appearance-font-settings.css'
+)
 
 export const THEME_CSS = readFileSync(THEME_CSS_PATH, 'utf8')
+export const APPEARANCE_FONT_CSS = readFileSync(APPEARANCE_FONT_CSS_PATH, 'utf8')
 
 type Scope = 'root' | 'dark'
 
@@ -65,7 +70,7 @@ function readDeclarations(css: string): { name: string; value: string; scope: Sc
     const selector = /^([^{};]+)\{/.exec(token)
     if (selector && atDepth === 0 && themeDepth === 0 && scope === null) {
       const text = selector[1]?.trim() ?? ''
-      if (/^:root$/.test(text)) scope = 'root'
+      if (/^:root(?:\[data-font-settings\])?$/.test(text)) scope = 'root'
       else if (/^\.dark$/.test(text)) scope = 'dark'
       index += selector[0].length
       continue
@@ -89,7 +94,9 @@ function readDeclarations(css: string): { name: string; value: string; scope: Sc
 }
 
 export const declarations = readDeclarations(THEME_CSS)
-export const declaredNames = new Set(declarations.map((d) => d.name))
+export const declaredNames = new Set(
+  [...declarations, ...readDeclarations(APPEARANCE_FONT_CSS)].map((d) => d.name)
+)
 
 /**
  * Resolve a token's value in a theme, following `var()` indirection and falling

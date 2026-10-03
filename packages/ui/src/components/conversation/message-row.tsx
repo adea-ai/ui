@@ -145,7 +145,9 @@ export function MessageRow(props: MessageRowProps) {
             <Show
               when={!local.deleted}
               fallback={
-                <p class="font-content text-content text-muted-foreground italic">Message deleted</p>
+                <p class="font-content text-content text-muted-foreground italic">
+                  Message deleted
+                </p>
               }
             >
               {local.children}

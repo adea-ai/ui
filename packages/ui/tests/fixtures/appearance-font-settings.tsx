@@ -1,9 +1,9 @@
 import { createSignal } from 'solid-js'
+import { AppearanceFontSettingsGroup } from '../../src/components/composites/appearance-editor/font-settings-group'
 import {
-  AppearanceFontSettingsGroup,
+  DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
   type AppearanceEditorFontSettings,
-} from '../../src/components/composites/appearance-editor/font-settings-group'
-import { DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS } from '../../src/lib/appearance-font-settings'
+} from '../../src/lib/appearance-font-settings'
 
 export function AppearanceFontSettingsFixture() {
   const [settings, setSettings] = createSignal<AppearanceEditorFontSettings>({

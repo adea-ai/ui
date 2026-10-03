@@ -200,6 +200,7 @@ directories your application uses in its stylesheet, relative to that stylesheet
 @import 'tailwindcss';
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/appearance-font-settings.css'; /* optional: shared font roles and Appearance controls */
 @source '../node_modules/@adea-ai/ui/src/components/ui/button';
 ```
 
@@ -253,7 +254,7 @@ provider takes an initial selection and every axis is a plain value:
 | Appearance | `light`, `dark`, `system`                                                                            | a `dark` class plus `color-scheme` on `<html>`                                      |
 | Theme      | any of the 34 catalogue ids                                                                          | the variant's tokens, written as custom properties on `<html>`                      |
 | Accent     | `theme` (follow the variant), one of six presets, or an accent the theme pair carries (`ansi-blue`…) | a `data-accent` attribute on `<html>`, plus the resolved roles as custom properties |
-| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                         | `data-ui-font`, `data-content-font`, `data-code-font` plus `--font-*-size` values   |
+| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                        | Stable `data-*-font` ids plus resolved `--font-*` family and pixel-size properties  |
 
 Older single-font `font` preferences remain readable and migrate their family to
 the UI axis; new preferences store `fonts` with one family and size per axis.
@@ -305,21 +306,36 @@ Pass the same key to `ThemeProvider` as `storageKey`, and the two agree.
 
 ## Fonts
 
-Fonts are opt-in. `globals.css` does not import font assets; import
-`fonts.css` explicitly when those faces are wanted:
+Font preference roles and font assets are separate opt-ins. Import
+`appearance-font-settings.css` after the theme and base styles to enable the
+shared UI/content/code projections and utilities. `globals.css` does not import
+font assets; import `fonts.css` explicitly when those faces are wanted:
 
 ```css
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/appearance-font-settings.css';
 @import '@adea-ai/ui/fonts.css'; /* omit to bring your own */
 ```
 
-`--font-ui`, `--font-content` and `--font-code` are the three family axes.
+`appearance-font-settings.css` defaults `--font-ui`, `--font-content` and
+`--font-code` to System and scales each text role. Import it after `theme.css` and
+`base.css`, then apply settings with the shared runtime or prepaint helper; the
+helper resolves catalogue ids to family tokens and writes canonical pixel sizes.
+This stylesheet does not load any font files.
 `--font-sans` and `--font-mono` remain compatibility aliases for UI and code.
 The shared projection and prepaint helpers are exported from
 `@adea-ai/ui/lib/appearance-font-settings`; hosts can normalize persisted ids,
-apply the shared data attributes and size properties, and reuse the same
-bootstrap snippet without duplicating catalogue rules.
+apply the shared data attributes, resolve family ids through the published
+`--font-family-*` tokens, and reuse the same bootstrap snippet without
+duplicating catalogue rules.
+For versioned host preferences, pass the expected version as the bootstrap
+helper's second argument. Only an exact version match is applied before paint;
+missing or unsupported records use the System defaults. Omitting the argument
+retains the unversioned helper behavior.
+Each UI, Content and Code chooser keeps the complete font catalogue, and Code
+uses the exact selected catalogue family. Choose a `Mono` option when you want a
+monospace face; `System` uses the platform's monospace counterpart for Code.
 
 ## Adding a component
 

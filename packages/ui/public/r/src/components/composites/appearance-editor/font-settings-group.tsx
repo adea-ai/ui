@@ -1,6 +1,6 @@
 import { BookOpen, ChevronDown, Code2, PanelsTopLeft } from 'lucide-solid'
 import { For, createMemo, createSignal, createUniqueId } from 'solid-js'
-import { fontOptions } from '#lib/font-catalog'
+import { fontOptions } from '../../../lib/font-catalog'
 import { Button } from '../../ui/button/button'
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ import {
   type AppearanceEditorFontAxis,
   type AppearanceEditorFontFamilyId,
   type AppearanceEditorFontSettings,
-} from '#lib/appearance-font-settings'
+} from '../../../lib/appearance-font-settings'
 
 export type AppearanceFontSettingsGroupProps = {
   settings: AppearanceEditorFontSettings

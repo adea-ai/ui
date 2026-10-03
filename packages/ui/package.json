@@ -67,6 +67,7 @@
     "./globals.css": "./src/styles/globals.css",
     "./theme.css": "./src/styles/theme.css",
     "./base.css": "./src/styles/base.css",
+    "./appearance-font-settings.css": "./src/styles/appearance-font-settings.css",
     "./fonts.css": "./src/styles/fonts.css",
     "./registry.json": "./registry.json",
     "./package.json": "./package.json",

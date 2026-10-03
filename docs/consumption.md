@@ -73,13 +73,18 @@ persistence.
 
 Every axis is a value on the same provider, and each is stored in one preference.
 
-| Axis       | Values                                                             | Applied as        |
-| ---------- | ------------------------------------------------------------------ | ----------------- |
-| Appearance | `light`, `dark`, `system`                                          | a `dark` class    |
-| Theme      | any of the 27 catalogue ids                                        | custom properties |
-| Accent     | `theme`, one of six presets, or a theme-carried `ansi-*` accent    | `data-accent`     |
-| Typeface   | `space-grotesk`, `system`, `geist`, `geist-mono`, `jetbrains-mono` | `data-font`       |
-| Density    | `comfortable`, `compact`                                           | `data-density`    |
+| Axis       | Values                                                                        | Applied as        |
+| ---------- | ----------------------------------------------------------------------------- | ----------------- |
+| Appearance | `light`, `dark`, `system`                                                     | a `dark` class    |
+| Theme      | any of the 27 catalogue ids                                                   | custom properties |
+| Accent     | `theme`, one of six presets, or a theme-carried `ansi-*` accent               | `data-accent`     |
+| Typeface   | Full catalogue in UI, Content and Code (`fonts`); legacy `font` applies to UI | `data-*-font`     |
+| Density    | `comfortable`, `compact`                                                      | `data-density`    |
+
+New font settings keep the full catalogue available in every role, and Code
+uses the exact selected family. `System` uses the platform's monospace face for
+Code. Older preferences with only `font` migrate that value into UI; Content
+and Code keep their System defaults until the user chooses them separately.
 
 ```tsx
 <ThemeProvider
@@ -116,6 +121,12 @@ key must match the provider's:
   <script innerHTML={themeScript('my-app-appearance')} />
 </head>
 ```
+
+For a host-owned, versioned preference record, run the exported font bootstrap
+with the expected storage version before the theme stylesheets. It applies only
+an exact version match; when the record is absent or unsupported, it projects the
+shared System font defaults before first paint. Hosts using unversioned records
+can omit the version argument.
 
 ### The stylesheet exports
 
@@ -190,7 +201,7 @@ they were typed:
 | `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.4 kB    | Kobalte tooltip                       |
 | `@adea-ai/ui` → `NavigationMenu`                                | 56.0 kB    | Kobalte navigation menu               |
 | `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _348.3 kB_ | — and `Button` is 6.3% of it          |
+| _root plus chart and carousel entries_                          | _354.5 kB_ | — and `Button` is 6.2% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the

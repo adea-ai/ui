@@ -23,7 +23,7 @@
  */
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
 import { For, Show } from 'solid-js'
-import { cn } from '#lib/utils'
+import { cn } from '../../../lib/utils'
 
 export const PRIMARY_ACCENT_IDS = ['blue', 'green', 'amber', 'cyan', 'pink'] as const
 const primaryAccentIds: ReadonlySet<string> = new Set(PRIMARY_ACCENT_IDS)

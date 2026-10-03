@@ -24,12 +24,17 @@ import {
   type AdeaTheme,
 } from '@adea-ai/themes'
 import {
+  applyAppearanceFontSettings,
+  fontSettingsBootstrapScript,
+  normalizeAppearanceEditorFontSettings,
+} from '../../src/lib/appearance-font-settings'
+import {
   AppearanceEditor,
   AppearancePopover,
   type AppearanceDraft,
 } from '../../src/components/composites/appearance-editor'
-import { Text } from '../../src/components/ui/typography/typography'
 import '../../src/styles/globals.css'
+import '../../src/styles/appearance-font-settings.css'
 
 // A disposable host adapter demonstrates the editor's ports. Product persistence
 // and native capability acceptance require the real application composition.
@@ -78,6 +83,12 @@ function offeredThemeAccents(light: AdeaTheme, dark: AdeaTheme): AccentPreset[] 
 }
 
 function Fixture() {
+  const fontDefaults = normalizeAppearanceEditorFontSettings(undefined).settings
+  const fontBootstrap = fontSettingsBootstrapScript('appearance')
+  const fontApiSmoke = [
+    `${fontDefaults.ui.size}/${fontDefaults.content.size}/${fontDefaults.code.size}`,
+    String(fontBootstrap.includes('data-ui-font')),
+  ].join(';')
   const [open, setOpen] = createSignal(false)
   const [committed, setCommitted] = createSignal({ ...defaults })
   const [draft, setDraft] = createSignal({ ...defaults })
@@ -112,6 +123,7 @@ function Fixture() {
   createEffect(() => {
     for (const [name, value] of Object.entries(shadcnVariables(active())))
       document.documentElement.style.setProperty(name, value)
+    applyAppearanceFontSettings(document.documentElement, draft().fonts)
   })
   const custom = () =>
     draft().accent !== 'theme' &&
@@ -125,6 +137,9 @@ function Fixture() {
   }
   return (
     <main>
+      <output hidden data-font-settings-api>
+        {fontApiSmoke}
+      </output>
       <button type="button" id="outside">
         Outside the editor
       </button>
@@ -132,12 +147,12 @@ function Fixture() {
         Visible application
       </div>
       <div aria-label="Typography preview">
-        <Text data-testid="content-font-preview" variant="body">
+        <p data-testid="content-font-preview" class="font-content text-content">
           Reading preview
-        </Text>
-        <Text data-testid="code-font-preview" variant="code">
+        </p>
+        <code data-testid="code-font-preview" class="font-code text-code">
           const preview = true
-        </Text>
+        </code>
       </div>
       <AppearancePopover
         open={open()}

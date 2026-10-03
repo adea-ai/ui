@@ -1,5 +1,5 @@
-import { fontOptions, type FontOption } from '#lib/font-catalog'
-import { safeScriptStringLiteral } from '#lib/safe-script'
+import { fontOptions, type FontOption } from './font-catalog'
+import { safeScriptStringLiteral } from './safe-script'
 
 export const APPEARANCE_EDITOR_FONT_AXES = ['ui', 'content', 'code'] as const
 

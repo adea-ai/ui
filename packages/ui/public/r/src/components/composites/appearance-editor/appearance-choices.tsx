@@ -26,6 +26,7 @@
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
 import { For, Show } from 'solid-js'
 import { isThemeAccentId } from '../../../lib/theme-accents'
+import { AccentSwatchGroups } from './accent-swatch-groups'
 import type { AppearanceEditorProps } from './appearance-types'
 import { ThemeMiniature, ThemeMiniatureSplit } from './theme-preview'
 
@@ -39,7 +40,6 @@ const SURFACES = [
   { value: 'frosted', label: 'Frosted' },
   { value: 'opaque', label: 'Opaque' },
 ] as const
-
 export function ModeChoices(props: AppearanceEditorProps) {
   return (
     <Radio
@@ -113,89 +113,32 @@ export function AccentChoices(props: AppearanceEditorProps) {
       disabled={props.saving}
       orientation="horizontal"
       aria-label="Accent"
-      // One chip (custom) beside a capped swatch grid: a chip-per-state column
-      // beside a full-width swatch line overflowed the settings sidebar's
-      // control column, so the pair stays a narrow chip plus a wrapped grid.
-      class="flex items-center gap-3"
+      class="flex flex-col items-start gap-3"
       onChange={(accent) =>
         props.onChange({
           accent: accent === 'custom' ? (props.customAccentValue ?? '') : accent,
         })
       }
     >
-      <div class="grid grid-cols-4 gap-2">
-        {/* The theme's own accent is the first swatch. Picking it is the same
-            act the old dedicated "Theme default" chip performed, without a
-            second control for the state the row starts in. */}
-        <Radio.Item
-          value="theme"
-          class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
-        >
+      <AccentSwatchGroups
+        accentOptions={props.accentOptions}
+        themeAccentOptions={themeAccents()}
+        resolvedAppearance={resolvedAppearance()}
+        themeDefaultColor={
+          resolvedAppearance() === 'light'
+            ? props.lightTheme.colors.accent
+            : props.darkTheme.colors.accent
+        }
+      />
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted-foreground">Custom</span>
+        <Radio.Item value="custom">
           <Radio.ItemInput />
-          <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-            <span
-              class="block size-full rounded-full"
-              aria-hidden="true"
-              style={{
-                'background-color':
-                  resolvedAppearance() === 'light'
-                    ? props.lightTheme.colors.accent
-                    : props.darkTheme.colors.accent,
-              }}
-            />
-            <span class="sr-only">Theme default</span>
+          <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+            Custom
           </Radio.ItemLabel>
         </Radio.Item>
-        <For each={props.accentOptions}>
-          {(option) => (
-            <Radio.Item
-              value={option.id}
-              class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
-            >
-              <Radio.ItemInput />
-              <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-                <span
-                  class="block size-full rounded-full"
-                  aria-hidden="true"
-                  style={{
-                    'background-color':
-                      resolvedAppearance() === 'light' ? option.light : option.dark,
-                  }}
-                />
-                <span class="sr-only">{option.label}</span>
-              </Radio.ItemLabel>
-            </Radio.Item>
-          )}
-        </For>
-        <For each={themeAccents()}>
-          {(option) => (
-            <Radio.Item
-              value={option.id}
-              data-theme-accent={option.id}
-              class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
-            >
-              <Radio.ItemInput />
-              <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border border-dashed p-0.5 data-[checked]:border-solid data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-                <span
-                  class="block size-full rounded-full"
-                  aria-hidden="true"
-                  style={{
-                    'background-color':
-                      resolvedAppearance() === 'light' ? option.light : option.dark,
-                  }}
-                />
-                <span class="sr-only">{`Theme ${option.label.toLowerCase()}`}</span>
-              </Radio.ItemLabel>
-            </Radio.Item>
-          )}
-        </For>
       </div>
-      <Radio.Item value="custom">
-        <Radio.ItemInput />
-        <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-          Custom
-        </Radio.ItemLabel>
-      </Radio.Item>
     </Radio>
   )
 }
