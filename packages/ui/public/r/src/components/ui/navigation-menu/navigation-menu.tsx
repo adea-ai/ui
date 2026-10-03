@@ -130,9 +130,9 @@ export function NavigationMenuContent(props: ComponentProps<typeof KobalteNaviga
           // after it opens, so the previous panel would stay painted under the
           // next one.
           overlayMotion,
-        // A two-column panel is the shape most menu bars want, and it is opt-in
-        // through this hook rather than a prop because the column count is a
-        // layout decision the caller's content makes.
+          // A two-column panel is the shape most menu bars want, and it is opt-in
+          // through this hook rather than a prop because the column count is a
+          // layout decision the caller's content makes.
           'data-[wide]:grid-cols-2',
           local.class
         )}
