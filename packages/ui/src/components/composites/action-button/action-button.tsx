@@ -161,6 +161,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
         }
       >
         <Tooltip
+          placement={local.tooltipSide ?? 'bottom'}
           open={tooltipOpen()}
           onOpenChange={(open) => {
             if (open && tooltipSuppression()) return
@@ -174,7 +175,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
           >
             {contents()}
           </TooltipTrigger>
-          <TooltipContent side={local.tooltipSide ?? 'bottom'}>{local.tooltip}</TooltipContent>
+          <TooltipContent>{local.tooltip}</TooltipContent>
         </Tooltip>
       </Show>
       <Show when={busy()}>

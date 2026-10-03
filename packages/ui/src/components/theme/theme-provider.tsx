@@ -8,7 +8,15 @@ import {
   splitProps,
   useContext,
 } from 'solid-js'
-import { accentPresets, fontOptions } from '#lib/tokens'
+import { accentPresets } from '#lib/tokens'
+import { safeScriptStringLiteral } from '#lib/safe-script'
+import {
+  applyAppearanceFontSettings,
+  DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
+  fontSettingsBootstrapScript,
+  normalizeAppearanceEditorFontSettings,
+  type AppearanceEditorFontSettings,
+} from '#lib/appearance-font-settings'
 import type { AccentPreset } from '@adea-ai/themes'
 import {
   accentVariables,
@@ -39,7 +47,7 @@ import {
  *   - **an accent** — adea's six presets, or one of the accents the selected theme
  *     pair carries itself (`ansi-blue`…), which re-colour the interactive roles on
  *     top of whichever theme is active.
- *   - **a font** — the interface face.
+ *   - **fonts** — separate family and size choices for UI, content and code.
  *
  * Four axes rather than one list of presets, because they compose: a user who wants
  * Nord with a violet accent and the system font should not need someone to author
@@ -67,8 +75,10 @@ export type ThemeSelection = {
    * not offer falls back to the variant's own primary.
    */
   accent: string
-  /** A `fontOptions` id, or `space-grotesk` for the default. */
+  /** UI-family alias for consumers of the original single-font preference. */
   font: string
+  /** UI, content and code font settings. Omitted legacy records are migrated from `font`. */
+  fonts?: AppearanceEditorFontSettings
   /**
    * `comfortable` is the system's default geometry; `compact` moves the control
    * ladder down one rung.
@@ -84,7 +94,8 @@ export const defaultThemeSelection: ThemeSelection = {
   lightThemeId: defaultLightThemeId,
   darkThemeId: defaultDarkThemeId,
   accent: 'theme',
-  font: 'space-grotesk',
+  font: 'system',
+  fonts: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
   density: 'comfortable',
 }
 
@@ -153,6 +164,7 @@ function readSelection(storageKey: string): ThemeSelection {
     const raw = preferenceStore()?.getItem(storageKey)
     if (!raw) return defaultThemeSelection
     const parsed = JSON.parse(raw) as Partial<ThemeSelection>
+    const fonts = normalizeAppearanceEditorFontSettings(parsed.fonts, parsed.font).settings
     return {
       appearance:
         parsed.appearance === 'light' ||
@@ -179,9 +191,8 @@ function readSelection(storageKey: string): ThemeSelection {
           isThemeAccentId(parsed.accent))
           ? parsed.accent
           : defaultThemeSelection.accent,
-      font: fontOptions.some((option) => option.id === parsed.font)
-        ? (parsed.font as string)
-        : defaultThemeSelection.font,
+      font: fonts.ui.family,
+      fonts,
       // Every axis has to be read back here, or it is lost twice: the effect below
       // removes the `data-density` that `themeScript` set for the first paint, and
       // the next `setSelection` rewrites the store without it.
@@ -190,6 +201,26 @@ function readSelection(storageKey: string): ThemeSelection {
   } catch {
     return defaultThemeSelection
   }
+}
+
+/** Keep the deprecated single-font view synchronized with the UI axis. */
+function mergeThemeSelection(base: ThemeSelection, patch: Partial<ThemeSelection>): ThemeSelection {
+  const merged = { ...base, ...patch }
+  let fonts: AppearanceEditorFontSettings
+
+  if (patch.fonts !== undefined) {
+    fonts = normalizeAppearanceEditorFontSettings(patch.fonts).settings
+  } else if (patch.font !== undefined) {
+    const currentFonts = normalizeAppearanceEditorFontSettings(base.fonts, base.font).settings
+    fonts = normalizeAppearanceEditorFontSettings({
+      ...currentFonts,
+      ui: { ...currentFonts.ui, family: patch.font },
+    }).settings
+  } else {
+    fonts = normalizeAppearanceEditorFontSettings(merged.fonts, merged.font).settings
+  }
+
+  return { ...merged, fonts, font: fonts.ui.family }
 }
 
 export type ThemeProviderProps = {
@@ -217,10 +248,9 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const [local] = splitProps(props, ['children', 'storageKey', 'initial', 'selection'])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
 
-  const [selection, setSelectionState] = createSignal<ThemeSelection>({
-    ...readSelection(storageKey()),
-    ...local.initial,
-  })
+  const [selection, setSelectionState] = createSignal<ThemeSelection>(
+    mergeThemeSelection(readSelection(storageKey()), local.initial ?? {})
+  )
 
   // The controlled half of the contract. A patch from the owner replaces the
   // matching axes; the stored preference is untouched, since the owner is the one
@@ -228,7 +258,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
   // value — is what keeps this subscribed for the provider's lifetime.
   createEffect(() => {
     const incoming = local.selection
-    if (incoming) setSelectionState((current) => ({ ...current, ...incoming }))
+    if (incoming) setSelectionState((current) => mergeThemeSelection(current, incoming))
   })
 
   const [systemAppearance, setSystemAppearance] = createSignal<ThemeAppearance>('light')
@@ -284,8 +314,10 @@ export function ThemeProvider(props: ThemeProviderProps) {
     if (!accent) root.removeAttribute('data-accent')
     else root.dataset['accent'] = selection().accent
 
-    if (selection().font === 'space-grotesk') root.removeAttribute('data-font')
-    else root.dataset['font'] = selection().font
+    applyAppearanceFontSettings(
+      root,
+      normalizeAppearanceEditorFontSettings(selection().fonts, selection().font).settings
+    )
 
     // Density is a pure token shift, so unlike the colour axes there is nothing to
     // compute: the attribute selects a block in `theme.css`. It is applied here for
@@ -306,7 +338,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     themes: builtinThemes,
     themeAccents,
     setSelection(patch) {
-      const next = { ...selection(), ...patch }
+      const next = mergeThemeSelection(selection(), patch)
       setSelectionState(next)
       try {
         preferenceStore()?.setItem(storageKey(), JSON.stringify(next))
@@ -339,10 +371,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
  * was found; `tests/theme-script.test.ts` pins it so it cannot come back.
  */
 export function inlineScriptLiteral(value: string): string {
-  return JSON.stringify(value).replace(
-    /[<>\u2028\u2029]/g,
-    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`
-  )
+  return safeScriptStringLiteral(value)
 }
 
 /**
@@ -365,5 +394,6 @@ export function inlineScriptLiteral(value: string): string {
  * documented there.
  */
 export function themeScript(storageKey = 'adea-appearance'): string {
-  return `(function(){try{var s=localStorage.getItem(${inlineScriptLiteral(storageKey)});var p=s?JSON.parse(s):{};var a=p.appearance||'system';var d=a==='dark'||(a==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';if(p.accent&&p.accent!=='theme')r.dataset.accent=p.accent;if(p.font&&p.font!=='space-grotesk')r.dataset.font=p.font;if(p.density==='compact')r.dataset.density='compact';}catch(e){}})();`
+  const script = `(function(){try{var s=localStorage.getItem(${inlineScriptLiteral(storageKey)});var p=s?JSON.parse(s):{};var a=p.appearance||'system';var d=a==='dark'||(a==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';if(p.accent&&p.accent!=='theme')r.dataset.accent=p.accent;if(p.density==='compact')r.dataset.density='compact';}catch(e){}})();`
+  return `${script}${fontSettingsBootstrapScript(storageKey)}`
 }

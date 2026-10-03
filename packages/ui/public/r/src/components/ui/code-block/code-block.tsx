@@ -156,7 +156,7 @@ export function CodeBlock(props: CodeBlockProps) {
       }}
     >
       <div class="flex items-center justify-between gap-2 px-3 py-1">
-        <span class="truncate font-mono text-xs text-muted-foreground">{label()}</span>
+        <span class="truncate font-code text-code text-muted-foreground">{label()}</span>
         <Actions />
       </div>
       <div
@@ -170,7 +170,7 @@ export function CodeBlock(props: CodeBlockProps) {
           when={local.highlight}
           fallback={
             <pre class="m-0 px-3 py-2" style={{ 'line-height': local.lineHeight ?? '1.5' }}>
-              <code class="font-mono text-xs">
+              <code class="font-code text-code">
                 <Show when={local.showLineNumbers} fallback={local.code.replace(/\n$/, '')}>
                   <For each={lines()}>
                     {(line, index) => (
@@ -217,9 +217,9 @@ export function CodeBlock(props: CodeBlockProps) {
  * InlineCode.
  *
  * The `code` inside a sentence. It is a component rather than a class because it
- * has to hold three properties at once: it must not break the line's rhythm
- * (`font-size: 0.9em`, so it tracks the surrounding text), it must wrap rather
- * than overflow a narrow column (`overflow-wrap: anywhere` — an identifier with
+ * has to hold three properties at once: it uses the shared code family and size
+ * preference, and it wraps rather than overflows a narrow column
+ * (`overflow-wrap: anywhere` — an identifier with
  * no spaces is one long token), and it must be legible against whatever surface
  * it lands on, which is why the fill is a token and not a fixed grey.
  */
@@ -229,7 +229,7 @@ export function InlineCode(props: ComponentProps<'code'>) {
   return (
     <code
       class={cn(
-        'rounded-sm bg-muted px-[0.4em] py-[0.15em] font-mono text-[0.9em] text-foreground [overflow-wrap:anywhere]',
+        'rounded-sm bg-muted px-[0.4em] py-[0.15em] font-code text-code text-foreground [overflow-wrap:anywhere]',
         local.class
       )}
       {...rest}

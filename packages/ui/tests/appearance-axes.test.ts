@@ -1,4 +1,6 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   ACCENTS,
   CONTRAST_FLOORS,
@@ -18,37 +20,16 @@ import {
   themeById,
   withAccent,
 } from '#lib/themes'
-import { densityTokens } from '../src/lib/tokens'
-import { THEME_CSS, valueOf } from './helpers/theme-css'
+import { densityTokens, fontOptions } from '../src/lib/tokens'
+import { APPEARANCE_FONT_CSS, THEME_CSS, valueOf } from './helpers/theme-css'
+
+const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), 'utf8')
 
 /**
- * The three appearance axes that select rather than describe.
- *
- * Accent, typeface and density are *selections*: a user picks one, it is stored,
- * and something has to act on it. That is a different kind of claim from "these two
- * colours are legible", and it is the kind that quietly stops being true.
- *
- * All three were broken at once, in the same way, and nothing noticed:
- *
- *   - **Accent.** `theme.css` carried a correct `[data-accent='…']` block per preset
- *     and `ThemeProvider` set the attribute, but the provider writes a theme's roles
- *     onto `<html>` as *inline* custom properties. An inline declaration outranks
- *     every stylesheet selector, so the blocks never applied. All seven accents
- *     rendered as the same blue, and the toolbar reported a selection that had no
- *     effect.
- *   - **Typeface.** The default `--font-sans` was declared in a `:root` block placed
- *     *after* the `[data-font]` blocks. Equal specificity, so source order decided it
- *     and the default won. All five faces resolved to Space Grotesk.
- *   - **Density.** `grep -rn data-density` returned nothing. The tokens, the
- *     documentation and a toolbar control all described an axis with no
- *     implementation behind it.
- *
- * Every other suite here reads `theme.css` as text, which is why all three survived:
- * the file was correct in each case and the *runtime* was not. So these tests assert
- * the two things text cannot see — that the stylesheet and the provider agree, and
- * that a selection is reachable at all.
+ * Appearance selections have to reach their CSS projections. Accent, typography and
+ * density are stored choices, so the shared provider and tokens must agree on the
+ * attributes and variables that represent them.
  */
-
 /**
  * A declaration inside a named block, as `theme.css` writes it.
  *
@@ -296,141 +277,44 @@ describe('the appearance editor adapter', () => {
   })
 })
 
-/**
- * Which `--font-sans` declaration the cascade actually selects, per selection.
- *
- * The rules are read in document order and the *last* match wins, which is exactly
- * what the browser does for equal specificity — so this reproduces the rule rather
- * than trusting the file's appearance. It is a reimplementation, which is normally a
- * thing to avoid in a test, and it is here because the alternative is a test that
- * agrees with any file as long as the text looks plausible.
- */
-function resolveFontSans(): { default: string; bySelection: Record<string, string | undefined> } {
-  const rules: { selector: string; value: string }[] = []
-  const source = THEME_CSS.replace(/\/\*[\s\S]*?\*\//g, '')
-  for (const match of source.matchAll(/([^{}]+)\{([^{}]*--font-sans\s*:[^;}]+;)/g)) {
-    rules.push({
-      selector: (match[1] ?? '').trim(),
-      value: /--font-sans\s*:\s*([^;]+);/.exec(match[2] ?? '')?.[1]?.trim() ?? '',
-    })
-  }
+describe('the font axes reach the screen', () => {
+  test('System family and UI-scaled role defaults are activated by the marker', () => {
+    expect(APPEARANCE_FONT_CSS).toContain(':root[data-font-settings]')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-ui: var(--font-family-system)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-content: var(--font-family-system)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-code: var(--font-family-system-mono)')
+  })
 
-  // `:root` matches the document element with no attribute, and `[data-font='x']`
-  // matches it when the attribute is `x`. Both are specificity (0,1,0).
-  const lastMatch = (attribute: string | null): string | undefined => {
-    let winner: string | undefined
-    for (const rule of rules) {
-      const applies =
-        rule.selector === ':root'
-          ? attribute === null
-          : attribute !== null && rule.selector === `[data-font='${attribute}']`
-      if (applies) winner = rule.value
-    }
-    return winner
-  }
-
-  return {
-    default: lastMatch(null) ?? '',
-    bySelection: Object.fromEntries(
-      ['system', 'geist', 'geist-mono', 'jetbrains-mono'].map((id) => [id, lastMatch(id)])
-    ),
-  }
-}
-
-describe('the typeface axis reaches the screen', () => {
-  const defaultSans = /:root\s*\{[^}]*--font-sans:\s*([^;]+);/.exec(THEME_CSS)
-
-  /**
-   * Source order, because that is the whole mechanism.
-   *
-   * `:root` and `[data-font='…']` have identical specificity, so whichever is written
-   * last wins outright — there is no cascade subtlety to reason about, only a
-   * position in the file. A test that resolved the value would have to reproduce
-   * that rule; asserting the order states the requirement directly.
-   */
-  test('the default typeface is declared before every selection, so the selection wins', () => {
-    // Every `:root` declaration of the default, not just the first. Copying the
-    // default instead of moving it leaves the original sitting below the
-    // `[data-font]` blocks, where it silently wins again — and a test that looked at
-    // the first match would pass on exactly that file. So the assertion is on the
-    // *last* one, and the count is asserted separately.
-    const defaults = [...THEME_CSS.matchAll(/:root\s*\{([^}]*)\}/g)]
-      .map((match) => ({ body: match[1] ?? '', at: match.index ?? 0 }))
-      .filter(({ body }) => /--font-sans\s*:/.test(body))
-
-    expect(
-      defaults.length,
-      `--font-sans is declared in ${defaults.length} :root blocks. There must be exactly one ` +
-        'default, and it must sit above the [data-font] blocks — a second copy below them wins.'
-    ).toBe(1)
-
-    const defaultAt = defaults[0]!.at
-    expect(defaultSans, 'the default typeface is missing').not.toBeNull()
-
-    for (const id of ['system', 'geist', 'geist-mono', 'jetbrains-mono']) {
-      const selector = `[data-font='${id}']`
-      const at = THEME_CSS.indexOf(selector)
-      expect(at, `${selector} is missing from theme.css`).toBeGreaterThan(-1)
-      expect(
-        at,
-        `${selector} is written before the :root default. They have the same specificity, so the ` +
-          'default wins and the selection has no effect — which is what made all five typefaces ' +
-          'resolve to Space Grotesk.'
-      ).toBeGreaterThan(defaultAt)
+  test('every catalog family resolves to a published family variable for all text roles', () => {
+    for (const option of fontOptions) {
+      for (const variable of Object.values(option.familyVariables)) {
+        expect(variable).toMatch(/^--font-family-/)
+        expect(THEME_CSS).toContain(variable + ':')
+      }
     }
   })
 
-  /**
-   * The resolved stack, which is the only assertion that cannot be satisfied by a
-   * file that merely *reads* correctly.
-   *
-   * The ordering assertions above were written backwards once and passed anyway,
-   * because they described the order the file should have rather than the order it
-   * had. Nothing textual can catch that. A browser can: substitute each `--font-family-*`
-   * stack with a marker, apply the cascade for real, and read which marker wins. It
-   * needs no font to be installed and no rendering, because the whole question is
-   * which declaration the cascade selects.
-   */
-  test('the cascade selects the chosen stack, resolved through the family tokens', () => {
-    const resolved = resolveFontSans()
-    expect(resolved.default, 'the default stack is missing').toContain(
-      '--font-family-space-grotesk'
+  test('legacy data-font remains a UI-only compatibility alias', () => {
+    expect(THEME_CSS).toContain("[data-font='system']")
+    expect(THEME_CSS).toContain("[data-font='geist']")
+    expect(THEME_CSS).not.toMatch(/\[data-font=[^\]]+\][^{]*\{[^}]*--font-content:/)
+    expect(APPEARANCE_FONT_CSS).toContain('--font-sans: var(--font-ui)')
+  })
+
+  test('content and code expose their own selected size tokens', () => {
+    expect(APPEARANCE_FONT_CSS).toContain('--font-ui-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-content-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-code-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain(
+      '--text-content: calc(0.875rem * var(--font-content-scale))'
     )
-
-    for (const id of ['system', 'geist', 'geist-mono', 'jetbrains-mono']) {
-      expect(
-        resolved.bySelection[id],
-        `[data-font='${id}'] does not resolve to its own stack — the default is winning`
-      ).toBe(`var(--font-family-${id})`)
-    }
+    expect(APPEARANCE_FONT_CSS).toContain('--text-code: calc(0.75rem * var(--font-code-scale))')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-mono: var(--font-code)')
   })
 
-  test('each typeface resolves to a different stack than the default', () => {
-    const stacks = new Set<string>()
-    for (const id of ['system', 'geist', 'geist-mono', 'jetbrains-mono']) {
-      const sans = declaredIn(`[data-font='${id}'] {`, 'font-sans')
-      expect(sans, `${id} declares no --font-sans`).toBeDefined()
-      stacks.add(sans!)
-    }
-    expect(stacks.size, `typeface stacks are not distinct: ${[...stacks].join(' | ')}`).toBe(4)
-  })
-
-  test('the mono typefaces tighten tracking, and the proportional ones do not', () => {
-    // Tracking is what makes a monospace face sit correctly next to prose, and it
-    // is only meaningful when the UI face is monospace. A proportional face that
-    // tightened would read as a bug.
-    for (const id of ['geist-mono', 'jetbrains-mono']) {
-      expect(
-        declaredIn(`[data-font='${id}'] {`, 'ui-tracking'),
-        `${id} sets no --ui-tracking`
-      ).toBeDefined()
-    }
-    for (const id of ['system', 'geist']) {
-      expect(
-        declaredIn(`[data-font='${id}'] {`, 'ui-tracking'),
-        `${id} tightens tracking; a proportional face should not`
-      ).toBeUndefined()
-    }
+  test('the body and semantic code elements retain rem-relative enlargement', () => {
+    expect(BASE_CSS).toContain('font-size: var(--text-sm);')
+    expect(APPEARANCE_FONT_CSS).toContain('font-size: var(--text-code);')
   })
 })
 

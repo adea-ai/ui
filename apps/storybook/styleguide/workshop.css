@@ -16,6 +16,7 @@
  *      wrong width.
  */
 @import '@adea-ai/ui/globals.css';
+@import '@adea-ai/ui/appearance-font-settings.css';
 @import '@adea-ai/ui/fonts.css';
 
 /* The library, and this app's own styleguide. */

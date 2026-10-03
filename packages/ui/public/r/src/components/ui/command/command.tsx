@@ -274,7 +274,7 @@ export function CommandShortcut(props: {
   return (
     <span
       class={cn(
-        'text-muted-foreground ms-auto font-mono text-2xs tracking-widest group-data-[selected=true]/command-item:text-foreground',
+        'text-muted-foreground ms-auto font-code text-code tracking-widest group-data-[selected=true]/command-item:text-foreground',
         props.class
       )}
     >

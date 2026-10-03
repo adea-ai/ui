@@ -135,8 +135,29 @@ test('ThemeProvider keeps a stored compact density after mount and across a chan
   await expect(page.getByTestId('appearance')).toHaveText('light')
   await expect(html).toHaveAttribute('data-density', 'compact')
   await expect(html).toHaveAttribute('data-accent', 'violet')
-  await expect(html).toHaveAttribute('data-font', 'geist')
+  await expect(html).toHaveAttribute('data-font-settings', '')
+  await expect(html).toHaveAttribute('data-ui-font', 'geist')
+  await expect(html).not.toHaveAttribute('data-font')
+  await expect(html).not.toHaveAttribute('data-content-font')
+  await expect(html).not.toHaveAttribute('data-code-font')
   await expect(html).toHaveAttribute('data-theme', 'solarized-light')
+  expect(
+    await html.evaluate((root) => ({
+      ui: root.style.getPropertyValue('--font-ui').trim(),
+      content: root.style.getPropertyValue('--font-content').trim(),
+      code: root.style.getPropertyValue('--font-code').trim(),
+      uiSize: root.style.getPropertyValue('--font-ui-size').trim(),
+      contentSize: root.style.getPropertyValue('--font-content-size').trim(),
+      codeSize: root.style.getPropertyValue('--font-code-size').trim(),
+    }))
+  ).toEqual({
+    ui: 'var(--font-family-geist)',
+    content: 'var(--font-family-system)',
+    code: 'var(--font-family-system-mono)',
+    uiSize: '14px',
+    contentSize: '14px',
+    codeSize: '12px',
+  })
 
   // A change to another axis persists the whole selection; density must ride along
   // rather than be dropped from the rewrite.
@@ -144,7 +165,15 @@ test('ThemeProvider keeps a stored compact density after mount and across a chan
   await expect(html).toHaveClass(/\bdark\b/)
   await expect(html).toHaveAttribute('data-density', 'compact')
   await expect(html).toHaveAttribute('data-theme', 'nord')
-  expect(await storedSelection(page)).toEqual({ ...stored, appearance: 'dark' })
+  expect(await storedSelection(page)).toEqual({
+    ...stored,
+    appearance: 'dark',
+    fonts: {
+      ui: { family: 'geist', size: 14 },
+      content: { family: 'system', size: 14 },
+      code: { family: 'system', size: 12 },
+    },
+  })
 })
 
 test('ThemeProvider falls back to comfortable for an unknown stored density', async ({ page }) => {

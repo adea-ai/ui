@@ -1,0 +1,110 @@
+/* Optional typography roles and Appearance font controls.
+ *
+ * Import after `theme.css` and `base.css` when the host uses the shared font
+ * preference projection. This file defines selectors and utilities only; it
+ * never imports font assets. `fonts.css` remains a separate opt-in for bundled
+ * typefaces.
+ */
+
+/* The marker scopes role defaults and wins over theme.css root tokens even
+   when a bundler hoists this optional sheet before shared globals. Family
+   values come from the validated shared runtime/bootstrap projection. */
+:root[data-font-settings] {
+  --font-ui: var(--font-family-system);
+  --font-content: var(--font-family-system);
+  --font-code: var(--font-family-system-mono);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+  --font-ui-scale: 1;
+  --font-content-scale: 1;
+  --font-code-scale: 1;
+
+  --text-2xs: calc(0.6875rem * var(--font-ui-scale));
+  --text-xs: calc(0.75rem * var(--font-ui-scale));
+  --text-sm: calc(0.875rem * var(--font-ui-scale));
+  --text-base: calc(1rem * var(--font-ui-scale));
+  --text-lg: calc(1.125rem * var(--font-ui-scale));
+  --text-xl: calc(1.25rem * var(--font-ui-scale));
+  --text-2xl: calc(1.5rem * var(--font-ui-scale));
+  --text-3xl: calc(1.875rem * var(--font-ui-scale));
+  --text-content: calc(0.875rem * var(--font-content-scale));
+  --text-content--line-height: var(--text-sm--line-height);
+  --text-code: calc(0.75rem * var(--font-code-scale));
+  --text-code--line-height: var(--text-xs--line-height);
+}
+
+@layer base {
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-code);
+    font-size: var(--text-code);
+  }
+
+  /* Appearance's own controls grow with the UI preference while ordinary
+     controls retain their established density. */
+  .global-appearance-font-settings button,
+  .global-appearance-editor-actions button {
+    min-height: max(var(--control-height-sm), calc(1lh + 2px));
+  }
+
+  /* Text controls keep their density rung but gain room for their projected
+     line box. Icon-only controls use size-control-* and keep fixed targets. */
+  [data-font-settings] .h-control-2xs {
+    --font-control-height: var(--control-height-2xs);
+  }
+  [data-font-settings] .h-control-xs {
+    --font-control-height: var(--control-height-xs);
+  }
+  [data-font-settings] .h-control-sm {
+    --font-control-height: var(--control-height-sm);
+  }
+  [data-font-settings] .h-control-md {
+    --font-control-height: var(--control-height-md);
+  }
+  [data-font-settings] .h-control-lg {
+    --font-control-height: var(--control-height-lg);
+  }
+  [data-font-settings] .h-control-xl {
+    --font-control-height: var(--control-height-xl);
+  }
+  [data-font-settings] .h-control-2xl {
+    --font-control-height: var(--control-height-2xl);
+  }
+  [data-font-settings]
+    :is(
+      .h-control-2xs,
+      .h-control-xs,
+      .h-control-sm,
+      .h-control-md,
+      .h-control-lg,
+      .h-control-xl,
+      .h-control-2xl
+    ) {
+    min-height: max(var(--font-control-height), calc(1lh + 2px));
+  }
+
+  [data-font-settings]
+    input:is(
+      .h-control-2xs,
+      .h-control-xs,
+      .h-control-sm,
+      .h-control-md,
+      .h-control-lg,
+      .h-control-xl,
+      .h-control-2xl
+    ) {
+    min-height: max(var(--font-control-height), calc(1lh + var(--spacing) + var(--spacing) + 2px));
+  }
+
+  .global-appearance-font-settings input[type='number'] {
+    min-height: max(var(--control-height-md), calc(1lh + var(--spacing) + var(--spacing) + 3px));
+  }
+}
+
+/* Keep the numeric font-size value visible beside the native number stepper
+   as the UI font grows; unlayered so this minimum wins over min-w-0. */
+.global-appearance-font-settings input[type='number'] {
+  min-width: calc(3ch + var(--control-padding-md) + var(--control-padding-md) + 1.25rem + 2px);
+}

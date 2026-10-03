@@ -70,8 +70,14 @@ describe('headingVariants', () => {
 })
 
 describe('textVariants', () => {
-  test('gives text-sm three weights by role', () => {
-    expect(classes(textVariants({ variant: 'body' }))).toEqual(['text-sm'])
+  test('gives prose its own family and size axis', () => {
+    expect(classes(textVariants({ variant: 'body' }))).toEqual(['font-content', 'text-content'])
+    expect(classes(textVariants({ variant: 'strong' }))).toContain('font-content')
+    expect(classes(textVariants({ variant: 'strong' }))).toContain('text-content')
+  })
+
+  test('keeps labels on the interface ladder and assigns the other roles', () => {
+    expect(classes(textVariants({ variant: 'label' }))).toContain('text-sm')
     expect(classes(textVariants({ variant: 'label' }))).toContain('font-medium')
     expect(classes(textVariants({ variant: 'strong' }))).toContain('font-semibold')
   })
@@ -79,7 +85,7 @@ describe('textVariants', () => {
   test('covers the rungs below the default', () => {
     expect(classes(textVariants({ variant: 'caption' }))).toEqual(['text-xs'])
     expect(classes(textVariants({ variant: 'micro' }))).toEqual(['text-2xs', 'font-medium'])
-    expect(classes(textVariants({ variant: 'code' }))).toEqual(['font-mono', 'text-xs'])
+    expect(classes(textVariants({ variant: 'code' }))).toEqual(['font-code', 'text-code'])
   })
 
   test('keeps tone independent of size', () => {
@@ -87,7 +93,7 @@ describe('textVariants', () => {
       'text-xs',
       'text-muted-foreground',
     ])
-    expect(classes(textVariants())).toEqual(['text-sm'])
+    expect(classes(textVariants())).toEqual(['font-content', 'text-content'])
   })
 
   test('renders body as a paragraph, code as code and the rest inline', () => {

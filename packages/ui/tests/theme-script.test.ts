@@ -69,10 +69,12 @@ describe('themeScript', () => {
    * property assignment rather than code — worth asserting, because it is the reason
    * only the key needs escaping.
    */
-  test('a stored accent or font id is assigned, never executed', () => {
+  test('stored accent and font ids are applied as validated properties, never executed', () => {
     const script = themeScript()
     expect(script).toContain('r.dataset.accent=p.accent')
-    expect(script).toContain('r.dataset.font=p.font')
+    expect(script).toContain('r.setAttribute(spec.familyAttribute,family)')
+    expect(script).toContain("r.style.setProperty(spec.sizeProperty,px+'px')")
+    expect(script).toContain("valid(p.font,'system')")
     expect(script).not.toContain('eval(')
   })
 })

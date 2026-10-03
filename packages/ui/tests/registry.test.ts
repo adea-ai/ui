@@ -169,9 +169,11 @@ describe('registry', () => {
     // This assertion is what noticed the dependency had gone.
     const sheet = registryItems.find((item) => item.name === 'sheet')
     const toggleGroup = registryItems.find((item) => item.name === 'toggle-group')
+    const appearanceEditor = registryItems.find((item) => item.name === 'appearance-editor')
 
     expect(sheet?.registryDependencies ?? []).toContain('@adea-ai/ui/dialog')
     expect(toggleGroup?.registryDependencies ?? []).toContain('@adea-ai/ui/toggle')
+    expect(appearanceEditor?.registryDependencies ?? []).toContain('@adea-ai/ui/theme')
   })
 
   test('every item installs into a tree where every import resolves', () => {
@@ -262,6 +264,7 @@ describe('registry', () => {
     const theme = registryItems.find((item) => item.name === 'theme')
 
     expect(theme?.files.map((file) => file.path).toSorted()).toEqual([
+      'src/styles/appearance-font-settings.css',
       'src/styles/base.css',
       'src/styles/fonts.css',
       'src/styles/globals.css',

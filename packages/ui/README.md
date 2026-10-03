@@ -200,6 +200,7 @@ directories your application uses in its stylesheet, relative to that stylesheet
 @import 'tailwindcss';
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/appearance-font-settings.css'; /* optional: shared font roles and Appearance controls */
 @source '../node_modules/@adea-ai/ui/src/components/ui/button';
 ```
 
@@ -239,7 +240,11 @@ provider takes an initial selection and every axis is a plain value:
     darkThemeId: 'adea-dark',
     accent: 'theme', // or 'violet' | 'blue' | 'green' | 'amber' | 'cyan' | 'pink',
     //                    or a theme-carried accent such as 'ansi-blue'
-    font: 'space-grotesk', // or 'system' | 'geist' | 'geist-mono' | 'jetbrains-mono'
+    fonts: {
+      ui: { family: 'system', size: 14 },
+      content: { family: 'system', size: 14 },
+      code: { family: 'system', size: 12 },
+    },
   }}
 >
 ```
@@ -249,7 +254,13 @@ provider takes an initial selection and every axis is a plain value:
 | Appearance | `light`, `dark`, `system`                                                                            | a `dark` class plus `color-scheme` on `<html>`                                      |
 | Theme      | any of the 34 catalogue ids                                                                          | the variant's tokens, written as custom properties on `<html>`                      |
 | Accent     | `theme` (follow the variant), one of six presets, or an accent the theme pair carries (`ansi-blue`…) | a `data-accent` attribute on `<html>`, plus the resolved roles as custom properties |
-| Typeface   | five options                                                                                         | a `data-font` attribute on `<html>`                                                 |
+| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                        | Stable `data-*-font` ids plus resolved `--font-*` family and pixel-size properties  |
+
+Older single-font `font` preferences remain readable and migrate their family to
+the UI axis; new preferences store `fonts` with one family and size per axis.
+Canonical size properties stay in pixels for native editor integrations; the
+shared text tokens use rem-relative ratios so browser root-text enlargement still
+scales UI, prose, keyboard keys and code.
 
 Read and change the current selection with `useTheme()`:
 
@@ -263,8 +274,9 @@ itself (`@adea-ai/themes`' `themeAccentPresets`): the palette's own blue,
 magenta, cyan and green, offered only when both themes clear the catalogue's
 accent floors. Their ids are role-shaped, so `ansi-blue` follows a theme switch
 to the new theme's blue; a slot the new pair cannot offer falls back to the
-theme's own primary. `AppearancePanel` and `AppearanceEditor` offer them after
-the six presets.
+theme's own primary. The primary grid is the theme default plus five standard
+presets; Violet remains available under Additional colors, and theme accents
+have their own group.
 
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
@@ -294,16 +306,40 @@ Pass the same key to `ThemeProvider` as `storageKey`, and the two agree.
 
 ## Fonts
 
-Fonts are opt-in. `globals.css` does not import font assets; import
-`fonts.css` explicitly when those faces are wanted:
+Font preference roles and font assets are separate opt-ins. Import
+`appearance-font-settings.css` after the theme and base styles to enable the
+shared UI/content/code projections and utilities. `globals.css` does not import
+font assets; import `fonts.css` explicitly when those faces are wanted:
 
 ```css
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/appearance-font-settings.css';
 @import '@adea-ai/ui/fonts.css'; /* omit to bring your own */
 ```
 
-`--font-sans` and `--font-mono` are the two variables everything reads.
+`appearance-font-settings.css` defaults `--font-ui`, `--font-content` and
+`--font-code` to System and scales each text role. Import it after `theme.css` and
+`base.css`, then apply settings with the shared runtime or prepaint helper; the
+helper resolves catalogue ids to family tokens and writes canonical pixel sizes.
+This stylesheet does not load any font files.
+The `font-ui-size`, `font-content-size` and `font-code-size` entries in the token
+gallery are runtime-projected properties: `applyAppearanceFontSettings` and
+`fontSettingsBootstrapScript` write their pixel values from normalized font
+settings. They are not fixed declarations in the theme stylesheet.
+`--font-sans` and `--font-mono` remain compatibility aliases for UI and code.
+The shared projection and prepaint helpers are exported from
+`@adea-ai/ui/lib/appearance-font-settings`; hosts can normalize persisted ids,
+apply the shared data attributes, resolve family ids through the published
+`--font-family-*` tokens, and reuse the same bootstrap snippet without
+duplicating catalogue rules.
+For versioned host preferences, pass the expected version as the bootstrap
+helper's second argument. Only an exact version match is applied before paint;
+missing or unsupported records use the System defaults. Omitting the argument
+retains the unversioned helper behavior.
+Each UI, Content and Code chooser keeps the complete font catalogue, and Code
+uses the exact selected catalogue family. Choose a `Mono` option when you want a
+monospace face; `System` uses the platform's monospace counterpart for Code.
 
 ## Adding a component
 
@@ -321,7 +357,7 @@ Every component, every variant and the token galleries are in the workshop:
 bun run storybook
 ```
 
-The toolbar switches theme, accent, typeface and density live, which is the
+The toolbar switches theme, accent, fonts and density live, which is the
 fastest way to see how a component behaves across the catalogue rather than in
 one theme.
 

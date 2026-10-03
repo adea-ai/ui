@@ -1,7 +1,7 @@
 import { DropdownMenu as KobalteDropdownMenu } from '@kobalte/core/dropdown-menu'
 import { Check, ChevronRight, Circle } from 'lucide-solid'
-import type { ComponentProps } from 'solid-js'
-import { splitProps } from 'solid-js'
+import type { Accessor, ComponentProps } from 'solid-js'
+import { createContext, splitProps, useContext } from 'solid-js'
 import {
   menuContentPadding,
   destructiveMenuItem,
@@ -13,6 +13,18 @@ import {
   popoverArrow,
 } from '#lib/overlay'
 import { cn } from '#lib/utils'
+
+type MenuOrientation = 'horizontal' | 'vertical'
+const DropdownMenuOrientationContext = createContext<Accessor<MenuOrientation | undefined>>()
+type HandlerEvent<Handler> = Handler extends (...args: infer Arguments) => void
+  ? Arguments[0]
+  : never
+type DropdownMenuTriggerKeyEvent = HandlerEvent<
+  NonNullable<ComponentProps<typeof KobalteDropdownMenu.Trigger>['onKeyDown']>
+>
+type DropdownMenuTriggerPointerEvent = HandlerEvent<
+  NonNullable<ComponentProps<typeof KobalteDropdownMenu.Trigger>['onPointerDown']>
+>
 
 /**
  * DropdownMenu.
@@ -34,12 +46,138 @@ import { cn } from '#lib/utils'
  * with an AlertDialog is the caller's job.
  */
 export function DropdownMenu(props: ComponentProps<typeof KobalteDropdownMenu>) {
-  const [local, rest] = splitProps(props, ['modal'])
-  return <KobalteDropdownMenu modal={local.modal ?? false} {...rest} />
+  const [local, rest] = splitProps(props, ['modal', 'orientation'])
+  const orientation = () => local.orientation
+  return (
+    <DropdownMenuOrientationContext.Provider value={orientation}>
+      <KobalteDropdownMenu modal={local.modal ?? false} orientation={local.orientation} {...rest} />
+    </DropdownMenuOrientationContext.Provider>
+  )
+}
+
+const SCROLLABLE_OVERFLOW = /(auto|scroll)/
+const OVERFLOW_PROPERTIES = ['overflow', 'overflow-x', 'overflow-y'] as const
+
+type OverflowProperty = (typeof OVERFLOW_PROPERTIES)[number]
+type OverflowDeclaration = Readonly<{
+  property: OverflowProperty
+  value: string
+  priority: string
+}>
+
+function readInlineOverflow(element: HTMLElement): OverflowDeclaration[] {
+  return OVERFLOW_PROPERTIES.map((property) => ({
+    property,
+    value: element.style.getPropertyValue(property),
+    priority: element.style.getPropertyPriority(property),
+  }))
+}
+
+function declarationsMatch(element: HTMLElement, declarations: OverflowDeclaration[]) {
+  return declarations.every(
+    ({ property, value, priority }) =>
+      element.style.getPropertyValue(property) === value &&
+      element.style.getPropertyPriority(property) === priority
+  )
+}
+
+function bypassUnboundedScrollLookup(trigger: HTMLElement) {
+  const scrollRoot = document.scrollingElement ?? document.documentElement
+  if (window.getComputedStyle(scrollRoot).overflow !== 'hidden') return
+
+  const temporaryStyles: Array<{
+    element: HTMLElement
+    original: OverflowDeclaration[]
+    applied: OverflowDeclaration[]
+  }> = []
+
+  for (let element: HTMLElement | null = trigger; element;) {
+    const parent: HTMLElement | null = element.parentElement
+    if (element !== scrollRoot) {
+      const computed = window.getComputedStyle(element)
+      const overflow = `${computed.overflow} ${computed.overflowX} ${computed.overflowY}`
+      if (SCROLLABLE_OVERFLOW.test(overflow)) {
+        const original = readInlineOverflow(element)
+        element.style.setProperty('overflow', 'clip', 'important')
+        temporaryStyles.push({ element, original, applied: readInlineOverflow(element) })
+      }
+    }
+    element = parent
+  }
+
+  if (temporaryStyles.length === 0) return
+
+  // Kobalte's keyboard path synchronously walks scroll parents before it opens
+  // the menu. Clipping only non-root scroll ancestors makes that walk stop at
+  // the locked viewport. Restore those declarations once the event handler
+  // finishes, and leave any newer owner write untouched.
+  queueMicrotask(() => {
+    for (const { element, original, applied } of temporaryStyles) {
+      if (!element.isConnected || !declarationsMatch(element, applied)) continue
+      for (const property of OVERFLOW_PROPERTIES) element.style.removeProperty(property)
+      for (const { property, value, priority } of original) {
+        if (value) element.style.setProperty(property, value, priority)
+      }
+    }
+  })
 }
 
 export function DropdownMenuTrigger(props: ComponentProps<typeof KobalteDropdownMenu.Trigger>) {
-  return <KobalteDropdownMenu.Trigger {...props} />
+  const inheritedOrientation = useContext(DropdownMenuOrientationContext)
+  const [local, rest] = splitProps(props, ['disabled', 'onKeyDown', 'onPointerDown'])
+  const onPointerDown = (event: DropdownMenuTriggerPointerEvent) => {
+    if (typeof local.onPointerDown === 'function') local.onPointerDown(event)
+    else if (local.onPointerDown) local.onPointerDown[0](local.onPointerDown[1], event)
+
+    // WebKit can leave focus on a previous control when a native button gets
+    // a pointer click. Focus the trigger before Kobalte opens the menu so an
+    // enclosing modal focus scope does not restore focus and dismiss the menu.
+    if (
+      local.disabled ||
+      event.defaultPrevented ||
+      !event.isPrimary ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return
+    }
+    const trigger = event.currentTarget
+    const isNativeLink = trigger instanceof HTMLAnchorElement && trigger.hasAttribute('href')
+    if (trigger instanceof HTMLElement && !isNativeLink) {
+      trigger.focus({ preventScroll: true })
+    }
+  }
+  const onKeyDown = (event: DropdownMenuTriggerKeyEvent) => {
+    // Kobalte's MenuTrigger does not consult defaultPrevented before its own
+    // open-key handling. Preserve its existing callback behavior; this wrapper
+    // only makes the pre-open scroll-parent lookup terminate.
+    if (typeof local.onKeyDown === 'function') local.onKeyDown(event)
+    else if (local.onKeyDown) local.onKeyDown[0](local.onKeyDown[1], event)
+
+    if (local.disabled) return
+    const trigger = event.currentTarget
+    if (!(trigger instanceof HTMLElement)) return
+    const menubarOrientation = trigger.closest('[role="menubar"]')?.getAttribute('aria-orientation')
+    const orientation =
+      inheritedOrientation?.() ?? (menubarOrientation === 'vertical' ? 'vertical' : 'horizontal')
+    const openingArrow = orientation === 'horizontal' ? 'ArrowDown' : 'ArrowRight'
+    if (!['Enter', ' ', openingArrow].includes(event.key)) return
+    const isNativeLink = trigger instanceof HTMLAnchorElement && trigger.hasAttribute('href')
+    if (isNativeLink && (event.key === 'Enter' || event.key === ' ')) return
+    bypassUnboundedScrollLookup(trigger)
+  }
+
+  return (
+    <KobalteDropdownMenu.Trigger
+      {...rest}
+      disabled={local.disabled}
+      onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
+    />
+  )
 }
 
 export function DropdownMenuPortal(props: ComponentProps<typeof KobalteDropdownMenu.Portal>) {
@@ -113,7 +251,7 @@ export function DropdownMenuItem(
       {local.shortcut ? (
         <span
           aria-hidden="true"
-          class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest"
+          class="text-muted-foreground ms-auto font-code text-code tracking-widest"
         >
           {local.shortcut}
         </span>
@@ -139,7 +277,7 @@ export function DropdownMenuShortcut(props: ComponentProps<'span'>) {
     <span
       data-slot="dropdown-menu-shortcut"
       aria-hidden="true"
-      class={cn('text-muted-foreground ms-auto font-mono text-2xs tracking-widest', local.class)}
+      class={cn('text-muted-foreground ms-auto font-code text-code tracking-widest', local.class)}
       {...rest}
     />
   )

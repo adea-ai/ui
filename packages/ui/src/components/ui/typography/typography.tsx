@@ -119,11 +119,9 @@ export function Heading<T extends ValidComponent = 'h2'>(props: HeadingProps<T>)
 /**
  * Text.
  *
- * Everything that is not a heading. `text-sm` is the interface default, not 16px,
- * and it carries three weights by role: 400 for body copy, 500 for a label or
- * control text, 600 for emphasis. Below it, `caption` (12px) is metadata and
- * `micro` (11px, 500) is the floor — keyboard keys and the status bar. `code` is
- * the mono face at 12px, for anything a user compares character by character.
+ * Everything that is not a heading. Body and strong copy use the content font
+ * axis; labels, captions and microcopy inherit the UI face. Code uses its own
+ * family and size axis for anything a user compares character by character.
  *
  * `tone` is a separate axis from `variant` because "secondary" is a colour
  * decision, not a size: a muted caption and a muted body line are both common.
@@ -136,17 +134,17 @@ export const textVariants = cva('', {
   variants: {
     variant: {
       /** 14px / 400. Body copy and descriptions. */
-      body: 'text-sm',
+      body: 'font-content text-content',
       /** 14px / 500. Labels, control text, list-row titles. */
       label: 'text-sm font-medium',
       /** 14px / 600. Emphasis inside body copy. */
-      strong: 'text-sm font-semibold',
+      strong: 'font-content text-content font-semibold',
       /** 12px / 400. Metadata, secondary rows, units. */
       caption: 'text-xs',
       /** 11px / 500. The floor: keyboard keys, the status bar. */
       micro: 'text-2xs font-medium',
       /** 12px mono. Ids, paths, hashes, inline code. */
-      code: 'font-mono text-xs',
+      code: 'font-code text-code',
     },
     tone: {
       inherit: '',

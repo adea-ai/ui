@@ -11,6 +11,11 @@
   "registryDependencies": [],
   "files": [
     {
+      "path": "src/lib/appearance-font-settings.ts",
+      "type": "registry:lib",
+      "target": "lib/appearance-font-settings.ts"
+    },
+    {
       "path": "src/lib/clipboard.ts",
       "type": "registry:lib",
       "target": "lib/clipboard.ts"
@@ -26,6 +31,11 @@
       "target": "lib/download.ts"
     },
     {
+      "path": "src/lib/font-catalog.ts",
+      "type": "registry:lib",
+      "target": "lib/font-catalog.ts"
+    },
+    {
       "path": "src/lib/form-field.ts",
       "type": "registry:lib",
       "target": "lib/form-field.ts"
@@ -39,6 +49,11 @@
       "path": "src/lib/overlay.ts",
       "type": "registry:lib",
       "target": "lib/overlay.ts"
+    },
+    {
+      "path": "src/lib/safe-script.ts",
+      "type": "registry:lib",
+      "target": "lib/safe-script.ts"
     },
     {
       "path": "src/lib/theme-accents.ts",
