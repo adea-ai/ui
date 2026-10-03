@@ -448,17 +448,17 @@ export const typographyTokens: TokenDefinition[] = [
   {
     name: 'font-ui-size',
     kind: 'dimension',
-    description: 'The chosen interface size in pixels; scales the shared UI text ladder.',
+    description: 'Runtime-projected interface size in pixels; scales the shared UI text ladder.',
   },
   {
     name: 'font-content-size',
     kind: 'dimension',
-    description: 'The chosen prose and transcript size in pixels.',
+    description: 'Runtime-projected prose and transcript size in pixels.',
   },
   {
     name: 'font-code-size',
     kind: 'dimension',
-    description: 'The chosen code, terminal and keyboard-key size in pixels.',
+    description: 'Runtime-projected code, terminal and keyboard-key size in pixels.',
   },
   {
     name: 'font-ui-scale',
