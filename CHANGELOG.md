@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.103.0](https://github.com/adea-ai/ui/compare/v0.102.0...v0.103.0) (2026-10-03)
+
+
+### Features
+
+* **theme:** adopt @adea-ai/themes 0.9 theme-carried accents ([#288](https://github.com/adea-ai/ui/issues/288)) ([46b4457](https://github.com/adea-ai/ui/commit/46b4457745da6705e768c2dc4152e8a7721f2437))
+* **update-dialog:** add release channel selector slot ([#295](https://github.com/adea-ai/ui/issues/295)) ([73264b7](https://github.com/adea-ai/ui/commit/73264b76fdda3a7a095e6676175655fa4066bce4))
+
 ## [0.102.0](https://github.com/adea-ai/ui/compare/v0.101.1...v0.102.0) (2026-10-03)
 
 
