@@ -20,6 +20,7 @@ import {
   formatOklch,
   parseColor,
   shadcnVariables,
+  themeAccentPresets,
 } from '@adea-ai/themes'
 import {
   AppearanceEditor,
@@ -64,9 +65,18 @@ function Fixture() {
   const [committed, setCommitted] = createSignal({ ...defaults })
   const [draft, setDraft] = createSignal({ ...defaults })
   const [saving, setSaving] = createSignal(false)
+  const pair = () => ({
+    light: themes.find((candidate) => candidate.id === draft().lightThemeId)!,
+    dark: themes.find((candidate) => candidate.id === draft().darkThemeId)!,
+  })
   const theme = (appearance: 'light' | 'dark') => {
     const record = themes.find((candidate) => candidate.id === draft()[`${appearance}ThemeId`])!
-    const accent = ACCENTS.find((candidate) => candidate.id === draft().accent)
+    // A preset, or an accent the selected pair carries itself (`ansi-blue`).
+    const accent =
+      ACCENTS.find((candidate) => candidate.id === draft().accent) ??
+      themeAccentPresets(pair().light, pair().dark).find(
+        (candidate) => candidate.id === draft().accent
+      )
     const value =
       accent?.[appearance] ?? (/^#[\da-f]{6}$/i.test(draft().accent) ? draft().accent : undefined)
     return value
@@ -88,7 +98,9 @@ function Fixture() {
       document.documentElement.style.setProperty(name, value)
   })
   const custom = () =>
-    draft().accent !== 'theme' && !ACCENTS.some((accent) => accent.id === draft().accent)
+    draft().accent !== 'theme' &&
+    !ACCENTS.some((accent) => accent.id === draft().accent) &&
+    !draft().accent.startsWith('ansi-')
   const error = () =>
     custom() && !/^#[\da-f]{6}$/i.test(draft().accent) ? 'Use a six-digit hex color.' : undefined
   const dismiss = () => {

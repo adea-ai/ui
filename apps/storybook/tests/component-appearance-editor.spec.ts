@@ -649,3 +649,33 @@ test('theme menus scroll inside a fixed cap and the accent row starts at the the
   // folded into the grid rather than sitting beside it as a second control.
   expect(await accentGroup.getByRole('radio').first().getAttribute('value')).toBe('theme')
 })
+
+test('the accents the theme pair carries are offered after the presets and preview live', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  const accentGroup = dialog.getByRole('radiogroup', { name: 'Accent', exact: true })
+  const themeAccents = accentGroup.locator('[data-theme-accent]')
+  // Adea's pair offers its own blue, magenta, cyan and green through
+  // `themeAccentPresets`; they follow the six presets in the swatch grid.
+  await expect(themeAccents).toHaveCount(4)
+  const values = await accentGroup
+    .getByRole('radio')
+    .evaluateAll((radios) => radios.map((radio) => radio.getAttribute('value')))
+  expect(values.indexOf('ansi-blue')).toBeGreaterThan(values.indexOf('pink'))
+
+  const before = await page
+    .locator('[data-live-preview]')
+    .evaluate((element) => getComputedStyle(element).color)
+  await accentGroup.locator('[data-theme-accent="ansi-blue"] label').click()
+  await expect(accentGroup.getByRole('radio', { name: 'Theme blue' })).toBeChecked()
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"ansi-blue"')
+  // A theme accent is a known choice, never the custom field.
+  await expect(dialog.getByRole('textbox', { name: 'Custom accent' })).toHaveCount(0)
+  await expect(dialog.getByText(/^Theme blue · /)).toBeVisible()
+  await expect
+    .poll(() =>
+      page.locator('[data-live-preview]').evaluate((element) => getComputedStyle(element).color)
+    )
+    .not.toBe(before)
+})

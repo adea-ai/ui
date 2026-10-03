@@ -1,6 +1,7 @@
-import { ACCENTS, accentForeground, getTheme } from '@adea-ai/themes'
+import { ACCENTS } from '@adea-ai/themes'
 import { createMemo, createSignal } from 'solid-js'
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { appearancePreviewThemes, isThemeAccentId, themeRecordById } from '#lib/themes'
 import { AppearanceEditor, AppearancePopover } from './appearance-editor'
 import type { AppearanceDraft } from './appearance-types'
 
@@ -22,7 +23,7 @@ const themes = [
   'everforest-light',
   'gruvbox-dark',
   'gruvbox-light',
-].map((id) => getTheme(id)!)
+].map((id) => themeRecordById(id)!)
 const defaults: AppearanceDraft = {
   mode: 'system',
   lightThemeId: 'adea-light',
@@ -44,26 +45,17 @@ function Example(props: {
   const [draft, setDraft] = createSignal({ ...defaults })
   const [committed, setCommitted] = createSignal({ ...defaults })
   const [open, setOpen] = createSignal(false)
-  const theme = (appearance: 'light' | 'dark') => {
-    const record = getTheme(draft()[`${appearance}ThemeId`])!
-    const accent = ACCENTS.find((option) => option.id === draft().accent)?.[appearance]
-    return accent
-      ? {
-          ...record,
-          colors: { ...record.colors, accent, accentForeground: accentForeground(accent) },
-        }
-      : record
-  }
-  const light = createMemo(() => theme('light'))
-  const dark = createMemo(() => theme('dark'))
+  // The ids-to-records adapter the package exports: it resolves a preset or a
+  // theme-carried accent onto both preview themes, as ThemeProvider would.
+  const preview = createMemo(() => appearancePreviewThemes(draft()))
   const cancel = () => {
     setDraft({ ...committed() })
     setOpen(false)
   }
   const editor = () => ({
     draft: draft(),
-    lightTheme: light(),
-    darkTheme: dark(),
+    lightTheme: preview().lightTheme,
+    darkTheme: preview().darkTheme,
     resolvedAppearance: 'dark' as const,
     themes: props.empty ? [] : themes,
     accentOptions: ACCENTS,
@@ -80,7 +72,9 @@ function Example(props: {
       setOpen(false)
     },
     customAccentError:
-      draft().accent !== 'theme' && !ACCENTS.some((accent) => accent.id === draft().accent)
+      draft().accent !== 'theme' &&
+      !ACCENTS.some((accent) => accent.id === draft().accent) &&
+      !isThemeAccentId(draft().accent)
         ? 'Custom colors are validated by the host; this example accepts presets.'
         : undefined,
   })

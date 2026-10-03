@@ -9,11 +9,14 @@ import {
   useContext,
 } from 'solid-js'
 import { accentPresets, fontOptions } from '#lib/tokens'
+import type { AccentPreset } from '@adea-ai/themes'
 import {
   accentVariables,
   builtinThemes,
   defaultDarkThemeId,
   defaultLightThemeId,
+  isThemeAccentId,
+  themeAccentsFor,
   themeById,
   themeCssVariables,
   type ThemeAppearance,
@@ -33,7 +36,8 @@ import {
  *   - **appearance** — light, dark, or follow the system.
  *   - **a theme per appearance** — so a user can run Catppuccin Mocha by night and
  *     Solarized Light by day without re-choosing when the system flips.
- *   - **an accent** — adea's six presets, which re-colour the interactive roles on
+ *   - **an accent** — adea's six presets, or one of the accents the selected theme
+ *     pair carries itself (`ansi-blue`…), which re-colour the interactive roles on
  *     top of whichever theme is active.
  *   - **a font** — the interface face.
  *
@@ -57,7 +61,11 @@ export type ThemeSelection = {
   lightThemeId: string
   /** The variant to use when the resolved appearance is dark. */
   darkThemeId: string
-  /** An `accentPresets` id, or `theme` for the variant's own primary. */
+  /**
+   * An `accentPresets` id, a theme accent id from `themeAccents()` (`ansi-blue`…),
+   * or `theme` for the variant's own primary. A theme accent the current pair does
+   * not offer falls back to the variant's own primary.
+   */
   accent: string
   /** A `fontOptions` id, or `space-grotesk` for the default. */
   font: string
@@ -111,6 +119,11 @@ export type ThemeContextValue = {
   setSelection: (patch: Partial<ThemeSelection>) => void
   /** The catalogue, so a picker does not import it separately. */
   themes: readonly ThemeVariant[]
+  /**
+   * The accents the selected light/dark pair carries, offered beside the presets.
+   * Follows the selection: a different theme pair may offer different slots.
+   */
+  themeAccents: () => readonly AccentPreset[]
 }
 
 const ThemeContext = createContext<ThemeContextValue>()
@@ -157,9 +170,15 @@ function readSelection(storageKey: string): ThemeSelection {
         themeById(parsed.darkThemeId ?? '')?.appearance === 'dark'
           ? (parsed.darkThemeId as string)
           : defaultDarkThemeId,
-      accent: accentPresets.some((preset) => preset.id === parsed.accent)
-        ? (parsed.accent as string)
-        : defaultThemeSelection.accent,
+      // A theme accent is kept whenever it names a slot, even one the stored pair
+      // cannot offer: the id is role-shaped so it survives a theme switch, and an
+      // unoffered slot already resolves to the theme's own primary when applied.
+      accent:
+        typeof parsed.accent === 'string' &&
+        (accentPresets.some((preset) => preset.id === parsed.accent) ||
+          isThemeAccentId(parsed.accent))
+          ? parsed.accent
+          : defaultThemeSelection.accent,
       font: fontOptions.some((option) => option.id === parsed.font)
         ? (parsed.font as string)
         : defaultThemeSelection.font,
@@ -246,7 +265,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     // them meant the attribute was set, the rules were present, and nothing
     // changed on screen.
     const properties = { ...themeCssVariables(active) }
-    const accent = accentVariables(selection().accent, resolvedAppearance())
+    const accent = accentVariables(selection().accent, resolvedAppearance(), selection())
     if (accent) Object.assign(properties, accent)
 
     for (const [name, value] of Object.entries(properties)) {
@@ -258,7 +277,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     root.dataset['appearance'] = resolvedAppearance()
     root.style.colorScheme = resolvedAppearance()
 
-    if (selection().accent === 'theme') root.removeAttribute('data-accent')
+    if (!accent) root.removeAttribute('data-accent')
     else root.dataset['accent'] = selection().accent
 
     if (selection().font === 'space-grotesk') root.removeAttribute('data-font')
@@ -272,11 +291,16 @@ export function ThemeProvider(props: ThemeProviderProps) {
     else root.dataset['density'] = resolvedDensity(selection())
   })
 
+  const themeAccents = createMemo(() =>
+    themeAccentsFor(selection().lightThemeId, selection().darkThemeId)
+  )
+
   const value: ThemeContextValue = {
     selection,
     resolvedAppearance,
     variant,
     themes: builtinThemes,
+    themeAccents,
     setSelection(patch) {
       const next = { ...selection(), ...patch }
       setSelectionState(next)

@@ -23,8 +23,10 @@
  */
 // Pinned mode-card, accent-swatch, and glass-chip composition. Kobalte replaces
 // the app port's manual roving focus; it does not replace the donor hierarchy.
+import { themeAccentPresets } from '@adea-ai/themes'
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { For, Show } from 'solid-js'
+import { For, Show, createMemo } from 'solid-js'
+import { isThemeAccentId } from '../../../lib/theme-accents'
 import type { AppearanceEditorProps } from './appearance-types'
 import { ThemeMiniature, ThemeMiniatureSplit } from './theme-preview'
 
@@ -82,16 +84,32 @@ export function ModeChoices(props: AppearanceEditorProps) {
   )
 }
 
+/**
+ * Whether the draft accent is the host's custom colour: not the theme default,
+ * not a preset, and not a theme accent id. A theme accent id counts as known even
+ * when the current pair cannot offer it — it is a stored role, not a colour the
+ * user typed, and showing it in the custom field would invite editing `ansi-blue`.
+ */
+export function isCustomAccent(props: AppearanceEditorProps): boolean {
+  const accent = props.draft.accent
+  return (
+    accent !== 'theme' &&
+    !props.accentOptions.some((option) => option.id === accent) &&
+    !isThemeAccentId(accent)
+  )
+}
+
 export function AccentChoices(props: AppearanceEditorProps) {
   // The resolved appearance decides which side of a preset pair — and which
   // theme accent — the swatches paint, so the row previews each choice as the
   // user will see it.
   const resolvedAppearance = () =>
     props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
-  const custom = () =>
-    props.draft.accent !== 'theme' &&
-    !props.accentOptions.some((option) => option.id === props.draft.accent)
-  const accentSelection = () => (custom() ? 'custom' : props.draft.accent)
+  // The accents the previewed theme pair carries, offered after the presets. Read
+  // from the preview themes the host already supplies, so a host gets them without
+  // a second prop that could disagree with the themes it is previewing.
+  const themeAccents = createMemo(() => themeAccentPresets(props.lightTheme, props.darkTheme))
+  const accentSelection = () => (isCustomAccent(props) ? 'custom' : props.draft.accent)
   return (
     <Radio
       value={accentSelection()}
@@ -148,6 +166,28 @@ export function AccentChoices(props: AppearanceEditorProps) {
                   }}
                 />
                 <span class="sr-only">{option.label}</span>
+              </Radio.ItemLabel>
+            </Radio.Item>
+          )}
+        </For>
+        <For each={themeAccents()}>
+          {(option) => (
+            <Radio.Item
+              value={option.id}
+              data-theme-accent={option.id}
+              class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
+            >
+              <Radio.ItemInput />
+              <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border border-dashed p-0.5 data-[checked]:border-solid data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                <span
+                  class="block size-full rounded-full"
+                  aria-hidden="true"
+                  style={{
+                    'background-color':
+                      resolvedAppearance() === 'light' ? option.light : option.dark,
+                  }}
+                />
+                <span class="sr-only">{`Theme ${option.label.toLowerCase()}`}</span>
               </Radio.ItemLabel>
             </Radio.Item>
           )}

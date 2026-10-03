@@ -77,7 +77,7 @@ Every axis is a value on the same provider, and each is stored in one preference
 | ---------- | ------------------------------------------------------------------ | ----------------- |
 | Appearance | `light`, `dark`, `system`                                          | a `dark` class    |
 | Theme      | any of the 27 catalogue ids                                        | custom properties |
-| Accent     | `theme`, or one of six presets                                     | `data-accent`     |
+| Accent     | `theme`, one of six presets, or a theme-carried `ansi-*` accent    | `data-accent`     |
 | Typeface   | `space-grotesk`, `system`, `geist`, `geist-mono`, `jetbrains-mono` | `data-font`       |
 | Density    | `comfortable`, `compact`                                           | `data-density`    |
 

@@ -35,9 +35,10 @@
 
 import {
   ACCENTS,
+  accentForeground,
   accentRoles,
   chartSeries,
-  getAccent,
+  getTheme,
   hasTheme,
   shadcnDestructiveProjection,
   statusForeground,
@@ -47,10 +48,16 @@ import {
   syntaxRoles,
   themes as catalogue,
   themesByAppearance,
+  themeAccentPresets,
   validateCatalogue,
+  type AccentPreset,
+  type AdeaTheme,
   type AdeaThemeRecord,
   type ContrastFinding,
 } from '@adea-ai/themes'
+import { resolveAccentPreset } from './theme-accents'
+
+export { isThemeAccentId, resolveAccentPreset } from './theme-accents'
 
 export type ThemeAppearance = 'light' | 'dark'
 
@@ -321,6 +328,79 @@ export function themeFamilies(): { family: string; label: string; themes: ThemeV
 export const accents = ACCENTS
 
 /**
+ * The canonical catalogue records, in catalogue order.
+ *
+ * {@link builtinThemes} is this system's projection of the catalogue onto the
+ * shadcn vocabulary, which is what a document is painted with. A *preview* of a
+ * theme — the miniatures `AppearanceEditor` and `ThemeMiniature` draw — reads the
+ * catalogue's own roles instead (`surfaceActive`, `borderMuted`, `textSubtle`…),
+ * several of which the projection folds together. These are those records, so a
+ * consumer hands the editor exactly what it takes rather than reconstructing it
+ * from the projection.
+ */
+export const themeRecords: readonly AdeaThemeRecord[] = catalogue
+
+export function themeRecordById(id: string): AdeaThemeRecord | undefined {
+  return getTheme(id)
+}
+
+/** A light/dark theme pair by id, with the defaults standing in for an unknown id. */
+function recordPair(lightThemeId: string, darkThemeId: string) {
+  const light = getTheme(lightThemeId) ?? getTheme(defaultLightThemeId)!
+  const dark = getTheme(darkThemeId) ?? getTheme(defaultDarkThemeId)!
+  return { light, dark }
+}
+
+/**
+ * The accents the selected light/dark pair carries — offered beside the presets.
+ *
+ * Computed per pair rather than per theme because a theme accent is a *pair* of
+ * values, like a preset: a slot is offered only when both themes can offer it.
+ */
+export function themeAccentsFor(
+  lightThemeId: string,
+  darkThemeId: string
+): readonly AccentPreset[] {
+  const { light, dark } = recordPair(lightThemeId, darkThemeId)
+  return themeAccentPresets(light, dark)
+}
+
+/**
+ * A theme with an accent laid over it, in the catalogue's own shape.
+ *
+ * The accent replaces `accent` and its measured label, which is all an accent
+ * changes about a theme; `undefined` returns the theme untouched. This is the
+ * overlay a host needs for `AppearanceEditor`'s `lightTheme`/`darkTheme`.
+ */
+export function withAccent<T extends AdeaTheme>(theme: T, accent: AccentPreset | undefined): T {
+  if (!accent) return theme
+  const value = theme.appearance === 'dark' ? accent.dark : accent.light
+  return {
+    ...theme,
+    colors: { ...theme.colors, accent: value, accentForeground: accentForeground(value) },
+  }
+}
+
+/**
+ * The two preview themes an appearance selection resolves to, accent applied.
+ *
+ * The adapter between a stored selection and `AppearanceEditor`: it takes ids —
+ * what a preference holds — and returns the canonical records the editor's
+ * `lightTheme` and `darkTheme` props take, so a host does not map roles by hand.
+ * Unknown ids fall back to the defaults and an accent the pair cannot offer falls
+ * back to the theme's own, exactly as `ThemeProvider` resolves them.
+ */
+export function appearancePreviewThemes(selection: {
+  lightThemeId: string
+  darkThemeId: string
+  accent: string
+}): { lightTheme: AdeaThemeRecord; darkTheme: AdeaThemeRecord } {
+  const { light, dark } = recordPair(selection.lightThemeId, selection.darkThemeId)
+  const accent = resolveAccentPreset(selection.accent, light, dark)
+  return { lightTheme: withAccent(light, accent), darkTheme: withAccent(dark, accent) }
+}
+
+/**
  * The properties an accent selection overrides, as CSS custom properties.
  *
  * ## Why this exists rather than relying on the `[data-accent]` blocks
@@ -339,16 +419,25 @@ export const accents = ACCENTS
  * provider and the CSS generator call `accentRoles` out of `@adea-ai/themes`, and
  * `tests/appearance-axes.test.ts` asserts the two agree value for value.
  *
- * Returns `undefined` for `theme` — the variant's own primary — and for an id the
- * catalogue does not have, so a stale stored preference falls back to the theme
- * rather than blanking the primary.
+ * A theme accent (`ansi-blue`) has no block: its value depends on the theme pair,
+ * so it is resolved against `pair` — the selection's light and dark theme ids —
+ * and only ever applied here. Without a pair it resolves against the defaults.
+ *
+ * Returns `undefined` for `theme` — the variant's own primary — for an id the
+ * catalogue does not have, and for a theme accent the pair does not offer, so a
+ * stale stored preference falls back to the theme rather than blanking the primary.
  */
 export function accentVariables(
   accentId: string,
-  appearance: ThemeAppearance
+  appearance: ThemeAppearance,
+  pair: { lightThemeId: string; darkThemeId: string } = {
+    lightThemeId: defaultLightThemeId,
+    darkThemeId: defaultDarkThemeId,
+  }
 ): Record<string, string> | undefined {
   if (accentId === 'theme') return undefined
-  const preset = getAccent(accentId)
+  const { light, dark } = recordPair(pair.lightThemeId, pair.darkThemeId)
+  const preset = resolveAccentPreset(accentId, light, dark)
   if (!preset) return undefined
 
   const roles = accentRoles(preset, appearance)

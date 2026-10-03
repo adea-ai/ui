@@ -1,71 +1,30 @@
 <!-- @dsCard group="Composites" height=860 -->
 <div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
 <script>
-  const { render, html, createSignal, createMemo, AppearanceEditor, builtinThemes, accentPresets } = window.AdeaUI;
-  // The editor takes canonical theme records (surface, surfaceElevated, text, textMuted…).
-  // The bundle exposes the projected variants, so map each back to the canonical roles.
-  // surfaceActive, borderMuted and textSubtle are not projected; their nearest
-  // projected siblings stand in for the miniature previews.
-  const toRecord = (v) => ({
-    id: v.id,
-    name: v.label.startsWith(v.familyLabel) ? v.label : `${v.familyLabel} ${v.label}`,
-    appearance: v.appearance,
-    description: v.description,
-    colors: {
-      background: v.colors.background,
-      foreground: v.colors.foreground,
-      surface: v.colors.card,
-      surfaceElevated: v.colors.popover,
-      surfaceHover: v.colors.accent,
-      surfaceActive: v.colors.accent,
-      border: v.colors.border,
-      borderMuted: v.colors.border,
-      text: v.colors.foreground,
-      textMuted: v.colors.mutedForeground,
-      textSubtle: v.colors.mutedForeground,
-      accent: v.colors.primary,
-      accentForeground: v.colors.primaryForeground,
-      success: v.colors.success,
-      warning: v.colors.warning,
-      error: v.colors.destructive,
-      info: v.colors.info,
-    },
-    ansi: {},
-    cursor: v.terminal.cursor,
-    selection: v.terminal.selection,
-  });
+  const { render, html, createSignal, createMemo, AppearanceEditor, themeRecordById, appearancePreviewThemes, accentPresets } = window.AdeaUI;
+  // The editor takes the catalogue's own theme records, which the bundle exports as
+  // themeRecords / themeRecordById; appearancePreviewThemes resolves a draft's ids and
+  // accent (a preset or one the theme pair carries) into the two preview themes.
   const ids = ['adea-light', 'adea-dark', 'ayu', 'ayu-light', 'ayu-mirage', 'catppuccin-frappe', 'catppuccin-latte',
     'catppuccin-macchiato', 'catppuccin-mocha', 'dracula', 'everforest-dark', 'everforest-light', 'gruvbox-dark', 'gruvbox-light'];
-  const themes = ids.map((id) => builtinThemes.find((t) => t.id === id)).filter(Boolean).map(toRecord);
-  const byId = (id) => themes.find((t) => t.id === id) ?? themes[0];
+  const themes = ids.map(themeRecordById).filter(Boolean);
+  const accentOptions = accentPresets.filter((preset) => preset.id !== 'theme');
   const defaults = {
     mode: 'system', lightThemeId: 'adea-light', darkThemeId: 'adea-dark',
     terminalThemeId: 'theme', accent: 'theme', surface: 'theme', reduceTransparency: false,
   };
-  // Host-side accent overlay, as the story does; a light accent takes dark ink.
-  const ink = (hex) => {
-    const n = parseInt(String(hex).replace('#', '').slice(0, 6), 16);
-    const l = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-    return l > 0.6 ? '#111111' : '#ffffff';
-  };
   render(() => {
     const [draft, setDraft] = createSignal({ ...defaults });
-    const theme = (appearance) => {
-      const record = byId(draft()[`${appearance}ThemeId`]);
-      const accent = accentPresets.find((option) => option.id === draft().accent)?.[appearance];
-      return accent ? { ...record, colors: { ...record.colors, accent, accentForeground: ink(accent) } } : record;
-    };
-    const light = createMemo(() => theme('light'));
-    const dark = createMemo(() => theme('dark'));
+    const preview = createMemo(() => appearancePreviewThemes(draft()));
     return html`
 <div style="width:100%;max-width:512px">
   <${AppearanceEditor}
     draft=${() => draft()}
-    lightTheme=${() => light()}
-    darkTheme=${() => dark()}
+    lightTheme=${() => preview().lightTheme}
+    darkTheme=${() => preview().darkTheme}
     resolvedAppearance="dark"
     themes=${themes}
-    accentOptions=${accentPresets}
+    accentOptions=${accentOptions}
     surfaceCapability=${{ frosted: false, reason: 'Transparency is unavailable on this host.' }}
     onChange=${(patch) => setDraft((value) => ({ ...value, ...patch }))}
     onReset=${(_event) => setDraft({ ...defaults })}

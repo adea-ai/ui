@@ -233,25 +233,34 @@ provider takes an initial selection and every axis is a plain value:
     appearance: 'system', // 'light' | 'dark' | 'system'
     lightThemeId: 'adea-light',
     darkThemeId: 'adea-dark',
-    accent: 'theme', // or 'violet' | 'blue' | 'green' | 'amber' | 'cyan' | 'pink'
+    accent: 'theme', // or 'violet' | 'blue' | 'green' | 'amber' | 'cyan' | 'pink',
+    //                    or a theme-carried accent such as 'ansi-blue'
     font: 'space-grotesk', // or 'system' | 'geist' | 'geist-mono' | 'jetbrains-mono'
   }}
 >
 ```
 
-| Axis       | Values                                             | How it is applied                                              |
-| ---------- | -------------------------------------------------- | -------------------------------------------------------------- |
-| Appearance | `light`, `dark`, `system`                          | a `dark` class plus `color-scheme` on `<html>`                 |
-| Theme      | any of the 34 catalogue ids                        | the variant's tokens, written as custom properties on `<html>` |
-| Accent     | `theme` (follow the variant) or one of six presets | a `data-accent` attribute on `<html>`                          |
-| Typeface   | five options                                       | a `data-font` attribute on `<html>`                            |
+| Axis       | Values                                                                                               | How it is applied                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Appearance | `light`, `dark`, `system`                                                                            | a `dark` class plus `color-scheme` on `<html>`                                      |
+| Theme      | any of the 34 catalogue ids                                                                          | the variant's tokens, written as custom properties on `<html>`                      |
+| Accent     | `theme` (follow the variant), one of six presets, or an accent the theme pair carries (`ansi-blue`…) | a `data-accent` attribute on `<html>`, plus the resolved roles as custom properties |
+| Typeface   | five options                                                                                         | a `data-font` attribute on `<html>`                                                 |
 
 Read and change the current selection with `useTheme()`:
 
 ```tsx
-const { selection, resolvedAppearance, setSelection, themes } = useTheme()
+const { selection, resolvedAppearance, setSelection, themes, themeAccents } = useTheme()
 setSelection({ accent: 'amber' })
 ```
+
+`themeAccents()` lists the accents the selected light/dark theme pair carries
+itself (`@adea-ai/themes`' `themeAccentPresets`): the palette's own blue,
+magenta, cyan and green, offered only when both themes clear the catalogue's
+accent floors. Their ids are role-shaped, so `ansi-blue` follows a theme switch
+to the new theme's blue; a slot the new pair cannot offer falls back to the
+theme's own primary. `AppearancePanel` and `AppearanceEditor` offer them after
+the six presets.
 
 Two components ship for the settings surface: `AppearancePanel` is the whole
 appearance view, and `ThemeToggle` is the light/dark switch on its own.
@@ -671,9 +680,15 @@ its menus prevent Tab, the theme row carries Tab and Shift+Tab through the enclo
 dialog's focus order. `DropdownMenuContent.portalMount` keeps the theme menu within
 its enclosing modal's accessible subtree.
 
-Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices from
-`@adea-ai/themes`, including any validated accent overlay. The editor imports
-only their types. Hosts own saved-ID recovery, validation, draft snapshots,
+Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices.
+`themeRecords`/`themeRecordById` export those records, and
+`appearancePreviewThemes({ lightThemeId, darkThemeId, accent })` resolves a
+draft's ids and accent — a preset or a theme-carried accent — into the two
+preview themes, exactly as `ThemeProvider` would apply them; `withAccent` is the
+overlay on its own. `builtinThemes` is the shadcn projection a document is
+painted with, not an editor input. The editor derives the theme-carried accent
+swatches from the previews itself (`themeAccentPresets`) and loads no
+catalogue. Hosts own saved-ID recovery, validation, draft snapshots,
 System appearance resolution, native transparency, live application tokens,
 Save persistence and restoration on Cancel/dismissal. `saving`,
 `saveDisabledReason`, `recoveryNotice`, `customAccentError`, and

@@ -31,6 +31,7 @@
  * GPUI globals and app-specific storage/native authority. Save/Cancel/Reset and
  * custom accent/reduced-transparency are accepted Adea divergences (#425).
  */
+import { themeAccentPresets } from '@adea-ai/themes'
 import { EyeOff, Palette, PanelsTopLeft, SlidersHorizontal } from 'lucide-solid'
 import { Show, createUniqueId } from 'solid-js'
 import { cn } from '../../../lib/utils'
@@ -46,7 +47,7 @@ import {
   PopoverTrigger,
 } from '../../ui/popover/popover'
 import type { AppearanceEditorProps, AppearancePopoverProps } from './appearance-types'
-import { ModeChoices, AccentChoices, GlassChoices } from './appearance-choices'
+import { ModeChoices, AccentChoices, GlassChoices, isCustomAccent } from './appearance-choices'
 import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
 
 /**
@@ -60,13 +61,21 @@ import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
 export function AppearanceEditor(props: AppearanceEditorProps) {
   const errorId = createUniqueId()
   const saveReasonId = createUniqueId()
-  const custom = () =>
-    props.draft.accent !== 'theme' &&
-    !props.accentOptions.some((option) => option.id === props.draft.accent)
+  const custom = () => isCustomAccent(props)
   const accentDescription = () => {
     if (props.draft.accent === 'theme') return "Theme default · Uses the palette's intended color."
-    const name = props.accentOptions.find((option) => option.id === props.draft.accent)?.label
-    return `${name ?? 'Custom'} · Controls, glyphs, selections, code, and activity.`
+    const preset = props.accentOptions.find((option) => option.id === props.draft.accent)
+    if (preset) return `${preset.label} · Controls, glyphs, selections, code, and activity.`
+    if (custom()) return 'Custom · Controls, glyphs, selections, code, and activity.'
+    const offered = themeAccentPresets(props.lightTheme, props.darkTheme).find(
+      (option) => option.id === props.draft.accent
+    )
+    // A stored theme accent survives a theme switch by id; when the new pair
+    // cannot offer that slot the host falls back to the theme's own primary,
+    // and the description says so rather than naming a colour not on screen.
+    return offered
+      ? `Theme ${offered.label.toLowerCase()} · The theme's own color, on controls and activity.`
+      : "Theme default · This theme does not carry that accent, so it uses the palette's intended color."
   }
   const glassDescription = () =>
     props.draft.surface === 'opaque'

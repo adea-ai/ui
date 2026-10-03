@@ -23,7 +23,7 @@
     "test:vitest": "vitest run"
   },
   "dependencies": {
-    "@adea-ai/themes": "^0.8.0",
+    "@adea-ai/themes": "^0.9.4",
     "@adea-ai/ui": "workspace:*",
     "lucide-solid": "^1.48.0",
     "solid-js": "^1.9.15"
