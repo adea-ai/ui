@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.101.0](https://github.com/adea-ai/ui/compare/v0.100.2...v0.101.0) (2026-10-03)
+
+
+### Features
+
+* **typography:** add Heading and Text and adopt them in shared titles ([#285](https://github.com/adea-ai/ui/issues/285)) ([ede2343](https://github.com/adea-ai/ui/commit/ede2343b3c787c77ccbf1e9daa7626b727ca56f5))
+
+
+### Bug Fixes
+
+* **chart:** theme the polar-area scale and set chart text in the UI face ([#286](https://github.com/adea-ai/ui/issues/286)) ([9167bdc](https://github.com/adea-ai/ui/commit/9167bdc82c1084c392ddffec8733ea245e1e753e))
+* **ui:** tighten the support dialogs and add the rail-parity account trigger ([#274](https://github.com/adea-ai/ui/issues/274)) ([6bb949f](https://github.com/adea-ai/ui/commit/6bb949fdc0e5a11de38ceacbfb71cb195e73e96c))
+
+
+### Documentation
+
+* generate the tree-shaking size table and add preview gotchas ([#284](https://github.com/adea-ai/ui/issues/284)) ([244b394](https://github.com/adea-ai/ui/commit/244b394861912129ded1d09eba34bd162521b522))
+* regenerate the tree-shaking size table ([#291](https://github.com/adea-ai/ui/issues/291)) ([5884b0e](https://github.com/adea-ai/ui/commit/5884b0e8b54f022a184688cc27d6ea681801c8ac))
+
 ## [0.100.2](https://github.com/adea-ai/ui/compare/v0.100.1...v0.100.2) (2026-10-03)
 
 
