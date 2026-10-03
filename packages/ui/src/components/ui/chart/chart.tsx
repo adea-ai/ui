@@ -15,7 +15,7 @@ import {
   RadialLinearScale,
   Tooltip as ChartTooltip,
 } from 'chart.js'
-import type { ChartOptions, ChartType } from 'chart.js'
+import type { ChartOptions, ChartType, Plugin } from 'chart.js'
 import { cn } from '#lib/utils'
 import {
   chartOptions,
@@ -62,7 +62,9 @@ import {
  * A canvas cannot read a custom property, so the options and datasets carry
  * `var(--token)` strings and each chart resolves them against its own element
  * when it renders, and again whenever the root's attributes change — the
- * `.dark` class, `data-accent`, an inline override. See `createThemeResolver`.
+ * `.dark` class, `data-accent`, `data-font`, an inline override. The type is
+ * resolved the same way: `--font-sans` for the family and a type-scale rung for
+ * the size, so a chart follows the font axis too. See `createThemeResolver`.
  */
 
 /**
@@ -119,6 +121,23 @@ function toCanvasColor(value: string): string {
   return `rgba(${r}, ${g}, ${b}, ${Math.round(((a ?? 255) / 255) * 1000) / 1000})`
 }
 
+const length = /^(-?\d*\.?\d+)(px|rem)$/
+
+/**
+ * A token's computed value as a canvas option: a colour as an sRGB colour, a
+ * `px`/`rem` length (a type-scale rung) as the number of pixels Chart.js wants,
+ * and anything else — a font stack — as written.
+ */
+function toCanvasValue(raw: string): string | number {
+  const match = length.exec(raw)
+  if (match) {
+    const value = Number(match[1])
+    if (match[2] === 'px') return value
+    return value * (Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+  }
+  return toCanvasColor(raw)
+}
+
 /**
  * Resolves `var(--token)` strings against a chart's element, and re-resolves
  * them when the theme changes.
@@ -127,16 +146,25 @@ function toCanvasColor(value: string): string {
  * inline tokens takes those. The observer watches every attribute on `<html>`,
  * because that is where both applications switch appearance, accent and theme
  * (`.dark`, `data-accent`, `data-theme`, inline variables); a theme axis added
- * later is covered without touching this. It is released with the chart.
+ * later is covered without touching this. It also re-resolves when a web font
+ * finishes loading: a canvas draws text once, so a chart rendered before the
+ * face selected by `data-font` arrived would otherwise keep the fallback face
+ * until something else redrew it. Both are released with the chart.
  */
 function createThemeResolver() {
   let element: HTMLElement | undefined
   const [revision, invalidate] = createSignal(undefined, { equals: false })
+  const onFontsLoaded = () => invalidate()
 
   onMount(() => {
     const observer = new MutationObserver(() => invalidate())
     observer.observe(document.documentElement, { attributes: true })
-    onCleanup(() => observer.disconnect())
+    const fonts = typeof document.fonts === 'undefined' ? undefined : document.fonts
+    fonts?.addEventListener('loadingdone', onFontsLoaded)
+    onCleanup(() => {
+      observer.disconnect()
+      fonts?.removeEventListener('loadingdone', onFontsLoaded)
+    })
   })
 
   return {
@@ -147,11 +175,11 @@ function createThemeResolver() {
       revision()
       if (!element || typeof getComputedStyle === 'undefined') return value
       const style = getComputedStyle(element)
-      const resolved = new Map<string, string | undefined>()
+      const resolved = new Map<string, string | number | undefined>()
       return resolveCssVariables(value, (name) => {
         if (!resolved.has(name)) {
           const raw = style.getPropertyValue(name).trim()
-          resolved.set(name, raw ? toCanvasColor(raw) : undefined)
+          resolved.set(name, raw ? toCanvasValue(raw) : undefined)
         }
         return resolved.get(name)
       })
@@ -343,13 +371,36 @@ export function RadarChart(props: SeriesChartProps) {
 }
 
 /**
- * A polar area chart: radial bars, for a composition.
+ * Puts the themed radial scale back on a chart `solid-chartjs` has just created.
  *
- * Its scale is left to Chart.js's polar-area defaults (`'none'` rather than
- * `'radial'`): `solid-chartjs` deletes `options.scales.r` for every chart type
- * but radar when it first creates the chart, so radial styling here would apply
- * only after the first theme change — a chart that restyles itself on a toggle.
+ * `solid-chartjs` deletes `options.scales.r` for every chart type but radar when
+ * it first creates a chart. Today that delete lands on a throwaway copy — Solid
+ * compiles `options={…}` to a getter, so its next read rebuilds the object with
+ * `r` intact — but that is an accident of how the prop is passed: a memoised or
+ * static options object would lose the scale, and the polar area would fall back
+ * to Chart.js's defaults (grey ticks on a translucent white box, which is a white
+ * box on a dark card). Restoring it from this component's own options makes the
+ * themed scale independent of both. Later option updates (every theme change)
+ * pass `r` through untouched; only creation drops it.
+ *
+ * `afterInit` runs inside Chart.js's constructor, after the options are read and
+ * before the first update builds the scales and draws, so the themed scale is in
+ * place for the first frame — no default-styled frame, and no extra update. The
+ * plugin is per instance, passed through the chart's `plugins` prop, so nothing
+ * is registered globally.
  */
+function restoreRadialScale(options: () => ChartOptions): Plugin {
+  return {
+    id: 'adea-radial-scale',
+    afterInit(chart) {
+      const scale = options().scales?.['r']
+      if (!scale) return
+      chart.options.scales = { ...chart.options.scales, r: scale }
+    },
+  }
+}
+
+/** A polar area chart: radial bars, for a composition. */
 export function PolarAreaChart(props: {
   labels: readonly string[]
   data: readonly number[]
@@ -357,9 +408,11 @@ export function PolarAreaChart(props: {
   class?: string
 }) {
   const theme = createThemeResolver()
+  const options = () => theme.resolve(chartOptions(props.options, 'radial'))
   return (
     <div ref={theme.ref} class={cn('h-64', props.class)}>
       <PolarArea
+        plugins={[restoreRadialScale(options)]}
         data={theme.resolve({
           labels: [...props.labels],
           datasets: [
@@ -371,7 +424,7 @@ export function PolarAreaChart(props: {
             },
           ],
         })}
-        options={theme.resolve(chartOptions(props.options, 'none'))}
+        options={options()}
       />
     </div>
   )
