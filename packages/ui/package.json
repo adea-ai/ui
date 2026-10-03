@@ -87,6 +87,12 @@
       "solid": "./src/components/conversation/transcript-composition.tsx",
       "development": "./src/components/conversation/transcript-composition.tsx",
       "import": "./dist/components/conversation/transcript-composition.js"
+    },
+    "./components/layout/split-layout/tree": {
+      "types": "./dist/components/layout/split-layout/tree.d.ts",
+      "solid": "./src/components/layout/split-layout/tree.ts",
+      "development": "./src/components/layout/split-layout/tree.ts",
+      "import": "./dist/components/layout/split-layout/tree.js"
     }
   },
   "scripts": {
@@ -104,7 +110,7 @@
     "theme:build": "bun scripts/build-default-theme.ts",
     "theme:check": "bun scripts/build-default-theme.ts --check",
     "design-system:build": "bun scripts/design-system/build.ts",
-    "check:packed-layout": "node --test scripts/check-packed-layout-process.test.mjs && node scripts/check-packed-layout.mjs",
+    "check:packed-layout": "node --test scripts/check-packed-layout-process.test.mjs && node scripts/check-packed-layout.mjs && node scripts/check-packed-layout-tree.mjs",
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
     "check:packed-list-row": "bun scripts/check-packed-list-row.ts",
     "check:packed-scene-controls": "bun scripts/check-packed-scene-controls.ts",

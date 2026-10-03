@@ -96,15 +96,29 @@ try {
     join(consumer, 'node_modules/@adea-ai/ui/dist/components/layout/split-layout/model.js'),
     'utf8'
   )
-  if (/^import\s/m.test(model)) throw Error('Pure model retained a runtime dependency')
-  if (gzipSync(model).length > 3 * 1024)
+  const tree = readFileSync(join(installed, 'dist/components/layout/split-layout/tree.js'), 'utf8')
+  // The extracted read-only tree is part of the same pure model graph. Check
+  // its dependencies and charge both modules against the original byte cap.
+  const dependencies = [...model.matchAll(/^(?:import|export).*?from ["']([^"']+)["']/gm)]
+  const imports = [...model.matchAll(/^import\s.*$/gm)]
+  if (
+    dependencies.some((match) => match[1] !== './tree.js') ||
+    imports.some((match) => !/from ["']\.\/tree\.js["']/.test(match[0])) ||
+    /\bimport\s*\(/.test(model + tree) ||
+    /^import\s/m.test(tree)
+  )
+    throw Error('Pure model retained a runtime dependency')
+  if (/^export.*?from ["']/m.test(tree)) throw Error('Pure tree retained a transitive dependency')
+  const modelGraph = model + '\n' + tree
+  if (gzipSync(modelGraph).length > 3 * 1024)
     throw Error('Packed pure model exceeded its 3 KiB gzip budget')
   console.log(
     JSON.stringify({
       outputs,
-      modelJsBytes: Buffer.byteLength(model),
-      modelGzipBytes: gzipSync(model).length,
-      imports: 0,
+      modelJsBytes: Buffer.byteLength(modelGraph),
+      modelGzipBytes: gzipSync(modelGraph).length,
+      runtimeImports: 0,
+      internalTreeImports: imports.length,
       gzipBudget: 3 * 1024,
       attribution: 'packed Apache LICENSE and full MIT donor NOTICE retained',
       limitations:
