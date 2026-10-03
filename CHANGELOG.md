@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.99.4](https://github.com/adea-ai/ui/compare/v0.99.3...v0.99.4) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ui:** composite and conversation defects found building the design-system page ([#269](https://github.com/adea-ai/ui/issues/269)) ([75a646b](https://github.com/adea-ai/ui/commit/75a646b80bd157856427c11e1d72074488150ac0))
+
 ## [0.99.3](https://github.com/adea-ai/ui/compare/v0.99.2...v0.99.3) (2026-10-03)
 
 
