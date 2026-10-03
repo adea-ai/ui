@@ -142,7 +142,11 @@ export function AccountMenu(props: AccountMenuProps) {
   const visible = () =>
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
-  const menu = (
+  // Built by reference at each return, not once up front: Solid fixes a node's
+  // owner chain when the JSX expression runs, and an eagerly created tree would
+  // never see the Tooltip provider below — Kobalte's TooltipTrigger then throws
+  // `useTooltipContext must be used within a Tooltip component`.
+  const menu = () => (
     <DropdownMenu
       modal={false}
       placement={local.placement ?? 'top-start'}
@@ -240,11 +244,11 @@ export function AccountMenu(props: AccountMenuProps) {
     </DropdownMenu>
   )
 
-  if (local.railTrigger) return menu
+  if (local.railTrigger) return menu()
 
   return (
     <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
-      {menu}
+      {menu()}
       {/* Both overlays own a Popper context; the tooltip must stay outside the menu root. */}
       <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
     </Tooltip>
