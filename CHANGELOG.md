@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.106.1](https://github.com/adea-ai/ui/compare/v0.106.0...v0.106.1) (2026-10-03)
+
+
+### Maintenance
+
+* **deps:** track @adea-ai/themes 0.9.7 ([#316](https://github.com/adea-ai/ui/issues/316)) ([f9ba7d5](https://github.com/adea-ai/ui/commit/f9ba7d551da944b1e18b8a648176227fae9b1b78))
+
 ## [0.106.0](https://github.com/adea-ai/ui/compare/v0.105.0...v0.106.0) (2026-10-03)
 
 
