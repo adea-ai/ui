@@ -218,6 +218,22 @@ describe('appearance editor font settings', () => {
     expect(properties.get('--font-code-scale')).toBe('1')
   })
 
+  test('versioned bootstrap rejects non-integer and injected runtime version values', () => {
+    for (const version of [
+      NaN,
+      Infinity,
+      -Infinity,
+      2.5,
+      Number.MAX_SAFE_INTEGER + 1,
+      '2',
+      '</script><script>globalThis.injected = true</script>',
+    ]) {
+      expect(() =>
+        Reflect.apply(fontSettingsBootstrapScript, undefined, ['appearance', version])
+      ).toThrow(RangeError)
+    }
+  })
+
   test('versioned bootstrap applies System defaults when preferences are missing or unsupported', () => {
     const unsupported = JSON.stringify({
       version: 1,
