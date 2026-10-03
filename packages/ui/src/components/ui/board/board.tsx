@@ -12,7 +12,7 @@ import {
 } from 'solid-js'
 import { cva, type VariantProps } from '#lib/variants'
 import { cn } from '#lib/utils'
-import { Badge } from '../badge/badge'
+import { badgeVariants } from '../badge/badge'
 import { headingVariants, textVariants } from '../typography'
 
 /**
@@ -142,9 +142,13 @@ function BoardColumnDot(props: { tone?: BoardTone }) {
 function BoardColumnCount(props: { count?: number }) {
   return (
     <Show when={props.count !== undefined}>
-      <Badge variant="subtle" size="sm" class="tabular-nums" data-slot="board-column-count">
+      {/* The Badge's classes, not the component: Board stays free of Kobalte. */}
+      <span
+        class={cn(badgeVariants({ variant: 'subtle', size: 'sm' }), 'tabular-nums')}
+        data-slot="board-column-count"
+      >
         {props.count}
-      </Badge>
+      </span>
     </Show>
   )
 }
