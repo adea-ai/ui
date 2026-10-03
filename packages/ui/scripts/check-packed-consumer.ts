@@ -71,6 +71,13 @@ const coreSamples: PackedSample[] = [
     source: 'ui/modal-dialog',
   },
   {
+    name: 'catalog-detail-group',
+    imports:
+      "import { CatalogDetail, CatalogDetailSection } from '@adea-ai/ui/components/composites/catalog-browser'",
+    jsx: '<CatalogDetail title="Calendar" description="Workspace scheduling" category="App" publisher="Adea" publishedByLabel={(publisher) => publisher} sectionsLayout="columns"><CatalogDetailSection title="Capabilities">Scheduling</CatalogDetailSection><CatalogDetailSection title="Connection">Connected</CatalogDetailSection><CatalogDetailSection title="Bundle">Shared catalog</CatalogDetailSection></CatalogDetail>',
+    sources: ['components/composites/catalog-browser/catalog-detail.tsx'],
+  },
+  {
     name: 'update-dialog',
     imports:
       "import { UpdateDialog, type UpdateAdapter, type UpdateState } from '@adea-ai/ui/components/composites/update-dialog';\nconst current: UpdateState = { phase: 'current', currentVersion: '0.70.1' };\nconst adapter: UpdateAdapter = { getStatus: async () => current, check: async () => current, install: async () => current, isDesktopRuntime: () => true }",
