@@ -243,3 +243,62 @@ for (const width of [320, 768, 1440]) {
     expect(results.violations).toEqual([])
   })
 }
+
+for (const width of [320, 768]) {
+  test(`detail identity and action feedback do not overlap at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.getByRole('button', { name: 'Group detail fields', exact: true }).click()
+    await page.locator('[data-catalog-entry-id="calendar"]').click()
+    await page.getByRole('button', { name: 'Request install', exact: true }).click()
+    await expect(page.getByRole('alert')).toContainText('Install request was rejected')
+    const layout = await page.locator('[data-catalog-detail-header]').evaluate((header) => {
+      const identity = header.querySelector('[data-catalog-detail-identity]')!
+      const actions = header.querySelector('[data-catalog-detail-actions]')!
+      const title = identity.querySelector('h2')!
+      const description = identity.querySelector('p')!
+      const identityBounds = identity.getBoundingClientRect()
+      const actionBounds = actions.getBoundingClientRect()
+      const titleBounds = title.getBoundingClientRect()
+      const descriptionBounds = description.getBoundingClientRect()
+      return {
+        identity: { right: identityBounds.right, bottom: identityBounds.bottom },
+        actions: { left: actionBounds.left, top: actionBounds.top },
+        title: { bottom: titleBounds.bottom },
+        description: { top: descriptionBounds.top },
+        overflow: [header, identity, actions].some(
+          (element) => element.scrollWidth > element.clientWidth + 1
+        ),
+      }
+    })
+    expect(layout.overflow).toBe(false)
+    expect(layout.title.bottom).toBeLessThanOrEqual(layout.description.top)
+    if (width < 640) expect(layout.actions.top).toBeGreaterThanOrEqual(layout.identity.bottom)
+    else expect(layout.actions.left).toBeGreaterThanOrEqual(layout.identity.right)
+    const sections = page.locator('[data-catalog-detail-sections] > section')
+    for (const section of await sections.all()) {
+      const content = await section.evaluate((element) => {
+        const heading = element.querySelector('h3')!
+        const body = heading.nextElementSibling!
+        const titleBounds = heading.getBoundingClientRect()
+        return {
+          titleHeight: titleBounds.height,
+          lineHeight: Number.parseFloat(getComputedStyle(heading).lineHeight),
+          gap: body.getBoundingClientRect().top - titleBounds.bottom,
+          expectedGap: Number.parseFloat(getComputedStyle(element).rowGap),
+        }
+      })
+      expect(content.titleHeight).toBeLessThanOrEqual(content.lineHeight + 1)
+      expect(content.gap).toBeGreaterThanOrEqual(0)
+      expect(content.gap).toBeLessThanOrEqual(content.expectedGap + 1)
+    }
+    await page.screenshot({
+      path: testInfo.outputPath(`catalog-feedback-${width}.png`),
+      animations: 'disabled',
+    })
+    expect(
+      (await new AxeBuilder({ page }).include('[data-catalog-detail]').analyze()).violations
+    ).toEqual([])
+  })
+}
