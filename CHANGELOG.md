@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.101.1](https://github.com/adea-ai/ui/compare/v0.101.0...v0.101.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ui:** vertical tab marker, toaster class placement, navigation panel surface ([#289](https://github.com/adea-ai/ui/issues/289)) ([dd1f238](https://github.com/adea-ai/ui/commit/dd1f23870a74ef20fd37f685664de934af05bcd4))
+
+
+### CI
+
+* **gates:** stop superseded heavy lanes; sync Code Foundry 1.44.2 ([#290](https://github.com/adea-ai/ui/issues/290)) ([66c87f4](https://github.com/adea-ai/ui/commit/66c87f43d6915e8cad3d79f2d56c688a869633c8))
+
 ## [0.101.0](https://github.com/adea-ai/ui/compare/v0.100.2...v0.101.0) (2026-10-03)
 
 
