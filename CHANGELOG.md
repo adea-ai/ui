@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.103.1](https://github.com/adea-ai/ui/compare/v0.103.0...v0.103.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **theme:** read stored density back in ThemeProvider ([#297](https://github.com/adea-ai/ui/issues/297)) ([1db64fc](https://github.com/adea-ai/ui/commit/1db64fcf547f4d8dcc3aa236c20cf26521e9f154))
+
 ## [0.103.0](https://github.com/adea-ai/ui/compare/v0.102.0...v0.103.0) (2026-10-03)
 
 
