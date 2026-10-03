@@ -406,6 +406,141 @@ test('pane header pointer drag moves at the chosen edge without remounting edito
   await expect(page.getByLabel('Unmounts')).toHaveText('0')
   await expect(page.locator('[data-drop-direction]')).toHaveCount(0)
 })
+
+test('pane drag uses a bounded floating preview, grabbing cursor, and reduced-motion feedback', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await act(page, 'split')
+  const feedback = await page.evaluate(() => {
+    const root = document.querySelector('[aria-label="Work panes"]')!
+    const source = root.querySelector('[data-pane-id="a"]') as HTMLElement
+    const handle = source.querySelector('[data-pane-drag-handle]') as HTMLElement
+    const frame = source.getBoundingClientRect()
+    const dataTransfer = new DataTransfer()
+    let dragImage: Element | undefined
+    Object.defineProperty(dataTransfer, 'setDragImage', {
+      configurable: true,
+      value: (element: Element) => {
+        dragImage = element
+      },
+    })
+    handle.dispatchEvent(
+      new DragEvent('dragstart', {
+        bubbles: true,
+        dataTransfer,
+        clientX: frame.left + 16,
+        clientY: frame.top + 16,
+      })
+    )
+    const preview = document.querySelector('[data-split-drag-preview]') as HTMLElement
+    const previewFrame = preview.getBoundingClientRect()
+    const duringDrag = {
+      rootDragging: root.hasAttribute('data-dragging'),
+      cursor: getComputedStyle(handle).cursor,
+      transitionDuration: Number.parseFloat(getComputedStyle(source).transitionDuration),
+      previewWidth: previewFrame.width,
+      previewHeight: previewFrame.height,
+      previewPosition: getComputedStyle(preview).position,
+      previewHasWindowFrame:
+        preview.classList.contains('rounded-lg') &&
+        preview.classList.contains('border') &&
+        preview.classList.contains('shadow-xl'),
+      dragImageUsesPreview: dragImage === preview,
+      previewAriaHidden: preview.getAttribute('aria-hidden'),
+      previewInert: preview.inert,
+      previewHasText: preview.textContent?.includes('Pane a'),
+      previewHasId: Boolean(preview.querySelector('[id]')),
+      previewHasDraggable: Boolean(preview.querySelector('[draggable]')),
+    }
+    handle.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer }))
+    return {
+      ...duringDrag,
+      previewRemoved: !document.querySelector('[data-split-drag-preview]'),
+      rootCleared: !root.hasAttribute('data-dragging'),
+      cursorAfterDrag: getComputedStyle(handle).cursor,
+    }
+  })
+  expect(feedback).toMatchObject({
+    rootDragging: true,
+    cursor: 'grabbing',
+    previewWidth: 384,
+    previewHeight: 256,
+    previewPosition: 'fixed',
+    previewHasWindowFrame: true,
+    dragImageUsesPreview: true,
+    previewAriaHidden: 'true',
+    previewInert: true,
+    previewHasText: true,
+    previewHasId: false,
+    previewHasDraggable: false,
+    previewRemoved: true,
+    rootCleared: true,
+    cursorAfterDrag: 'grab',
+  })
+  expect(feedback.transitionDuration).toBeLessThanOrEqual(0.00001)
+})
+
+test('native pane drag snapshots canvas pixels without reconnecting embedded resources', async ({
+  page,
+}) => {
+  const resourceRequests: string[] = []
+  await page.route('https://drag-preview.invalid/**', async (route) => {
+    resourceRequests.push(new URL(route.request().url()).pathname)
+    await route.abort()
+  })
+  await act(page, 'split')
+  await act(page, 'drag-preview-content')
+  const layout = page.getByRole('group', { name: 'Work panes', exact: true })
+  const source = layout.locator('[data-pane-id="a"] [data-pane-drag-handle]')
+  await expect(source).toBeVisible()
+  await expect.poll(() => resourceRequests.length).toBeGreaterThan(0)
+  await page.waitForLoadState('networkidle')
+  const requestsBeforeDrag = resourceRequests.length
+  const bounds = (await source.boundingBox())!
+
+  // Real pointer input triggers the browser's draggable path and native
+  // DataTransfer, so this exercises setDragImage beyond a synthetic event.
+  await page.mouse.move(bounds.x + 8, bounds.y + 8)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + 40, bounds.y + 16, { steps: 5 })
+  await expect(layout).toHaveAttribute('data-dragging', '')
+  const preview = page.locator('[data-split-drag-preview]')
+  await expect(preview).toHaveAttribute('data-native-drag-image', '')
+
+  const snapshot = await preview.evaluate((element) => {
+    const canvas = element.querySelector('canvas[data-preview-canvas]') as HTMLCanvasElement
+    const pixel = canvas.getContext('2d')?.getImageData(0, 0, 1, 1).data
+    return {
+      inert: (element as HTMLElement).inert,
+      ariaHidden: element.getAttribute('aria-hidden'),
+      iframeCount: element.querySelectorAll('iframe').length,
+      mediaCount: element.querySelectorAll('video, audio, object, embed').length,
+      placeholders: Array.from(
+        element.querySelectorAll('[data-split-drag-placeholder]'),
+        (placeholder) => placeholder.getAttribute('data-split-drag-placeholder')
+      ).toSorted(),
+      canvasPixel: pixel ? Array.from(pixel) : [],
+      canvasSize: canvas ? [canvas.width, canvas.height] : [],
+    }
+  })
+  expect(snapshot).toMatchObject({
+    inert: true,
+    ariaHidden: 'true',
+    iframeCount: 0,
+    mediaCount: 0,
+    placeholders: ['audio', 'embed', 'iframe', 'object', 'video'],
+    canvasPixel: [18, 52, 86, 255],
+    canvasSize: [384, 192],
+  })
+
+  await page.waitForTimeout(250)
+  expect(resourceRequests).toHaveLength(requestsBeforeDrag)
+  await page.mouse.up()
+  await expect(preview).toHaveCount(0)
+  await expect(layout).not.toHaveAttribute('data-dragging')
+})
+
 test('foreign layout and forged plaintext drops cannot invoke host moves', async ({ page }) => {
   await act(page, 'split')
   const source = page.locator('[data-pane-id="a"] [data-pane-drag-handle]').first()
