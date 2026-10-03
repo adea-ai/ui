@@ -57,7 +57,7 @@
       "name": "@adea-ai/ui",
       "version": "0.104.2",
       "dependencies": {
-        "@adea-ai/themes": "^0.9.6",
+        "@adea-ai/themes": "^0.9.7",
         "@corvu/calendar": "^0.1.2",
         "@corvu/drawer": "^0.2.4",
         "@corvu/otp-field": "^0.1.4",
@@ -104,7 +104,7 @@
   "packages": {
     "@adea-ai/storybook": ["@adea-ai/storybook@workspace:apps/storybook"],
 
-    "@adea-ai/themes": ["@adea-ai/themes@0.9.6", "", {}, "sha512-oktz1g0mS55fGCfGwtJWY5SMz2oIbSf24XBbJlO+GtQIkVi/ua0/59UkhnpZgXKFN2FS3f7rhcLV0UMp/SqdhQ=="],
+    "@adea-ai/themes": ["@adea-ai/themes@0.9.7", "", {}, "sha512-NY5Q7UxtBL+rp6WldvlotEmQkeGJ84IHZsgd2Zm2LKx3d7+JiccQuSHXDvkI/G/SK2NUBfW+4sMPSVJNpaA0Ng=="],
 
     "@adea-ai/ui": ["@adea-ai/ui@workspace:packages/ui"],
 
