@@ -31,7 +31,6 @@
  * GPUI globals and app-specific storage/native authority. Save/Cancel/Reset and
  * custom accent/reduced-transparency are accepted Adea divergences (#425).
  */
-import { themeAccentPresets } from '@adea-ai/themes'
 import { EyeOff, Palette, PanelsTopLeft, SlidersHorizontal } from 'lucide-solid'
 import { Show, createUniqueId } from 'solid-js'
 import { cn } from '#lib/utils'
@@ -67,9 +66,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
     const preset = props.accentOptions.find((option) => option.id === props.draft.accent)
     if (preset) return `${preset.label} · Controls, glyphs, selections, code, and activity.`
     if (custom()) return 'Custom · Controls, glyphs, selections, code, and activity.'
-    const offered = themeAccentPresets(props.lightTheme, props.darkTheme).find(
-      (option) => option.id === props.draft.accent
-    )
+    const offered = props.themeAccentOptions?.find((option) => option.id === props.draft.accent)
     // A stored theme accent survives a theme switch by id; when the new pair
     // cannot offer that slot the host falls back to the theme's own primary,
     // and the description says so rather than naming a colour not on screen.

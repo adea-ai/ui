@@ -38,6 +38,7 @@ import {
   accentForeground,
   accentRoles,
   chartSeries,
+  getAccent,
   getTheme,
   hasTheme,
   shadcnDestructiveProjection,
@@ -55,9 +56,9 @@ import {
   type AdeaThemeRecord,
   type ContrastFinding,
 } from '@adea-ai/themes'
-import { resolveAccentPreset } from './theme-accents'
+import { isThemeAccentId } from './theme-accents'
 
-export { isThemeAccentId, resolveAccentPreset } from './theme-accents'
+export { isThemeAccentId } from './theme-accents'
 
 export type ThemeAppearance = 'light' | 'dark'
 
@@ -363,6 +364,27 @@ export function themeAccentsFor(
 ): readonly AccentPreset[] {
   const { light, dark } = recordPair(lightThemeId, darkThemeId)
   return themeAccentPresets(light, dark)
+}
+
+/**
+ * An accent id resolved against a theme pair: a preset, a theme accent the pair
+ * offers, or `undefined` for `theme`, an unknown id, or a slot this pair cannot
+ * offer — each of which means "use the theme's own primary".
+ *
+ * Theme accent ids are role-shaped (`ansi-blue`), so a stored one survives a theme
+ * switch and resolves to the new theme's blue; when the new pair cannot offer the
+ * slot it resolves to nothing, the same fallback a stale preset id gets.
+ */
+export function resolveAccentPreset(
+  accentId: string,
+  light: AdeaTheme,
+  dark: AdeaTheme
+): AccentPreset | undefined {
+  if (accentId === 'theme') return undefined
+  const preset = getAccent(accentId)
+  if (preset) return preset
+  if (!isThemeAccentId(accentId)) return undefined
+  return themeAccentPresets(light, dark).find((option) => option.id === accentId)
 }
 
 /**

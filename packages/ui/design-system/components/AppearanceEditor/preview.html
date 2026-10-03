@@ -1,10 +1,11 @@
 <!-- @dsCard group="Composites" height=860 -->
 <div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
 <script>
-  const { render, html, createSignal, createMemo, AppearanceEditor, themeRecordById, appearancePreviewThemes, accentPresets } = window.AdeaUI;
+  const { render, html, createSignal, createMemo, AppearanceEditor, themeRecordById, appearancePreviewThemes, themeAccentsFor, accentPresets } = window.AdeaUI;
   // The editor takes the catalogue's own theme records, which the bundle exports as
   // themeRecords / themeRecordById; appearancePreviewThemes resolves a draft's ids and
-  // accent (a preset or one the theme pair carries) into the two preview themes.
+  // accent (a preset or one the theme pair carries) into the two preview themes, and
+  // themeAccentsFor lists the accents the selected pair carries.
   const ids = ['adea-light', 'adea-dark', 'ayu', 'ayu-light', 'ayu-mirage', 'catppuccin-frappe', 'catppuccin-latte',
     'catppuccin-macchiato', 'catppuccin-mocha', 'dracula', 'everforest-dark', 'everforest-light', 'gruvbox-dark', 'gruvbox-light'];
   const themes = ids.map(themeRecordById).filter(Boolean);
@@ -25,6 +26,7 @@
     resolvedAppearance="dark"
     themes=${themes}
     accentOptions=${accentOptions}
+    themeAccentOptions=${() => themeAccentsFor(draft().lightThemeId, draft().darkThemeId)}
     surfaceCapability=${{ frosted: false, reason: 'Transparency is unavailable on this host.' }}
     onChange=${(patch) => setDraft((value) => ({ ...value, ...patch }))}
     onReset=${(_event) => setDraft({ ...defaults })}

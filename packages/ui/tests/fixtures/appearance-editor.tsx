@@ -20,7 +20,8 @@ import {
   formatOklch,
   parseColor,
   shadcnVariables,
-  themeAccentPresets,
+  type AccentPreset,
+  type AdeaTheme,
 } from '@adea-ai/themes'
 import {
   AppearanceEditor,
@@ -60,6 +61,21 @@ const defaults: AppearanceDraft = {
   reduceTransparency: false,
 }
 
+// A real host takes this list from `themeAccentsFor` in `@adea-ai/ui`, which
+// applies the catalogue's accent floors through its normalization module. The
+// packed renderer gate forbids that module in this bundle, so the disposable host
+// pairs the themes' own ANSI slots directly: the editor's contract is to render
+// and select whatever list it is handed, and the floors are unit-tested.
+function offeredThemeAccents(light: AdeaTheme, dark: AdeaTheme): AccentPreset[] {
+  return (['blue', 'magenta', 'cyan', 'green'] as const).map((slot) => ({
+    id: `ansi-${slot}`,
+    label: slot.charAt(0).toUpperCase() + slot.slice(1),
+    description: `The theme's own ${slot} colour.`,
+    light: light.ansi[slot],
+    dark: dark.ansi[slot],
+  }))
+}
+
 function Fixture() {
   const [open, setOpen] = createSignal(false)
   const [committed, setCommitted] = createSignal({ ...defaults })
@@ -69,14 +85,13 @@ function Fixture() {
     light: themes.find((candidate) => candidate.id === draft().lightThemeId)!,
     dark: themes.find((candidate) => candidate.id === draft().darkThemeId)!,
   })
+  const themeAccents = createMemo(() => offeredThemeAccents(pair().light, pair().dark))
   const theme = (appearance: 'light' | 'dark') => {
     const record = themes.find((candidate) => candidate.id === draft()[`${appearance}ThemeId`])!
     // A preset, or an accent the selected pair carries itself (`ansi-blue`).
     const accent =
       ACCENTS.find((candidate) => candidate.id === draft().accent) ??
-      themeAccentPresets(pair().light, pair().dark).find(
-        (candidate) => candidate.id === draft().accent
-      )
+      themeAccents().find((candidate) => candidate.id === draft().accent)
     const value =
       accent?.[appearance] ?? (/^#[\da-f]{6}$/i.test(draft().accent) ? draft().accent : undefined)
     return value
@@ -128,6 +143,7 @@ function Fixture() {
         resolvedAppearance="dark"
         themes={themes}
         accentOptions={ACCENTS}
+        themeAccentOptions={themeAccents()}
         customAccentError={error()}
         saving={saving()}
         surfaceCapability={{ frosted: false, reason: 'Transparency is unavailable on this host.' }}

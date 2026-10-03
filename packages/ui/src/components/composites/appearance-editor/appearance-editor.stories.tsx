@@ -1,7 +1,12 @@
 import { ACCENTS } from '@adea-ai/themes'
 import { createMemo, createSignal } from 'solid-js'
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { appearancePreviewThemes, isThemeAccentId, themeRecordById } from '#lib/themes'
+import {
+  appearancePreviewThemes,
+  isThemeAccentId,
+  themeAccentsFor,
+  themeRecordById,
+} from '#lib/themes'
 import { AppearanceEditor, AppearancePopover } from './appearance-editor'
 import type { AppearanceDraft } from './appearance-types'
 
@@ -59,6 +64,7 @@ function Example(props: {
     resolvedAppearance: 'dark' as const,
     themes: props.empty ? [] : themes,
     accentOptions: ACCENTS,
+    themeAccentOptions: themeAccentsFor(draft().lightThemeId, draft().darkThemeId),
     saving: props.saving,
     recoveryNotice: props.recovery
       ? 'An unavailable saved theme was restored to Adea Dark.'

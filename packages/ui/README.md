@@ -686,9 +686,10 @@ Supply canonical `AdeaTheme` previews and `AdeaThemeRecord` choices.
 draft's ids and accent — a preset or a theme-carried accent — into the two
 preview themes, exactly as `ThemeProvider` would apply them; `withAccent` is the
 overlay on its own. `builtinThemes` is the shadcn projection a document is
-painted with, not an editor input. The editor derives the theme-carried accent
-swatches from the previews itself (`themeAccentPresets`) and loads no
-catalogue. Hosts own saved-ID recovery, validation, draft snapshots,
+painted with, not an editor input. Pass `themeAccentOptions` —
+`themeAccentsFor(lightThemeId, darkThemeId)` — to offer the accents the previewed
+pair carries after the presets; the editor itself loads no catalogue or
+normalization. Hosts own saved-ID recovery, validation, draft snapshots,
 System appearance resolution, native transparency, live application tokens,
 Save persistence and restoration on Cancel/dismissal. `saving`,
 `saveDisabledReason`, `recoveryNotice`, `customAccentError`, and

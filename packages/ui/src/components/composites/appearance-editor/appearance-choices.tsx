@@ -23,9 +23,8 @@
  */
 // Pinned mode-card, accent-swatch, and glass-chip composition. Kobalte replaces
 // the app port's manual roving focus; it does not replace the donor hierarchy.
-import { themeAccentPresets } from '@adea-ai/themes'
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { For, Show, createMemo } from 'solid-js'
+import { For, Show } from 'solid-js'
 import { isThemeAccentId } from '#lib/theme-accents'
 import type { AppearanceEditorProps } from './appearance-types'
 import { ThemeMiniature, ThemeMiniatureSplit } from './theme-preview'
@@ -105,10 +104,8 @@ export function AccentChoices(props: AppearanceEditorProps) {
   // user will see it.
   const resolvedAppearance = () =>
     props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
-  // The accents the previewed theme pair carries, offered after the presets. Read
-  // from the preview themes the host already supplies, so a host gets them without
-  // a second prop that could disagree with the themes it is previewing.
-  const themeAccents = createMemo(() => themeAccentPresets(props.lightTheme, props.darkTheme))
+  // The accents the previewed theme pair carries, offered after the presets.
+  const themeAccents = () => props.themeAccentOptions ?? []
   const accentSelection = () => (isCustomAccent(props) ? 'custom' : props.draft.accent)
   return (
     <Radio

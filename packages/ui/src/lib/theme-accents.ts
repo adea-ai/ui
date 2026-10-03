@@ -15,16 +15,13 @@
  * it resolves to nothing and the theme's own primary applies — the same fallback a
  * stale preset id gets.
  *
- * This module imports no catalogue: it works on whatever theme records it is
- * given, so the appearance editor can use it without loading every palette.
+ * This module holds only the id test, and reads only the schema entry: the
+ * appearance editor uses it, and the editor's packed renderer gate forbids the
+ * catalogue and normalization modules that *computing* a theme accent needs
+ * (`themeAccentPresets` measures through `normalize.js`). Resolution lives in
+ * `lib/themes.ts`, beside the catalogue it reads.
  */
-import {
-  ANSI_KEYS,
-  getAccent,
-  themeAccentPresets,
-  type AccentPreset,
-  type AdeaTheme,
-} from '@adea-ai/themes'
+import { ANSI_KEYS } from '@adea-ai/themes/schema'
 
 /** The prefix the catalogue gives every theme-derived accent id. */
 const THEME_ACCENT_PREFIX = 'ansi-'
@@ -34,7 +31,7 @@ const THEME_ACCENT_PREFIX = 'ansi-'
  *
  * Deliberately wider than what any one pair offers: the id is valid to *store*
  * whenever it names a slot, because the next theme may offer it even if this one
- * does not. Whether it resolves is {@link resolveAccentPreset}'s question.
+ * does not. Whether it resolves is `resolveAccentPreset`'s question.
  */
 export function isThemeAccentId(id: string): boolean {
   // Computed per call rather than held in a module-level set: a top-level
@@ -44,21 +41,4 @@ export function isThemeAccentId(id: string): boolean {
     id.startsWith(THEME_ACCENT_PREFIX) &&
     (ANSI_KEYS as readonly string[]).includes(id.slice(THEME_ACCENT_PREFIX.length))
   )
-}
-
-/**
- * An accent id resolved against a theme pair: a preset, a theme accent the pair
- * offers, or `undefined` for `theme`, an unknown id, or a slot this pair cannot
- * offer — each of which means "use the theme's own primary".
- */
-export function resolveAccentPreset(
-  accentId: string,
-  light: AdeaTheme,
-  dark: AdeaTheme
-): AccentPreset | undefined {
-  if (accentId === 'theme') return undefined
-  const preset = getAccent(accentId)
-  if (preset) return preset
-  if (!isThemeAccentId(accentId)) return undefined
-  return themeAccentPresets(light, dark).find((option) => option.id === accentId)
 }

@@ -25,6 +25,14 @@ export type AppearanceEditorProps = {
   resolvedAppearance: 'light' | 'dark'
   themes: readonly AdeaThemeRecord[]
   accentOptions: readonly AccentPreset[]
+  /**
+   * The accents the previewed light/dark pair carries itself, offered after
+   * `accentOptions` — `themeAccentsFor(lightThemeId, darkThemeId)` from
+   * `@adea-ai/ui`. Supplied by the host because computing them measures through
+   * the catalogue's normalization, which the editor does not load. Omitted, the
+   * row offers the presets only.
+   */
+  themeAccentOptions?: readonly AccentPreset[]
   onChange: (patch: Partial<AppearanceDraft>) => void
   onSave: () => void
   onCancel: () => void
