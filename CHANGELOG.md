@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.106.0](https://github.com/adea-ai/ui/compare/v0.105.0...v0.106.0) (2026-10-03)
+
+
+### Features
+
+* add role-specific appearance font controls ([#300](https://github.com/adea-ai/ui/issues/300)) ([63acadd](https://github.com/adea-ai/ui/commit/63acadd989e148533a347e0642d5578e3cffcf83))
+
 ## [0.105.0](https://github.com/adea-ai/ui/compare/v0.104.3...v0.105.0) (2026-10-03)
 
 
