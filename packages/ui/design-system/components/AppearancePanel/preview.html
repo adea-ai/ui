@@ -1,9 +1,4 @@
 <!-- @dsCard group="Theming" height=1380 -->
-<style>
-  /* Workaround, remove when fixed in source: ThemePicker's option button keeps both
-     h-control-sm and h-auto after cn(), h-control-sm wins, and each ThemePreview is squashed. */
-  [data-slot='theme-picker'] > [role='radio'] { height: auto; }
-</style>
 <div id="root" style="padding:16px"></div>
 <script>
   const { render, html, createSignal, ThemeProvider, AppearancePanel, themeById, defaultThemeSelection } = window.AdeaUI;
@@ -16,21 +11,6 @@
   //  - data-theme is mapped back to the page's ids ('adea-dark' -> 'dark', any other
   //    variant -> its appearance), so tokens the provider does not write still resolve,
   //    and a theme switch by the host page is passed on to the provider.
-  // The provider reads and writes localStorage, and touching it throws where storage is
-  // denied (an opaque-origin frame). An in-memory stand-in keeps the card rendering there.
-  try {
-    window.localStorage.length;
-  } catch {
-    const memory = new Map();
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {
-        getItem: (key) => (memory.has(key) ? memory.get(key) : null),
-        setItem: (key, value) => memory.set(key, String(value)),
-        removeItem: (key) => memory.delete(key),
-      },
-    });
-  }
   const root = document.documentElement;
   const selectionFor = (theme) => {
     const appearance = theme.startsWith('dark') ? 'dark' : 'light';

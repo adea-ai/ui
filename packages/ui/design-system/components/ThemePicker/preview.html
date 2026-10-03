@@ -1,9 +1,4 @@
 <!-- @dsCard group="Theming" height=500 -->
-<style>
-  /* Workaround, remove when fixed in source: the option button keeps both h-control-sm and
-     h-auto after cn(), h-control-sm wins, and the 28px button squashes each ThemePreview. */
-  [data-slot='theme-picker'] > [role='radio'] { height: auto; }
-</style>
 <div id="root" style="padding:16px"></div>
 <script>
   const { render, html, createSignal, ThemePicker, themesForAppearance, defaultThemeSelection } = window.AdeaUI;
