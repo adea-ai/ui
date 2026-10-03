@@ -19,11 +19,15 @@ export const badgeVariants = cva(
         default: 'bg-primary text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground',
         outline: 'border-border text-foreground',
-        /** Tinted status fills, for counts and states rather than actions. */
-        success: 'bg-success-subtle text-foreground',
-        warning: 'bg-warning-subtle text-foreground',
-        destructive: 'bg-destructive-subtle text-foreground',
-        info: 'bg-info-subtle text-foreground',
+        /**
+         * Tinted status fills, for counts and states rather than actions. The
+         * word stays in `foreground` for contrast; the glyph takes the status
+         * hue, so tags of different tones read apart at a glance.
+         */
+        success: 'bg-success-subtle text-foreground [&_svg]:text-success',
+        warning: 'bg-warning-subtle text-foreground [&_svg]:text-warning',
+        destructive: 'bg-destructive-subtle text-foreground [&_svg]:text-destructive',
+        info: 'bg-info-subtle text-foreground [&_svg]:text-info',
         subtle: 'bg-primary-subtle text-primary',
         /**
          * A count that asks for attention, pinned to a corner of another control

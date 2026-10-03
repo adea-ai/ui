@@ -41,12 +41,15 @@ import { DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS } from '../../../lib/appearance
 
 import { Switch } from '../../ui/switch/switch'
 import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverTitle,
-  PopoverTrigger,
-} from '../../ui/popover/popover'
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '../../ui/sheet/sheet'
 import type { AppearanceEditorProps, AppearancePopoverProps } from './appearance-types'
 import { ModeChoices, AccentChoices, GlassChoices, isCustomAccent } from './appearance-choices'
 import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
@@ -61,7 +64,6 @@ import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
  */
 export function AppearanceEditor(props: AppearanceEditorProps) {
   const errorId = createUniqueId()
-  const saveReasonId = createUniqueId()
   const custom = () => isCustomAccent(props)
   const accentDescription = () => {
     if (props.draft.accent === 'theme') return "Theme default · Uses the palette's intended color."
@@ -188,15 +190,35 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
           </Button>
         </SettingsRow>
       </div>
+      <Show when={!props.hideActions}>
+        {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
+            editor scrolls with its host panel, and actions parked at the bottom
+            of a long form were unreachable without scrolling past every row. */}
+        <div class="sticky bottom-0 z-10 mt-2 border-t bg-background px-4 py-3">
+          <AppearanceEditorActions {...props} />
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+/**
+ * Reset, Cancel and Save, with the reason Save is unavailable. Rendered by the
+ * editor itself, or — with `hideActions` — by a host that pins them in its own
+ * footer, as `AppearancePopover` does.
+ */
+export function AppearanceEditorActions(props: AppearanceEditorProps) {
+  const saveReasonId = createUniqueId()
+  return (
+    <div class="flex w-full flex-col gap-2">
       <Show when={props.saveDisabledReason}>
-        <p id={saveReasonId} role="status" class="px-4 pt-3 text-xs text-muted-foreground">
+        <p id={saveReasonId} role="status" class="text-xs text-muted-foreground">
           {props.saveDisabledReason}
         </p>
       </Show>
-      {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
-          editor scrolls with its host panel, and actions parked at the bottom
-          of a long form were unreachable without scrolling past every row. */}
-      <div class="global-appearance-editor-actions sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
+      {/* `global-appearance-editor-actions` lets these buttons grow with the UI
+          font preference, like the rest of Appearance's own controls. */}
+      <div class="global-appearance-editor-actions flex flex-wrap items-center gap-2">
         <Button
           type="button"
           size="sm"
@@ -232,19 +254,15 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
   )
 }
 
-/** Modal anchoring/dismissal and nested-menu behavior come from Kobalte.
- * Its measured available height also bounds scrolling, keeping footer actions
- * reachable when a narrow popup begins below its trigger. */
+/** The editor in an inset Sheet docked beside the main view: the body scrolls and
+ * Reset/Cancel/Save sit in the panel's full-width footer, always reachable.
+ * Dismissal (Escape, the close button, an outside click) is `onDismiss`. */
 export function AppearancePopover(props: AppearancePopoverProps) {
   const [menuPortalMount, setMenuPortalMount] = createSignal<HTMLElement>()
 
   return (
-    <Popover
-      open={props.open}
-      modal
-      onOpenChange={(open) => (open ? props.onOpen() : props.onDismiss())}
-    >
-      <PopoverTrigger
+    <Sheet open={props.open} onOpenChange={(open) => (open ? props.onOpen() : props.onDismiss())}>
+      <SheetTrigger
         as={Button}
         type="button"
         variant="ghost"
@@ -252,17 +270,21 @@ export function AppearancePopover(props: AppearancePopoverProps) {
         aria-label="Appearance settings"
       >
         <Palette />
-      </PopoverTrigger>
-      <PopoverContent
-        ref={setMenuPortalMount}
-        class="w-lg max-w-[calc(100vw-2rem)] max-h-(--kb-popper-content-available-height) overflow-y-auto"
-      >
-        <PopoverTitle>Appearance</PopoverTitle>
-        <PopoverDescription>
-          Changes preview immediately. Save keeps them; Cancel restores the previous appearance.
-        </PopoverDescription>
-        <AppearanceEditor {...props} menuPortalMount={menuPortalMount()} />
-      </PopoverContent>
-    </Popover>
+      </SheetTrigger>
+      <SheetContent side="end" closeLabel="Close appearance settings" ref={setMenuPortalMount}>
+        <SheetHeader>
+          <SheetTitle>Appearance</SheetTitle>
+          <SheetDescription>
+            Changes preview immediately. Save keeps them; Cancel restores the previous appearance.
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <AppearanceEditor {...props} menuPortalMount={menuPortalMount()} hideActions />
+        </SheetBody>
+        <SheetFooter>
+          <AppearanceEditorActions {...props} />
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -55,6 +55,8 @@ export type AppearanceEditorProps = {
   /** Mount nested font menus inside the containing overlay when one exists. */
   menuPortalMount?: HTMLElement
   class?: string
+  /** Leave Reset/Cancel/Save to the host, which renders `AppearanceEditorActions`. */
+  hideActions?: boolean
 }
 
 export type AppearancePopoverProps = AppearanceEditorProps & {

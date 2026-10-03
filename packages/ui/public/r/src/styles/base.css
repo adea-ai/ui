@@ -277,6 +277,19 @@
   text-orientation: mixed;
 }
 
+/**
+ * The docking box of an inset Sheet: below the top bar, with one gap (two spacing
+ * steps) from the top bar, the end edge and the bottom of the window, so the
+ * panel fills the height of the main view and its edges line up on every side.
+ * Narrow windows keep the same gap at the start edge too.
+ */
+@utility panel-dialog-inset {
+  top: calc(var(--topbar-height) + var(--spacing) * 2);
+  inset-inline-end: calc(var(--spacing) * 2);
+  bottom: calc(var(--spacing) * 2);
+  max-width: calc(100vw - var(--spacing) * 4);
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

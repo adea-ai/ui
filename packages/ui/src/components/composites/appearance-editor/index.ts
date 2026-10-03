@@ -1,4 +1,4 @@
-export { AppearanceEditor, AppearancePopover } from './appearance-editor'
+export { AppearanceEditor, AppearanceEditorActions, AppearancePopover } from './appearance-editor'
 export {
   AppearanceFontSettingsGroup,
   type AppearanceFontSettingsGroupProps,

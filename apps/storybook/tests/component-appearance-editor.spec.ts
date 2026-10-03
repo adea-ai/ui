@@ -163,7 +163,8 @@ test.beforeEach(async ({ page }, testInfo) => {
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
-  if (!inlineEditor) await page.getByRole('button', { name: 'Appearance settings' }).click()
+  if (!inlineEditor)
+    await page.getByRole('button', { name: 'Appearance settings', exact: true }).click()
 })
 
 test('System avoids font requests and the selected catalogue face loads only its local asset', async ({
@@ -669,8 +670,8 @@ test('unsaved theme selection updates live miniatures and Cancel restores the sn
   await expect
     .poll(() => preview.evaluate((element) => getComputedStyle(element).color))
     .toBe(initial)
-  await expect(page.getByRole('button', { name: 'Appearance settings' })).toBeFocused()
-  await page.getByRole('button', { name: 'Appearance settings' }).click()
+  await expect(page.getByRole('button', { name: 'Appearance settings', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: 'Appearance settings', exact: true }).click()
   await expect(page.getByRole('button', { name: /^Dark theme/ })).toContainText('Adea Dark')
 })
 

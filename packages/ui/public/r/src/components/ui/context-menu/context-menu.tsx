@@ -10,6 +10,7 @@ import {
   menuSeparator,
   overlayMotion,
   overlaySurface,
+  topLayerProps,
 } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 
@@ -40,6 +41,7 @@ export function ContextMenuContent(props: ComponentProps<typeof KobalteContextMe
   return (
     <KobalteContextMenu.Portal>
       <KobalteContextMenu.Content
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,
@@ -174,6 +176,7 @@ export function ContextMenuSubContent(props: ComponentProps<typeof KobalteContex
   return (
     <KobalteContextMenu.Portal>
       <KobalteContextMenu.SubContent
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,

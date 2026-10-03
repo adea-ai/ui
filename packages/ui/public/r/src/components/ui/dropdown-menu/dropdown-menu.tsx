@@ -11,6 +11,7 @@ import {
   overlayMotion,
   overlaySurface,
   popoverArrow,
+  topLayerProps,
 } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 
@@ -148,6 +149,12 @@ export function DropdownMenuTrigger(props: ComponentProps<typeof KobalteDropdown
     const isNativeLink = trigger instanceof HTMLAnchorElement && trigger.hasAttribute('href')
     if (trigger instanceof HTMLElement && !isNativeLink) {
       trigger.focus({ preventScroll: true })
+      // Focusing first is not enough in WebKit: the press's default mousedown
+      // action runs afterwards and moves focus off a button to the nearest
+      // focusable ancestor — inside a dialog, the dialog — so the menu that
+      // just opened still reads focus leaving it and closes. Cancelling the
+      // default keeps focus where it was put.
+      if (event.pointerType !== 'touch') event.preventDefault()
     }
   }
   const onKeyDown = (event: DropdownMenuTriggerKeyEvent) => {
@@ -196,6 +203,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   return (
     <KobalteDropdownMenu.Portal mount={local.portalMount}>
       <KobalteDropdownMenu.Content
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,
@@ -372,6 +380,7 @@ export function DropdownMenuSubContent(
   return (
     <KobalteDropdownMenu.Portal>
       <KobalteDropdownMenu.SubContent
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,
