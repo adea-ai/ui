@@ -31,9 +31,17 @@ export const Rail: Story = {
       <WorkspaceMark name="cortana" />
       <WorkspaceMark name="control-plane" />
       <WorkspaceMark
+        name="cluster"
+        badge={
+          <Badge size="sm" variant="notification">
+            12
+          </Badge>
+        }
+      />
+      <WorkspaceMark
         name="plugins"
         badge={
-          <Badge size="sm" variant="destructive">
+          <Badge size="sm" variant="notification">
             2
           </Badge>
         }

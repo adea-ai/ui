@@ -320,7 +320,10 @@ export function MessageBody(
       .filter(Boolean)
       .map((segment) => {
         if (!segment.startsWith('```')) {
-          return { kind: 'prose' as const, value: segment }
+          // The newlines that separate prose from a fence belong to the fence
+          // syntax. Kept, `whitespace-pre-wrap` draws them as blank lines on top
+          // of the column gap, doubling the space beside every code block.
+          return { kind: 'prose' as const, value: segment.replace(/^\n+|\n+$/g, '') }
         }
         const body = segment.replace(/^```/, '').replace(/```$/, '')
         // The language is the first token on the opening line, and only when the
@@ -334,6 +337,8 @@ export function MessageBody(
           language,
         }
       })
+      // Newlines alone between two fences leave an empty paragraph once trimmed.
+      .filter((segment) => segment.kind === 'code' || segment.value !== '')
 
   const last = () => segments().at(-1)
 
