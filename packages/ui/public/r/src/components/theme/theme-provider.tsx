@@ -182,6 +182,10 @@ function readSelection(storageKey: string): ThemeSelection {
       font: fontOptions.some((option) => option.id === parsed.font)
         ? (parsed.font as string)
         : defaultThemeSelection.font,
+      // Every axis has to be read back here, or it is lost twice: the effect below
+      // removes the `data-density` that `themeScript` set for the first paint, and
+      // the next `setSelection` rewrites the store without it.
+      density: resolvedDensity(parsed as ThemeSelection),
     }
   } catch {
     return defaultThemeSelection

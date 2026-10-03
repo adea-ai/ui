@@ -39,7 +39,10 @@ test.beforeAll(async () => {
     .join('\n')
 })
 
-async function mount(page: Page, options: { blockStorage?: boolean } = {}) {
+async function mount(
+  page: Page,
+  options: { blockStorage?: boolean; storage?: Record<string, string> } = {}
+) {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>Shell theming</title></head><body></body></html>'
@@ -56,8 +59,34 @@ async function mount(page: Page, options: { blockStorage?: boolean } = {}) {
       })
     })
   }
+  if (options.storage) {
+    // A blank page has an opaque origin, where the real `localStorage` throws, so a
+    // seeded preference needs an in-memory store standing in for it. The map is kept
+    // on `window` so the test can read back what the provider persisted.
+    await page.evaluate((entries) => {
+      const backing = new Map<string, string>(Object.entries(entries))
+      const store = {
+        getItem: (key: string) => backing.get(key) ?? null,
+        setItem: (key: string, value: string) => void backing.set(key, String(value)),
+        removeItem: (key: string) => void backing.delete(key),
+        clear: () => backing.clear(),
+        key: (index: number) => [...backing.keys()][index] ?? null,
+        get length() {
+          return backing.size
+        },
+      }
+      Object.defineProperty(window, 'localStorage', { configurable: true, value: store })
+    }, options.storage)
+  }
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
+}
+
+/** The preference the provider persisted under the fixture's key, parsed. */
+function storedSelection(page: Page) {
+  return page.evaluate(() =>
+    JSON.parse(window.localStorage.getItem('shell-theming-fixture') ?? 'null')
+  )
 }
 
 /** Distance from an element's inline-start edge to where its text starts. */
@@ -85,6 +114,45 @@ test('ThemeProvider mounts and switches in memory where storage access throws', 
   await expect(page.getByTestId('appearance')).toHaveText('dark')
   await expect(page.locator('html')).toHaveClass(/\bdark\b/)
   expect(errors).toEqual([])
+})
+
+test('ThemeProvider keeps a stored compact density after mount and across a change', async ({
+  page,
+}) => {
+  // Every axis the provider reads, so a later omission of any of them shows up here
+  // and not only density's. The ids are the ones `readSelection` accepts.
+  const stored = {
+    appearance: 'light',
+    lightThemeId: 'solarized-light',
+    darkThemeId: 'nord',
+    accent: 'violet',
+    font: 'geist',
+    density: 'compact',
+  }
+  await mount(page, { storage: { 'shell-theming-fixture': JSON.stringify(stored) } })
+
+  const html = page.locator('html')
+  await expect(page.getByTestId('appearance')).toHaveText('light')
+  await expect(html).toHaveAttribute('data-density', 'compact')
+  await expect(html).toHaveAttribute('data-accent', 'violet')
+  await expect(html).toHaveAttribute('data-font', 'geist')
+  await expect(html).toHaveAttribute('data-theme', 'solarized-light')
+
+  // A change to another axis persists the whole selection; density must ride along
+  // rather than be dropped from the rewrite.
+  await page.getByRole('button', { name: 'Use dark' }).click()
+  await expect(html).toHaveClass(/\bdark\b/)
+  await expect(html).toHaveAttribute('data-density', 'compact')
+  await expect(html).toHaveAttribute('data-theme', 'nord')
+  expect(await storedSelection(page)).toEqual({ ...stored, appearance: 'dark' })
+})
+
+test('ThemeProvider falls back to comfortable for an unknown stored density', async ({ page }) => {
+  await mount(page, {
+    storage: { 'shell-theming-fixture': JSON.stringify({ density: 'cramped' }) },
+  })
+  await expect(page.getByTestId('appearance')).toHaveText('system')
+  await expect(page.locator('html')).not.toHaveAttribute('data-density', /.*/)
 })
 
 test('ThemePicker options size to their previews and keep wrapped rows aligned', async ({
