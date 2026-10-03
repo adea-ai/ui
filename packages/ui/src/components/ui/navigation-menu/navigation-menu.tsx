@@ -2,7 +2,14 @@ import { splitProps, type ComponentProps, type JSX } from 'solid-js'
 import * as KobalteNavigationMenu from '@kobalte/core/navigation-menu'
 import { ChevronDown } from 'lucide-solid'
 import { cn } from '#lib/utils'
-import { menuContentPadding, menuItem, overlayMotion, overlaySurface } from '#lib/overlay'
+import {
+  menuContentPadding,
+  menuItem,
+  menuLabel,
+  menuSeparator,
+  overlayMotion,
+  overlaySurface,
+} from '#lib/overlay'
 
 /**
  * NavigationMenu.
@@ -123,7 +130,11 @@ export function NavigationMenuContent(props: ComponentProps<typeof KobalteNaviga
         class={cn(
           // Absolute so the viewport sizes to the active panel's measured box and
           // animates between panels, rather than stacking them.
-          'absolute top-0 left-0 grid w-max gap-1 p-2 outline-none',
+          'absolute top-0 left-0 grid w-max gap-1 outline-none',
+          // The viewport is the surface and carries no padding of its own (its
+          // measured size is the panel's), so the panel supplies the inset every
+          // menu surface shares — the one the separator's bleed is cut for.
+          menuContentPadding,
           // The motion is the panel's, not the viewport's. Kobalte keeps an
           // outgoing panel mounted until the viewport's own animation ends; a
           // viewport that carries an entrance animation never fires that again
@@ -193,7 +204,11 @@ export function NavigationMenuItem(props: NavigationMenuItemProps) {
     <KobalteNavigationMenu.Item
       class={cn(
         menuItem,
-        'grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5',
+        // The description sits under the label, in the label's column. Without
+        // an icon there is no leading column, and a two-column grid would set
+        // the description beside the label instead of beneath it.
+        local.icon ? 'grid grid-cols-[auto_1fr]' : 'grid grid-cols-1',
+        'items-center gap-x-2 gap-y-0.5',
         local.description && 'grid-rows-[auto_auto] py-2',
         local.class
       )}
@@ -202,7 +217,13 @@ export function NavigationMenuItem(props: NavigationMenuItemProps) {
       {local.icon}
       <span class="font-medium">{local.children}</span>
       {local.description && (
-        <span class="col-start-2 text-xs text-muted-foreground">{local.description}</span>
+        <span
+          class={cn('text-xs text-muted-foreground', {
+            'col-start-2': !!local.icon,
+          })}
+        >
+          {local.description}
+        </span>
       )}
     </KobalteNavigationMenu.Item>
   )
@@ -212,12 +233,7 @@ export function NavigationMenuSeparator(
   props: ComponentProps<typeof KobalteNavigationMenu.Separator>
 ) {
   const [local, rest] = splitProps(props, ['class'])
-  return (
-    <KobalteNavigationMenu.Separator
-      class={cn('-mx-1 my-1 h-px bg-border', local.class)}
-      {...rest}
-    />
-  )
+  return <KobalteNavigationMenu.Separator class={cn(menuSeparator, local.class)} {...rest} />
 }
 
 /** A non-interactive caption above a group of items. */
@@ -225,16 +241,7 @@ export function NavigationMenuGroupLabel(
   props: ComponentProps<typeof KobalteNavigationMenu.GroupLabel>
 ) {
   const [local, rest] = splitProps(props, ['class'])
-  return (
-    <KobalteNavigationMenu.GroupLabel
-      class={cn(
-        menuContentPadding,
-        'text-2xs font-semibold text-muted-foreground uppercase',
-        local.class
-      )}
-      {...rest}
-    />
-  )
+  return <KobalteNavigationMenu.GroupLabel class={cn(menuLabel, local.class)} {...rest} />
 }
 
 export function NavigationMenuGroup(props: ComponentProps<typeof KobalteNavigationMenu.Group>) {

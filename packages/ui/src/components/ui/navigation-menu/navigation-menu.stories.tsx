@@ -23,67 +23,72 @@ const meta = {
       },
     },
   },
-  decorators: [
-    () => (
-      <div class="flex h-64 justify-center pt-8">
-        <NavigationMenu label="Documentation">
-          <NavigationMenuMenu>
-            <NavigationMenuTrigger>Guides</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <NavigationMenuGroup>
-                <NavigationMenuGroupLabel>Getting started</NavigationMenuGroupLabel>
-                <NavigationMenuItem
-                  href="#install"
-                  icon={<BookOpen aria-hidden="true" class="size-4" />}
-                >
-                  Installation
-                </NavigationMenuItem>
-                <NavigationMenuItem
-                  href="#themes"
-                  icon={<Layers aria-hidden="true" class="size-4" />}
-                  description="The accent, font and appearance axes."
-                >
-                  Theming
-                </NavigationMenuItem>
-              </NavigationMenuGroup>
-              <NavigationMenuSeparator />
-              <NavigationMenuItem
-                href="#support"
-                icon={<LifeBuoy aria-hidden="true" class="size-4" />}
-              >
-                Support
-              </NavigationMenuItem>
-            </NavigationMenuContent>
-          </NavigationMenuMenu>
-          <NavigationMenuMenu>
-            <NavigationMenuTrigger>Components</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <NavigationMenuItem href="#button">Button</NavigationMenuItem>
-              <NavigationMenuItem href="#dialog">Dialog</NavigationMenuItem>
-              <NavigationMenuItem href="#board">Board</NavigationMenuItem>
-            </NavigationMenuContent>
-          </NavigationMenuMenu>
-          <NavigationMenuMenu>
-            <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <NavigationMenuItem
-                href="#general"
-                icon={<Settings aria-hidden="true" class="size-4" />}
-              >
-                General
-              </NavigationMenuItem>
-            </NavigationMenuContent>
-          </NavigationMenuMenu>
-        </NavigationMenu>
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof NavigationMenu>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+/**
+ * The full bar: grouped panel with a label, a described item and a separator,
+ * plus two siblings to move between. A `render`, not a meta decorator: a
+ * decorator that does not call its story replaces every story in the file with
+ * this bar, which is how SingleEntry and WithDescriptions once rendered it too.
+ */
+export const Default: Story = {
+  render: () => (
+    <div class="flex h-64 justify-center pt-8">
+      <NavigationMenu label="Documentation">
+        <NavigationMenuMenu>
+          <NavigationMenuTrigger>Guides</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <NavigationMenuGroup>
+              <NavigationMenuGroupLabel>Getting started</NavigationMenuGroupLabel>
+              <NavigationMenuItem
+                href="#install"
+                icon={<BookOpen aria-hidden="true" class="size-4" />}
+              >
+                Installation
+              </NavigationMenuItem>
+              <NavigationMenuItem
+                href="#themes"
+                icon={<Layers aria-hidden="true" class="size-4" />}
+                description="The accent, font and appearance axes."
+              >
+                Theming
+              </NavigationMenuItem>
+            </NavigationMenuGroup>
+            <NavigationMenuSeparator />
+            <NavigationMenuItem
+              href="#support"
+              icon={<LifeBuoy aria-hidden="true" class="size-4" />}
+            >
+              Support
+            </NavigationMenuItem>
+          </NavigationMenuContent>
+        </NavigationMenuMenu>
+        <NavigationMenuMenu>
+          <NavigationMenuTrigger>Components</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <NavigationMenuItem href="#button">Button</NavigationMenuItem>
+            <NavigationMenuItem href="#dialog">Dialog</NavigationMenuItem>
+            <NavigationMenuItem href="#board">Board</NavigationMenuItem>
+          </NavigationMenuContent>
+        </NavigationMenuMenu>
+        <NavigationMenuMenu>
+          <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <NavigationMenuItem
+              href="#general"
+              icon={<Settings aria-hidden="true" class="size-4" />}
+            >
+              General
+            </NavigationMenuItem>
+          </NavigationMenuContent>
+        </NavigationMenuMenu>
+      </NavigationMenu>
+    </div>
+  ),
+}
 
 /** A single entry, for a bar with one panel. */
 export const SingleEntry: Story = {

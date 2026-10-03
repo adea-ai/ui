@@ -170,6 +170,14 @@ function SettingsNavigationFixture() {
           </TabsContent>
         </Tabs>
         <span id="custom-panel-label">External custom panel label</span>
+        <Tabs value="general" orientation="vertical">
+          <TabsList aria-label="Vertical tab root">
+            <TabsTrigger value="general">Vertical general</TabsTrigger>
+            <TabsTrigger value="advanced">Vertical advanced</TabsTrigger>
+          </TabsList>
+          <TabsContent value="general">Vertical general panel.</TabsContent>
+          <TabsContent value="advanced">Vertical advanced panel.</TabsContent>
+        </Tabs>
       </div>
       <output aria-label="Selected section">{value()}</output>
       <output aria-label="Reselected section">{reselected()}</output>

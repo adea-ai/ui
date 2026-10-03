@@ -13,6 +13,7 @@ import { cn } from '../../../lib/utils'
 
 type TabsIdContextValue = {
   id: Accessor<string>
+  orientation: Accessor<'horizontal' | 'vertical'>
   triggerIds: Accessor<ReadonlyMap<string, string>>
   registerTriggerId: (value: string, id: string) => void
   unregisterTriggerId: (value: string, id: string) => void
@@ -43,6 +44,7 @@ export function Tabs(props: ComponentProps<typeof KobalteTabs>) {
   const [triggerIds, setTriggerIds] = createSignal<ReadonlyMap<string, string>>(new Map())
   const tabs: TabsIdContextValue = {
     id,
+    orientation: () => rest.orientation ?? 'horizontal',
     triggerIds,
     registerTriggerId: (value, triggerId) => {
       setTriggerIds((current) => new Map(current).set(value, triggerId))
@@ -103,6 +105,19 @@ export type TabsTriggerProps = ComponentProps<typeof KobalteTabs.Trigger> & {
   appearance?: 'underline' | 'segmented'
 }
 
+/**
+ * The underline appearance marks the selected trigger on the edge it shares
+ * with the list's axis. A horizontal row reads left to right along a baseline,
+ * so the mark is a bottom bar sitting on the list's rule. A vertical list stacks
+ * its triggers, and a bottom bar there underlines one row of a column — it reads
+ * as a divider, not a selection — so the mark moves to the inline-start edge,
+ * the leading bar a side navigation uses, and the label aligns to that edge.
+ *
+ * The orientation is read from the root rather than from a `data-orientation`
+ * selector so the vertical classes are unprefixed: a composite that replaces the
+ * mark (SettingsNavigation's filled row passes `border-0`) then overrides it
+ * through the ordinary class merge instead of fighting a variant-scoped border.
+ */
 export function TabsTrigger(props: TabsTriggerProps) {
   const [local, rest] = splitProps(props, ['class', 'appearance', 'id'])
   const tabs = useTabsId()
@@ -128,7 +143,9 @@ export function TabsTrigger(props: TabsTriggerProps) {
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4',
         local.appearance === 'segmented'
           ? 'h-control-sm rounded-md px-control-sm data-[selected]:bg-card data-[selected]:shadow-xs'
-          : 'h-control-md -mb-px rounded-none border-b-2 border-transparent px-2 pb-2 data-[selected]:border-primary',
+          : tabs.orientation() === 'vertical'
+            ? 'h-control-md justify-start rounded-none border-s-2 border-transparent ps-3 pe-2 data-[selected]:border-primary'
+            : 'h-control-md -mb-px rounded-none border-b-2 border-transparent px-2 pb-2 data-[selected]:border-primary',
         local.class
       )}
       {...rest}
