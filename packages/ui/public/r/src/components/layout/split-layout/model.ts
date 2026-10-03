@@ -15,21 +15,18 @@
  * See NOTICE and docs/research/dev-view-donor-audit.md.
  */
 
-/** A visual identity only. Extend this with host-owned payload; UI never interprets it. */
-export type SplitLayoutLeaf = Readonly<{ kind: 'leaf'; id: string }>
-export type SplitLayoutBranch<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readonly<{
-  kind: 'split'
-  id: string
-  direction: 'row' | 'column'
-  ratio: number
-  children: readonly [SplitLayoutNode<L>, SplitLayoutNode<L>]
-}>
-export type SplitLayoutNode<L extends SplitLayoutLeaf = SplitLayoutLeaf> = L | SplitLayoutBranch<L>
+import {
+  MAX_LAYOUT_LEAVES,
+  MAX_LAYOUT_DEPTH,
+  MIN_SPLIT_RATIO,
+  MAX_SPLIT_RATIO,
+  listLeaves,
+  countLeaves,
+  layoutDepth,
+} from './tree'
+import type { SplitLayoutLeaf, SplitLayoutBranch, SplitLayoutNode } from './tree'
 
-export const MAX_LAYOUT_LEAVES = 8
-export const MAX_LAYOUT_DEPTH = 8
-export const MIN_SPLIT_RATIO = 0.1
-export const MAX_SPLIT_RATIO = 0.9
+export * from './tree'
 
 export type SplitLayoutState<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readonly<{
   center: SplitLayoutNode<L>
@@ -43,22 +40,6 @@ export type SplitPaneInput<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readon
   leaf: L
   splitId: string
 }>
-
-export function listLeaves<L extends SplitLayoutLeaf>(node: SplitLayoutNode<L>): readonly L[] {
-  return node.kind === 'leaf'
-    ? [node]
-    : [...listLeaves(node.children[0]), ...listLeaves(node.children[1])]
-}
-
-export function countLeaves<L extends SplitLayoutLeaf>(node: SplitLayoutNode<L>): number {
-  return node.kind === 'leaf' ? 1 : countLeaves(node.children[0]) + countLeaves(node.children[1])
-}
-
-export function layoutDepth<L extends SplitLayoutLeaf>(node: SplitLayoutNode<L>): number {
-  return node.kind === 'leaf'
-    ? 1
-    : 1 + Math.max(layoutDepth(node.children[0]), layoutDepth(node.children[1]))
-}
 
 function replaceLeaf<L extends SplitLayoutLeaf>(
   node: SplitLayoutNode<L>,

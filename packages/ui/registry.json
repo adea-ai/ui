@@ -1750,6 +1750,11 @@
           "path": "src/components/layout/split-layout/split-layout.tsx",
           "type": "registry:ui",
           "target": "components/layout/split-layout/split-layout.tsx"
+        },
+        {
+          "path": "src/components/layout/split-layout/tree.ts",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/tree.ts"
         }
       ]
     },
