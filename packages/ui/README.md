@@ -649,6 +649,12 @@ header content does not define the region's accessible name or the close
 button's name: both continue to come from `labelForLeaf`, so hosts should
 provide an accessible domain label there as well.
 
+Pointer moves use a bounded, window-framed native drag-image snapshot while
+the source dims and the handle changes from a grab to a grabbing cursor. The
+temporary preview is inert, has no duplicate IDs, and is removed when dragging
+ends. Reduced-motion preference disables the source opacity transition;
+keyboard moves remain host-owned through `renderPaneActions`.
+
 The `HostPresentation` story shows a decorative icon and host title, keyboard
 pane stops, and a workspace-specific separator name. A narrow-width component
 fixture also checks that a long host title does not widen its pane header.
