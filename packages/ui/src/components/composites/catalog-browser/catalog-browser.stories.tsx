@@ -321,3 +321,30 @@ export const GroupedDetail: Story = {
     </CatalogDetail>
   ),
 }
+
+/** Long identity, feedback, and related fields must remain readable in a narrow panel. */
+export const NarrowDetailWithFeedback: Story = {
+  render: () => (
+    <div class="max-w-xs">
+      <CatalogDetail
+        title="Calendar integration for the team"
+        description="Schedule work across connected calendars without leaving the workspace."
+        category="Developer Tools"
+        publisher="Community publisher"
+        publishedByLabel={(publisher) => `Published by ${publisher}`}
+        eyebrow="Connector"
+        leading={<Blocks aria-hidden="true" />}
+        action={<Button disabled>Installed</Button>}
+        status={<p role="status">Installed through the workspace connection.</p>}
+        sectionsLayout="columns"
+      >
+        <CatalogDetailSection title="Capabilities">
+          <p>Manage scheduled work.</p>
+        </CatalogDetailSection>
+        <CatalogDetailSection title="Connection">
+          <p>Managed by this workspace. Account authorization remains with the provider.</p>
+        </CatalogDetailSection>
+      </CatalogDetail>
+    </div>
+  ),
+}
