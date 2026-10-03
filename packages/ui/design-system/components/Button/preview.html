@@ -1,0 +1,29 @@
+<!-- @dsCard group="Actions" height=120 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Button } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <${Button}>Save changes<//>
+        <${Button} variant="secondary">Cancel<//>
+        <${Button} variant="outline">Export<//>
+        <${Button} variant="subtle">Add filter<//>
+        <${Button} variant="ghost">Skip<//>
+        <${Button} variant="destructive">Delete<//>
+        <${Button} variant="success">Approve<//>
+        <${Button} variant="link">Learn more<//>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <${Button} size="xs">xs 24<//>
+        <${Button} size="sm">sm 28<//>
+        <${Button} size="md">md 32<//>
+        <${Button} size="lg">lg 36<//>
+        <${Button} size="xl">xl 40<//>
+        <${Button} variant="ghost" size="icon-sm" aria-label="Settings"><${Icons.Settings} /><//>
+        <${Button} disabled=${true}>Disabled<//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,73 @@
+{
+  "$comment": "The weight and sample for each type rung, as docs/design-language.md records them. Sizes and leading come from theme.css; a rung no shared component sets a weight for shows 400.",
+  "families": {
+    "sans": "font-family-space-grotesk",
+    "mono": "font-family-jetbrains-mono",
+    "geist": "font-family-geist",
+    "geist-mono": "font-family-geist-mono",
+    "system": "font-family-system",
+    "system-mono": "font-family-system-mono"
+  },
+  "fonts": [
+    { "family": "Space Grotesk Variable", "package": "space-grotesk" },
+    { "family": "JetBrains Mono Variable", "package": "jetbrains-mono" },
+    { "family": "Geist Variable", "package": "geist" },
+    { "family": "Geist Mono Variable", "package": "geist-mono" }
+  ],
+  "groups": [
+    {
+      "name": "Interface",
+      "family": "sans",
+      "styles": [
+        { "token": "text-3xl", "weight": 400, "sample": "Nothing here yet" },
+        { "token": "text-2xl", "weight": 400, "sample": "1,284 runs" },
+        { "token": "text-xl", "weight": 600, "sample": "Workspace settings" },
+        { "token": "text-lg", "weight": 400, "sample": "Appearance" },
+        { "token": "text-base", "weight": 600, "sample": "Delete this thread?" },
+        {
+          "name": "text-sm",
+          "token": "text-sm",
+          "weight": 400,
+          "sample": "Choose the theme both apps open with."
+        },
+        {
+          "name": "text-sm-label",
+          "token": "text-sm",
+          "weight": 500,
+          "sample": "Workspace name",
+          "usage": "Labels, control text, list-row titles."
+        },
+        {
+          "name": "text-sm-strong",
+          "token": "text-sm",
+          "weight": 600,
+          "sample": "Two checks failed",
+          "usage": "Emphasis inside body copy and alert titles."
+        },
+        { "token": "text-xs", "weight": 400, "sample": "Updated 3 minutes ago" },
+        {
+          "name": "text-xs-badge",
+          "token": "text-xs",
+          "weight": 500,
+          "sample": "Published",
+          "usage": "Badges and status labels."
+        },
+        { "token": "text-2xs", "weight": 500, "sample": "⌘K · main · Ln 42" }
+      ]
+    },
+    {
+      "name": "Mono",
+      "family": "mono",
+      "styles": [
+        {
+          "name": "code",
+          "token": "text-xs",
+          "lineHeight": "20px",
+          "weight": 400,
+          "sample": "bun add @adea-ai/ui",
+          "usage": "Code blocks, terminals, ids and file paths (`font-mono text-xs leading-5`)."
+        }
+      ]
+    }
+  ]
+}

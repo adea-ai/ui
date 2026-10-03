@@ -1,0 +1,110 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--background);
+      }
+      .cover {
+        position: relative;
+        width: 960px;
+        height: 288px;
+        overflow: hidden;
+        background: var(--background);
+        font-family: var(--font-sans, 'Space Grotesk', sans-serif);
+      }
+      svg {
+        position: absolute;
+        inset: 0;
+      }
+      .ink {
+        fill: var(--foreground);
+      }
+      .primary {
+        fill: var(--primary);
+      }
+      .blue {
+        fill: var(--chart-1);
+      }
+      .cyan {
+        fill: var(--chart-3);
+      }
+      .amber {
+        fill: var(--warning);
+      }
+      .row {
+        fill: var(--surface-active);
+      }
+      .slab {
+        rx: var(--radius-xl);
+      }
+      .tile {
+        rx: var(--radius-md);
+      }
+      .chip {
+        rx: var(--radius-sm);
+      }
+      .text {
+        position: absolute;
+        left: 40px;
+        bottom: 36px;
+        max-width: 440px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 100px;
+        line-height: 0.92;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: var(--foreground);
+      }
+      p {
+        margin: 14px 0 0;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--muted-foreground);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cover">
+      <!--
+    blocks: foreground as the 56px rail slab (rail-width); primary 248×168 (radius-xl); chart-1 140×120; chart-3 140×40; warning 28×28 chip — status stays small
+    arrangement: the app shell: a rail column bleeding top to bottom, then panels flush on a 8px gap grid, primary bleeding off the top
+    pattern: "geometric, modular, dense UI" → tiles at control-height-md (32px) rows, 8px gaps, some merged two-wide — the system's README says the shell is a component and density is its identity
+    scales: rows 32px (control-height-md), gaps 8px, rail 56px; radii radius-xl (slabs), radius-md (tiles), radius-sm (chip)
+  -->
+      <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+        <rect class="ink" x="496" y="-12" width="56" height="312" rx="0" />
+        <rect class="primary slab" x="560" y="-20" width="248" height="168" />
+        <rect class="blue slab" x="816" y="-20" width="160" height="120" />
+        <rect class="cyan tile" x="816" y="108" width="160" height="40" />
+        <rect class="amber chip" x="512" y="24" width="24" height="24" />
+        <rect class="row tile" x="560" y="156" width="160" height="32" />
+        <rect class="row tile" x="728" y="156" width="80" height="32" />
+        <rect class="primary tile" x="816" y="156" width="152" height="32" />
+        <rect class="row tile" x="560" y="196" width="80" height="32" />
+        <rect class="row tile" x="648" y="196" width="320" height="32" />
+        <rect class="row tile" x="560" y="236" width="248" height="32" />
+        <rect class="row tile" x="816" y="236" width="80" height="32" />
+        <rect class="blue tile" x="904" y="236" width="64" height="32" />
+        <rect class="row tile" x="560" y="276" width="120" height="32" />
+        <rect class="row tile" x="688" y="276" width="280" height="32" />
+      </svg>
+      <div class="text">
+        <h1>Adea UI</h1>
+        <p>
+          One component library, one token set, one shell: two desktop apps that read as one
+          product.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

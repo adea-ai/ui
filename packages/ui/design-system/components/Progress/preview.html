@@ -1,0 +1,15 @@
+<!-- @dsCard group="Feedback" height=160 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Progress } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:16px;max-width:384px">
+        <${Progress} value=${64} label="Materialising worktrees" />
+        <${Progress} value=${32} label="Uploading build artifacts" hideValue=${true} />
+        <${Progress} indeterminate=${true} label="Connecting to the control plane" />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

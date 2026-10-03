@@ -1,0 +1,50 @@
+<!-- @dsCard group="Shell" height=340 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, createMemo, For, VirtualWindow } = window.AdeaUI;
+  const ROW = 40;
+  const VIEWPORT = 300;
+  const OVERSCAN = 3;
+  const total = 400;
+  const branches = ['main', 'feat/worktrees', 'fix/rail-tooltip', 'release/0.55', 'chore/tokens'];
+  const rows = Array.from({ length: total }, (_, i) => ({
+    id: i,
+    name: `Session ${i + 1}`,
+    branch: branches[i % branches.length],
+    age: `${(i % 59) + 1}m ago`,
+  }));
+  const [scrollTop, setScrollTop] = createSignal(0);
+  const first = createMemo(() => Math.max(0, Math.floor(scrollTop() / ROW) - OVERSCAN));
+  const last = createMemo(() => Math.min(total, Math.ceil((scrollTop() + VIEWPORT) / ROW) + OVERSCAN));
+  const mounted = createMemo(() => rows.slice(first(), last()));
+  render(() => html`
+<div style="display:flex;gap:24px;align-items:flex-start">
+  <div
+    role="list"
+    tabindex="0"
+    aria-label="Sessions"
+    style=${`width:480px;height:${VIEWPORT}px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background)`}
+    onScroll=${(event) => setScrollTop(event.currentTarget.scrollTop)}
+  >
+    <${VirtualWindow} totalSize=${total * ROW} offset=${() => first() * ROW}>
+      <${For} each=${mounted}>${(row) => html`
+        <div role="listitem" style=${`display:flex;height:${ROW}px;box-sizing:border-box;align-items:center;gap:12px;border-bottom:1px solid var(--border);padding:0 12px;font-size:14px`}>
+          <span style="width:96px;font-variant-numeric:tabular-nums">${row.name}</span>
+          <span style="flex:1;font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)">${row.branch}</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">${row.age}</span>
+        </div>
+      `}<//>
+    <//>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;font-size:14px">
+    <span style="font-weight:600">${total} rows, ${() => mounted().length} mounted</span>
+    <span style="color:var(--muted-foreground)">${() => `Rows ${first() + 1}–${last()} are in the DOM.`}</span>
+    <span style="max-width:340px;color:var(--muted-foreground)">The caller owns the scroll region and the range; VirtualWindow keeps the full scroll height and translates the mounted rows to their offset. Scroll the list.</span>
+  </div>
+</div>
+`, document.getElementById('root'));
+  // Open part-way down the list, so the card shows a window that is not the first page.
+  const list = document.querySelector('[role="list"]');
+  list.scrollTop = 120 * ROW;
+  setScrollTop(list.scrollTop);
+</script>

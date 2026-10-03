@@ -1,0 +1,40 @@
+<!-- @dsCard group="Overlays" height=320 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Button,
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+  } = window.AdeaUI
+  const description =
+    'Every project, session and worktree is removed for everyone. This cannot be undone, and there is no export.'
+  render(
+    () => html`
+      <div>
+        <${AlertDialog} defaultOpen=${true}>
+          <${AlertDialogTrigger} as=${Button} variant="destructive">Delete workspace<//>
+          <${AlertDialogContent}>
+            <${AlertDialogHeader}>
+              <${AlertDialogTitle}>Delete this workspace?<//>
+              <${AlertDialogDescription}>${description}<//>
+            <//>
+            <${AlertDialogFooter}>
+              <${AlertDialogCancel} as=${Button} variant="ghost">Keep it<//>
+              <${AlertDialogAction} as=${Button} variant="destructive">Delete permanently<//>
+            <//>
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

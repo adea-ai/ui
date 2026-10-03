@@ -1,0 +1,29 @@
+<!-- @dsCard group="Overlays" height=360 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Button, Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } = window.AdeaUI;
+  render(() => html`
+<div>
+<${Sheet} defaultOpen=${true}>
+  <${SheetTrigger} as=${Button} variant="outline">Open inspector<//>
+  <${SheetContent} side="end">
+    <${SheetHeader}>
+      <${SheetTitle}>Run r-1042<//>
+      <${SheetDescription}>soak · 24h 00m · passed<//>
+    <//>
+    <${SheetBody}>
+      <dl style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0;font-size:14px">
+        <dt style="color:var(--muted-foreground)">Budget</dt><dd style="margin:0">honoured</dd>
+        <dt style="color:var(--muted-foreground)">Stalled streams</dt><dd style="margin:0">0</dd>
+        <dt style="color:var(--muted-foreground)">Resyncs</dt><dd style="margin:0">0</dd>
+      </dl>
+    <//>
+    <${SheetFooter}>
+      <${Button} size="sm" variant="ghost">Close<//>
+      <${Button} size="sm">Open report<//>
+    <//>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+</script>

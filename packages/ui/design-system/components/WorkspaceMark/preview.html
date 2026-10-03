@@ -1,0 +1,37 @@
+<!-- @dsCard group="Composites" height=290 -->
+<div
+  id="root"
+  style="padding: 16px; display: flex; flex-direction: row; align-items: flex-start; gap: 32px"
+></div>
+<script>
+  const { render, html, WorkspaceMark, Badge } = window.AdeaUI
+  render(
+    () => html`
+      <div
+        style="display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:12px"
+      >
+        <${WorkspaceMark} name="adea" active=${true} />
+        <${WorkspaceMark} name="cortana" />
+        <${WorkspaceMark} name="control-plane" />
+        <${WorkspaceMark}
+          name="plugins"
+          badge=${html`<${Badge} size="sm" variant="destructive">2<//>`}
+        />
+        <${WorkspaceMark}
+          name="agent-sim"
+          badge=${html`<span style="display:block;width:8px;height:8px;border-radius:9999px;background:var(--primary)"></span>`}
+        />
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <${WorkspaceMark} name="active" active=${true} />
+        <${WorkspaceMark} name="idle" />
+        <${WorkspaceMark} name="disabled" disabled=${true} />
+        <${WorkspaceMark}
+          name="unread"
+          badge=${html`<span style="display:block;width:8px;height:8px;border-radius:9999px;background:var(--destructive)"></span>`}
+        />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

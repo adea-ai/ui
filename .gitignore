@@ -93,3 +93,6 @@ blob-report/
 bun-debug.log*
 # Generated release artifacts
 .github/.code-foundry/
+
+# Design-system artifact build output
+packages/ui/design-system/out/

@@ -1,0 +1,72 @@
+<!-- @dsCard group="Composites" height=660 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Icons, createSignal, SettingsLayout, SettingsPage, SettingsSection, SettingsRow, TabsContent, Input, Switch, Button } = window.AdeaUI;
+  const groups = [
+    {
+      label: 'Workspace',
+      items: [
+        { value: 'account', label: 'Account', icon: html`<${Icons.User} aria-hidden="true" />` },
+        { value: 'preferences', label: 'Preferences', icon: html`<${Icons.Settings} aria-hidden="true" />` },
+        { value: 'notifications', label: 'Notifications', icon: html`<${Icons.Bell} aria-hidden="true" />` },
+      ],
+    },
+    {
+      label: 'Privacy',
+      items: [
+        { value: 'data', label: 'Data controls', icon: html`<${Icons.Layers} aria-hidden="true" />` },
+        { value: 'access', label: 'Access', icon: html`<${Icons.Users} aria-hidden="true" />` },
+      ],
+    },
+  ];
+  render(() => {
+    const [value, setValue] = createSignal('preferences');
+    return html`
+<div style="display:flex;height:628px;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden">
+  <${SettingsLayout}
+    id="settings-navigation-card"
+    value=${() => value()}
+    onChange=${(next) => setValue(next)}
+    aria-label="Settings sections"
+    groups=${groups}
+    style="min-height:0;min-width:0;flex:1"
+  >
+    <${TabsContent} value="account">
+      <${SettingsSection} title="Account" description="Session and product information." />
+    <//>
+    <${TabsContent} value="preferences">
+      <${SettingsPage}>
+        <${SettingsSection} title="General" description="Applies to this workspace on this machine.">
+          <${SettingsRow} label="Workspace name" description="Shown to anyone you invite.">
+            <${Input} style="width:224px" value="Adea" aria-label="Workspace name" />
+          <//>
+          <${SettingsRow} label="Base directory" description="Where worktrees are materialised.">
+            <${Input} style="width:224px;font-family:var(--font-mono);font-size:12px" value="~/Developer/Adea" aria-label="Base directory" />
+          <//>
+          <${SettingsRow} label="Auto-update" description="Install signed updates when the app is idle.">
+            <${Switch} defaultChecked=${true} aria-label="Auto-update" />
+          <//>
+        <//>
+        <${SettingsSection} title="Advanced" description="Defaults that most people never change.">
+          <${SettingsRow} label="Reduce transparency" description="Solid panels instead of frosted ones.">
+            <${Switch} aria-label="Reduce transparency" />
+          <//>
+          <${SettingsRow} label="Delete workspace" description="Removes the workspace for everyone. This cannot be undone.">
+            <${Button} variant="destructive" size="sm">Delete<//>
+          <//>
+        <//>
+      <//>
+    <//>
+    <${TabsContent} value="notifications">
+      <${SettingsSection} title="Notifications" description="Where updates are delivered." />
+    <//>
+    <${TabsContent} value="data">
+      <${SettingsSection} title="Data controls" description="Retention and private content." />
+    <//>
+    <${TabsContent} value="access">
+      <${SettingsSection} title="Access" description="Permissions for this workspace." />
+    <//>
+  <//>
+</div>`;
+  }, document.getElementById('root'));
+</script>

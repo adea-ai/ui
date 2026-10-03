@@ -1,0 +1,24 @@
+<!-- @dsCard group="Actions" height=72 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, ButtonGroup, ButtonGroupSeparator, Button } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;gap:16px;align-items:center">
+        <${ButtonGroup} label="Text formatting">
+          <${Button} variant="outline" size="icon-md" aria-label="Bold"><${Icons.Bold} /><//>
+          <${Button} variant="outline" size="icon-md" aria-label="Italic"><${Icons.Italic} /><//>
+          <${Button} variant="outline" size="icon-md" aria-label="Underline"
+            ><${Icons.Underline}
+          /><//>
+        <//>
+        <${ButtonGroup} label="Run">
+          <${Button}>Run lane<//>
+          <${ButtonGroupSeparator} />
+          <${Button} size="icon-md" aria-label="Run options"><${Icons.ChevronDown} /><//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

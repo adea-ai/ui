@@ -1,0 +1,60 @@
+<!-- @dsCard group="Overlays" height=280 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    ContextMenu,
+    ContextMenuTrigger,
+    ContextMenuContent,
+    ContextMenuLabel,
+    ContextMenuGroup,
+    ContextMenuItem,
+    ContextMenuSeparator,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p style="margin:0;font-size:14px;color:var(--muted-foreground)">
+          Right-click the row below.
+        </p>
+        <${ContextMenu}>
+          <${ContextMenuTrigger}
+            id="ds-context-trigger"
+            style="display:flex;width:320px;align-items:center;gap:10px;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 12px;font-size:14px"
+          >
+            <span style="font-family:var(--font-mono);font-size:12px">side-rail.tsx</span>
+          <//>
+          <${ContextMenuContent} style="width:208px">
+            <${ContextMenuGroup}>
+              <${ContextMenuLabel}>side-rail.tsx<//>
+              <${ContextMenuItem}><${Icons.Pencil} />Rename<//>
+              <${ContextMenuItem}><${Icons.Copy} />Copy path<//>
+              <${ContextMenuItem}><${Icons.Download} />Download<//>
+            <//>
+            <${ContextMenuSeparator} />
+            <${ContextMenuItem} variant="destructive"><${Icons.Trash2} />Delete<//>
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+  // A context menu has no open prop: open it the way a user would, with a right-click on the row.
+  requestAnimationFrame(() => {
+    const trigger = document.getElementById('ds-context-trigger')
+    const rect = trigger.getBoundingClientRect()
+    trigger.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        clientX: rect.left + 140,
+        clientY: rect.top + rect.height / 2,
+      })
+    )
+    // A synthetic right-click focuses the menu as a keyboard open would; a real one shows no ring.
+    setTimeout(() => document.activeElement && document.activeElement.blur(), 50)
+  })
+</script>

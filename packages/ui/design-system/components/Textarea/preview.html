@@ -1,0 +1,14 @@
+<!-- @dsCard group="Forms" height=120 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Textarea, Label } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:6px;width:384px">
+        <${Label} for="t1">Objective<//
+        ><${Textarea} id="t1" placeholder="What should this session accomplish?" />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

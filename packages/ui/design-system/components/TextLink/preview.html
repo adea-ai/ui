@@ -1,0 +1,13 @@
+<!-- @dsCard group="Navigation" height=64 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, TextLink } = window.AdeaUI
+  render(
+    () => html`
+      <p style="margin:0;font-size:14px;color:var(--muted-foreground)">
+        Read the <${TextLink} href="#">usage guide<//> before connecting a new source.
+      </p>
+    `,
+    document.getElementById('root')
+  )
+</script>

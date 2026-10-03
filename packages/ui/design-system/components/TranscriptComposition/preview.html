@@ -1,0 +1,27 @@
+<!-- @dsCard group="Conversation" height=400 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, TranscriptComposition, MessageRow, MessageBody } = window.AdeaUI;
+  const rows = [
+    { id: 'prompt', value: { speaker: 'user', text: 'Why does the event cursor test fail on CI?' }, opensTurn: 'reset' },
+    { id: 'thinking-1', value: { text: 'Check where the cursor is committed.' }, reasoning: true, fold: 'prose' },
+    { id: 'call-1-request', value: { text: 'Read the event cursor implementation.', detail: 'src/server/event-cursor.ts' }, working: true, fold: 'tool', call: { phase: 'request', id: 'call-1' } },
+    { id: 'call-1-result', value: { text: 'The cursor advances before the commit resolves.', detail: 'Result for call-1' }, working: true, fold: 'tool', call: { phase: 'result', id: 'call-1' } },
+    { id: 'call-2-request', value: { text: 'Run the cursor tests.', detail: 'bun test event-cursor' }, working: true, fold: 'tool', call: { phase: 'request', id: 'call-2' } },
+    { id: 'call-2-result', value: { text: '1 failed: reads past an uncommitted event.', detail: 'Result for call-2' }, working: true, fold: 'tool', call: { phase: 'result', id: 'call-2' } },
+    { id: 'diff', value: { text: 'Review the proposed event-log diff.', detail: 'src/server/event-cursor.ts · +2 −2' }, fold: 'tool', alwaysVisible: true },
+    { id: 'answer', value: { speaker: 'agent', text: 'The cursor advanced before the event committed, so a slow write let the test read past it. The diff moves the advance after the commit.' }, fold: 'prose', conclusion: true, turnEnd: true },
+  ];
+  // The host renders each row; the composition only orders and folds them.
+  const Row = (props) => props.row.value.speaker
+    ? html`<${MessageRow} senderKind=${props.row.value.speaker} senderName=${props.row.value.speaker === 'user' ? 'You' : 'Ada Lovelace'}><${MessageBody} text=${props.row.value.text} /><//>`
+    : html`<article style="display:flex;flex-direction:column;gap:2px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--card);padding:8px 12px;font-size:14px">
+        <span>${props.row.value.text}</span>
+        ${props.row.value.detail ? html`<span style="font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)">${props.row.value.detail}</span>` : ''}
+      </article>`;
+  render(() => html`
+<div style="display:flex;width:704px;max-width:100%;flex-direction:column;gap:12px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px">
+  <${TranscriptComposition} rows=${rows} resetKey="event-cursor" renderRow=${Row} />
+</div>
+`, document.getElementById('root'));
+</script>

@@ -1,0 +1,56 @@
+<!-- @dsCard group="Composites" height=130 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, ActionButton } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+        <${ActionButton} tooltip="Save the current workspace settings">Save changes<//>
+        <${ActionButton} busy=${true} busyLabel="Saving workspace" aria-label="Save changes"
+          >Save changes<//
+        >
+        <${ActionButton}
+          as="a"
+          href="#action-button"
+          variant="outline"
+          tooltip="Open the action docs"
+          >Open documentation<//
+        >
+        <${ActionButton}
+          as="a"
+          href="#busy-action-button"
+          aria-label="Export report"
+          busy=${true}
+          busyLabel="Exporting report"
+          variant="outline"
+          tooltip="Wait for the current export to finish"
+          >Export<//
+        >
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+        <${ActionButton}
+          size="icon-md"
+          touchTarget="comfortable"
+          aria-label="Open details"
+          tooltip="Open the selected item details"
+          ><${Icons.Plus}
+        /><//>
+        <${ActionButton}
+          size="icon-md"
+          touchTarget="comfortable"
+          aria-label="Unavailable action"
+          disabled=${true}
+          tooltip="Ask an owner to restore access before continuing"
+          ><${Icons.Plus}
+        /><//>
+        <${ActionButton}
+          disabled=${true}
+          tooltip="Ask a workspace owner to restore access before deleting"
+          aria-label="Delete workspace"
+          >Delete workspace<//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

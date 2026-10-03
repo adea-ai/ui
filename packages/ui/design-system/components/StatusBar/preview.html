@@ -1,0 +1,39 @@
+<!-- @dsCard group="Shell" height=232 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, StatusBar, StatusBarItem, StatusBarSpacer } = window.AdeaUI;
+  const frame = 'overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background)';
+  const caption = 'font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)';
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:10px">
+  <code style=${caption}>default</code>
+  <div style=${frame}>
+    <${StatusBar}>
+      <${StatusBarItem} tone="success" dot=${true}>Connected<//>
+      <${StatusBarItem}><${Icons.GitBranch} />main<//>
+      <${StatusBarItem}>4 worktrees<//>
+      <${StatusBarSpacer} />
+      <${StatusBarItem}>UTF-8<//>
+      <${StatusBarItem}>Ln 1, Col 1<//>
+    <//>
+  </div>
+  <code style=${caption}>tones</code>
+  <div style=${frame}>
+    <${StatusBar}>
+      <${StatusBarItem} tone="default">Default<//>
+      <${StatusBarItem} tone="success" dot=${true}>Success<//>
+      <${StatusBarItem} tone="warning" dot=${true}>Warning (pulses)<//>
+      <${StatusBarItem} tone="destructive" dot=${true}>Destructive<//>
+    <//>
+  </div>
+  <code style=${caption}>disconnected</code>
+  <div style=${frame}>
+    <${StatusBar}>
+      <${StatusBarItem} tone="destructive" dot=${true}>Offline · last sync 14m ago<//>
+      <${StatusBarSpacer} />
+      <${StatusBarItem}>Local only<//>
+    <//>
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

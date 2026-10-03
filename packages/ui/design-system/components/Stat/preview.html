@@ -1,0 +1,42 @@
+<!-- @dsCard group="Composites" height=380 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 16px"></div>
+<script>
+  const { render, html, Stat, StatGroup, PropertyList, PropertyTerm, PropertyValue } = window.AdeaUI
+  render(
+    () => html`
+      <div style="width:768px;max-width:100%">
+        <${StatGroup}>
+          <${Stat}
+            label="Coverage"
+            value="83.4"
+            unit="%"
+            delta="+1.9 from last week"
+            deltaTone="up"
+            accent=${true}
+          />
+          <${Stat} label="Stories" value="128" delta="+14" deltaTone="up" />
+          <${Stat}
+            label="Bundle"
+            value="412"
+            unit="kB"
+            delta="+38 kB"
+            deltaTone="down"
+            accent=${true}
+          />
+          <${Stat} label="Soak" value="24h 00m" delta="budget honoured" deltaTone="neutral" />
+        <//>
+      </div>
+      <div style="width:384px;max-width:100%">
+        <${PropertyList}>
+          <${PropertyTerm}>Base<//><${PropertyValue}>main<//> <${PropertyTerm}>Materialised<//
+          ><${PropertyValue}>copy-on-write<//> <${PropertyTerm}>Digest<//
+          ><${PropertyValue} style="font-family:var(--font-mono);font-size:12px"
+            >sha256:9f2c41ab…<//
+          >
+          <${PropertyTerm}>Created<//><${PropertyValue}>2026-09-24 17:41<//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

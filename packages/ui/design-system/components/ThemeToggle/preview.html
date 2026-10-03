@@ -1,0 +1,55 @@
+<!-- @dsCard group="Theming" height=180 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, ThemeProvider, ThemeToggle, useTheme, themeById, defaultThemeSelection } = window.AdeaUI;
+
+  // ThemeProvider writes the active theme onto <html>: every colour role as an inline
+  // property, plus data-theme, data-appearance and the .dark class. Two adjustments keep
+  // it in step with this page rather than fighting it:
+  //  - it starts from the variant that matches the page's own data-theme, so the first
+  //    paint is identical to every other card;
+  //  - data-theme is mapped back to the page's ids ('adea-dark' -> 'dark', any other
+  //    variant -> its appearance), so tokens the provider does not write still resolve,
+  //    and a theme switch by the host page is passed on to the provider.
+  const root = document.documentElement;
+  const selectionFor = (theme) => {
+    const appearance = theme.startsWith('dark') ? 'dark' : 'light';
+    const id = themeById(`adea-${theme}`) ? `adea-${theme}` : appearance === 'dark' ? defaultThemeSelection.darkThemeId : defaultThemeSelection.lightThemeId;
+    return appearance === 'dark' ? { appearance, darkThemeId: id } : { appearance, lightThemeId: id };
+  };
+  let pageTheme = root.dataset.theme || 'light';
+  const [host, setHost] = createSignal({ ...defaultThemeSelection, ...selectionFor(pageTheme) });
+  const sync = () => {
+    const theme = root.dataset.theme;
+    if (!theme || theme === pageTheme) return;
+    if (themeById(theme)) {
+      pageTheme = theme.startsWith('adea-') ? theme.slice(5) : root.dataset.appearance || 'light';
+      root.dataset.theme = pageTheme;
+    } else {
+      pageTheme = theme;
+      setHost(selectionFor(theme));
+    }
+  };
+  new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  const caption = 'font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)';
+  const Readout = () => {
+    const { selection, resolvedAppearance } = useTheme();
+    return html`<code style=${caption}>${() => `appearance: ${selection().appearance} · resolves to ${resolvedAppearance()}`}</code>`;
+  };
+  render(() => html`
+<${ThemeProvider} storageKey="adea-design-system-preview" initial=${host()} selection=${() => host()}>
+  <div style="display:flex;flex-direction:column;gap:20px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+      <${Readout} />
+      <${ThemeToggle} />
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+      <code style=${caption}>withLabels</code>
+      <${ThemeToggle} withLabels=${true} />
+    </div>
+  </div>
+<//>
+`, document.getElementById('root'));
+  sync();
+</script>

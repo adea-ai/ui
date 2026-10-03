@@ -1,0 +1,143 @@
+<!-- @dsCard group="Shell" height=520 -->
+<div id="root" style="padding: 16px"></div>
+<script>
+  const {
+    render,
+    html,
+    createSignal,
+    For,
+    Icons,
+    AppShell,
+    AppShellBody,
+    AppShellMain,
+    SideRail,
+    SideRailHeader,
+    SideRailContent,
+    SideRailFooter,
+    SideRailItem,
+    SidebarNav,
+    SidebarNavHeader,
+    SidebarNavTitle,
+    SidebarNavContent,
+    SidebarNavSection,
+    SidebarNavItem,
+    TopBar,
+    TopBarSection,
+    TopBarTitle,
+    TopBarSearch,
+    StatusBar,
+    StatusBarItem,
+    StatusBarSpacer,
+    Panel,
+    PanelHeader,
+    PanelTitle,
+    PanelBody,
+  } = window.AdeaUI
+  const railItems = [
+    { value: 'dev', label: 'Dev view', icon: Icons.Terminal },
+    { value: 'files', label: 'Files', icon: Icons.Folder },
+    { value: 'branches', label: 'Worktrees', icon: Icons.GitBranch },
+    { value: 'agents', label: 'Agents', icon: Icons.Users },
+    { value: 'artifacts', label: 'Artifacts', icon: Icons.Layers },
+  ]
+  const projects = ['adea', 'cortana', 'control-plane', 'plugins', 'agent-sim']
+  const mark =
+    'display:flex;width:24px;height:24px;flex-shrink:0;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--primary);color:var(--primary-foreground);font-size:11px;font-weight:600'
+  const [active, setActive] = createSignal('dev')
+  const [project, setProject] = createSignal('adea')
+  render(
+    () => html`
+      <div
+        style="height:488px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl)"
+      >
+        <${AppShell} style="height:100%;width:100%">
+          <${SideRail}>
+            <${SideRailHeader}>
+              <span style=${mark}>A</span>
+              <span style="font-size:14px;font-weight:600">Adea</span>
+            <//>
+            <${SideRailContent}>
+              <${For} each=${railItems}
+                >${(item) => html`
+        <${SideRailItem}
+          as="button"
+          type="button"
+          active=${() => active() === item.value}
+          label=${item.label}
+          onClick=${(event) => setActive(item.value)}
+          ><${item.icon}
+        /><//>
+      `}<//
+              >
+            <//>
+            <${SideRailFooter}>
+              <${SideRailItem} as="button" type="button" label="Settings"><${Icons.Settings} /><//>
+            <//>
+          <//>
+          <${AppShellBody}>
+            <${TopBar}>
+              <${TopBarSection}><${TopBarTitle}>${project}<//><//>
+              <${TopBarSearch}
+                placeholder="Search projects, files and sessions"
+                shortcut="⌘K"
+                keyshortcuts="Meta+K"
+              />
+              <${TopBarSection} align="end"
+                ><${StatusBarItem} tone="success" dot=${true}>Connected<//><//
+              >
+            <//>
+            <div style="display:flex;min-height:0;flex:1">
+              <${SidebarNav} aria-label="Projects">
+                <${SidebarNavHeader}><${SidebarNavTitle}>Projects<//><//>
+                <${SidebarNavContent}>
+                  <${SidebarNavSection} label="Recent" count=${projects.length}>
+                    <${For} each=${projects}
+                      >${(name) => html`
+              <${SidebarNavItem}
+                as="button"
+                type="button"
+                active=${() => project() === name}
+                onClick=${(event) => setProject(name)}
+                ><${Icons.Folder} />${name}<//
+              >
+            `}<//
+                    >
+                  <//>
+                <//>
+              <//>
+              <${AppShellMain}>
+                <${Panel}>
+                  <${PanelHeader}><${PanelTitle}>${project}<//><//>
+                  <${PanelBody}>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                      <${For} each=${['Sessions', 'Terminals', 'Files']}
+                        >${(label) => html`
+                <div
+                  style="border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--card);padding:12px"
+                >
+                  <div style="font-size:12px;color:var(--muted-foreground)">${label}</div>
+                  <div style="font-size:20px;font-weight:600;font-variant-numeric:tabular-nums">
+                    12
+                  </div>
+                </div>
+              `}<//
+                      >
+                    </div>
+                  <//>
+                <//>
+              <//>
+            </div>
+            <${StatusBar}>
+              <${StatusBarItem} tone="success" dot=${true}>main<//>
+              <${StatusBarItem}>4 worktrees<//>
+              <${StatusBarSpacer} />
+              <${StatusBarItem}>UTF-8<//>
+              <${StatusBarItem}>Ln 1, Col 1<//>
+            <//>
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

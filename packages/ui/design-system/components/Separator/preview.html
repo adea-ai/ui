@@ -1,0 +1,20 @@
+<!-- @dsCard group="Layout" height=150 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Separator } = window.AdeaUI
+  render(
+    () => html`
+      <div style="width:384px;font-size:14px">
+        <div style="padding:12px 0">Above the rule</div>
+        <${Separator} />
+        <div style="padding:12px 0">Below the rule</div>
+        <${Separator} variant="dashed" />
+        <div style="display:flex;height:32px;align-items:center;gap:12px;margin-top:8px">
+          <span>Bold</span><${Separator} orientation="vertical" /><span>Italic</span
+          ><${Separator} orientation="vertical" /><span>Underline</span>
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

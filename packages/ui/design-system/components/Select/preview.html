@@ -1,0 +1,28 @@
+<!-- @dsCard group="Forms" height=240 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } = window.AdeaUI;
+  const models = [
+    { value: 'opus', label: 'Claude Opus' },
+    { value: 'sonnet', label: 'Claude Sonnet' },
+    { value: 'haiku', label: 'Claude Haiku' },
+  ];
+  render(() => html`
+<div style="width:224px">
+<${Select}
+  options=${models}
+  optionValue=${(option) => option.value}
+  optionTextValue=${(option) => option.label}
+  defaultValue=${models[1]}
+  defaultOpen=${true}
+  placeholder="Choose a model"
+  itemComponent=${(props) => html`<${SelectItem} item=${props.item}>${props.item.rawValue.label}<//>`}
+>
+  <${SelectTrigger} style="width:224px" aria-label="Model"><${SelectValue} /><//>
+  <${SelectContent} />
+<//>
+</div>
+`, document.getElementById('root'));
+  // Opened without a pointer, the list takes keyboard focus and draws its ring; a clicked one does not.
+  setTimeout(() => document.activeElement && document.activeElement.blur(), 50);
+</script>

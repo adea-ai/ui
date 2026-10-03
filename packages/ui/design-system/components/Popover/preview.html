@@ -1,0 +1,26 @@
+<!-- @dsCard group="Overlays" height=280 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Button, Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription, Label, Input } = window.AdeaUI;
+  render(() => html`
+<div style="padding-left:96px">
+<${Popover} defaultOpen=${true} placement="bottom-start">
+  <${PopoverTrigger} as=${Button} variant="outline">Rename<//>
+  <${PopoverContent}>
+    <${PopoverTitle}>Rename session<//>
+    <${PopoverDescription}>The title is shown in the sidebar and in search results.<//>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 8px">
+      <${Label} for="popover-title">Title<//>
+      <${Input} id="popover-title" value="Worktree evidence" />
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 8px 8px">
+      <${Button} size="sm" variant="ghost">Cancel<//>
+      <${Button} size="sm">Save<//>
+    </div>
+  <//>
+<//>
+</div>
+`, document.getElementById('root'));
+  // Opened without a pointer, focus lands in the panel and draws a keyboard ring; a clicked popover does not.
+  setTimeout(() => document.activeElement && document.activeElement.blur(), 50);
+</script>

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Forms" height=160 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Label, Input } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:20px;width:320px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <${Label} for="label-demo">Branch name<//>
+          <${Input} id="label-demo" placeholder="feat/…" />
+        </div>
+        <div class="group" data-disabled="true" style="display:flex;flex-direction:column;gap:6px">
+          <${Label} for="label-disabled">Managed by your organisation<//>
+          <${Input} id="label-disabled" value="adea-ai" disabled=${true} />
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,29 @@
+<!-- @dsCard group="Composites" height=440 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 640px"></div>
+<script>
+  const { render, html, HelpCenter } = window.AdeaUI
+  render(
+    () => html`
+      <${HelpCenter}
+        appName="Adea"
+        shortcuts=${[
+    { label: 'Open settings', keys: ['⌘', ','] },
+    { label: 'Find in workspace', keys: ['⌘', 'K'] },
+  ]}
+        links=${[
+    {
+      label: 'Adea on GitHub',
+      description: 'Source code, releases, and project discussions.',
+      url: 'https://github.com/adea-ai/adea',
+    },
+    {
+      label: 'Send Feedback',
+      url: 'https://github.com/adea-ai/adea/issues/new?template=feedback.yml',
+    },
+  ]}
+        openExternal=${async (_url) => {}}
+      />
+    `,
+    document.getElementById('root')
+  )
+</script>

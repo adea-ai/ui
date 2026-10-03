@@ -1,0 +1,23 @@
+<!-- @dsCard group="Layout" height=290 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, ScrollArea } = window.AdeaUI;
+  const sessions = Array.from({ length: 40 }, (_, index) => `Session ${index + 1}`);
+  const filters = Array.from({ length: 20 }, (_, index) => `filter-${index + 1}`);
+  render(() => html`
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+  <div style="border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden">
+    <${ScrollArea} fade=${true} aria-label="Sessions" style="height:240px;width:240px;padding:12px">
+      <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px">
+        ${sessions.map((item) => html`<li>${item}</li>`)}
+      </ul>
+    <//>
+  </div>
+  <${ScrollArea} orientation="horizontal" aria-label="Filters" style="width:320px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:12px">
+    <div style="display:flex;gap:8px">
+      ${filters.map((item) => html`<span style="flex-shrink:0;border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 8px;font-size:12px">${item}</span>`)}
+    </div>
+  <//>
+</div>
+`, document.getElementById('root'));
+</script>

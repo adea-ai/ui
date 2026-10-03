@@ -1,0 +1,31 @@
+<!-- @dsCard group="Actions" height=170 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Toggle } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <${Toggle} aria-label="Not pressed">Not pressed<//>
+          <${Toggle} defaultPressed=${true} aria-label="Pressed">Pressed<//>
+          <${Toggle} disabled=${true} aria-label="Disabled">Disabled<//>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <${Toggle} variant="outline" aria-label="Outline off">Outline off<//>
+          <${Toggle} variant="outline" defaultPressed=${true} aria-label="Outline on">Outline on<//>
+          <${Toggle} variant="subtle" aria-label="Subtle off">Subtle off<//>
+        </div>
+        <div
+          style="display:inline-flex;align-self:flex-start;align-items:center;gap:4px;border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px"
+        >
+          <${Toggle} size="icon-sm" defaultPressed=${true} aria-label="Bold"><${Icons.Bold} /><//>
+          <${Toggle} size="icon-sm" aria-label="Italic"><${Icons.Italic} /><//>
+          <${Toggle} size="icon-sm" defaultPressed=${true} aria-label="Underline"
+            ><${Icons.Underline}
+          /><//>
+        </div>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

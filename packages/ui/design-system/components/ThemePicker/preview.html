@@ -1,0 +1,17 @@
+<!-- @dsCard group="Theming" height=500 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, ThemePicker, themesForAppearance, defaultThemeSelection } = window.AdeaUI;
+  // A picker lists one appearance at a time; this one follows the page's.
+  const appearance = (document.documentElement.dataset.theme || 'light').startsWith('dark') ? 'dark' : 'light';
+  const all = themesForAppearance(appearance);
+  const themes = all.slice(0, 10);
+  const [selected, setSelected] = createSignal(appearance === 'dark' ? defaultThemeSelection.darkThemeId : defaultThemeSelection.lightThemeId);
+  const caption = 'font-family:var(--font-mono);font-size:12px;color:var(--muted-foreground)';
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:12px">
+  <code style=${caption}>${`${themes.length} of ${all.length} ${appearance} themes · selected: `}${selected}</code>
+  <${ThemePicker} themes=${themes} selectedId=${() => selected()} onThemeSelect=${(theme) => setSelected(theme.id)} />
+</div>
+`, document.getElementById('root'));
+</script>

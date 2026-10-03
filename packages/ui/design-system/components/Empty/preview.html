@@ -1,0 +1,30 @@
+<!-- @dsCard group="Feedback" height=240 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const {
+    render,
+    html,
+    Icons,
+    Empty,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+    EmptyDescription,
+    EmptyContent,
+    Button,
+  } = window.AdeaUI
+  render(
+    () => html`
+      <div style="width:520px;border:1px solid var(--border);border-radius:var(--radius-xl)">
+        <${Empty}
+          ><${EmptyHeader}
+            ><${EmptyMedia} variant="icon"><${Icons.Plus} /><//><${EmptyTitle}>No projects yet<//
+            ><${EmptyDescription}>Create a project to group related sessions and sources.<//><//
+          >
+          <${EmptyContent}><${Button} size="sm">Create a project<//><//><//
+        >
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

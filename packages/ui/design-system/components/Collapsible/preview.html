@@ -1,0 +1,30 @@
+<!-- @dsCard group="Layout" height=170 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, Collapsible, CollapsibleTrigger, CollapsibleContent } = window.AdeaUI
+  render(
+    () => html`
+      <${Collapsible}
+        defaultOpen=${true}
+        style="width:512px;border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px"
+      >
+        <${CollapsibleTrigger} class="group">
+          <${Icons.ChevronRight}
+            class="size-3.5 transition-transform ease-out group-data-[expanded]:rotate-90"
+          />
+          What this lane checks
+        <//>
+        <${CollapsibleContent}>
+          <ul
+            style="margin:12px 0 0;padding:0;list-style:disc inside;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted-foreground)"
+          >
+            <li>A stalled stream fails the run; a slow machine does not.</li>
+            <li>The budget governs, not a round cap.</li>
+            <li>A broken probe is never retried.</li>
+          </ul>
+        <//>
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Code" height=220 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, CodeBlock, InlineCode } = window.AdeaUI
+  render(
+    () => html`
+      <div style="width:576px;display:flex;flex-direction:column;gap:12px">
+        <${CodeBlock}
+          complete=${true}
+          language="tsx"
+          code=${'import { Button } from \'@adea-ai/ui\'\n\nexport function Save() {\n  return <Button variant="default" size="sm">Save</Button>\n}'}
+        />
+        <p style="margin:0;font-size:14px">
+          Pass the list to <${InlineCode}>keyedRows<//> with a key function.
+        </p>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -219,6 +219,7 @@ own list, its own icons or its own column names could only serve one product.
 | [docs/design-language.md](docs/design-language.md) | The visual decisions: palette, type, the control ladder, the rail   |
 | [docs/conventions.md](docs/conventions.md)         | How components are written here — variants, tokens, comments        |
 | [docs/consumption.md](docs/consumption.md)         | Installing, the registry, re-hueing, density, and the migration map |
+| [docs/design-system.md](docs/design-system.md)     | The published design-system page: what builds it, how to refresh it |
 
 ## Contributing
 

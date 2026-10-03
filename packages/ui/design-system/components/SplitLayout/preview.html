@@ -1,0 +1,48 @@
+<!-- @dsCard group="Shell" height=460 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, Button, SplitLayout, createLayoutState, splitPane, resizeSplit, closePane, focusPane, undoClosePane, movePane, countLeaves } = window.AdeaUI;
+  let initial = createLayoutState({ kind: 'leaf', id: 'editor' });
+  initial = splitPane(initial, 'editor', { direction: 'row', placement: 'after', leaf: { kind: 'leaf', id: 'terminal' }, splitId: 'main' });
+  initial = splitPane(initial, 'editor', { direction: 'column', placement: 'after', leaf: { kind: 'leaf', id: 'review' }, splitId: 'review-split' });
+  initial = focusPane(initial, 'editor');
+  const [state, setState] = createSignal(initial);
+  let sequence = 0;
+  const names = { editor: 'Editor', terminal: 'Terminal', review: 'Review' };
+  const name = (leaf) => names[leaf.id] ?? 'Scratch';
+  const mono = 'margin:0;padding:10px 12px;font-family:var(--font-mono);font-size:12px;line-height:1.6;white-space:pre';
+  const bodies = {
+    editor: `export function AppShell(props) {\n  const [local, rest] = splitProps(props, ['class'])\n  return <div data-slot="app-shell" {...rest} />\n}`,
+    terminal: `$ bun test packages/ui/tests\n\n 37 pass\n 0 fail\n 103 expect() calls`,
+    review: `2 comments on app-shell.tsx\n\nThe body region needs min-h-0, or a long\ntable scrolls the whole window.`,
+  };
+  render(() => html`
+<div style="display:flex;height:428px;flex-direction:column;gap:8px">
+  <div style="display:flex;gap:8px">
+    <${Button} variant="outline" size="sm" disabled=${() => countLeaves(state().center) >= 8} onClick=${(event) => {
+      const suffix = ++sequence;
+      setState((s) => splitPane(s, s.focusedLeafId, { direction: 'row', placement: 'after', leaf: { kind: 'leaf', id: `scratch-${suffix}` }, splitId: `split-${suffix}` }));
+    }}>Split pane<//>
+    <${Button} variant="outline" size="sm" disabled=${() => !state().closed.length} onClick=${(event) => setState(undoClosePane)}>Undo close<//>
+  </div>
+  <div style="min-height:0;flex:1">
+    <${SplitLayout}
+      state=${() => state()}
+      label="Work panes"
+      labelForLeaf=${(leaf) => `${name(leaf)} pane`}
+      renderPaneLabel=${(leaf) => html`<span style="overflow:hidden;text-overflow:ellipsis">${() => name(leaf())}</span>`}
+      labelForSeparator=${(branch) => 'Resize workspace panes'}
+      onMove=${(id, target, intent) => setState((s) => movePane(s, id, target, intent.placement, intent.direction, `move-${++sequence}`))}
+      onFocus=${(id) => setState((s) => focusPane(s, id))}
+      onResize=${(id, ratio) => setState((s) => resizeSplit(s, id, ratio))}
+      onClose=${(id) => {
+        const next = closePane(state(), id, () => ({ kind: 'leaf', id: 'placeholder' }));
+        setState(next);
+        return next.focusedLeafId;
+      }}
+      renderLeaf=${(leaf) => html`<pre style=${mono}>${() => bodies[leaf().id] ?? 'An empty pane. Close it, or split it again.'}</pre>`}
+    />
+  </div>
+</div>
+`, document.getElementById('root'));
+</script>

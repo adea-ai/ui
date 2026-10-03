@@ -1,0 +1,25 @@
+<!-- @dsCard group="Overlays" height=360 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, Button, ModalDialog, Label, Input } = window.AdeaUI;
+  render(() => {
+    const [open, setOpen] = createSignal(true);
+    // solid-js/html reads a zero-argument function prop as a getter, so handlers take an argument.
+    const close = (_event) => setOpen(false);
+    return html`
+<div>
+  <${Button} onClick=${(_event) => setOpen(true)}>Rename workspace<//>
+  <${ModalDialog} open=${() => open()} onClose=${close} title="Rename workspace" description="The new name is visible to everyone who has access. Existing links keep working.">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <${Label} for="modal-name">Name<//>
+      <${Input} id="modal-name" value="Adea" />
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <${Button} variant="ghost" onClick=${close}>Cancel<//>
+      <${Button} onClick=${close}>Save<//>
+    </div>
+  <//>
+</div>
+`;
+  }, document.getElementById('root'));
+</script>

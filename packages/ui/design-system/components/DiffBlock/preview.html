@@ -1,0 +1,17 @@
+<!-- @dsCard group="Code" height=220 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Icons, DiffBlock } = window.AdeaUI
+  render(
+    () => html`
+      <div style="width:640px">
+        <${DiffBlock}
+          complete=${true}
+          showLineNumbers=${true}
+          patch=${'--- a/theme.css\n+++ b/theme.css\n@@ -1,4 +1,4 @@\n :root {\n-  --radius-lg: 0.5rem;\n+  --radius-lg: 0.625rem;\n   --radius-sm: 0.375rem;\n }'}
+        />
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>
