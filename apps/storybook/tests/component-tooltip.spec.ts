@@ -113,12 +113,13 @@ test('a closing tooltip stops intercepting the pointer', async ({ page }) => {
   const next = page.getByRole('button', { name: 'Next action' })
 
   await trigger.hover()
-  await expect(page.getByRole('tooltip')).toBeVisible()
+  const tip = page.getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  // A tooltip is never interactive, and the placement draws it below its
+  // action — where a hit-testing tip would hold the next control hostage.
+  // The pointer belongs to the control underneath, open or departing.
+  await expect(tip).toHaveCSS('pointer-events', 'none')
   await next.hover()
-  // The force-mounted tip stays in the tree closed; it must not keep
-  // hit-testing, or the hover and click aimed at the control beneath it land
-  // on the departing tooltip instead.
-  await expect(page.getByRole('tooltip')).toHaveCSS('pointer-events', 'none')
   await next.click()
   await expect(next).toBeFocused()
 })

@@ -377,12 +377,14 @@ export function TooltipContent(props: TooltipContentProps) {
           'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
           'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           'data-expanded:duration-150 data-closed:duration-100',
-          // A closing tip still hangs in the tree through its exit transition;
-          // without this it keeps hit-testing, so the hover or click aimed at
-          // the control underneath lands on the departing tooltip instead.
-          'data-closed:pointer-events-none',
           local.class
         )}
+        // A tooltip is never interactive: the content is plain text, and the
+        // placement draws the tip below its action — where a hit-testing tip
+        // would hold the next control hostage, open or departing. Kobalte
+        // inlines pointer-events auto, so this is forced after its merge; the
+        // pointer belongs to the control underneath.
+        style={{ 'pointer-events': 'none' }}
         aria-hidden={context.isOpen() ? local['aria-hidden'] : true}
         onEscapeKeyDown={(event) => {
           invokeEventHandler(local.onEscapeKeyDown, event)
