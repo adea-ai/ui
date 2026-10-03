@@ -5,6 +5,8 @@
   "description": "",
   "dependencies": [],
   "registryDependencies": [
+    "@adea-ai/ui/badge",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

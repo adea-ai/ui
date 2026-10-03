@@ -1,41 +1,51 @@
-<!-- @dsCard group="Data display" height=220 -->
-<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<!-- @dsCard group="Data display" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px;height:228px"></div>
 <script>
-  const { render, html, createSignal, Board, BoardCardBody, BoardCardTitle, Badge } = window.AdeaUI;
-  const columns = [
-    { id: 'planned', label: 'Planned' },
-    { id: 'in_progress', label: 'In-Progress' },
-    { id: 'done', label: 'Completed', disabled: true },
+  const { render, html, createSignal, Board, BoardCardBody, BoardCardTrigger, Badge } = window.AdeaUI;
+  // Each lane takes a chart hue and an accent count; empty lanes fold to a
+  // sideways label, except the inbox lane, which stays open.
+  const lanes = [
+    { id: 'planned', label: 'Planned', tone: 'neutral', collapsible: false },
+    { id: 'queued', label: 'Queued', tone: 'chart-2' },
+    { id: 'in_progress', label: 'In progress', tone: 'chart-1' },
+    { id: 'in_review', label: 'In review', tone: 'chart-5' },
+    { id: 'done', label: 'Completed', tone: 'chart-4' },
   ];
-  // Three of the story's four lanes, so all fit the card; the board scrolls sideways past that.
   const legal = {
-    planned: ['in_progress'],
-    in_progress: ['planned'],
+    planned: ['queued', 'in_progress', 'done'],
+    queued: ['in_progress', 'done'],
+    in_progress: ['in_review', 'done'],
+    in_review: ['in_progress', 'done'],
     done: [],
   };
   const tasks = [
     { id: 't1', title: 'Port the appearance view', priority: 'urgent' },
-    { id: 't2', title: 'Audit the rail against KiroCrew', priority: 'normal' },
-    { id: 't3', title: 'Retire packages/ui in adea', priority: 'low' },
-    { id: 't4', title: 'Document the theme axis', priority: 'normal' },
+    { id: 't2', title: 'Audit the rail', priority: 'normal' },
+    { id: 't3', title: 'Document the theme axis', priority: 'low' },
   ];
-  const priorityVariant = { low: 'subtle', normal: 'secondary', urgent: 'warning' };
-  const [placement, setPlacement] = createSignal({ t1: 'in_progress', t2: 'planned', t3: 'planned', t4: 'in_progress' });
+  const priorityVariant = { low: 'outline', normal: 'secondary', urgent: 'destructive' };
+  const [placement, setPlacement] = createSignal({ t1: 'in_progress', t2: 'planned', t3: 'planned' });
+  const columns = () =>
+    lanes.map((lane) => ({
+      ...lane,
+      count: tasks.filter((task) => placement()[task.id] === lane.id).length,
+    }));
   const card = (task) => html`
     <${BoardCardBody}>
-      <${BoardCardTitle}>${task.title}<//>
+      <${BoardCardTrigger}>${task.title}<//>
       <${Badge} variant=${priorityVariant[task.priority]} size="sm">${task.priority}<//>
     <//>
   `;
   render(() => html`
 <${Board}
-  columns=${columns}
+  columns=${columns()}
   items=${tasks}
   itemId=${(task) => task.id}
   itemColumn=${(task) => placement()[task.id] ?? 'planned'}
   canDrop=${(_task, from, to) => (legal[from] ?? []).includes(to)}
   onMove=${(move) => setPlacement((current) => ({ ...current, [move.itemId]: move.to }))}
-  emptyColumn=${(column) => `No tasks in ${column.label}`}
+  collapseEmpty=${true}
+  class="h-full"
   children=${card}
 />
 `, document.getElementById('root'));

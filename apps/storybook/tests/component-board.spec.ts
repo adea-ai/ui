@@ -56,6 +56,11 @@ test('pointer drops accept legal destinations and refuse disabled columns', asyn
   await expect(
     page.getByRole('region', { name: 'Done', exact: true }).getByRole('article')
   ).toBeVisible()
+  // Dragging a card is a direct act on it: it ends focused in its new lane,
+  // even though the drag began on a button inside it.
+  await expect(
+    page.getByRole('region', { name: 'Done', exact: true }).getByRole('article')
+  ).toBeFocused()
 })
 
 test('keyboard moves never wrap at boundaries and skip disabled columns', async ({ page }) => {
@@ -96,4 +101,37 @@ test('a delayed controlled move restores card focus until another action takes f
     page.getByRole('region', { name: 'To do', exact: true }).getByRole('article')
   ).toBeVisible()
   await expect(action).toBeFocused()
+})
+
+test('empty lanes fold to a narrow, still-droppable strip and unfold once they hold a card', async ({
+  page,
+}) => {
+  const done = page.getByRole('region', { name: 'Done', exact: true })
+  const todo = page.getByRole('region', { name: 'To do', exact: true })
+  await expect(done).toHaveAttribute('data-collapsed', '')
+  await expect(todo).not.toHaveAttribute('data-collapsed', '')
+  const folded = await done.boundingBox()
+  const open = await todo.boundingBox()
+  expect(folded!.width).toBeLessThan(open!.width / 4)
+  // The folded lane keeps its name visible, set on its side.
+  await expect(done.getByRole('heading', { name: 'Done' })).toBeVisible()
+  await page.getByRole('article').dragTo(done)
+  await expect(page.getByLabel('Move count')).toHaveText('1')
+  await expect(done).not.toHaveAttribute('data-collapsed', '')
+  await expect(todo).toHaveAttribute('data-collapsed', '')
+  await expect(done.getByRole('article')).toBeVisible()
+})
+
+test('a confirmed move that hands back fresh column objects keeps the moved card focused', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Echo moves' }).click()
+  const card = page.getByRole('article')
+  await card.focus()
+  await page.keyboard.press('Control+ArrowRight')
+  const done = page.getByRole('region', { name: 'Done', exact: true })
+  await expect(done.getByRole('article')).toBeFocused()
+  // Outlast the echo: re-derived columns must not remount the lane.
+  await page.waitForTimeout(400)
+  await expect(done.getByRole('article')).toBeFocused()
 })
