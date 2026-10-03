@@ -64,7 +64,8 @@ export function WorkspaceMark(props: WorkspaceMarkProps) {
       <Show when={local.badge}>
         <span
           data-slot="workspace-mark-badge"
-          class="absolute end-0 top-0 flex translate-x-1/2 -translate-y-1/2 items-center justify-center rtl:-translate-x-1/2">
+          class="absolute end-0 top-0 flex translate-x-1/2 -translate-y-1/2 items-center justify-center rtl:-translate-x-1/2"
+        >
           {local.badge}
         </span>
       </Show>
