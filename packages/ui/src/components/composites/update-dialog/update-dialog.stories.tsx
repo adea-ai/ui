@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal, Show } from 'solid-js'
 import { Button } from '../../ui/button'
+import { NativeSelect } from '../../ui/native-select/native-select'
 import { UpdateDialog, type UpdateAdapter, type UpdateState } from './update-dialog'
 
 const CHANGELOG = `# 0.55.0
@@ -59,6 +60,49 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const UpToDate: Story = { args: { adapter: demoAdapter([base]), appName: 'Adea' } }
+
+/** A host-owned channel selector stays with the installed version and update status. */
+export const WithChannelControl: Story = {
+  render: () => {
+    const [channel, setChannel] = createSignal('stable')
+
+    return (
+      <UpdateDialog
+        adapter={demoAdapter([base])}
+        appName="Adea"
+        defaultOpen
+        channelControl={({ disabled, recheck }) => (
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-col gap-1">
+              <label for="update-channel" class="text-sm font-medium">
+                Update channel
+              </label>
+              <p class="text-muted-foreground text-sm">
+                Choose which signed releases this app checks for.
+              </p>
+            </div>
+            <NativeSelect
+              id="update-channel"
+              value={channel()}
+              disabled={disabled()}
+              onChange={(event) => {
+                const nextChannel = event.currentTarget.value
+                setChannel(nextChannel)
+                void recheck(async () => {
+                  setChannel(nextChannel)
+                })
+              }}
+            >
+              <option value="stable">Stable</option>
+              <option value="pre-release">Pre-release</option>
+              <option value="dev">Dev</option>
+            </NativeSelect>
+          </div>
+        )}
+      />
+    )
+  },
+}
 
 export const UpdateAvailable: Story = {
   args: {

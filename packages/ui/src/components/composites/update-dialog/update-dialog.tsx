@@ -7,7 +7,7 @@ import {
   Show,
   splitProps,
 } from 'solid-js'
-import type { Accessor } from 'solid-js'
+import type { Accessor, JSX } from 'solid-js'
 import {
   Check,
   CircleStop,
@@ -148,6 +148,13 @@ export type UpdateAdapter = Readonly<{
   isDesktopRuntime(): boolean
 }>
 
+type ChannelControlActions = Readonly<{
+  /** Disabled while the app is checking, downloading, installing, or saving a channel. */
+  disabled: Accessor<boolean>
+  /** Persist a channel change, then check that channel without retaining a stale offer. */
+  recheck(beforeCheck?: () => Promise<void>): Promise<void>
+}>
+
 export type UpdateDialogProps = {
   adapter: UpdateAdapter
   /** The application's name, used in the title and the copy. */
@@ -160,6 +167,12 @@ export type UpdateDialogProps = {
   fallbackVersion?: string
   /** Copy for the adapter's non-desktop case. */
   desktopOnlyMessage?: string
+  /**
+   * Optional host-owned release-channel control, rendered in the version status
+   * card. The host owns its accessible label and calls `recheck` after a selection;
+   * the optional callback persists that selection before the dialog checks it.
+   */
+  channelControl?: (actions: ChannelControlActions) => JSX.Element
   /** A controlled open state. Omit for the trigger to manage its own. */
   open?: boolean
   /**
@@ -220,6 +233,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
     'changelog',
     'fallbackVersion',
     'desktopOnlyMessage',
+    'channelControl',
     'open',
     'defaultOpen',
     'onOpenChange',
@@ -248,6 +262,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
   const [cancelPending, setCancelPending] = createSignal(false)
   let lifecycleEpoch = 0
   let activeOpenEpoch: number | undefined
+  let channelCheckUnconfirmed = false
   let disposed = false
 
   onCleanup(() => {
@@ -263,12 +278,15 @@ export function UpdateDialog(props: UpdateDialogProps) {
       const previous = state()
       const hasActionableSnapshot = (candidate: UpdateState | null) =>
         candidate?.phase === 'available' || isBusy(candidate)
+      const ignoresUnconfirmedChannelSnapshot =
+        channelCheckUnconfirmed && hasActionableSnapshot(status)
       const preservesSnapshot =
         previous?.phase === 'available'
           ? status.phase === 'available' || isBusy(status)
           : isBusy(previous) && isBusy(status)
       if (
         isCurrent() &&
+        !ignoresUnconfirmedChannelSnapshot &&
         !(checkFailed() && hasActionableSnapshot(previous) && !preservesSnapshot)
       ) {
         setState(status)
@@ -291,10 +309,10 @@ export function UpdateDialog(props: UpdateDialogProps) {
     setError(message)
   }
 
-  const applyCheckResult = (next: UpdateState) => {
+  const applyCheckResult = (next: UpdateState, preserveOnFailure = true) => {
     if (next.phase === 'failed') {
       const current = state()
-      if (!current) setState(next)
+      if (!current || !preserveOnFailure) setState(next)
       failCheck(next.error, 'Could not check for updates')
       return
     }
@@ -303,7 +321,10 @@ export function UpdateDialog(props: UpdateDialogProps) {
     setError('')
   }
 
-  const check = async () => {
+  const check = async (
+    beforeCheck?: () => Promise<void>,
+    clearStaleOffer = beforeCheck !== undefined
+  ) => {
     if (!desktop()) {
       setError(local.desktopOnlyMessage ?? `Update checks are available from the desktop app.`)
       return
@@ -316,16 +337,43 @@ export function UpdateDialog(props: UpdateDialogProps) {
       lifecycleEpoch === epoch &&
       open()
     if (!isCurrent()) return
+    if (clearStaleOffer && working()) return
+    if (clearStaleOffer) channelCheckUnconfirmed = true
+    const discardStaleOffer = clearStaleOffer || channelCheckUnconfirmed
     setBusy(true)
     setError('')
     setCheckFailed(false)
+    if (discardStaleOffer) {
+      const current = state()
+      if (current) setState({ phase: 'checking', currentVersion: current.currentVersion })
+    }
+    let channelSaved = beforeCheck === undefined
     try {
+      await beforeCheck?.()
+      channelSaved = true
+      if (!isCurrent()) return
       const checked = await local.adapter.check()
-      if (isCurrent()) applyCheckResult(checked)
+      if (isCurrent()) {
+        applyCheckResult(checked, !discardStaleOffer)
+        if (discardStaleOffer && checked.phase !== 'failed') channelCheckUnconfirmed = false
+      }
     } catch (caught) {
       if (isCurrent()) {
-        failCheck(caught, 'Could not check for updates')
-        await loadStatus(isCurrent)
+        if (discardStaleOffer) {
+          const fallback = channelSaved
+            ? 'Could not check for updates'
+            : 'Could not save the update channel'
+          const message = errorMessage(caught, fallback)
+          setState({
+            phase: 'failed',
+            currentVersion: state()?.currentVersion ?? '',
+            error: message,
+          })
+          failCheck(message, fallback)
+        } else {
+          failCheck(caught, 'Could not check for updates')
+          await loadStatus(isCurrent)
+        }
       }
     } finally {
       if (isCurrent()) setBusy(false)
@@ -366,11 +414,31 @@ export function UpdateDialog(props: UpdateDialogProps) {
       try {
         const current = await local.adapter.getStatus()
         if (!isCurrent()) return
-        setState(current)
+        const discardStaleOffer = channelCheckUnconfirmed
+        setState(
+          discardStaleOffer
+            ? { phase: 'checking', currentVersion: current.currentVersion }
+            : current
+        )
         const checked = await local.adapter.check()
-        if (isCurrent()) applyCheckResult(checked)
+        if (isCurrent()) {
+          applyCheckResult(checked, !discardStaleOffer)
+          if (discardStaleOffer && checked.phase !== 'failed') channelCheckUnconfirmed = false
+        }
       } catch (caught) {
-        if (isCurrent()) failCheck(caught, 'Could not check for updates')
+        if (isCurrent()) {
+          if (channelCheckUnconfirmed) {
+            const message = errorMessage(caught, 'Could not check for updates')
+            setState({
+              phase: 'failed',
+              currentVersion: state()?.currentVersion ?? '',
+              error: message,
+            })
+            failCheck(message, 'Could not check for updates')
+          } else {
+            failCheck(caught, 'Could not check for updates')
+          }
+        }
       } finally {
         if (isCurrent()) setBusy(false)
       }
@@ -497,6 +565,8 @@ export function UpdateDialog(props: UpdateDialogProps) {
     return value ? plainTextFromMarkdown(value) : ''
   }
   const working = () => busy() || cancelPending() || isBusy(state())
+  const channelControlDisabled = () => !desktop() || working()
+  const recheckChannel = (beforeCheck?: () => Promise<void>) => check(beforeCheck, true)
   const isCurrent = () => state()?.phase === 'current' && !error() && !checkFailed() && !working()
 
   const triggerLabel = () => {
@@ -644,6 +714,16 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 </Show>
               </div>
             </div>
+            <Show when={local.channelControl}>
+              {(channelControl) => (
+                <div class="mt-4 border-t border-border pt-4">
+                  {channelControl()({
+                    disabled: channelControlDisabled,
+                    recheck: recheckChannel,
+                  })}
+                </div>
+              )}
+            </Show>
           </section>
 
           <Show
