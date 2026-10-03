@@ -96,6 +96,14 @@ describe('token manifest', () => {
     expect(missing).toEqual([])
   })
 
+  test('runtime font-size classification covers exactly the three emitted axis properties', () => {
+    expect([...runtimeAppearanceFontSizeTokens].toSorted()).toEqual([
+      'font-code-size',
+      'font-content-size',
+      'font-ui-size',
+    ])
+  })
+
   test('every colour token is themed, or explicitly theme-invariant', () => {
     const colors = allTokens.filter((token) => token.kind === 'color')
     const notThemed = colors.filter((token) => !token.themed).map((token) => token.name)
