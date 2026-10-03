@@ -17,6 +17,8 @@ import { computeLayoutFrames, type LayoutRect } from './geometry'
 import { paneDropIntent, type PaneDropIntent } from './drop'
 export type { PaneDropIntent } from './drop'
 const PANE_DRAG_TYPE = 'application/x-adea-pane-move'
+const DRAG_PREVIEW_MAX_WIDTH = 384
+const DRAG_PREVIEW_MAX_HEIGHT = 256
 import {
   listLeaves,
   MIN_SPLIT_RATIO,
@@ -57,6 +59,112 @@ function rectStyle(rect: LayoutRect): JSX.CSSProperties {
     height: `${rect.height * 100}%`,
   }
 }
+function dragPreviewPlaceholder(source: HTMLElement, message: string) {
+  const placeholder = document.createElement('div')
+  placeholder.className = cn(
+    source.getAttribute('class'),
+    'flex min-h-8 min-w-0 items-center justify-center bg-muted px-2 text-center text-xs text-muted-foreground'
+  )
+  placeholder.setAttribute('data-split-drag-placeholder', source.localName)
+  placeholder.textContent = message
+  return placeholder
+}
+function boundedSnapshotSize(width: number, height: number) {
+  const sourceWidth = Math.max(1, width)
+  const sourceHeight = Math.max(1, height)
+  const scale = Math.min(
+    1,
+    DRAG_PREVIEW_MAX_WIDTH / sourceWidth,
+    DRAG_PREVIEW_MAX_HEIGHT / sourceHeight
+  )
+  return {
+    width: Math.max(1, Math.round(sourceWidth * scale)),
+    height: Math.max(1, Math.round(sourceHeight * scale)),
+  }
+}
+function cloneDragPreviewNode(source: Node): Node | undefined {
+  if (source.nodeType === Node.TEXT_NODE) return source.cloneNode(false)
+  if (!(source instanceof HTMLElement || source instanceof SVGElement))
+    return source.cloneNode(false)
+
+  if (['script', 'style', 'link', 'source', 'track', 'meta'].includes(source.localName))
+    return undefined
+  if (['iframe', 'video', 'audio', 'object', 'embed'].includes(source.localName))
+    return dragPreviewPlaceholder(
+      source as HTMLElement,
+      'Embedded content unavailable while moving'
+    )
+  if (source instanceof HTMLImageElement) {
+    const snapshot = document.createElement('canvas')
+    const size = boundedSnapshotSize(
+      source.naturalWidth || source.width,
+      source.naturalHeight || source.height
+    )
+    snapshot.width = size.width
+    snapshot.height = size.height
+    snapshot.className = source.getAttribute('class') ?? ''
+    snapshot.setAttribute('data-split-drag-image', '')
+    try {
+      if (!source.complete || source.naturalWidth === 0)
+        throw new Error('image has no decoded pixels')
+      const context = snapshot.getContext('2d')
+      if (!context) throw new Error('canvas snapshot context is unavailable')
+      context.drawImage(source, 0, 0, snapshot.width, snapshot.height)
+      return snapshot
+    } catch {
+      return dragPreviewPlaceholder(source, 'Image preview unavailable')
+    }
+  }
+
+  // Copying a defined custom element can run its constructor; inserting it can
+  // also reconnect a stream or terminal session. Flatten its display tree.
+  if (source instanceof HTMLElement && source.localName.includes('-')) {
+    const children = document.createDocumentFragment()
+    for (const child of source.childNodes) {
+      const clone = cloneDragPreviewNode(child)
+      if (clone) children.append(clone)
+    }
+    return children.childNodes.length > 0
+      ? children
+      : dragPreviewPlaceholder(source, 'Live component preview unavailable while moving')
+  }
+
+  const clone = source.cloneNode(false) as HTMLElement | SVGElement
+  for (const attribute of [
+    'id',
+    'style',
+    'draggable',
+    'data-pane-drag-handle',
+    'data-pane-id',
+    'src',
+    'srcset',
+    'href',
+    'xlink:href',
+    'data',
+    'poster',
+  ])
+    clone.removeAttribute(attribute)
+
+  if (source instanceof HTMLCanvasElement && clone instanceof HTMLCanvasElement) {
+    const size = boundedSnapshotSize(source.width, source.height)
+    clone.width = size.width
+    clone.height = size.height
+    try {
+      const context = clone.getContext('2d')
+      if (!context) throw new Error('canvas snapshot context is unavailable')
+      context.drawImage(source, 0, 0, clone.width, clone.height)
+    } catch {
+      return dragPreviewPlaceholder(source, 'Canvas preview unavailable while moving')
+    }
+    return clone
+  }
+
+  for (const child of source.childNodes) {
+    const childClone = cloneDragPreviewNode(child)
+    if (childClone) clone.append(childClone)
+  }
+  return clone
+}
 /** Muxy frame geometry keeps leaf owners stable; Corvu owns constrained separator interactions. */
 export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L>) {
   let root: HTMLDivElement | undefined
@@ -66,11 +174,35 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
   const prefix = createUniqueId()
   let nextDomId = 0
   let nextDragId = 0
+  let dragPreview: HTMLElement | undefined
   const [drag, setDrag] = createSignal<{ id: string; token: string }>()
   const [drop, setDrop] = createSignal<{ id: string; intent: PaneDropIntent }>()
   const clearDrag = () => {
     setDrag(undefined)
     setDrop(undefined)
+    dragPreview?.remove()
+    dragPreview = undefined
+  }
+  const createDragPreview = (source: HTMLElement) => {
+    dragPreview?.remove()
+    const preview = cloneDragPreviewNode(source) as HTMLElement
+    preview.className =
+      'pointer-events-none fixed -left-full top-0 z-(--z-dialog) flex h-64 max-h-screen w-96 max-w-screen min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl'
+    preview.removeAttribute('id')
+    preview.removeAttribute('style')
+    preview.removeAttribute('role')
+    preview.removeAttribute('aria-label')
+    preview.removeAttribute('data-pane-id')
+    preview.removeAttribute('data-focused')
+    preview.removeAttribute('data-drag-source')
+    preview.removeAttribute('data-drop-direction')
+    preview.removeAttribute('data-drop-placement')
+    preview.setAttribute('data-split-drag-preview', '')
+    preview.setAttribute('aria-hidden', 'true')
+    preview.inert = true
+    document.body.append(preview)
+    dragPreview = preview
+    return preview
   }
   const domId = (id: string) => {
     const existing = domIds.get(id)
@@ -236,7 +368,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                 props.onMove?.(current.id, id, next)
               }}
               style={rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 })}
-              class="absolute flex min-h-0 min-w-0 flex-col overflow-hidden border border-border transition-opacity data-[drag-source]:opacity-40 data-[focused]:border-primary bg-background text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+              class="absolute flex min-h-0 min-w-0 flex-col overflow-hidden border border-border transition-opacity motion-reduce:transition-none data-[drag-source]:opacity-40 data-[focused]:border-primary bg-background text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               onFocusIn={() => props.onFocus?.(id)}
             >
               <header class="flex min-w-0 shrink-0 items-center gap-2 bg-surface px-2">
@@ -245,6 +377,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                   draggable={Boolean(props.onMove)}
                   class={cn('flex min-w-0 flex-1 items-center gap-2 truncate text-sm', {
                     'cursor-grab': Boolean(props.onMove),
+                    'cursor-grabbing': drag()?.id === id,
                   })}
                   title={props.onMove ? `Drag ${props.labelForLeaf(leaf())} to move` : undefined}
                   onDragStart={(event) => {
@@ -256,18 +389,23 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                     setDrag({ id, token })
                     event.dataTransfer.setData(PANE_DRAG_TYPE, token)
                     event.dataTransfer.effectAllowed = 'move'
-                    // The ghost is the pane itself, not the handle strip: the
-                    // browser snapshots the region before the drag state dims
-                    // this section, so the dragged pane stays readable while
-                    // its source visibly recedes.
+                    // The native drag image carries this pane's actual content
+                    // in a bounded floating-window frame; the source recedes
+                    // independently as the browser follows the image pointer.
                     const source = refs.get(id)
                     const frame = source?.getBoundingClientRect()
-                    if (source && frame && typeof event.dataTransfer.setDragImage === 'function')
+                    if (source && frame && typeof event.dataTransfer.setDragImage === 'function') {
+                      const preview = createDragPreview(source)
+                      const previewFrame = preview.getBoundingClientRect()
+                      const scaleX = previewFrame.width / frame.width
+                      const scaleY = previewFrame.height / frame.height
                       event.dataTransfer.setDragImage(
-                        source,
-                        Math.max(0, Math.round(event.clientX - frame.left)),
-                        Math.max(0, Math.round(event.clientY - frame.top))
+                        preview,
+                        Math.max(0, Math.round((event.clientX - frame.left) * scaleX)),
+                        Math.max(0, Math.round((event.clientY - frame.top) * scaleY))
                       )
+                      preview.setAttribute('data-native-drag-image', '')
+                    }
                   }}
                   onDragEnd={clearDrag}
                 >
