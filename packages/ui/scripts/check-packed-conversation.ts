@@ -50,11 +50,10 @@ const MAX_GZIP_BYTES = 50 * 1024
 // coarse-pointer touch rung: atomic measured 43,355 against main's 42,717
 // (+638 bytes of base CSS — the same delta that re-baselined the packed
 // consumer's list-row cap from 32 to 34 KiB).
-// Re-baselined 43 → 44 KiB (2026-10) for the appearance font settings: the
-// runtime font projection CSS now ships inside every pilot's globals
-// (atomic measured 44,171; every other pilot holds under the new cap).
-const MAX_CSS_BYTES = 44 * 1024
-// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 44 KiB cap.
+// Appearance typography roles are emitted as on-demand utilities, keeping the
+// packed atomic consumer below the existing 43 KiB ceiling.
+const MAX_CSS_BYTES = 43 * 1024
+// Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 43 KiB cap.
 // Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
 const MAX_BUSY_GZIP_BYTES = 60 * 1024
 const results: unknown[] = []
@@ -656,6 +655,13 @@ void textarea
         .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
         .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
         .join('\n')
+      if (
+        pilot === 'atomic' &&
+        /(?:^|[;{])\s*--(?:font-content|font-code|text-content(?:--line-height)?|text-code(?:--line-height)?):/.test(
+          css
+        )
+      )
+        throw new Error('Packed atomic emitted unused global content/code role variables')
       const editorBytes = renderedModules
         .filter(({ id }) =>
           /\/conversation\/atomic\/chat-composer\.|\/conversation\/paste-token-editor\.|\/conversation\/paste-tokens\./.test(
@@ -1323,12 +1329,14 @@ void textarea
                 contentSize: Number.parseFloat(getComputedStyle(content).fontSize),
                 codeFamily: getComputedStyle(codePreview).fontFamily,
                 codeSize: Number.parseFloat(getComputedStyle(codePreview).fontSize),
+                codeLineHeight: Number.parseFloat(getComputedStyle(codePreview).lineHeight),
               }
             })
             if (
               roleStyles.contentFamily !== roleStyles.bodyFamily ||
               roleStyles.contentSize !== roleStyles.bodySize ||
               roleStyles.codeSize !== 12 ||
+              roleStyles.codeLineHeight !== 18 ||
               !/monospace/i.test(roleStyles.codeFamily)
             )
               throw new Error(

@@ -1,7 +1,18 @@
 import { render } from 'solid-js/web'
 import { Button } from '../../src/components/ui/button/button'
 import { Kbd, KbdChord, KbdGroup } from '../../src/components/ui/kbd/kbd'
+import {
+  applyAppearanceFontSettings,
+  DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
+} from '../../src/lib/appearance-font-settings'
 import '../../src/styles/globals.css'
+import '../../src/styles/appearance-font-settings.css'
+
+applyAppearanceFontSettings(document.documentElement, DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS)
+Object.assign(window, {
+  setKbdAppearanceFontSettings: (settings: unknown) =>
+    applyAppearanceFontSettings(document.documentElement, settings),
+})
 
 render(
   () => (

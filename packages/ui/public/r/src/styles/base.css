@@ -205,6 +205,28 @@
 
 /* --- Named utilities ----------------------------------------------------- */
 
+/* Role utilities use fallbacks directly instead of @theme aliases. Tailwind
+   emits every @theme variable globally, while these rules are emitted only
+   when a consumer uses that role. The optional Appearance sheet supplies the
+   selected role variables when its root marker is present. */
+@utility font-content {
+  font-family: var(--font-content, var(--font-sans));
+}
+
+@utility font-code {
+  font-family: var(--font-code, var(--font-mono));
+}
+
+@utility text-content {
+  font-size: var(--text-content, var(--text-sm));
+  line-height: var(--tw-leading, var(--text-content--line-height, var(--text-sm--line-height)));
+}
+
+@utility text-code {
+  font-size: var(--text-code, 0.75rem);
+  line-height: var(--tw-leading, var(--text-code--line-height, 1.5));
+}
+
 /**
  * Visible to a screen reader, invisible on screen.
  *

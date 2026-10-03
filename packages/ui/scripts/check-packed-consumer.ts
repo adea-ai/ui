@@ -396,8 +396,12 @@ try {
             throw new Error('Packed Button is missing its Tailwind utility')
           if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
             throw new Error('Packed Button is missing shared control sizing')
-          if (sample.name === 'kbd-chord' && (!css.includes('.h-5') || !css.includes('.h-4')))
-            throw new Error('Packed Kbd is missing its default or compact cap height')
+          if (
+            sample.name === 'kbd-chord' &&
+            (!/\.min-h-5\s*\{[^}]*\bmin-height\s*:/.test(css) ||
+              !/\.min-h-4\s*\{[^}]*\bmin-height\s*:/.test(css))
+          )
+            throw new Error('Packed Kbd is missing its default or compact minimum cap height')
           if (sample.name === 'conversation-transcript' && !css.includes('.h-control-md'))
             throw new Error('Packed ConversationSurface is missing shared control sizing')
           if (
