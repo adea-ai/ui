@@ -89,6 +89,55 @@ test('the group gap tightens with the compact caps', async ({ page }) => {
   ])
 })
 
+test('default and compact caps grow to contain selected Code sizes', async ({ page }) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Kbd code size</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+
+  for (const size of [16, 32] as const) {
+    await page.evaluate((fontSize) => {
+      const setSettings = (
+        window as typeof window & { setKbdAppearanceFontSettings?: (value: unknown) => void }
+      ).setKbdAppearanceFontSettings
+      if (!setSettings) throw new Error('Kbd font settings runtime is not available')
+      setSettings({
+        ui: { family: 'system', size: 14 },
+        content: { family: 'system', size: 14 },
+        code: { family: 'space-grotesk', size: fontSize },
+      })
+    }, size)
+
+    const caps = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-cap]')].map((element) => {
+        const style = getComputedStyle(element)
+        return {
+          cap: element.dataset['cap']!,
+          family: style.fontFamily,
+          fontSize: parseFloat(style.fontSize),
+          height: parseFloat(style.height),
+          lineHeight: parseFloat(style.lineHeight),
+        }
+      })
+    )
+    const expected = [
+      { cap: 'default', lineHeight: size * 1.5 },
+      { cap: 'compact', lineHeight: size },
+    ]
+
+    expect(caps).toEqual(
+      expected.map(({ cap, lineHeight }) => ({
+        cap,
+        family: expect.stringContaining('Space Grotesk Variable'),
+        fontSize: size,
+        height: lineHeight + 2,
+        lineHeight,
+      }))
+    )
+  }
+})
+
 test('a chord draws one cap per character and stays out of the host name', async ({ page }) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>Kbd geometry</title></head><body></body></html>'

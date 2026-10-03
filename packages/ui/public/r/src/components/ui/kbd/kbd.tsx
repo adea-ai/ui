@@ -20,12 +20,12 @@ import { cn } from '../../../lib/utils'
  * needs a gap between them that is a layout concern, not punctuation.
  */
 export const kbdVariants = cva(
-  'bg-muted text-muted-foreground pointer-events-none inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-sm border border-border px-1 font-code text-code font-medium select-none',
+  'bg-muted text-muted-foreground pointer-events-none inline-flex min-h-5 min-w-5 items-center justify-center gap-1 rounded-sm border border-border px-1 font-code text-code font-medium select-none',
   {
     variants: {
       size: {
         default: '',
-        compact: 'h-4 min-w-4 bg-muted/40 px-0.5 font-normal leading-none',
+        compact: 'min-h-4 min-w-4 bg-muted/40 px-0.5 font-normal leading-none',
       },
     },
     defaultVariants: {

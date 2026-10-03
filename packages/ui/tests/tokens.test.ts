@@ -9,7 +9,14 @@ import { APPEARANCE_EDITOR_FONT_AXES } from '../src/lib/appearance-font-settings
 import { allTokens, undocumentedTokenAliases } from '../src/lib/tokens'
 import { builtinThemes, themeCssVariables } from '../src/lib/themes'
 import { destructiveMenuItem, menuItem } from '../src/lib/overlay'
-import { declarations, declaredNames, valueOf, type Scope } from './helpers/theme-css'
+import {
+  APPEARANCE_FONT_CSS,
+  declarations,
+  declaredNames,
+  THEME_CSS,
+  valueOf,
+  type Scope,
+} from './helpers/theme-css'
 
 /* ---------------------------------------------------------------------------
  * Contrast is *measured*, and the measurement is the catalogue's.
@@ -50,7 +57,6 @@ const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), '
 const runtimeAppearanceFontSizeTokens = new Set(
   APPEARANCE_EDITOR_FONT_AXES.map((axis) => `font-${axis}-size`)
 )
-
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -102,6 +108,47 @@ describe('token manifest', () => {
       'font-content-size',
       'font-ui-size',
     ])
+  })
+
+  test('content and code role utilities keep fallback values out of global tokens', () => {
+    const roleUtilityFallbacks: [string, [string, string][]][] = [
+      ['font-content', [['font-family', 'var(--font-content, var(--font-sans))']]],
+      ['font-code', [['font-family', 'var(--font-code, var(--font-mono))']]],
+      [
+        'text-content',
+        [
+          ['font-size', 'var(--text-content, var(--text-sm))'],
+          [
+            'line-height',
+            'var(--tw-leading, var(--text-content--line-height, var(--text-sm--line-height)))',
+          ],
+        ],
+      ],
+      [
+        'text-code',
+        [
+          ['font-size', 'var(--text-code, 0.75rem)'],
+          ['line-height', 'var(--tw-leading, var(--text-code--line-height, 1.5))'],
+        ],
+      ],
+    ]
+
+    for (const [utility, expected] of roleUtilityFallbacks) {
+      const block = new RegExp(`@utility ${utility}\\s*\\{([^}]*)\\}`).exec(BASE_CSS)?.[1]
+      expect(block).toBeDefined()
+      const actual: [string, string][] = [...block!.matchAll(/^\s*([a-z-]+):\s*([^;]+);$/gm)].map(
+        (match): [string, string] => [match[1]!, match[2]!.trim()]
+      )
+      expect(actual).toEqual(expected)
+    }
+
+    expect(THEME_CSS).not.toMatch(
+      /(?:^|\n)\s*--(?:font-content|font-code|text-content(?:--line-height)?|text-code(?:--line-height)?):/
+    )
+    for (const name of ['font-content', 'font-code', 'text-content', 'text-code']) {
+      expect(APPEARANCE_FONT_CSS).toContain(`--${name}:`)
+      expect(declaredNames.has(name)).toBe(true)
+    }
   })
 
   test('every colour token is themed, or explicitly theme-invariant', () => {
