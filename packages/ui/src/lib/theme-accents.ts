@@ -29,10 +29,6 @@ import {
 /** The prefix the catalogue gives every theme-derived accent id. */
 const THEME_ACCENT_PREFIX = 'ansi-'
 
-const THEME_ACCENT_IDS: ReadonlySet<string> = new Set(
-  ANSI_KEYS.map((key) => `${THEME_ACCENT_PREFIX}${key}`)
-)
-
 /**
  * Whether an id names a theme-derived accent slot.
  *
@@ -41,7 +37,13 @@ const THEME_ACCENT_IDS: ReadonlySet<string> = new Set(
  * does not. Whether it resolves is {@link resolveAccentPreset}'s question.
  */
 export function isThemeAccentId(id: string): boolean {
-  return THEME_ACCENT_IDS.has(id)
+  // Computed per call rather than held in a module-level set: a top-level
+  // `new Set(...)` is a statement a bundler cannot prove pure, and it would keep
+  // this module in every bundle that touches the root entry.
+  return (
+    id.startsWith(THEME_ACCENT_PREFIX) &&
+    (ANSI_KEYS as readonly string[]).includes(id.slice(THEME_ACCENT_PREFIX.length))
+  )
 }
 
 /**
