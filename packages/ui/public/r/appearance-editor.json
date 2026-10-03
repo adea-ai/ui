@@ -4,9 +4,9 @@
   "title": "Appearance Editor",
   "description": "",
   "dependencies": [
-    "@adea-ai/themes@^0.9.5",
+    "@adea-ai/themes@^0.9.6",
     "@kobalte/core@^0.13.14",
-    "lucide-solid@^1.48.0"
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/button",

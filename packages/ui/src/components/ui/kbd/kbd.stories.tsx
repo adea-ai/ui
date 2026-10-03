@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { Kbd, KbdGroup } from './kbd'
+import { Button } from '../button'
+import { Kbd, KbdChord, KbdGroup } from './kbd'
 
 /**
  * Kbd.
@@ -55,6 +56,60 @@ export const Combinations: Story = {
         <Kbd>Esc</Kbd>
         <span class="text-sm">Close the active overlay</span>
       </div>
+    </div>
+  ),
+}
+
+/**
+ * The dense-row rung next to the default, so the two geometries cannot be
+ * confused. Compact drops one height step and lightens fill and weight — a
+ * solid muted cap at 16px reads heavier than the row text it sits in. `min-w`
+ * rather than `width`, so a wide cap like `Esc` stays wide.
+ */
+export const Compact: Story = {
+  render: () => (
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-4">
+        <KbdGroup>
+          <Kbd>⌘</Kbd>
+          <Kbd>K</Kbd>
+        </KbdGroup>
+        <span class="text-sm">Default — prose and tooltip size</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <KbdGroup size="compact">
+          <Kbd size="compact">⌘</Kbd>
+          <Kbd size="compact">K</Kbd>
+        </KbdGroup>
+        <span class="text-sm">Compact — rail and sidebar rows</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <Kbd size="compact">Esc</Kbd>
+        <span class="text-sm">A named key keeps its width at compact</span>
+      </div>
+    </div>
+  ),
+}
+
+/**
+ * The chord composition, and its decoration contract.
+ *
+ * One cap per drawn character — `⌘K` is two caps, `⇧⌘P` is three — which is how
+ * system menus draw chords. The chord renders `aria-hidden`, so on the button
+ * below the accessible name stays "Search projects" and the parseable
+ * `aria-keyshortcuts` stays on the control; the caps contribute to neither.
+ */
+export const Chord: Story = {
+  render: () => (
+    <div class="flex max-w-md flex-col gap-3 text-sm">
+      <p class="text-muted-foreground">
+        Every character is a cap. <KbdChord keys="⌘K" /> opens the palette, and{' '}
+        <KbdChord keys="⇧⌘P" /> switches project.
+      </p>
+      <Button variant="outline" size="sm" class="w-fit gap-2" aria-keyshortcuts="Meta+K">
+        Search projects
+        <KbdChord size="compact" keys="⌘K" />
+      </Button>
     </div>
   ),
 }

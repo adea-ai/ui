@@ -10,7 +10,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -34,7 +34,7 @@
       "title": "Alert",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -175,7 +175,7 @@
       "title": "Breadcrumb",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -247,7 +247,7 @@
       "description": "",
       "dependencies": [
         "@corvu/calendar@^0.1.2",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -297,7 +297,7 @@
       "dependencies": [
         "embla-carousel",
         "embla-carousel-solid",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -353,7 +353,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -377,7 +377,7 @@
       "title": "Code Block",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -427,7 +427,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -458,7 +458,7 @@
       "dependencies": [
         "@kobalte/core@^0.13.14",
         "cmdk-solid@^1.2.0",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/dialog",
@@ -484,7 +484,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -508,7 +508,7 @@
       "title": "Detail Panel",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -534,7 +534,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/typography",
@@ -607,7 +607,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -631,7 +631,7 @@
       "title": "Empty",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -886,7 +886,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -933,7 +933,7 @@
       "title": "Native Select",
       "description": "A themed wrapper around the browser's native `<select>` element.",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -958,7 +958,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -983,7 +983,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1056,7 +1056,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1081,7 +1081,7 @@
       "description": "",
       "dependencies": [
         "@corvu/resizable@^0.2.5",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1128,7 +1128,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1177,7 +1177,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/dialog",
@@ -1249,7 +1249,7 @@
       "title": "Spinner",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1413,7 +1413,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1561,7 +1561,7 @@
       "title": "Floating Preview",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -1689,7 +1689,7 @@
       "dependencies": [
         "@corvu/resizable@^0.2.5",
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1719,7 +1719,7 @@
       "description": "Issue-backed binary layout with stable opaque leaf owners; scoped persistence belongs to the host.",
       "dependencies": [
         "@corvu/resizable@^0.2.5",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -1786,7 +1786,7 @@
       "title": "Top Bar",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -1832,7 +1832,7 @@
       "title": "About Dialog",
       "description": "Shared app identity and version support dialog.",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -1858,7 +1858,7 @@
       "title": "Account Menu",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -1910,9 +1910,9 @@
       "title": "Appearance Editor",
       "description": "",
       "dependencies": [
-        "@adea-ai/themes@^0.9.5",
+        "@adea-ai/themes@^0.9.6",
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
@@ -1973,7 +1973,7 @@
       "description": "",
       "dependencies": [
         "class-variance-authority@^0.7.1",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/badge",
@@ -2019,7 +2019,7 @@
       "title": "Help Center",
       "description": "Shared keyboard shortcuts and project resource page.",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -2078,7 +2078,7 @@
       "title": "Scene Controls",
       "description": "Shared host-neutral scene movement, jump and zoom controls.",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button"
@@ -2137,7 +2137,7 @@
       "title": "Stat",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/typography",
@@ -2162,7 +2162,7 @@
       "title": "Tree",
       "description": "Keyboard-accessible tree rows with virtualization-aware focus handoff.",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "lib"
@@ -2191,7 +2191,7 @@
       "title": "Update Dialog",
       "description": "",
       "dependencies": [
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -2245,7 +2245,7 @@
       "description": "",
       "dependencies": [
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/action-button",
@@ -2368,9 +2368,9 @@
       "title": "Theming",
       "description": "",
       "dependencies": [
-        "@adea-ai/themes@^0.9.5",
+        "@adea-ai/themes@^0.9.6",
         "@kobalte/core@^0.13.14",
-        "lucide-solid@^1.48.0"
+        "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
         "@adea-ai/ui/appearance-editor",
@@ -2483,7 +2483,7 @@
       "title": "Class-name and token helpers",
       "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
       "dependencies": [
-        "@adea-ai/themes@^0.9.5",
+        "@adea-ai/themes@^0.9.6",
         "class-variance-authority@^0.7.1",
         "cn@^0.4.0"
       ],

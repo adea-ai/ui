@@ -127,6 +127,12 @@ const coreSamples: PackedSample[] = [
     source: 'ui/tooltip',
   },
   {
+    name: 'kbd-chord',
+    imports: "import { KbdChord } from '@adea-ai/ui/components/ui/kbd'",
+    jsx: '<p>Open <KbdChord keys="⌘K" /> and <KbdChord size="compact" keys="⇧⌘P" /></p>',
+    source: 'ui/kbd',
+  },
+  {
     name: 'conversation-transcript',
     imports:
       "import { ConversationSurface } from '@adea-ai/ui/components/conversation'; import { Button } from '@adea-ai/ui/components/ui/button'",
@@ -390,6 +396,8 @@ try {
             throw new Error('Packed Button is missing its Tailwind utility')
           if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
             throw new Error('Packed Button is missing shared control sizing')
+          if (sample.name === 'kbd-chord' && (!css.includes('.h-5') || !css.includes('.h-4')))
+            throw new Error('Packed Kbd is missing its default or compact cap height')
           if (sample.name === 'conversation-transcript' && !css.includes('.h-control-md'))
             throw new Error('Packed ConversationSurface is missing shared control sizing')
           if (
