@@ -453,6 +453,33 @@ test('the actual aggregate gate rejects failed, cancelled, missing and required 
   expect(passes({ COMPONENTS_NEEDED: 'false', COMPONENTS_RESULT: 'cancelled' })).toBe(false)
 })
 
+test('superseded runs stop heavy lanes while required aggregates still fail closed', () => {
+  const gates = Bun.YAML.parse(
+    readFileSync(new URL('../workflows/design-system-gates.yml', import.meta.url), 'utf8')
+  ) as {
+    concurrency: { group: string; 'cancel-in-progress': string | boolean }
+    jobs: Record<string, { if?: string }>
+  }
+  // Pull-request commits supersede their gates; main pushes build the Pages
+  // artifact and must not be cancelled by the next merge.
+  expect(gates.concurrency['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}")
+  const aggregates = ['registry', 'workshop-gate']
+  for (const [name, job] of Object.entries(gates.jobs)) {
+    if (name === 'changes') {
+      expect(job.if).not.toMatch(/always\(\)|cancelled\(\)/)
+      continue
+    }
+    if (aggregates.includes(name)) {
+      // A skipped required check counts as passing, so the aggregates must run
+      // in a cancelled run and fail there.
+      expect(job.if?.startsWith('always() && ')).toBe(true)
+      continue
+    }
+    expect(job.if?.startsWith('${{ !cancelled() && ')).toBe(true)
+    expect(job.if).not.toContain('always()')
+  }
+})
+
 test('Pages publishes the exact successful main build and keeps registry install routes', () => {
   const gates = Bun.YAML.parse(
     readFileSync(new URL('../workflows/design-system-gates.yml', import.meta.url), 'utf8')
