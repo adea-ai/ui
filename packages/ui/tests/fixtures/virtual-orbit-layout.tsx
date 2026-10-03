@@ -5,7 +5,8 @@ import { OrbitItem, OrbitLayout } from '../../src/components/layout/orbit-layout
 import { VirtualWindow } from '../../src/components/layout/virtual-window/virtual-window'
 import '../../src/styles/globals.css'
 
-const [points, setPoints] = createSignal(['North', 'East', 'South', 'West'])
+// OrbitItem's order: index 0 at three o'clock, then clockwise.
+const [points, setPoints] = createSignal(['East', 'South', 'West', 'North'])
 const [mode, setMode] = createSignal<'radial' | 'flow'>('radial')
 const [virtualMetrics, setVirtualMetrics] = createSignal({ totalSize: 640, offset: 160 })
 

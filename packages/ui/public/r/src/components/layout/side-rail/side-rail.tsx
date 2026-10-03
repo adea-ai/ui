@@ -205,7 +205,10 @@ export type SideRailItemProps<T extends ValidComponent = 'a'> = PolymorphicProps
      * being deleted.
      */
     label: string
-    /** A count or a dot, rendered over the icon's corner. */
+    /**
+     * A count or a dot. Expanded, it trails the label at the row's end; collapsed,
+     * it moves onto the icon's corner, so the rail never loses it.
+     */
     badge?: JSX.Element
     /** An indicator pinned to the trailing edge in the expanded form. */
     trailing?: JSX.Element
@@ -258,6 +261,7 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
         data-active={local.active ? '' : undefined}
         class={cn(
           sideRailItemClass,
+          'relative',
           local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,
           local.class
         )}
@@ -267,23 +271,32 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
         onBlur={hideTip}
         {...(rest as Record<string, unknown>)}
       >
-        <Show when={local.badge}>
-          <span class="relative flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
-            {local.children}
-            <span class="absolute -top-1 -end-1 flex items-center justify-center">
-              {local.badge}
-            </span>
-          </span>
-        </Show>
-        <Show when={!local.badge}>
-          <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
-            {local.children}
-          </span>
-        </Show>
+        <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
+          {local.children}
+        </span>
 
-        <span class="min-w-0 flex-1 truncate group-data-[collapsed=true]/rail:sr-only">
+        <span class="min-w-0 flex-1 truncate text-start group-data-[collapsed=true]/rail:sr-only">
           {local.label}
         </span>
+
+        {/*
+         * One element, two placements, because the badge is caller content and a DOM
+         * node cannot be in two places. Expanded, it is a trailing count in the row's
+         * flow, after the label — over the icon it would cover the glyph the row is
+         * recognised by. Collapsed, there is no label to trail, so it leaves the flow
+         * and pins to the icon's top-end corner: anchored to the row's centre (where
+         * the centred icon sits) and pushed out by 14px, the icon's half-width plus
+         * the 4px overhang, so a wider count grows back over the icon rather than past
+         * the rail's edge.
+         */}
+        <Show when={local.badge}>
+          <span
+            data-slot="side-rail-badge"
+            class="flex shrink-0 items-center justify-center group-data-[collapsed=true]/rail:absolute group-data-[collapsed=true]/rail:end-1/2 group-data-[collapsed=true]/rail:top-1/2 group-data-[collapsed=true]/rail:-me-3.5 group-data-[collapsed=true]/rail:-mt-3.5"
+          >
+            {local.badge}
+          </span>
+        </Show>
 
         <Show when={local.shortcut && local.trailing === undefined}>
           <span
@@ -380,7 +393,7 @@ export function SideRailButton(
         <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
           {local.children}
         </span>
-        <span class="min-w-0 flex-1 truncate group-data-[collapsed=true]/rail:sr-only">
+        <span class="min-w-0 flex-1 truncate text-start group-data-[collapsed=true]/rail:sr-only">
           {local.label}
         </span>
         <Show when={local.shortcut}>

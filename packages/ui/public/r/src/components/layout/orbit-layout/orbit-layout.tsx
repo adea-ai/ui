@@ -60,7 +60,11 @@ export function OrbitLayout(props: OrbitLayoutProps) {
 export type OrbitItemProps = Omit<ComponentProps<'div'>, 'style'> & {
   /** JSX style props are owned by this geometry primitive. */
   style?: never
-  /** Zero-based position in the rendered sequence. */
+  /**
+   * Zero-based position in the rendered sequence. Index 0 sits at three o'clock
+   * (the positive x axis) and the sequence runs clockwise, because the y axis
+   * points down the screen: with four items, 0 is east, 1 south, 2 west, 3 north.
+   */
   index: number
   /** Number of items sharing this orbit. */
   count: number

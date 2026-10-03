@@ -159,7 +159,11 @@ export function ThemePicker(props: ThemePickerProps) {
             role="radio"
             aria-checked={local.selectedId === theme.id}
             aria-label={`${theme.familyLabel} ${theme.label}`}
-            class="h-auto flex-col gap-1.5 p-0 hover:bg-transparent"
+            // `justify-start`: the options in a wrapped row stretch to its tallest
+            // member, and an option whose label has a second line (the family)
+            // is that member. Centred, every shorter option's preview dropped below
+            // its neighbours'; pinned to the top, the previews share one line.
+            class="h-auto flex-col justify-start gap-1.5 p-0 hover:bg-transparent"
             onClick={() => local.onThemeSelect(theme)}
           >
             <ThemePreview theme={theme} selected={local.selectedId === theme.id} />
