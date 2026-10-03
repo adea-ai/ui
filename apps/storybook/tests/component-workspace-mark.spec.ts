@@ -32,7 +32,9 @@ for (const theme of ['light', 'dark'] as const) {
     })
 
     for (const name of ['plugins', 'control-plane']) {
-      test(`the ${name} count badge clears the monogram and reads at 4.5:1`, async ({ page }) => {
+      test(`the ${name} count badge clears the monogram and reads at 4.5:1 in ${theme}`, async ({
+        page,
+      }) => {
         const mark = page.getByRole('button', { name, exact: true })
         const badge = mark.locator('[data-slot="workspace-mark-badge"] > *')
         await expect(badge).toBeVisible()
