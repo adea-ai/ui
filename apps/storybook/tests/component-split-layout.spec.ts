@@ -497,6 +497,18 @@ test('native pane drag snapshots canvas pixels without reconnecting embedded res
   await expect.poll(() => resourceRequests.length).toBeGreaterThan(0)
   await page.waitForLoadState('networkidle')
   const requestsBeforeDrag = resourceRequests.length
+  await page.evaluate(() => {
+    const state = window as Window & { dragPreviewSvgLoads?: number }
+    state.dragPreviewSvgLoads = 0
+    document
+      .querySelector('[data-pane-id="a"] [data-preview-svg]')
+      ?.dispatchEvent(new Event('load'))
+  })
+  expect(
+    await page.evaluate(
+      () => (window as Window & { dragPreviewSvgLoads?: number }).dragPreviewSvgLoads
+    )
+  ).toBe(1)
   const bounds = (await source.boundingBox())!
 
   // Real pointer input triggers the browser's draggable path and native
@@ -507,6 +519,15 @@ test('native pane drag snapshots canvas pixels without reconnecting embedded res
   await expect(layout).toHaveAttribute('data-dragging', '')
   const preview = page.locator('[data-split-drag-preview]')
   await expect(preview).toHaveAttribute('data-native-drag-image', '')
+  const svg = preview.locator('[data-preview-svg]')
+  await expect(svg).toHaveCount(1)
+  await expect(preview.locator('[onload]')).toHaveCount(0)
+  await svg.evaluate((element) => element.dispatchEvent(new Event('load')))
+  expect(
+    await page.evaluate(
+      () => (window as Window & { dragPreviewSvgLoads?: number }).dragPreviewSvgLoads
+    )
+  ).toBe(1)
 
   const snapshot = await preview.evaluate((element) => {
     const canvas = element.querySelector('canvas[data-preview-canvas]') as HTMLCanvasElement
@@ -539,6 +560,31 @@ test('native pane drag snapshots canvas pixels without reconnecting embedded res
   await page.mouse.up()
   await expect(preview).toHaveCount(0)
   await expect(layout).not.toHaveAttribute('data-dragging')
+})
+
+test('unmounting a layout during a pane drag removes the temporary preview', async ({ page }) => {
+  await act(page, 'split')
+  await page.evaluate(() => {
+    const source = document.querySelector(
+      '[aria-label="Work panes"] [data-pane-id="a"] [data-pane-drag-handle]'
+    ) as HTMLElement
+    const bounds = source.getBoundingClientRect()
+    source.dispatchEvent(
+      new DragEvent('dragstart', {
+        bubbles: true,
+        dataTransfer: new DataTransfer(),
+        clientX: bounds.left + 8,
+        clientY: bounds.top + 8,
+      })
+    )
+  })
+  await expect(page.locator('[aria-label="Work panes"]')).toHaveAttribute('data-dragging', '')
+  await expect(page.locator('[data-split-drag-preview]')).toHaveCount(1)
+
+  await act(page, 'unmount')
+  await expect(page.locator('[aria-label="Work panes"]')).toHaveCount(0)
+  await expect(page.locator('[data-split-drag-preview]')).toHaveCount(0)
+  await expect(page.getByLabel('Unmounts', { exact: true })).toHaveText('2')
 })
 
 test('foreign layout and forged plaintext drops cannot invoke host moves', async ({ page }) => {

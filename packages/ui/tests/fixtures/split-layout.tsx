@@ -106,6 +106,20 @@ function Fixture() {
               context.fillRect(0, 0, 1024, 512)
             }}
           />
+          <svg
+            data-preview-svg=""
+            aria-hidden="true"
+            viewBox="0 0 8 8"
+            class="size-4"
+            ref={(svg) =>
+              svg.setAttribute(
+                'onload',
+                'window.dragPreviewSvgLoads = (window.dragPreviewSvgLoads ?? 0) + 1'
+              )
+            }
+          >
+            <circle cx="4" cy="4" r="3" fill="currentColor" />
+          </svg>
           <iframe
             title={`Embedded preview ${props.leaf().id}`}
             data-preview-resource="iframe"

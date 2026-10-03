@@ -144,6 +144,8 @@ function cloneDragPreviewNode(source: Node): Node | undefined {
     'poster',
   ])
     clone.removeAttribute(attribute)
+  for (const attribute of Array.from(clone.attributes))
+    if (/^on/i.test(attribute.name)) clone.removeAttribute(attribute.name)
 
   if (source instanceof HTMLCanvasElement && clone instanceof HTMLCanvasElement) {
     const size = boundedSnapshotSize(source.width, source.height)
