@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test'
+import type { ChartOptions } from 'chart.js'
 import {
   chartOptions,
   chartSeriesColors,
   mergeChartOptions,
   resolveCssVariables,
 } from '../src/components/ui/chart/chart-options'
-import { colorTokens } from '../src/lib/tokens'
+import { colorTokens, typographyTokens } from '../src/lib/tokens'
 
 /** A scriptable option: a value Chart.js calls rather than reads. */
 const scriptableColor = () => 'red'
@@ -24,7 +25,7 @@ function referencedTokens(value: unknown): string[] {
 
 describe('chartOptions', () => {
   test('refers only to tokens the theme defines', () => {
-    const declared = new Set(colorTokens.map((token) => token.name))
+    const declared = new Set([...colorTokens, ...typographyTokens].map((token) => token.name))
     const referenced = [
       ...referencedTokens(chartOptions()),
       ...referencedTokens(chartOptions(undefined, 'radial')),
@@ -46,7 +47,10 @@ describe('chartOptions', () => {
     expect(options.scales?.['x']).toMatchObject({
       stacked: true,
       grid: { color: 'var(--border)', drawTicks: false },
-      ticks: { color: 'var(--muted-foreground)', font: { size: 10 } },
+      ticks: {
+        color: 'var(--muted-foreground)',
+        font: { family: 'var(--font-sans)', size: 'var(--text-2xs)' },
+      },
     })
     expect(options.scales?.['y']?.grid?.color).toBe('var(--border)')
   })
@@ -59,6 +63,23 @@ describe('chartOptions', () => {
       usePointStyle: true,
     })
     expect(options.plugins?.tooltip?.backgroundColor).toBe('var(--popover)')
+  })
+
+  test('sets every text in the UI face at a type-scale rung', () => {
+    const radial = chartOptions(undefined, 'radial') as ChartOptions<'polarArea'>
+    const fonts = [
+      chartOptions().scales?.['x']?.ticks?.font,
+      chartOptions().scales?.['y']?.ticks?.font,
+      radial.scales?.r?.ticks?.font,
+      radial.scales?.r?.pointLabels?.font,
+      chartOptions().plugins?.legend?.labels?.font,
+      chartOptions().plugins?.tooltip?.titleFont,
+      chartOptions().plugins?.tooltip?.bodyFont,
+      chartOptions().plugins?.tooltip?.footerFont,
+    ]
+    for (const font of fonts) {
+      expect(font).toMatchObject({ family: 'var(--font-sans)', size: 'var(--text-2xs)' })
+    }
   })
 
   test('gives a radial or scale-less chart no cartesian axes', () => {
@@ -106,6 +127,14 @@ describe('resolveCssVariables', () => {
     expect(output.nested.gradient).toBe(gradient)
     expect(output.nested.scriptable).toBe(read)
     expect(input.color).toBe('var(--chart-1)')
+  })
+
+  test('passes a numeric resolution through as a number', () => {
+    const font: Record<string, unknown> = { family: 'var(--font-sans)', size: 'var(--text-2xs)' }
+    const output = resolveCssVariables(font, (name) =>
+      name === '--text-2xs' ? 11 : name === '--font-sans' ? 'Geist, sans-serif' : undefined
+    )
+    expect(output).toEqual({ family: 'Geist, sans-serif', size: 11 })
   })
 
   test('falls back to the var() fallback, then to the string as written', () => {

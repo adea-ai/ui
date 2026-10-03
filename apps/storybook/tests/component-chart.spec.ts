@@ -52,16 +52,24 @@ type ChartSnapshot = {
   xTicks?: unknown
   xStacked?: unknown
   legendLabels?: unknown
+  xFont?: unknown
+  legendFont?: unknown
+  r?: {
+    grid: unknown
+    ticks: unknown
+    backdrop: unknown
+    font: unknown
+  }
 }
 
 /** The slice of Chart.js's registry the spec reads, typed without importing it. */
 type ChartRegistry = {
   getChart(canvas: HTMLCanvasElement): {
     data: { datasets: { backgroundColor?: unknown; borderColor?: unknown }[] }
-    scales: Record<string, unknown>
+    scales: Record<string, { options: Record<string, Record<string, unknown>> }>
     options: {
       scales?: Record<string, unknown>
-      plugins?: { legend?: { labels?: { color?: unknown } } }
+      plugins?: { legend?: { labels?: { color?: unknown; font?: unknown } } }
     }
   }
 }
@@ -73,6 +81,9 @@ function snapshot(page: Page): Promise<ChartSnapshot[]> {
     return [...document.querySelectorAll('canvas')].map((canvas) => {
       const chart = Chart.getChart(canvas)!
       const x = chart.options.scales?.['x'] as Record<string, Record<string, unknown>> | undefined
+      // The scale's own options: what Chart.js resolved and drew with, after
+      // its type defaults were merged in — not just what was passed.
+      const r = chart.scales['r']?.options
       return {
         datasetColors: chart.data.datasets.flatMap((dataset) => [
           dataset.backgroundColor,
@@ -83,6 +94,14 @@ function snapshot(page: Page): Promise<ChartSnapshot[]> {
         xTicks: x?.['ticks']?.['color'],
         xStacked: x?.['stacked'],
         legendLabels: chart.options.plugins?.legend?.labels?.color,
+        xFont: x?.['ticks']?.['font'],
+        legendFont: chart.options.plugins?.legend?.labels?.font,
+        r: r && {
+          grid: r['grid']?.['color'],
+          ticks: r['ticks']?.['color'],
+          backdrop: r['ticks']?.['backdropColor'],
+          font: r['ticks']?.['font'],
+        },
       }
     })
   })
@@ -170,6 +189,57 @@ test('draws no cartesian axes on a radial chart', async ({ page }) => {
   expect(pie!.scaleIds).toEqual([])
   expect(polar!.scaleIds).toEqual(['r'])
   expect(radar!.scaleIds).toEqual(['r'])
+})
+
+test('themes the polar area scale from the first frame and on a theme change', async ({ page }) => {
+  const polar = async () => (await snapshot(page))[4]!.r!
+  const expected = async () => ({
+    grid: await painted(page, '--border'),
+    ticks: await painted(page, '--muted-foreground'),
+    backdrop: await painted(page, '--card'),
+  })
+  // `solid-chartjs` drops `scales.r` when it creates a polar area; Chart.js's
+  // own defaults here are a grey tick on a translucent white backdrop.
+  expect(await polar()).toMatchObject(await expected())
+
+  await page.evaluate(() => document.documentElement.classList.add('dark'))
+  const dark = await expected()
+  await expect.poll(async () => (await polar()).backdrop).toBe(dark.backdrop)
+  expect(await polar()).toMatchObject(dark)
+})
+
+/** `--font-sans` as the root computes it — what the chart should paint in. */
+function fontSans(page: Page): Promise<string> {
+  return page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--font-sans').trim()
+  )
+}
+
+test('sets the chart text in the UI face and follows the font axis', async ({ page }) => {
+  const fonts = async () => {
+    const [line, , , , polar] = await snapshot(page)
+    return { x: line!.xFont, legend: line!.legendFont, r: polar!.r!.font }
+  }
+  const rootSize = await page.evaluate(() =>
+    Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+  )
+  // `--text-2xs` is 0.6875rem: the rung, in pixels, rather than Chart.js's 12px.
+  const size = 0.6875 * rootSize
+
+  const initial = await fontSans(page)
+  expect(initial).toContain('Space Grotesk')
+  for (const font of Object.values(await fonts())) {
+    expect(font).toMatchObject({ family: initial, size })
+  }
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-font', 'jetbrains-mono'))
+  const mono = await fontSans(page)
+  expect(mono).not.toBe(initial)
+  expect(mono).toContain('JetBrains Mono')
+  await expect.poll(async () => (await fonts()).x).toMatchObject({ family: mono, size })
+  for (const font of Object.values(await fonts())) {
+    expect(font).toMatchObject({ family: mono, size })
+  }
 })
 
 test('draws the frame description in the muted foreground', async ({ page }) => {

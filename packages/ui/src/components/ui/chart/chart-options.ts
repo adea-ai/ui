@@ -45,7 +45,30 @@ const furniture = {
  */
 export type ChartScaleShape = 'cartesian' | 'radial' | 'none'
 
-const tickFont = { size: 10 }
+/**
+ * The chart's type: the UI face from the font axis and a rung of the type scale,
+ * declared as tokens like the colours.
+ *
+ * Chart.js does not inherit the page's font — it paints in its own default
+ * family — so every text a chart draws names `--font-sans` explicitly, and the
+ * chart follows `data-font` the same way it follows `.dark`. Everything is
+ * `--text-2xs`, the rung `ChartLegend` and the frame's metadata already use, so
+ * a canvas legend and an HTML one beside it are the same size.
+ *
+ * Chart.js types `size` as a number of pixels. The token is a `rem` length, so
+ * it is written as `var(--text-2xs)` here and the component resolves it to
+ * pixels with the colours (see `resolveCssVariables` and `chart.tsx`); the cast
+ * is that declaration, not a number.
+ */
+function chartFont(weight?: number) {
+  return {
+    family: 'var(--font-sans)',
+    size: 'var(--text-2xs)' as unknown as number,
+    ...(weight === undefined ? {} : { weight }),
+  }
+}
+
+const tickFont = chartFont()
 
 function scalesFor(shape: ChartScaleShape): ChartOptions['scales'] {
   if (shape === 'cartesian') {
@@ -140,7 +163,7 @@ export function chartOptions(
             boxHeight: 8,
             usePointStyle: true,
             pointStyle: 'circle',
-            font: { size: 11 },
+            font: chartFont(),
           },
         },
         tooltip: {
@@ -155,8 +178,9 @@ export function chartOptions(
           boxWidth: 8,
           boxHeight: 8,
           usePointStyle: true,
-          titleFont: { size: 11, weight: 600 },
-          bodyFont: { size: 11 },
+          titleFont: chartFont(600),
+          bodyFont: chartFont(),
+          footerFont: chartFont(),
         },
       },
       scales: scalesFor(shape),
@@ -169,17 +193,21 @@ const cssVariable = /^\s*var\(\s*(--[\w-]+)\s*(?:,\s*(.*?))?\s*\)\s*$/
 
 /**
  * Replace every `var(--token)` string in `value` — options, datasets, nested
- * arrays — with what `read` returns for the token. A token `read` cannot
+ * arrays — with what `read` returns for the token, which may be a number (a
+ * length token read as pixels). A token `read` cannot
  * resolve falls back to the `var()`'s own fallback, then to the string as
  * written. Functions and class instances pass through untouched, so scriptable
  * options and gradients keep working.
  */
-export function resolveCssVariables<T>(value: T, read: (name: string) => string | undefined): T {
+export function resolveCssVariables<T>(
+  value: T,
+  read: (name: string) => string | number | undefined
+): T {
   if (typeof value === 'string') {
     const match = cssVariable.exec(value)
     if (!match) return value
     const resolved = read(match[1]!)
-    if (resolved) return resolved as T
+    if (resolved !== undefined && resolved !== '') return resolved as T
     return (match[2] ? resolveCssVariables(match[2], read) : value) as T
   }
   if (Array.isArray(value)) {
