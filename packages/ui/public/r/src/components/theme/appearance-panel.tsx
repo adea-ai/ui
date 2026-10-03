@@ -24,7 +24,8 @@ import { Heading } from '../ui/typography'
  *   2. **Themes** — one for each appearance. Both are shown at once, because the
  *      choice is per-appearance and hiding the other half makes it feel like one
  *      setting that keeps changing.
- *   3. **Accent** — adea's presets, layered on whichever theme is active.
+ *   3. **Accent** — adea's presets, then the accents the selected theme pair
+ *      carries itself, layered on whichever theme is active.
  *   4. **Font** — the interface face.
  *
  * The panel reads and writes the provider's preference and keeps no state of its
@@ -37,7 +38,7 @@ const DARK_THEMES = themesForAppearance('dark')
 
 export function AppearancePanel(props: AppearancePanelProps) {
   const [local, rest] = splitProps(props, ['class'])
-  const { selection, setSelection, resolvedAppearance } = useTheme()
+  const { selection, setSelection, resolvedAppearance, themeAccents } = useTheme()
 
   return (
     <div data-slot="appearance-panel" class={cn('flex flex-col gap-8', local.class)} {...rest}>
@@ -95,38 +96,38 @@ export function AppearancePanel(props: AppearancePanelProps) {
           </Heading>
           <p class="max-w-prose text-sm text-muted-foreground">
             Colours the interactive roles — the primary button, the focus ring, a selected row — on
-            top of the theme above. Every preset is measured against the surface it lands on, so
-            none of them can make a label unreadable.
+            top of the theme above — one of the presets, or a colour the theme carries itself. Every
+            option is measured against the surface it lands on, so none of them can make a label
+            unreadable.
           </p>
         </header>
         <div role="radiogroup" aria-label="Accent" class="flex flex-wrap gap-2">
           <For each={accentPresets}>
             {(preset) => (
-              <Button
-                as="button"
-                type="button"
-                variant="outline"
-                size="sm"
-                role="radio"
-                aria-checked={selection().accent === preset.id}
-                aria-label={preset.label}
-                class={cn({
-                  'border-ring ring-3 ring-primary-subtle': selection().accent === preset.id,
-                })}
-                onClick={() => setSelection({ accent: preset.id })}
-              >
-                <span
-                  aria-hidden="true"
-                  class="size-3 rounded-full border border-border"
-                  style={{
-                    'background-color':
-                      preset.id === 'theme'
-                        ? 'var(--primary)'
-                        : `var(--accent-${preset.id}, ${preset.dark})`,
-                  }}
-                />
-                {preset.label}
-              </Button>
+              <AccentOption
+                id={preset.id}
+                label={preset.label}
+                checked={selection().accent === preset.id}
+                swatch={
+                  preset.id === 'theme'
+                    ? 'var(--primary)'
+                    : `var(--accent-${preset.id}, ${preset.dark})`
+                }
+                onSelect={() => setSelection({ accent: preset.id })}
+              />
+            )}
+          </For>
+          {/* The theme's own accents follow the presets. Their values are the
+              theme pair's, so the swatch shows the side that is active now. */}
+          <For each={themeAccents()}>
+            {(accent) => (
+              <AccentOption
+                id={accent.id}
+                label={`Theme ${accent.label.toLowerCase()}`}
+                checked={selection().accent === accent.id}
+                swatch={resolvedAppearance() === 'dark' ? accent.dark : accent.light}
+                onSelect={() => setSelection({ accent: accent.id })}
+              />
             )}
           </For>
         </div>
@@ -160,6 +161,36 @@ export function AppearancePanel(props: AppearancePanelProps) {
         </RadioGroup>
       </section>
     </div>
+  )
+}
+
+function AccentOption(props: {
+  id: string
+  label: string
+  checked: boolean
+  swatch: string
+  onSelect: () => void
+}) {
+  return (
+    <Button
+      as="button"
+      type="button"
+      variant="outline"
+      size="sm"
+      role="radio"
+      data-accent-option={props.id}
+      aria-checked={props.checked}
+      aria-label={props.label}
+      class={cn({ 'border-ring ring-3 ring-primary-subtle': props.checked })}
+      onClick={() => props.onSelect()}
+    >
+      <span
+        aria-hidden="true"
+        class="size-3 rounded-full border border-border"
+        style={{ 'background-color': props.swatch }}
+      />
+      {props.label}
+    </Button>
   )
 }
 

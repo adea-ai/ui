@@ -77,7 +77,7 @@ Every axis is a value on the same provider, and each is stored in one preference
 | ---------- | ------------------------------------------------------------------ | ----------------- |
 | Appearance | `light`, `dark`, `system`                                          | a `dark` class    |
 | Theme      | any of the 27 catalogue ids                                        | custom properties |
-| Accent     | `theme`, or one of six presets                                     | `data-accent`     |
+| Accent     | `theme`, one of six presets, or a theme-carried `ansi-*` accent    | `data-accent`     |
 | Typeface   | `space-grotesk`, `system`, `geist`, `geist-mono`, `jetbrains-mono` | `data-font`       |
 | Density    | `comfortable`, `compact`                                           | `data-density`    |
 
@@ -190,7 +190,7 @@ they were typed:
 | `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.4 kB    | Kobalte tooltip                       |
 | `@adea-ai/ui` → `NavigationMenu`                                | 56.0 kB    | Kobalte navigation menu               |
 | `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _347.1 kB_ | — and `Button` is 6.3% of it          |
+| _root plus chart and carousel entries_                          | _348.3 kB_ | — and `Button` is 6.3% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the

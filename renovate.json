@@ -17,8 +17,8 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
-      "description": "This repository is the source of the @adea-ai/* packages: never self-update an internal package.",
-      "matchPackageNames": ["/^@adea-ai//"],
+      "description": "This repository publishes @adea-ai/ui, so never self-update it. Other @adea-ai/* packages (e.g. @adea-ai/themes, published from adea-ai/themes) are external dependencies here and must keep receiving updates — a 0.x caret range does not reach the next minor on its own.",
+      "matchPackageNames": ["@adea-ai/ui"],
       "enabled": false
     },
     {

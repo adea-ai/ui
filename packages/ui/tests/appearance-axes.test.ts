@@ -1,6 +1,23 @@
 import { describe, expect, test } from 'bun:test'
-import { ACCENTS, getAccent } from '@adea-ai/themes'
-import { accentVariables, themeById } from '#lib/themes'
+import {
+  ACCENTS,
+  CONTRAST_FLOORS,
+  contrastRatio as ratioOf,
+  getAccent,
+  getTheme,
+  parseColor,
+  themeAccentPresets,
+  themesByAppearance,
+} from '@adea-ai/themes'
+import {
+  accentVariables,
+  appearancePreviewThemes,
+  isThemeAccentId,
+  resolveAccentPreset,
+  themeAccentsFor,
+  themeById,
+  withAccent,
+} from '#lib/themes'
 import { densityTokens } from '../src/lib/tokens'
 import { THEME_CSS, valueOf } from './helpers/theme-css'
 
@@ -140,6 +157,142 @@ describe('the accent axis reaches the screen', () => {
     for (const preset of ACCENTS) {
       expect(getAccent(preset.id), `${preset.id} is offered but not resolvable`).toBeDefined()
     }
+  })
+})
+
+/**
+ * The accents a theme carries.
+ *
+ * Since `@adea-ai/themes` 0.9 a light/dark pair offers its own accent-shaped ANSI
+ * colours beside the six presets. They have no `[data-accent]` block — the value
+ * depends on the pair — so the only path to the screen is `accentVariables`, and
+ * these tests are what keep it honest: the value is the pair's, the label is
+ * measured, and a slot the pair cannot offer falls back instead of blanking.
+ */
+/** Contrast between two CSS colour strings, as the catalogue measures it. */
+const contrastRatio = (a: string, b: string) => ratioOf(parseColor(a)!, parseColor(b)!)
+
+describe('theme-carried accents reach the screen', () => {
+  const pair = { lightThemeId: 'catppuccin-latte', darkThemeId: 'catppuccin-mocha' }
+  const latte = getTheme(pair.lightThemeId)!
+  const mocha = getTheme(pair.darkThemeId)!
+
+  test("the offered accents are the catalogue's, for the selected pair", () => {
+    const offered = themeAccentsFor(pair.lightThemeId, pair.darkThemeId)
+    expect(offered.length).toBeGreaterThan(0)
+    expect(offered).toEqual(themeAccentPresets(latte, mocha))
+    for (const accent of offered) expect(isThemeAccentId(accent.id)).toBe(true)
+  })
+
+  test("a theme accent resolves to the pair's value in each appearance", () => {
+    for (const accent of themeAccentsFor(pair.lightThemeId, pair.darkThemeId)) {
+      expect(accentVariables(accent.id, 'light', pair)?.['--primary']).toBe(accent.light)
+      expect(accentVariables(accent.id, 'dark', pair)?.['--primary']).toBe(accent.dark)
+    }
+  })
+
+  test('the same id follows the theme: a different pair gives its own blue', () => {
+    const other = { lightThemeId: 'gruvbox-light', darkThemeId: 'gruvbox-dark' }
+    const here = accentVariables('ansi-blue', 'dark', pair)?.['--primary']
+    const there = accentVariables('ansi-blue', 'dark', other)?.['--primary']
+    expect(here).toBeDefined()
+    expect(there).toBeDefined()
+    expect(there).not.toBe(here)
+  })
+
+  test('a slot the pair does not offer, or a non-slot id, falls back to the theme', () => {
+    // Red is never an accent slot, so no pair offers it; it is still a stored-id
+    // shape the provider keeps, and it must resolve to nothing rather than a colour.
+    expect(isThemeAccentId('ansi-red')).toBe(true)
+    expect(accentVariables('ansi-red', 'dark', pair)).toBeUndefined()
+    expect(isThemeAccentId('ansi-')).toBe(false)
+    expect(isThemeAccentId('blue')).toBe(false)
+    expect(resolveAccentPreset('ansi-chartreuse', latte, mocha)).toBeUndefined()
+  })
+
+  test('a preset still resolves through the pair-aware path', () => {
+    expect(resolveAccentPreset('violet', latte, mocha)).toEqual(getAccent('violet'))
+    expect(accentVariables('violet', 'dark', pair)).toEqual(accentVariables('violet', 'dark'))
+  })
+
+  /**
+   * Contrast, measured rather than inherited. The catalogue enforces its floors
+   * when it offers a slot; this pins that the label and canvas pairings the
+   * provider actually writes clear them, across every theme of each appearance
+   * paired with the other appearance's default.
+   */
+  test('every offered theme accent carries a legible label and clears the raised floor', () => {
+    const pairs = [
+      ...themesByAppearance('light').map((theme) => [theme.id, 'adea-dark'] as const),
+      ...themesByAppearance('dark').map((theme) => ['adea-light', theme.id] as const),
+    ]
+    let measured = 0
+    for (const [lightThemeId, darkThemeId] of pairs) {
+      for (const accent of themeAccentsFor(lightThemeId, darkThemeId)) {
+        for (const appearance of ['light', 'dark'] as const) {
+          const roles = accentVariables(accent.id, appearance, { lightThemeId, darkThemeId })!
+          const canvas = getTheme(appearance === 'light' ? lightThemeId : darkThemeId)!.colors
+            .background
+          const where = `${accent.id} on ${lightThemeId}/${darkThemeId} (${appearance})`
+          expect(
+            contrastRatio(roles['--primary-foreground']!, roles['--primary']!),
+            `${where}: label`
+          ).toBeGreaterThanOrEqual(CONTRAST_FLOORS.accentForeground)
+          expect(
+            contrastRatio(roles['--primary']!, canvas),
+            `${where}: canvas`
+          ).toBeGreaterThanOrEqual(CONTRAST_FLOORS.accentRaised)
+          measured += 1
+        }
+      }
+    }
+    expect(measured).toBeGreaterThan(0)
+  })
+})
+
+describe('the appearance editor adapter', () => {
+  test('preview themes are canonical records, with the accent laid over both', () => {
+    const selection = { lightThemeId: 'adea-light', darkThemeId: 'adea-dark', accent: 'violet' }
+    const { lightTheme, darkTheme } = appearancePreviewThemes(selection)
+    const violet = getAccent('violet')!
+    expect(lightTheme.id).toBe('adea-light')
+    expect(darkTheme.id).toBe('adea-dark')
+    // The roles the editor's miniatures read and the shadcn projection does not carry.
+    expect(darkTheme.colors.surfaceActive).toBe(getTheme('adea-dark')!.colors.surfaceActive)
+    expect(darkTheme.colors.textSubtle).toBe(getTheme('adea-dark')!.colors.textSubtle)
+    expect(lightTheme.colors.accent).toBe(violet.light)
+    expect(darkTheme.colors.accent).toBe(violet.dark)
+    expect(
+      contrastRatio(darkTheme.colors.accentForeground, darkTheme.colors.accent)
+    ).toBeGreaterThanOrEqual(CONTRAST_FLOORS.accentForeground)
+  })
+
+  test('a theme accent and the theme default resolve as the provider resolves them', () => {
+    const base = { lightThemeId: 'gruvbox-light', darkThemeId: 'gruvbox-dark' }
+    const offered = themeAccentsFor(base.lightThemeId, base.darkThemeId)[0]!
+    const tinted = appearancePreviewThemes({ ...base, accent: offered.id })
+    expect(tinted.darkTheme.colors.accent).toBe(offered.dark)
+    expect(tinted.lightTheme.colors.accent).toBe(offered.light)
+    const plain = appearancePreviewThemes({ ...base, accent: 'theme' })
+    expect(plain.darkTheme).toBe(getTheme('gruvbox-dark')!)
+    expect(appearancePreviewThemes({ ...base, accent: 'ansi-red' }).darkTheme).toBe(
+      getTheme('gruvbox-dark')!
+    )
+  })
+
+  test('unknown theme ids fall back to the defaults rather than to nothing', () => {
+    const { lightTheme, darkTheme } = appearancePreviewThemes({
+      lightThemeId: 'gone',
+      darkThemeId: 'also-gone',
+      accent: 'theme',
+    })
+    expect(lightTheme.id).toBe('adea-light')
+    expect(darkTheme.id).toBe('adea-dark')
+  })
+
+  test('withAccent without an accent is the identity', () => {
+    const theme = getTheme('nord') ?? getTheme('adea-dark')!
+    expect(withAccent(theme, undefined)).toBe(theme)
   })
 })
 

@@ -1905,7 +1905,7 @@
       "title": "Appearance Editor",
       "description": "",
       "dependencies": [
-        "@adea-ai/themes@^0.8.0",
+        "@adea-ai/themes@^0.9.5",
         "@kobalte/core@^0.13.14",
         "lucide-solid@^1.48.0"
       ],
@@ -2351,6 +2351,7 @@
       "title": "Theming",
       "description": "",
       "dependencies": [
+        "@adea-ai/themes@^0.9.5",
         "lucide-solid@^1.48.0"
       ],
       "registryDependencies": [
@@ -2458,7 +2459,7 @@
       "title": "Class-name and token helpers",
       "description": "The private helpers the components import: the class-name merge, the variant recipes, the token manifest and the theme bridge. Installed automatically as a peer of any component that needs it.",
       "dependencies": [
-        "@adea-ai/themes@^0.8.0",
+        "@adea-ai/themes@^0.9.5",
         "class-variance-authority@^0.7.1",
         "cn@^0.4.0"
       ],
@@ -2493,6 +2494,11 @@
           "path": "src/lib/overlay.ts",
           "type": "registry:lib",
           "target": "lib/overlay.ts"
+        },
+        {
+          "path": "src/lib/theme-accents.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-accents.ts"
         },
         {
           "path": "src/lib/themes.ts",
