@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.104.1](https://github.com/adea-ai/ui/compare/v0.104.0...v0.104.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* keep update dialogs within narrow viewports ([#301](https://github.com/adea-ai/ui/issues/301)) ([38abcb8](https://github.com/adea-ai/ui/commit/38abcb8a77e125573d75caa0cfca707657ff060f))
+
 ## [0.104.0](https://github.com/adea-ai/ui/compare/v0.103.1...v0.104.0) (2026-10-03)
 
 
