@@ -94,7 +94,7 @@ export function AboutDialog(props: AboutDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent
-        class="w-96"
+        class="w-full max-w-96"
         onKeyDown={(event: KeyboardEvent) => {
           // Tooltip help on the identity actions cannot trap Escape in this popup.
           if (event.key === 'Escape' && !event.defaultPrevented) {

@@ -21,6 +21,7 @@ function Fixture() {
   const [hidden, setHidden] = createSignal(false)
   const [moves, setMoves] = createSignal(0)
   const [hostPresentation, setHostPresentation] = createSignal(false)
+  const [dragPreviewContent, setDragPreviewContent] = createSignal(false)
   const [hostState, setHostState] = createSignal(
     splitPane(createLayoutState({ kind: 'leaf', id: 'host-a' }), 'host-a', {
       direction: 'row',
@@ -78,6 +79,7 @@ function Fixture() {
     }
     if (detail === 'hidden-mount') setVisible(true)
     if (detail === 'host-presentation') setHostPresentation(true)
+    if (detail === 'drag-preview-content') setDragPreviewContent(true)
     if (detail === 'resize') setState((s) => resizeSplit(s, 'ab', 0.7))
   }
   window.addEventListener('layout-fixture', act)
@@ -85,7 +87,51 @@ function Fixture() {
   function Content(props: { leaf: Accessor<SplitLayoutLeaf> }) {
     setMounts((n) => n + 1)
     onCleanup(() => setUnmounts((n) => n + 1))
-    return <textarea aria-label={`Editor ${props.leaf().id}`} />
+    return (
+      <Show
+        when={dragPreviewContent()}
+        fallback={<textarea aria-label={`Editor ${props.leaf().id}`} />}
+      >
+        <div class="flex min-h-0 min-w-0 flex-col gap-1">
+          <canvas
+            aria-label={`Terminal canvas ${props.leaf().id}`}
+            data-preview-canvas=""
+            width="1024"
+            height="512"
+            class="size-4"
+            ref={(canvas) => {
+              const context = canvas.getContext('2d')
+              if (!context) return
+              context.fillStyle = 'rgb(18, 52, 86)'
+              context.fillRect(0, 0, 1024, 512)
+            }}
+          />
+          <svg
+            data-preview-svg=""
+            aria-hidden="true"
+            viewBox="0 0 8 8"
+            class="size-4"
+            ref={(svg) =>
+              svg.setAttribute(
+                'onload',
+                'window.dragPreviewSvgLoads = (window.dragPreviewSvgLoads ?? 0) + 1'
+              )
+            }
+          >
+            <circle cx="4" cy="4" r="3" fill="currentColor" />
+          </svg>
+          <iframe
+            title={`Embedded preview ${props.leaf().id}`}
+            data-preview-resource="iframe"
+            src="https://drag-preview.invalid/frame"
+          />
+          <video data-preview-resource="video" src="https://drag-preview.invalid/video.mp4" />
+          <audio data-preview-resource="audio" src="https://drag-preview.invalid/audio.mp3" />
+          <object data-preview-resource="object" data="https://drag-preview.invalid/object.bin" />
+          <embed data-preview-resource="embed" src="https://drag-preview.invalid/embed.bin" />
+        </div>
+      </Show>
+    )
   }
   return (
     <main class="h-screen p-4">

@@ -205,3 +205,41 @@ test('narrow touch users can expand categories and reach every catalog card', as
     await context.close()
   }
 })
+
+for (const width of [320, 768, 1440]) {
+  test(`grouped detail fields share a padded outline at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.getByRole('button', { name: 'Group detail fields', exact: true }).click()
+    await page.locator('[data-catalog-entry-id="calendar"]').click()
+    const group = page.locator('[data-catalog-detail-sections]')
+    await expect(group).toHaveAttribute('data-layout', 'columns')
+    const geometry = await group.evaluate((element) => {
+      const style = getComputedStyle(element)
+      const bounds = element.getBoundingClientRect()
+      return {
+        padding: parseFloat(style.paddingTop),
+        border: parseFloat(style.borderTopWidth),
+        overflow: element.scrollWidth - element.clientWidth,
+        children: Array.from(element.children).map((child) => {
+          const rect = child.getBoundingClientRect()
+          return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom }
+        }),
+        top: bounds.top,
+      }
+    })
+    expect(geometry.children).toHaveLength(3)
+    const [first, second] = geometry.children
+    if (!first || !second) throw new Error('Grouped detail fields are missing')
+    expect(geometry.padding).toBeGreaterThan(0)
+    expect(geometry.border).toBeGreaterThan(0)
+    expect(geometry.overflow).toBeLessThanOrEqual(1)
+    expect(first.y - geometry.top).toBeGreaterThanOrEqual(geometry.padding)
+    if (width < 768) expect(second.y).toBeGreaterThanOrEqual(first.bottom)
+    else {
+      expect(Math.abs(first.y - second.y)).toBeLessThanOrEqual(1)
+      expect(second.x).toBeGreaterThanOrEqual(first.right)
+    }
+    const results = await new AxeBuilder({ page }).include('[data-catalog-detail]').analyze()
+    expect(results.violations).toEqual([])
+  })
+}

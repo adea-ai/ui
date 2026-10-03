@@ -298,3 +298,26 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Marketplace: Story = {}
+
+export const GroupedDetail: Story = {
+  render: () => (
+    <CatalogDetail
+      title="Workspace tools"
+      description="A verified bundle with contextual capabilities and an optional connection."
+      category="Developer tools"
+      publisher="Adea"
+      publishedByLabel={(publisher) => `Published by ${publisher}`}
+      sectionsLayout="columns"
+    >
+      <CatalogDetailSection title="Capabilities">
+        <p>Read project files and inspect browser sessions.</p>
+      </CatalogDetailSection>
+      <CatalogDetailSection title="Connection">
+        <p>Connect a workspace account to enable approved actions.</p>
+      </CatalogDetailSection>
+      <CatalogDetailSection title="Bundle">
+        <p>Includes the browser, source control, and workspace tools.</p>
+      </CatalogDetailSection>
+    </CatalogDetail>
+  ),
+}

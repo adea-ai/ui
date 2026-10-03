@@ -4,6 +4,7 @@ import { AboutDialog } from '../../src/components/composites/about-dialog'
 import { HelpCenter } from '../../src/components/composites/help-center'
 import { ModalDialog } from '../../src/components/ui/modal-dialog'
 import { AccountMenu, createAppMenuItems } from '../../src/components/composites/account-menu'
+import { NativeSelect } from '../../src/components/ui/native-select'
 import {
   UpdateDialog,
   type UpdateAdapter,
@@ -28,6 +29,7 @@ function Fixture() {
   const [deferCancellation, setDeferCancellation] = createSignal(false)
   const [cancelCalls, setCancelCalls] = createSignal(0)
   const [statusCalls, setStatusCalls] = createSignal(0)
+  const [channel, setChannel] = createSignal('stable')
   let finishCancel: (() => void) | undefined
   let opener: HTMLButtonElement | undefined
   let snapshot: UpdateState = {
@@ -127,6 +129,34 @@ function Fixture() {
         appIcon="/app-icon.svg"
         open={updates()}
         onOpenChange={setUpdates}
+        channelControl={({ disabled, recheck }) => (
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex min-w-0 flex-col gap-1">
+              <label for="support-update-channel" class="text-sm font-medium">
+                Update channel
+              </label>
+              <p class="text-sm text-muted-foreground">
+                Choose which signed releases this app checks for.
+              </p>
+            </div>
+            <NativeSelect
+              id="support-update-channel"
+              value={channel()}
+              disabled={disabled()}
+              onChange={(event) => {
+                const next = event.currentTarget.value
+                setChannel(next)
+                void recheck(async () => {
+                  setChannel(next)
+                })
+              }}
+            >
+              <option value="stable">Stable</option>
+              <option value="pre-release">Pre-release</option>
+              <option value="dev">Dev</option>
+            </NativeSelect>
+          </div>
+        )}
       />
       <HelpCenter
         appName="Cortana"
