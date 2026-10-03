@@ -122,6 +122,7 @@ const longNotices = Array.from({ length: 18 }, (_, index) => ({
 }))
 
 function Fixture() {
+  const [groupedDetails, setGroupedDetails] = createSignal(false)
   const [tab, setTab] = createSignal('discover')
   const [query, setQuery] = createSignal('')
   const [selectedId, setSelectedId] = createSignal<string | null>(null)
@@ -153,6 +154,7 @@ function Fixture() {
   return (
     <main class="flex h-screen min-w-0 flex-col gap-3 p-4">
       <div class="flex flex-wrap gap-2">
+        <Button onClick={() => setGroupedDetails(true)}>Group detail fields</Button>
         <Button
           onClick={() => {
             setLongMessages(false)
@@ -291,6 +293,7 @@ function Fixture() {
         }}
         renderDetail={(record) => (
           <CatalogDetail
+            sectionsLayout={groupedDetails() ? 'columns' : 'stacked'}
             title={record.name}
             description={record.description}
             category={record.category}
@@ -330,6 +333,14 @@ function Fixture() {
                 Workspace approval is required before this application can be enabled.
               </p>
             </CatalogDetailSection>
+            <Show when={groupedDetails()}>
+              <CatalogDetailSection title="Bundle">
+                <p class="text-sm">
+                  Source:
+                  https://example.com/catalog/published/workspace-tools/0123456789abcdef0123456789abcdef
+                </p>
+              </CatalogDetailSection>
+            </Show>
           </CatalogDetail>
         )}
       />
