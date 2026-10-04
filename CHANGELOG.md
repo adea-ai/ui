@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.108.0](https://github.com/adea-ai/ui/compare/v0.107.0...v0.108.0) (2026-10-04)
+
+
+### Features
+
+* share contextual sidebar and pixel resize controls ([#322](https://github.com/adea-ai/ui/issues/322)) ([32af33d](https://github.com/adea-ai/ui/commit/32af33d8b4887057c26491ce8b4a5a133d2e9e3c))
+
+
+### Bug Fixes
+
+* **lint:** require tooltips for shared icon-only actions ([#321](https://github.com/adea-ai/ui/issues/321)) ([3de71f4](https://github.com/adea-ai/ui/commit/3de71f4d3954d1611f745a1844ecf9c1695a5ac3))
+
 ## [0.107.0](https://github.com/adea-ai/ui/compare/v0.106.2...v0.107.0) (2026-10-04)
 
 
