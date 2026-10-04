@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.107.0](https://github.com/adea-ai/ui/compare/v0.106.2...v0.107.0) (2026-10-04)
+
+
+### Features
+
+* **sheet:** docked inset panel, reachable menus inside dialogs, tinted status glyphs ([#315](https://github.com/adea-ai/ui/issues/315)) ([568eef4](https://github.com/adea-ai/ui/commit/568eef4e420c9ef1dffded4baf0b34008926115f))
+
 ## [0.106.2](https://github.com/adea-ai/ui/compare/v0.106.1...v0.106.2) (2026-10-03)
 
 
