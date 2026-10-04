@@ -52,6 +52,18 @@ describe('registry', () => {
     ).toContain('Copyright (c) 2026 shadcn')
   })
 
+  test('keeps sidebar navigation independent of the contextual sheet', () => {
+    const sidebar = registryItems.find((item) => item.name === 'sidebar-nav')!
+    const contextual = registryItems.find((item) => item.name === 'contextual-sidebar')!
+    const ruler = registryItems.find((item) => item.name === 'pixel-resize-handle')!
+    expect(sidebar.registryDependencies).toContain('@adea-ai/ui/pixel-resize-handle')
+    expect(sidebar.registryDependencies).not.toContain('@adea-ai/ui/contextual-sidebar')
+    expect(contextual.registryDependencies).toContain('@adea-ai/ui/sidebar-nav')
+    expect(ruler.registryDependencies).toContain('@adea-ai/ui/resizable')
+    expect(ruler.registryDependencies).not.toContain('@adea-ai/ui/sidebar-nav')
+    expect(ruler.registryDependencies).not.toContain('@adea-ai/ui/contextual-sidebar')
+  })
+
   test('covers every component folder, plus the theme', () => {
     const names = registryItems.map((item) => item.name)
 

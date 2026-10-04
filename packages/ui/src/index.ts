@@ -90,6 +90,7 @@ export * from './components/layout/page'
 export * from './components/layout/panel'
 export * from './components/layout/side-rail'
 export * from './components/layout/sidebar-nav'
+export * from './components/layout/contextual-sidebar'
 export * from './components/layout/status-bar'
 export * from './components/layout/top-bar'
 

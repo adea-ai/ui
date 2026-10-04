@@ -1,0 +1,82 @@
+import { Canvas, Meta } from '@storybook/addon-docs/blocks'
+import * as ContextualSidebarStories from './contextual-sidebar.stories'
+
+<Meta of={ContextualSidebarStories} />
+
+# Contextual sidebar
+
+`ContextualSidebar` supplies the shared navigation shell for views that need a
+secondary column. It owns the header/content/footer geometry, desktop resize
+handle, responsive modal sheet, and focus-return wiring. The caller supplies the
+view-specific navigation rows and retains open state, width persistence, and
+layout authority.
+
+<Canvas of={ContextualSidebarStories.ResponsiveNavigation} />
+
+## Host-owned layout contract
+
+The shell receives a controlled `width` and reports `onWidthChange` while the
+separator moves and `onWidthCommit` when the user finishes. The host must project
+the same value into both the sidebar's grid track and the top-bar divider, and
+persist it in the app adapter. The library does not read storage or mutate an
+ancestor layout. On desktop, `open` also remains controlled: set the host grid
+track and the top-bar segment to zero when closed. `inert`, `aria-hidden`, the
+`data-open` marker, and the resize affordance follow the controlled state, but
+the host owns the surrounding shell geometry.
+
+The example uses 272px by default and bounds the width to 208–448px. `PixelResizeHandle`
+is also exported as an edge ruler for app-owned utility panes:
+
+```tsx
+import { PixelResizeHandle } from '@adea-ai/ui/components/layout/contextual-sidebar'
+
+;<PixelResizeHandle
+  side="right"
+  value={utilityWidth()}
+  minimum={208}
+  maximum={448}
+  label="Resize utility panel"
+  controls="utility-panel"
+  onChange={setUtilityWidth}
+  onCommit={persistUtilityWidth}
+/>
+```
+
+The right-edge ruler uses the same range and accessible pixel values as the left
+sidebar ruler; the host still owns the panel's actual width.
+
+## Mobile navigation
+
+At widths up to 48rem, the sidebar is rendered in the shared modal `Sheet`.
+Pass a stable `restoreFocusRef` when a toolbar button opens it. Supply
+`wideViewportAtLoad` from the app's viewport seed: a wide-loaded stale `open`
+value is cleared if the view mounts after the viewport becomes narrow, while an
+open value from a narrow boot is preserved. The viewport crossing closes a
+desktop-expanded sidebar before the modal mounts.
+
+The render context contains `mobile` and `portalMount()`. Pass that mount target
+to nested menus or popovers so their content remains inside the modal's
+accessibility tree. Views can also avoid focus-triggered tooltip layers inside
+the sheet when those layers would intercept Escape. The content slot remains
+view-specific; a generic sidebar does not infer domain entities or runtime
+authority.
+
+## Source and ownership
+
+This composition reuses the published `SidebarNav`, `Sheet`, and resizable
+primitives. It contains no application imports or copied donor component code.
+The host adapter owns the navigation data, selected item, route actions,
+archive semantics, preference storage, and app-shell width projection. A view
+without native room/character data should not manufacture that mapping to fill
+the slot.
+
+The standalone `PixelResizeHandle` is also available from
+`@adea-ai/ui/components/layout/pixel-resize-handle`. Its `side` is a physical
+edge, independent of the host's text direction. Left/right arrows follow the
+visible divider; Home/End choose the pane's minimum/maximum width. Registration,
+collapse, and canceled pointer gestures do not commit a new preference.
+
+The pixel ruler keeps Corvu's keyboard and geometry behavior. Its local pointer
+capture ends on pointer up, cancellation, lost capture, blur, or unmount. This
+fills Corvu 0.2.5's missing native-cancellation coverage without starting that
+version's global pointer-drag handler.

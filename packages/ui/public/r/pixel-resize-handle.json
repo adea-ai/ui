@@ -1,0 +1,23 @@
+{
+  "name": "pixel-resize-handle",
+  "type": "registry:ui",
+  "title": "Pixel Resize Handle",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/resizable",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/pixel-resize-handle/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/pixel-resize-handle/index.ts"
+    },
+    {
+      "path": "src/components/layout/pixel-resize-handle/pixel-resize-handle.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/pixel-resize-handle/pixel-resize-handle.tsx"
+    }
+  ]
+}

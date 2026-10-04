@@ -114,6 +114,9 @@ jobs:
       - name: Verify the publishable archive
         run: bun run pack:check
 
+      - name: Verify the packed lint plugin with real Oxlint canaries
+        run: bun run check:packed-lint
+
       # The packed browser contracts run in independent jobs below, against this
       # exact build. The artifact is scoped to this workflow run and expires after
       # a day; it is not reused by later commits or workflow attempts.

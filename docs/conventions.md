@@ -80,13 +80,29 @@ override; consumer files must not use inline suppressions or broad path patterns
 
 The opt-in `adea/require-action-button-tooltip` rule covers shared `Button`
 variants with `size="icon-2xs"`, `"icon-xs"`, `"icon-sm"`, `"icon-md"`, `"icon-lg"`,
-`"icon-xl"`, or `"icon-2xl"`, including polymorphic triggers
-whose `as` prop names the shared `Button`. Use the shared `ActionButton` with a
-supplied nonblank `tooltip`; keep an `aria-label` on the control because the
-tooltip explains the action rather than naming it. The rule tracks named import
-aliases from the shared Button and ActionButton modules and reads literal object
-spreads. Dynamic size or tooltip values remain a review boundary because their
-runtime values cannot be established statically.
+`"icon-xl"`, or `"icon-2xl"`, plus shared `Button` and `ActionButton` elements
+whose statically inspectable children are only imported `lucide-solid` icons,
+raw SVG, whitespace, fragments, or spans containing those forms without content
+overrides. It also checks
+polymorphic triggers whose `as` prop names the shared `Button` or `ActionButton`.
+Use the shared `ActionButton` with a supplied nonblank `tooltip`; keep an
+`aria-label` on the control because the tooltip explains the action rather than
+naming it. Visible text children keep a button outside the icon-only check.
+The rule resolves named imports, aliases, and namespace imports of the shared
+controls, plus named or namespace imports of Lucide icons.
+Dynamic children, custom component wrappers, spans with `children` or HTML-content
+override props, and prop spreads that may supply or replace children remain a
+review boundary; the rule does not execute Solid expressions or infer what a
+component renders. Dynamic size or tooltip values also remain a review boundary
+because their runtime values cannot be established statically.
+
+The lint plugin suite exercises the real Oxlint CLI. `bun run check:packed-lint`
+runs those same canaries against the actual npm archive after the library build;
+`verify` and the Registry CI gate include it. By default the direct test command builds the
+source plugin; set `ADEA_UI_LINT_PLUGIN` to an extracted package's exported
+`./lint` entry to run the same canaries against the published artifact. That
+mode loads the supplied module directly and never rebuilds or falls back to
+source. `ADEA_OXLINT_BIN` may select the consumer's installed Oxlint binary.
 
 ---
 

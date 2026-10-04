@@ -17,7 +17,7 @@ import { cn } from '../../../lib/utils'
  * adjusted from the keyboard; a bare `cursor-col-resize` div cannot.
  */
 /**
- * Whether the group was given `initialSizes`. Those are corvu's to apply, and a
+ * Whether the group was given `initialSizes` or controlled `sizes`. Those are corvu's to apply, and a
  * panel's own `initialSize` overrides them — so an unsized panel must not invent
  * one when the group already has an answer.
  */
@@ -27,7 +27,9 @@ export function ResizablePanelGroup(props: ComponentProps<typeof Resizable> & { 
   const [local, rest] = splitProps(props, ['class'])
 
   return (
-    <GroupSizesContext.Provider value={() => rest.initialSizes !== undefined}>
+    <GroupSizesContext.Provider
+      value={() => rest.initialSizes !== undefined || rest.sizes !== undefined}
+    >
       <Resizable
         class={cn('flex size-full data-[orientation=vertical]:flex-col', local.class)}
         {...rest}

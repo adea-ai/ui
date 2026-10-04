@@ -9,6 +9,13 @@ import '../../src/styles/globals.css'
 function Fixture() {
   return (
     <main class="grid gap-4 p-4">
+      <div data-testid="controlled" class="h-48 w-96">
+        <ResizablePanelGroup sizes={[0.3, 0.7]}>
+          <ResizablePanel>Controlled files</ResizablePanel>
+          <ResizableHandle label="Resize controlled panels" />
+          <ResizablePanel>Controlled editor</ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
       <div data-testid="horizontal" class="h-48 w-96">
         <ResizablePanelGroup>
           <ResizablePanel initialSize={0.28}>Files</ResizablePanel>

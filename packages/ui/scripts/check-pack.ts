@@ -60,7 +60,9 @@ const entryPoints = [
   'package.json',
   'dist/NOTICE',
   'dist/LICENSE',
-  ...(manifest.files ?? []).filter((entry: string) => entry.endsWith('.css')),
+  ...(manifest.files ?? []).filter(
+    (entry: string) => !entry.startsWith('!') && entry.endsWith('.css')
+  ),
 ]
 
 // Expand the public conditions against source files, not against whatever the
