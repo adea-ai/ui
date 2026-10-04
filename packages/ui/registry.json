@@ -568,6 +568,7 @@
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -1804,7 +1805,7 @@
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/button",
+        "@adea-ai/ui/action-button",
         "lib"
       ],
       "files": [

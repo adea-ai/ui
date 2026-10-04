@@ -15,6 +15,7 @@ import {
   overlayTitle,
 } from '#lib/overlay'
 import { cn } from '#lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip'
 
 type FocusCycle = {
   content: HTMLElement
@@ -290,16 +291,22 @@ export function DialogContent(props: DialogContentProps) {
         >
           {local.children}
           <Show when={local.closeButton !== false}>
-            <KobalteDialog.CloseButton
-              aria-label="Close"
-              class={cn(
-                'absolute top-3.5 end-3.5 rounded-md p-1 text-muted-foreground',
-                'transition-colors ease-out hover:bg-surface-hover hover:text-foreground',
-                'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle outline-none'
-              )}
-            >
-              {local.closeButton ?? <X class="size-4" />}
-            </KobalteDialog.CloseButton>
+            {/* The corner close is icon-only, so it carries the shared tooltip
+               treatment while its accessible name stays "Close". */}
+            <Tooltip>
+              <TooltipTrigger
+                as={KobalteDialog.CloseButton}
+                aria-label="Close"
+                class={cn(
+                  'absolute top-3.5 end-3.5 rounded-md p-1 text-muted-foreground',
+                  'transition-colors ease-out hover:bg-surface-hover hover:text-foreground',
+                  'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle outline-none'
+                )}
+              >
+                {local.closeButton ?? <X class="size-4" />}
+              </TooltipTrigger>
+              <TooltipContent>Close dialog.</TooltipContent>
+            </Tooltip>
           </Show>
         </KobalteDialogContent>
       </div>

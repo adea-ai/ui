@@ -10,7 +10,7 @@ import {
   useContext,
 } from 'solid-js'
 import { isServer } from 'solid-js/web'
-import { tooltipTip } from '../../../lib/overlay'
+import { tooltipTip, topLayerProps } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -397,6 +397,11 @@ export function TooltipContent(props: TooltipContentProps) {
           invokeEventHandler(local.onPointerDownOutside, event)
           if (!event.defaultPrevented) interaction?.markCloseIntent()
         }}
+        // A tooltip opened from inside a modal dialog is part of that dialog's
+        // surface, so it carries the same top-layer exemption as a menu or a
+        // popover — without it the dialog's hide-outside observer aria-hides
+        // the tip while it is on screen.
+        {...topLayerProps}
         {...rest}
       >
         {local.children}

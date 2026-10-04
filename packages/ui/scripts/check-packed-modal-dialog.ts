@@ -178,7 +178,9 @@ export function PackedDialogConsumer() {
       "@import '@adea-ai/ui/base.css';",
       "@source './modal.tsx';",
       "@source './sheet.tsx';",
-      "@source './node_modules/@adea-ai/ui/src/components/ui/{dialog,modal-dialog,sheet}';",
+      // The dialog's corner close carries the shared tooltip, so its styles
+      // belong in this packed sheet beside the other overlay surfaces.
+      "@source './node_modules/@adea-ai/ui/src/components/ui/{dialog,modal-dialog,tooltip,sheet}';",
       "@source './node_modules/@adea-ai/ui/src/lib/overlay.ts';",
     ].join('\n')
   )

@@ -212,6 +212,9 @@ try {
   writeFileSync(
     join(consumer, 'style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
+      // The pane close control is an ActionButton, so its tooltip ships with
+      // the renderer and needs the shared Tooltip styles in the packed sheet.
+      "@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n" +
       `@source inline(${JSON.stringify(closeButtonClasses)});\n`
   )
   writeFileSync(

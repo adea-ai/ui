@@ -196,12 +196,12 @@ they were typed:
 | `@adea-ai/ui` → `CodeBlock`                                     | 25.6 kB    | lucide icons                          |
 | `@adea-ai/ui` → `MessageRow`                                    | 26.7 kB    | nothing                               |
 | `@adea-ai/ui` → `CalendarSurface`                               | 29.6 kB    | corvu calendar                        |
-| `@adea-ai/ui` → `ModalDialog`                                   | 34.9 kB    | Kobalte dialog                        |
+| `@adea-ai/ui` → `ModalDialog`                                   | 48.9 kB    | Kobalte dialog, the shared tooltip    |
 | `@adea-ai/ui/components/ui/carousel` → `Carousel`               | 34.2 kB    | embla                                 |
-| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.4 kB    | Kobalte tooltip                       |
+| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.5 kB    | Kobalte tooltip                       |
 | `@adea-ai/ui` → `NavigationMenu`                                | 56.0 kB    | Kobalte navigation menu               |
 | `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _358.6 kB_ | — and `Button` is 6.1% of it          |
+| _root plus chart and carousel entries_                          | _360.0 kB_ | — and `Button` is 6.1% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the
