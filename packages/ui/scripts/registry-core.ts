@@ -161,7 +161,9 @@ function componentFiles(dir: string): string[] {
       // Tests are the same: a consumer wants the component, not our assertions
       // about it, and `bun:test` is not a dependency they agreed to.
       if (/\.test\.(ts|tsx)$/.test(entry)) continue
-      if (!/\.(ts|tsx)$/.test(entry)) continue
+      // Component-scoped CSS is imported by the component so it follows that
+      // component through both package and standalone registry installs.
+      if (!/\.(ts|tsx|css)$/.test(entry)) continue
       files.push(path)
     }
   }

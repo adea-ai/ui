@@ -53,6 +53,12 @@ const coreSamples: PackedSample[] = [
     source: 'ui/input',
   },
   {
+    name: 'annotation-surface',
+    imports: "import { AnnotationSurface } from '@adea-ai/ui/components/ui/annotation-surface'",
+    jsx: '<AnnotationSurface label="Frame preview. Press Space to create a centered region." tool="region" hint="Drag across the frame or press Space to mark the center." onDragChange={() => {}} />',
+    source: 'ui/annotation-surface',
+  },
+  {
     name: 'native-select-root',
     imports: "import { NativeSelect } from '@adea-ai/ui'",
     jsx: '<NativeSelect aria-label="Relationship kind" defaultValue="all"><option value="all">All</option></NativeSelect>',
@@ -336,6 +342,13 @@ try {
             )
           )
             throw new Error(`Packed ${condition} consumer did not include UpdateDialog`)
+          if (
+            sample.name === 'annotation-surface' &&
+            !uiModules.some((id) =>
+              id.includes(`${expectedPath}components/ui/annotation-surface/annotation-surface`)
+            )
+          )
+            throw new Error(`Packed ${condition} consumer did not include AnnotationSurface`)
           if (sample.name === 'appearance-font-settings') {
             if (!uiModules.some((id) => id.includes('/lib/appearance-font-settings')))
               throw new Error(
@@ -396,6 +409,18 @@ try {
             throw new Error('Packed Button is missing its Tailwind utility')
           if (sample.name.startsWith('button') && !css.includes('.h-control-md'))
             throw new Error('Packed Button is missing shared control sizing')
+          if (
+            sample.name === 'annotation-surface' &&
+            (!css.includes('.dev-annotation-surface') || !css.includes('repeating-linear-gradient'))
+          )
+            throw new Error(`Packed ${condition} AnnotationSurface is missing scoped CSS`)
+          if (
+            sample.name === 'baseline' &&
+            (css.includes('.dev-annotation-surface') || css.includes('repeating-linear-gradient'))
+          )
+            throw new Error(
+              `Packed ${condition} lean consumer retained unused AnnotationSurface CSS`
+            )
           if (
             sample.name === 'kbd-chord' &&
             (!/\.min-h-5\s*\{[^}]*\bmin-height\s*:/.test(css) ||
