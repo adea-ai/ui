@@ -1918,7 +1918,7 @@
         "@adea-ai/ui/button",
         "@adea-ai/ui/dropdown-menu",
         "@adea-ai/ui/input",
-        "@adea-ai/ui/popover",
+        "@adea-ai/ui/sheet",
         "@adea-ai/ui/switch",
         "@adea-ai/ui/theme",
         "lib"

@@ -2,7 +2,7 @@ import { Combobox as KobalteCombobox } from '@kobalte/core/combobox'
 import { Check, ChevronDown, X } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
-import { menuContentPadding, menuItem, popoverArrow } from '../../../lib/overlay'
+import { menuContentPadding, menuItem, popoverArrow, topLayerProps } from '../../../lib/overlay'
 import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
@@ -108,6 +108,7 @@ export function ComboboxContent(props: ComponentProps<typeof KobalteCombobox.Con
   return (
     <KobalteCombobox.Portal>
       <KobalteCombobox.Content
+        {...topLayerProps}
         class={cn(
           'bg-popover text-popover-foreground rounded-xl border border-border shadow-lg',
           'z-(--z-menu) max-h-72 min-w-(--kb-popper-anchor-width) origin-(--kb-combobox-content-transform-origin) overflow-hidden',

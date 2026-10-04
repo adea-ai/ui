@@ -2,7 +2,7 @@ import { Select as KobalteSelect } from '@kobalte/core/select'
 import { Check, ChevronDown, ChevronsUpDown } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
-import { menuContentPadding, menuItem, popoverArrow } from '#lib/overlay'
+import { menuContentPadding, menuItem, popoverArrow, topLayerProps } from '#lib/overlay'
 import { cn } from '#lib/utils'
 
 /**
@@ -140,6 +140,7 @@ export function SelectContent(props: SelectContentProps) {
   return (
     <KobalteSelect.Portal mount={local.portalMount}>
       <KobalteSelect.Content
+        {...topLayerProps}
         class={cn(
           'bg-popover text-popover-foreground rounded-xl border border-border shadow-lg',
           'z-(--z-menu) max-h-(--kb-popper-content-available-height) min-w-[8rem] origin-(--kb-select-content-transform-origin) overflow-y-auto overflow-x-hidden',

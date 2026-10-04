@@ -1,7 +1,13 @@
 import { Popover as KobaltePopover } from '@kobalte/core/popover'
 import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
-import { menuContentPadding, popoverArrow, popoverMotion, overlaySurface } from '#lib/overlay'
+import {
+  menuContentPadding,
+  popoverArrow,
+  popoverMotion,
+  overlaySurface,
+  topLayerProps,
+} from '#lib/overlay'
 import { cn } from '#lib/utils'
 
 /**
@@ -39,6 +45,7 @@ export function PopoverContent(props: PopoverContentProps) {
   return (
     <KobaltePopover.Portal>
       <KobaltePopover.Content
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           popoverMotion,

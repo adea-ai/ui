@@ -235,7 +235,7 @@ try {
     join(consumer, 'style.css'),
     // Native SSR evidence lives beside this browser entry. Automatic discovery
     // would also scan that generated bundle and emit its unused variant classes.
-    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@import '@adea-ai/ui/appearance-font-settings.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@import '@adea-ai/ui/appearance-font-settings.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,sheet,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'destructive-style.css'),

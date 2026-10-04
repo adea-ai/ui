@@ -11,6 +11,7 @@ import {
   overlayMotion,
   overlaySurface,
   popoverArrow,
+  topLayerProps,
 } from '#lib/overlay'
 import { cn } from '#lib/utils'
 
@@ -71,6 +72,7 @@ export function MenubarContent(props: ComponentProps<typeof KobalteMenubar.Conte
   return (
     <KobalteMenubar.Portal>
       <KobalteMenubar.Content
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,
@@ -201,6 +203,7 @@ export function MenubarSubContent(props: ComponentProps<typeof KobalteMenubar.Su
   return (
     <KobalteMenubar.Portal>
       <KobalteMenubar.SubContent
+        {...topLayerProps}
         class={cn(
           overlaySurface,
           overlayMotion,

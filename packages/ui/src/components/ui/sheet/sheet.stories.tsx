@@ -2,6 +2,15 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
 import { Button } from '../button/button'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../dropdown-menu/dropdown-menu'
+import { FormField } from '../field/field'
+import { Input } from '../input/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select/select'
+import {
   Sheet,
   SheetBody,
   SheetContent,
@@ -20,7 +29,8 @@ import {
  * settings flyout — so the user keeps the context it belongs to in view.
  *
  * A centred dialog interrupts; a sheet is inspected. That is the whole distinction,
- * and it is why `side` is the only decision a caller has to make.
+ * and it is why `side` is the main decision a caller has to make; `variant` (inset or
+ * edge) follows from it unless the caller says otherwise.
  */
 const meta = {
   title: 'Primitives/Overlays/Sheet',
@@ -32,14 +42,89 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** From the end edge, which is where a details inspector belongs. */
+const priorities = [
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'high', label: 'High' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'low', label: 'Low' },
+]
+
+/**
+ * Inset, the default at the end edge: docked below the top bar with an equal
+ * gap on three sides, no scrim, a heading with a rule beneath, and a full-width
+ * footer band. Menus and selects inside it open on the first click.
+ */
+export const InsetForm: Story = {
+  render: () => {
+    const [priority, setPriority] = createSignal(priorities[2]!)
+    const [kind, setKind] = createSignal('Feature')
+    return (
+      <Sheet>
+        <SheetTrigger as={Button} variant="outline">
+          Edit task
+        </SheetTrigger>
+        <SheetContent side="end" closeLabel="Close task">
+          <SheetHeader>
+            <SheetTitle>Edit task</SheetTitle>
+            <SheetDescription>Changes apply when you save.</SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <div class="grid gap-4">
+              <FormField label="Title">
+                <Input value="Polish the board" />
+              </FormField>
+              <FormField label="Priority">
+                <Select
+                  options={priorities}
+                  value={priority()}
+                  onChange={(next) => next && setPriority(next)}
+                  optionValue={(option) => option.value}
+                  optionTextValue={(option) => option.label}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>{props.item.rawValue.label}</SelectItem>
+                  )}
+                >
+                  <SelectTrigger class="w-full" aria-label="Priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              </FormField>
+              <DropdownMenu>
+                <DropdownMenuTrigger as={Button} variant="outline">
+                  Type: {kind()}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onSelect={() => setKind('Feature')}>Feature</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setKind('Bug')}>Bug</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setKind('Chore')}>Chore</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </SheetBody>
+          <SheetFooter>
+            <Button size="sm" variant="ghost" class="me-auto">
+              Archive
+            </Button>
+            <Button size="sm" variant="outline">
+              Cancel
+            </Button>
+            <Button size="sm">Save</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    )
+  },
+}
+
+/** From the end edge, edge to edge over a scrim, for a details inspector. */
 export const FromTheEnd: Story = {
   render: () => (
     <Sheet>
       <SheetTrigger as={Button} variant="outline">
         Open inspector
       </SheetTrigger>
-      <SheetContent side="end">
+      <SheetContent side="end" variant="edge">
         <SheetHeader>
           <SheetTitle>Run r-1042</SheetTitle>
           <SheetDescription>soak · 24h 00m · passed</SheetDescription>

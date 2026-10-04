@@ -81,3 +81,17 @@ export const menuSeparator = 'bg-border -mx-1 my-1 h-px'
 
 /** Padding shared by every menu-list surface. */
 export const menuContentPadding = 'p-1'
+
+/**
+ * Marks a floating layer — a menu, a listbox, a popover — as part of the top
+ * layer.
+ *
+ * A modal dialog hides everything outside itself from assistive technology
+ * (`aria-hidden` on its siblings) and keeps watching `<body>` for new nodes.
+ * A menu or select opened from inside the dialog portals to `<body>`, so the
+ * dialog hid it too: the list was on screen, focused, and invisible to a
+ * screen reader, and an outside-click check could treat a click on it as a
+ * click away from the dialog. Kobalte exempts nodes carrying this attribute
+ * from both, so every floating layer carries it.
+ */
+export const topLayerProps = { 'data-kb-top-layer': '' } as const
