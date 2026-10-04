@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.109.1](https://github.com/adea-ai/ui/compare/v0.109.0...v0.109.1) (2026-10-04)
+
+
+### Performance
+
+* reduce contextual sidebar and overlay imports ([#324](https://github.com/adea-ai/ui/issues/324)) ([c3ea63f](https://github.com/adea-ai/ui/commit/c3ea63f1a1d20def63d0bcf76a0dfcdd5cad1215))
+
 ## [0.109.0](https://github.com/adea-ai/ui/compare/v0.108.0...v0.109.0) (2026-10-04)
 
 
