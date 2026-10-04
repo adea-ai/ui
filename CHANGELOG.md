@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.109.0](https://github.com/adea-ai/ui/compare/v0.108.0...v0.109.0) (2026-10-04)
+
+
+### Features
+
+* **ui:** add shared annotation surface ([#320](https://github.com/adea-ai/ui/issues/320)) ([90998cf](https://github.com/adea-ai/ui/commit/90998cf9db78e75b31190ff3aa8f7b4e962f5511))
+
 ## [0.108.0](https://github.com/adea-ai/ui/compare/v0.107.0...v0.108.0) (2026-10-04)
 
 
