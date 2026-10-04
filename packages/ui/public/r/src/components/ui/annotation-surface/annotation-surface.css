@@ -1,0 +1,27 @@
+.dev-annotation-surface {
+  touch-action: none;
+  cursor: crosshair;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklch, var(--muted) 55%, transparent) 0 calc(var(--spacing) * 2),
+    transparent calc(var(--spacing) * 2) calc(var(--spacing) * 4)
+  );
+}
+
+.dev-annotation-surface[data-tool='point'] {
+  cursor: cell;
+}
+
+.dev-annotation-surface[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+.dev-annotation-surface[aria-disabled='true'] {
+  touch-action: auto;
+  cursor: default;
+}
+
+.dev-annotation-surface__region,
+.dev-annotation-surface__hint {
+  pointer-events: none;
+}

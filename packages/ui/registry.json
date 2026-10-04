@@ -77,6 +77,38 @@
       ]
     },
     {
+      "name": "annotation-surface",
+      "type": "registry:ui",
+      "title": "Annotation Surface",
+      "description": "Keyboard-operable normalized drawing surface; hosts retain domain geometry and actions.",
+      "dependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/annotation-surface/annotation-surface.css",
+          "type": "registry:ui",
+          "target": "components/ui/annotation-surface/annotation-surface.css"
+        },
+        {
+          "path": "src/components/ui/annotation-surface/annotation-surface.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/annotation-surface/annotation-surface.tsx"
+        },
+        {
+          "path": "src/components/ui/annotation-surface/geometry.ts",
+          "type": "registry:ui",
+          "target": "components/ui/annotation-surface/geometry.ts"
+        },
+        {
+          "path": "src/components/ui/annotation-surface/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/annotation-surface/index.ts"
+        }
+      ]
+    },
+    {
       "name": "aspect-ratio",
       "type": "registry:ui",
       "title": "Aspect Ratio",

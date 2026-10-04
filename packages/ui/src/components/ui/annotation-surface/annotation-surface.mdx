@@ -1,0 +1,54 @@
+import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks'
+import * as Stories from './annotation-surface.stories'
+
+<Meta of={Stories} />
+
+# AnnotationSurface
+
+`AnnotationSurface` provides a named, focusable viewport with shared focus,
+pointer capture, normalized point reporting, a region overlay, and idle guidance.
+It never receives screenshot pixels or sends annotation commands. Hosts retain
+their coordinate model, tool selection, keyboard policy, validation, persistence,
+and capture authority.
+
+Use it when a user needs to mark a two-dimensional viewport. Use `Button` for a
+single action and `Slider` for a one-dimensional value.
+
+## Interaction contract
+
+- The host supplies a non-empty `label` with keyboard instructions.
+- `Space` reports a centered 50% region in `region` mode or the center point in
+  `point` mode. Pointer drags are captured by the actual `HTMLDivElement` and
+  reported as normalized coordinates from `0` to `1`.
+- The host receives the native key event and owns arrow movement, submit, and
+  cancellation. Its Escape handler runs first; if it prevents the event, the
+  surface leaves cancellation to that host decision.
+- A changed `resetKey`, tool change, disabled interaction, lost pointer capture,
+  or unmount cancels an in-flight drag once. Cancellation only reports UI state;
+  it never submits a domain action.
+- `region` is controlled host data. If it is absent, the component renders no
+  selection.
+
+## Example
+
+```tsx
+<AnnotationSurface
+  label="Frame preview. Press Space to create a centered region. Arrow keys adjust it; Escape clears it."
+  tool="region"
+  region={region()}
+  hint="Drag across the frame or press Space to mark the center."
+  resetKey={annotationResetKey()}
+  onDragChange={handleAnnotationDrag}
+  onKeyDown={handleAnnotationKeyDown}
+/>
+```
+
+`class` is reserved for layout, such as width or grid placement. The region,
+hint, pointer cursor, focus ring, border, and surface colors come from this
+component and published semantic tokens.
+
+<Canvas of={Stories.Default} />
+
+<Controls of={Stories.Default} />
+
+<Canvas of={Stories.PointPlacement} />
