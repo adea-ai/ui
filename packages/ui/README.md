@@ -659,6 +659,20 @@ editing it; the shared constructor validates visual structure and identities,
 while applications still decode/scoped-persist preferences and retain unknown
 future versions for recovery.
 
+`splitPaneBalanced(state, targetLeafId, { placement, leaf, splitId })` is an
+opt-in automatic reflow for hosts that want a new pane beside the selected pane
+in reading order. It keeps one row for one or two panes, starts a second row at
+three, and balances the row lengths through the eight-pane limit (two rows of
+four at the cap). Leaves in each row receive equal widths and both rows receive
+equal height; adding a pane can therefore redistribute existing pane widths.
+Opaque leaf objects are retained. Existing split ID strings are recycled across
+the rebuilt branches; an ID can acquire a different axis or descendants, so hosts
+must resolve resize actions against the current tree rather than cache a branch.
+The new split ID names the nearest common branch of the selected and new panes.
+The new pane is focused, and the close-undo stack is cleared like other structural edits. The
+explicit-axis `splitPane` operation is unchanged for hosts that do not want an
+automatic reflow.
+
 The model and maintained accessible renderer are implemented in this draft.
 Stable content ownership and movement are exercised in component fixtures.
 The packed renderer gate includes the UI #20 size-token correction and the host

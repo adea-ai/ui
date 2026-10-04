@@ -6,6 +6,7 @@ import { SplitLayout } from './split-layout'
 import {
   createLayoutState,
   splitPane,
+  splitPaneBalanced,
   resizeSplit,
   closePane,
   focusPane,
@@ -31,7 +32,12 @@ const meta = {
 } satisfies Meta<typeof SplitLayout>
 export default meta
 type Story = StoryObj<typeof meta>
-function Demo(props: { nested?: boolean; eight?: boolean; hostPresentation?: boolean }) {
+function Demo(props: {
+  nested?: boolean
+  eight?: boolean
+  hostPresentation?: boolean
+  balanced?: boolean
+}) {
   let initial: SplitLayoutState<SplitLayoutLeaf> = createLayoutState({ kind: 'leaf', id: 'editor' })
   initial = splitPane(initial, 'editor', {
     direction: 'row',
@@ -87,7 +93,7 @@ function Demo(props: { nested?: boolean; eight?: boolean; hostPresentation?: boo
           onClick={() => {
             const suffix = ++sequence
             setState((s) =>
-              splitPane(s, s.focusedLeafId, {
+              (props.balanced ? splitPaneBalanced : splitPane)(s, s.focusedLeafId, {
                 direction: 'row',
                 placement: 'after',
                 leaf: { kind: 'leaf', id: `new-${suffix}` },
@@ -175,3 +181,5 @@ export const TwoPanes: Story = { render: () => <Demo /> }
 export const NestedDirections: Story = { render: () => <Demo nested /> }
 export const EightPanes: Story = { render: () => <Demo eight /> }
 export const HostPresentation: Story = { render: () => <Demo hostPresentation /> }
+
+export const BalancedSplits: Story = { render: () => <Demo balanced /> }

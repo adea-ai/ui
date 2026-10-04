@@ -62,7 +62,7 @@ try {
   )
     throw Error('Packed layout license or MIT attribution is missing')
 
-  const probe = `import { createLayoutState, splitPane, closePane, undoClosePane, movePane, countLeaves, listLeaves } from '@adea-ai/ui/components/layout/split-layout/model';
+  const probe = `import { createLayoutState, splitPane, splitPaneBalanced, closePane, undoClosePane, movePane, countLeaves, listLeaves } from '@adea-ai/ui/components/layout/split-layout/model';
  const first={kind:'leaf',id:'first',opaque:{fixture:true}};
  const second={kind:'leaf',id:'second',opaque:{fixture:false}};
  const state=splitPane(createLayoutState(first),'first',{direction:'row',placement:'after',leaf:second,splitId:'root'});
@@ -70,6 +70,11 @@ try {
  if(countLeaves(moved.center)!==2||listLeaves(moved.center)[0]!==second) throw Error('identity move failed');
  const restored=undoClosePane(closePane(moved,'second',()=>({kind:'leaf',id:'placeholder'})));
  if(restored.focusedLeafId!=='second'||listLeaves(restored.center)[0]!==second) throw Error('undo failed');
+ let balanced=createLayoutState(first);
+ for(let index=2;index<=8;index++) balanced=splitPaneBalanced(balanced,balanced.focusedLeafId,{placement:'after',leaf:{kind:'leaf',id:'balanced-'+index},splitId:'balanced-split-'+index});
+ if(countLeaves(balanced.center)!==8||listLeaves(balanced.center)[0]!==first) throw Error('balanced leaf ownership failed');
+ const rows=node=>node.kind==='leaf'?[[node.id]]:node.direction==='column'?[...rows(node.children[0]),...rows(node.children[1])]:[[...rows(node.children[0])[0],...rows(node.children[1])[0]]];
+ if(JSON.stringify(rows(balanced.center).map(row=>row.length))!=='[4,4]') throw Error('balanced grid failed');
  console.log(JSON.stringify({entry:import.meta.resolve('@adea-ai/ui/components/layout/split-layout/model'),result:'packed model behavior passed'}));`
   writeFileSync(join(consumer, 'probe.mjs'), probe)
 

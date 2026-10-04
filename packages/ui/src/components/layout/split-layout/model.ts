@@ -41,6 +41,10 @@ export type SplitPaneInput<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readon
   splitId: string
 }>
 
+export type BalancedSplitPaneInput<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readonly<
+  Pick<SplitPaneInput<L>, 'placement' | 'leaf' | 'splitId'>
+>
+
 function replaceLeaf<L extends SplitLayoutLeaf>(
   node: SplitLayoutNode<L>,
   leafId: string,
@@ -86,14 +90,19 @@ function assertUniqueInput<L extends SplitLayoutLeaf>(
   if (typeof splitId !== 'string' || splitId.length === 0)
     throw new Error('invalid_state: split identity must be nonempty')
   const ids = new Set<string>()
+  const splitIds: string[] = []
   const visit = (node: SplitLayoutNode<L>) => {
     if (ids.has(node.id)) throw new Error('invalid_state: duplicate pane id')
     ids.add(node.id)
-    if (node.kind === 'split') node.children.forEach(visit)
+    if (node.kind === 'split') {
+      splitIds.push(node.id)
+      node.children.forEach(visit)
+    }
   }
   visit(state.center)
   if (ids.has(leaf.id) || ids.has(splitId) || leaf.id === splitId)
     throw new Error('invalid_state: duplicate pane id')
+  return splitIds
 }
 
 /** Visual-tree validation only; applications still decode and scope persisted preferences. */
@@ -160,6 +169,51 @@ export function splitPane<L extends SplitLayoutLeaf>(
   })
   if (layoutDepth(center) > MAX_LAYOUT_DEPTH)
     throw new Error('limit_exceeded: center layout depth exceeds eight')
+  return { ...state, center, focusedLeafId: input.leaf.id, closed: [] }
+}
+
+/**
+ * Add a pane beside the selected leaf and reflow the visual tree into a
+ * balanced row-major grid. One or two leaves share one row; from three leaves
+ * onward, leaves fill a first row and then a second row, with no more than four
+ * columns in either. Each row gives its leaves equal width and the two rows
+ * equal height. Existing opaque leaf objects are preserved. Split IDs are
+ * recycled across rebuilt branches, whose axis and descendants can change;
+ * resize actions must resolve against the current tree. Ratios are recomputed.
+ * This is opt-in: callers
+ * that need an explicit axis and ratio should keep using `splitPane`.
+ */
+export function splitPaneBalanced<L extends SplitLayoutLeaf>(
+  state: SplitLayoutState<L>,
+  targetLeafId: string,
+  input: BalancedSplitPaneInput<L>
+): SplitLayoutState<L> {
+  const leaves = [...listLeaves(state.center)]
+  const targetIndex = leaves.findIndex((leaf) => leaf.id === targetLeafId)
+  if (targetIndex < 0) return state
+  if (leaves.length >= MAX_LAYOUT_LEAVES)
+    throw new Error('limit_exceeded: center layout has eight leaves')
+  const splitIds = assertUniqueInput(state, input.leaf, input.splitId)
+
+  const insertionIndex = targetIndex + (input.placement === 'before' ? 0 : 1)
+  leaves.splice(insertionIndex, 0, input.leaf)
+
+  const build = (start: number, end: number, vertical = false): SplitLayoutNode<L> => {
+    if (end - start === 1) return leaves[start]!
+    const middle = start + Math.ceil((end - start) / 2)
+    // The new identity belongs to the lowest branch separating the selected
+    // pane from its new neighbour. Other branches reuse the existing ID pool.
+    const id = middle === targetIndex + 1 ? input.splitId : splitIds.shift()!
+    return {
+      kind: 'split',
+      id,
+      direction: vertical ? 'column' : 'row',
+      ratio: vertical ? 0.5 : (middle - start) / (end - start),
+      children: [build(start, middle), build(middle, end)],
+    }
+  }
+  const center = build(0, leaves.length, leaves.length > 2)
+  assertLayoutTree(center)
   return { ...state, center, focusedLeafId: input.leaf.id, closed: [] }
 }
 
@@ -287,21 +341,19 @@ export function resizeSplit<L extends SplitLayoutLeaf>(
 export function normalizeLayout<L extends SplitLayoutLeaf>(
   state: SplitLayoutState<L>
 ): SplitLayoutState<L> {
-  const visit = (node: SplitLayoutNode<L>): { node: SplitLayoutNode<L>; changed: boolean } => {
-    if (node.kind === 'leaf') return { node, changed: false }
+  const visit = (node: SplitLayoutNode<L>): SplitLayoutNode<L> => {
+    if (node.kind === 'leaf') return node
     const first = visit(node.children[0])
     const second = visit(node.children[1])
     const ratio = Number.isFinite(node.ratio)
       ? Math.min(MAX_SPLIT_RATIO, Math.max(MIN_SPLIT_RATIO, node.ratio))
       : (MIN_SPLIT_RATIO + MAX_SPLIT_RATIO) / 2
-    const changed = first.changed || second.changed || ratio !== node.ratio
-    return {
-      node: changed ? { ...node, ratio, children: [first.node, second.node] } : node,
-      changed,
-    }
+    return first === node.children[0] && second === node.children[1] && ratio === node.ratio
+      ? node
+      : { ...node, ratio, children: [first, second] }
   }
-  const result = visit(state.center)
-  return result.changed ? { ...state, center: result.node } : state
+  const center = visit(state.center)
+  return center === state.center ? state : { ...state, center }
 }
 
 /** The leaf immediately after (`1`) or before (`-1`) the given leaf in reading order. */
