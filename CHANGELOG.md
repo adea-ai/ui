@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.110.1](https://github.com/adea-ai/ui/compare/v0.110.0...v0.110.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **components:** add tooltips to split-layout and dialog close actions ([#329](https://github.com/adea-ai/ui/issues/329)) ([8d16f96](https://github.com/adea-ai/ui/commit/8d16f96bd35ec5b3b6696d8c8a85b5d2aea15a66))
+
 ## [0.110.0](https://github.com/adea-ai/ui/compare/v0.109.1...v0.110.0) (2026-10-04)
 
 
