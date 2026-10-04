@@ -24,6 +24,7 @@
     "src",
     "!src/**/*.stories.tsx",
     "!src/**/*.stories.ts",
+    "!src/**/*.stories.css",
     "!src/**/*.mdx",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",

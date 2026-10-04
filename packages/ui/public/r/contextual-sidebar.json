@@ -1,0 +1,25 @@
+{
+  "name": "contextual-sidebar",
+  "type": "registry:ui",
+  "title": "Contextual Sidebar",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/pixel-resize-handle",
+    "@adea-ai/ui/sheet",
+    "@adea-ai/ui/sidebar-nav",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/contextual-sidebar/contextual-sidebar.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/contextual-sidebar/contextual-sidebar.tsx"
+    },
+    {
+      "path": "src/components/layout/contextual-sidebar/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/contextual-sidebar/index.ts"
+    }
+  ]
+}

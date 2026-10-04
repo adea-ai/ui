@@ -572,6 +572,20 @@
         "group": "Motion",
         "source": "motion/presence.tsx"
       }
+    ],
+    "contextual-sidebar": [
+      {
+        "card": "ContextualSidebar",
+        "group": "Shell",
+        "source": "layout/contextual-sidebar/contextual-sidebar.tsx"
+      }
+    ],
+    "pixel-resize-handle": [
+      {
+        "card": "PixelResizeHandle",
+        "group": "Layout",
+        "source": "layout/pixel-resize-handle/pixel-resize-handle.tsx"
+      }
     ]
   }
 }

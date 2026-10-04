@@ -29,6 +29,34 @@ const coreSamples: PackedSample[] = [
     sources: ['lib/appearance-font-settings.ts', 'lib/font-catalog.ts', 'lib/safe-script.ts'],
   },
   {
+    name: 'sidebar-nav-subpath',
+    imports:
+      "import { SidebarNav, SidebarNavResizeHandle } from '@adea-ai/ui/components/layout/sidebar-nav'",
+    jsx: '<SidebarNav><SidebarNavResizeHandle value={272} minimum={208} maximum={448} onChange={() => {}} /></SidebarNav>',
+    sources: [
+      'components/layout/sidebar-nav/sidebar-nav.tsx',
+      'components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx',
+      'components/layout/pixel-resize-handle/pixel-resize-handle.tsx',
+      'components/ui/resizable/resizable.tsx',
+    ],
+  },
+  {
+    name: 'contextual-sidebar-subpath',
+    imports: "import { ContextualSidebar } from '@adea-ai/ui/components/layout/contextual-sidebar'",
+    jsx: '<ContextualSidebar label="Workspace navigation" title="Workspace" open width={272} minimum={208} maximum={448} onOpenChange={() => {}} onWidthChange={() => {}} content={() => <p>Projects</p>} />',
+    sources: [
+      'components/layout/contextual-sidebar/contextual-sidebar.tsx',
+      'components/layout/sidebar-nav/sidebar-nav.tsx',
+      'components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx',
+      'components/layout/pixel-resize-handle/pixel-resize-handle.tsx',
+      'components/ui/resizable/resizable.tsx',
+      'components/ui/sheet/sheet.tsx',
+      'components/ui/button/button.tsx',
+      'lib/overlay.ts',
+      'lib/variants.ts',
+    ],
+  },
+  {
     name: 'button-root',
     imports: "import { Button } from '@adea-ai/ui'",
     jsx: '<Button>Action</Button>',
@@ -359,6 +387,11 @@ try {
             throw new Error('Mixed UI export conditions')
           const forbidden = modules.filter((id) => {
             if (/xterm|codemirror|shiki|storybook|\/lib\/themes/.test(id)) return true
+            if (
+              sample.name === 'sidebar-nav-subpath' &&
+              /\/components\/(?:layout\/contextual-sidebar|ui\/sheet)\//.test(id)
+            )
+              return true
             if (/\/components\/theme\//.test(id)) return true
             if (
               /\/components\/conversation\//.test(id) &&
@@ -454,22 +487,28 @@ try {
           // (measured 33,185 against main's 32,547, which held only 221 bytes of
           // headroom). Re-baselined, not relaxed — the cap still bounds the
           // fixture's complete stylesheet.
-          const cssCapKiB =
-            sample.name === 'update-dialog'
-              ? 48
-              : sample.name === 'overlay'
-                ? 40
-                : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
-                      sample.name
-                    )
-                  ? 42
-                  : sample.name === 'chart-subpath'
-                    ? 28
-                    : sample.name === 'carousel-subpath'
-                      ? 35
-                      : sample.name === 'list-row'
-                        ? 34
-                        : 32
+          // New sidebar probes establish their own complete-CSS bounds: navigation
+          // 34,224 bytes (34 KiB), contextual Sheet 48,439 bytes (48 KiB).
+          // Existing samples and every application budget retain their caps.
+          if (sample.name === 'sidebar-nav-subpath' && bytes > 32 * 1024)
+            throw new Error('Sidebar navigation exceeds its 32 KiB gzip bound')
+          if (sample.name === 'contextual-sidebar-subpath' && bytes > 42 * 1024)
+            throw new Error('Contextual sidebar exceeds its 42 KiB gzip bound')
+          const cssCapKiB = ['update-dialog', 'contextual-sidebar-subpath'].includes(sample.name)
+            ? 48
+            : sample.name === 'overlay'
+              ? 40
+              : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
+                    sample.name
+                  )
+                ? 42
+                : sample.name === 'chart-subpath'
+                  ? 28
+                  : sample.name === 'carousel-subpath'
+                    ? 35
+                    : ['list-row', 'sidebar-nav-subpath'].includes(sample.name)
+                      ? 34
+                      : 32
           if (Buffer.byteLength(css) > cssCapKiB * 1024)
             throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
           // JS gzip, measured: overlay 37,922; shell 24,434. The 32 KiB cap held
