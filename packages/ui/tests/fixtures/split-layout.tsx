@@ -4,6 +4,7 @@ import { SplitLayout } from '../../src/components/layout/split-layout/split-layo
 import {
   createLayoutState,
   splitPane,
+  splitPaneBalanced,
   movePane,
   resizeSplit,
   closePane,
@@ -31,8 +32,19 @@ function Fixture() {
     })
   )
   let nextMove = 0
+  let nextBalanced = 0
   const act = (event: Event) => {
     const detail = (event as CustomEvent<string>).detail
+    if (detail === 'balanced') {
+      const sequence = ++nextBalanced
+      setState((s) =>
+        splitPaneBalanced(s, s.focusedLeafId, {
+          placement: 'after',
+          leaf: { kind: 'leaf', id: `balanced-${sequence}` },
+          splitId: `balanced-split-${sequence}`,
+        })
+      )
+    }
     if (detail === 'split')
       setState((s) =>
         splitPane(s, 'a', {

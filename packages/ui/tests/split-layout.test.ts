@@ -9,8 +9,12 @@ import {
   neighborLeaf,
   normalizeLayout,
   focusPane,
+  layoutDepth,
   resizeSplit,
   splitPane,
+  splitPaneBalanced,
+  type SplitLayoutNode,
+  type SplitLayoutLeaf,
   swapPanes,
   undoClosePane,
 } from '../src/components/layout/split-layout/model'
@@ -53,6 +57,42 @@ const build = (
         ratio: 0.5,
         children: [build(count - 1), leaf(`leaf-${count}`)],
       }
+
+const buildBalanced = (count: number) => {
+  let state = createLayoutState(leaf('pane-1'))
+  for (let index = 2; index <= count; index += 1)
+    state = splitPaneBalanced(state, `pane-${index - 1}`, {
+      placement: 'after',
+      leaf: leaf(`pane-${index}`),
+      splitId: `balanced-${index}`,
+    })
+  return state
+}
+
+type TestNode = SplitLayoutNode<SplitLayoutLeaf>
+
+function gridRows(node: TestNode): string[][] {
+  if (node.kind === 'leaf') return [[node.id]]
+  const first = gridRows(node.children[0])
+  const second = gridRows(node.children[1])
+  return node.direction === 'row'
+    ? [[...(first[0] ?? []), ...(second[0] ?? [])]]
+    : [...first, ...second]
+}
+
+function splitIds(node: TestNode): string[] {
+  return node.kind === 'leaf'
+    ? []
+    : [node.id, ...splitIds(node.children[0]), ...splitIds(node.children[1])]
+}
+
+function assertBalancedRatios(node: TestNode) {
+  if (node.kind === 'leaf') return
+  const firstLeaves = countLeaves(node.children[0])
+  const totalLeaves = countLeaves(node)
+  expect(node.ratio).toBeCloseTo(node.direction === 'row' ? firstLeaves / totalLeaves : 0.5)
+  node.children.forEach(assertBalancedRatios)
+}
 
 describe('strict binary shared layout', () => {
   test('splits before or after the target in deterministic reading order', () => {
@@ -202,6 +242,184 @@ describe('strict binary shared layout', () => {
     expect(resizeSplit(initial, 'split', 1).center).toMatchObject({ ratio: 0.9 })
     expect(resizeSplit(initial, 'missing', 0.2)).toEqual(initial)
     expect(resizeSplit(initial, 'split', Number.NaN)).toEqual(initial)
+  })
+})
+
+describe('balanced row-major split', () => {
+  test('reflows one through eight leaves into at most two rows and four columns', () => {
+    const expectedRowSizes = [[1], [2], [2, 1], [2, 2], [3, 2], [3, 3], [4, 3], [4, 4]]
+
+    for (let count = 1; count <= 8; count += 1) {
+      const state = buildBalanced(count)
+      const rows = gridRows(state.center)
+      expect(rows.map((items) => items.length)).toEqual(expectedRowSizes[count - 1]!)
+      expect(rows.length).toBeLessThanOrEqual(2)
+      expect(Math.max(...rows.map((items) => items.length))).toBeLessThanOrEqual(4)
+      expect(rows.flat()).toEqual(Array.from({ length: count }, (_, index) => `pane-${index + 1}`))
+      expect(countLeaves(state.center)).toBe(count)
+      expect(layoutDepth(state.center)).toBeLessThanOrEqual(4)
+      assertBalancedRatios(state.center)
+    }
+  })
+
+  test('inserts before and after every selected leaf without changing reading order', () => {
+    let sequence = 0
+    for (let count = 1; count < 8; count += 1) {
+      const state = buildBalanced(count)
+      const previousOrder = listLeaves(state.center).map((item) => item.id)
+      for (let targetIndex = 0; targetIndex < previousOrder.length; targetIndex += 1) {
+        for (const placement of ['before', 'after'] as const) {
+          const leafId = `inserted-${++sequence}`
+          const split = splitPaneBalanced(state, previousOrder[targetIndex]!, {
+            placement,
+            leaf: leaf(leafId, 'editor'),
+            splitId: `balanced-insert-${sequence}`,
+          })
+          const expected = [...previousOrder]
+          expected.splice(targetIndex + (placement === 'after' ? 1 : 0), 0, leafId)
+          const rows = gridRows(split.center)
+          expect(rows.flat()).toEqual(expected)
+          expect(rows.length).toBeLessThanOrEqual(2)
+          expect(rows.every((items) => items.length <= 4)).toBe(true)
+          expect(split.focusedLeafId).toBe(leafId)
+          const findBranch = (node: TestNode): TestNode | undefined =>
+            node.kind === 'leaf'
+              ? undefined
+              : node.id === `balanced-insert-${sequence}`
+                ? node
+                : (findBranch(node.children[0]) ?? findBranch(node.children[1]))
+          const attachment = findBranch(split.center)
+          expect(attachment?.kind).toBe('split')
+          if (attachment?.kind === 'split') {
+            const left = listLeaves(attachment.children[0]).map((item) => item.id)
+            const right = listLeaves(attachment.children[1]).map((item) => item.id)
+            expect(left.includes(leafId) !== left.includes(previousOrder[targetIndex]!)).toBe(true)
+            expect(right.includes(leafId) !== right.includes(previousOrder[targetIndex]!)).toBe(
+              true
+            )
+          }
+        }
+      }
+    }
+  })
+
+  test('retains opaque leaf instances and all prior split IDs plus the new split ID', () => {
+    const originalLeaves = Array.from({ length: 5 }, (_, index) => ({
+      kind: 'leaf' as const,
+      id: `payload-pane-${index + 1}`,
+      payload: { owner: `owner-${index + 1}` },
+    }))
+    let state = createLayoutState(originalLeaves[0]!)
+    for (let index = 1; index < originalLeaves.length; index += 1)
+      state = splitPaneBalanced(state, originalLeaves[index - 1]!.id, {
+        placement: 'after',
+        leaf: originalLeaves[index]!,
+        splitId: `payload-split-${index}`,
+      })
+
+    const oldSplitIds = splitIds(state.center)
+    const newLeaf = { kind: 'leaf' as const, id: 'payload-pane-new', payload: { owner: 'new' } }
+    const next = splitPaneBalanced(
+      { ...state, closed: [{ center: state.center, leafId: 'closed-before-split' }] },
+      originalLeaves[2]!.id,
+      { placement: 'after', leaf: newLeaf, splitId: 'payload-split-new' }
+    )
+    const nextLeaves = listLeaves(next.center)
+    for (const original of originalLeaves)
+      expect(nextLeaves.find((item) => item.id === original.id)).toBe(original)
+    expect(nextLeaves.map((item) => item.id)).toEqual([
+      'payload-pane-1',
+      'payload-pane-2',
+      'payload-pane-3',
+      'payload-pane-new',
+      'payload-pane-4',
+      'payload-pane-5',
+    ])
+    expect(nextLeaves[3]).toBe(newLeaf)
+    expect(new Set(splitIds(next.center))).toEqual(new Set([...oldSplitIds, 'payload-split-new']))
+    expect(new Set([...nextLeaves.map((item) => item.id), ...splitIds(next.center)]).size).toBe(
+      nextLeaves.length + splitIds(next.center).length
+    )
+    expect(next.focusedLeafId).toBe(newLeaf.id)
+    expect(next.closed).toEqual([])
+  })
+
+  test('preserves missing targets, validates identities, and enforces the eight-leaf cap', () => {
+    const state = buildBalanced(3)
+    expect(
+      splitPaneBalanced(state, 'missing', {
+        placement: 'after',
+        leaf: leaf('next'),
+        splitId: 'next-split',
+      })
+    ).toBe(state)
+    expect(() =>
+      splitPaneBalanced(state, 'pane-1', {
+        placement: 'after',
+        leaf: leaf('pane-2'),
+        splitId: 'fresh-split',
+      })
+    ).toThrow('duplicate')
+    expect(() =>
+      splitPaneBalanced(state, 'pane-1', {
+        placement: 'after',
+        leaf: leaf('next'),
+        splitId: splitIds(state.center)[0]!,
+      })
+    ).toThrow('duplicate')
+    expect(() =>
+      splitPaneBalanced(state, 'pane-1', {
+        placement: 'after',
+        leaf: leaf('next'),
+        splitId: '',
+      })
+    ).toThrow('identity')
+    expect(() =>
+      splitPaneBalanced(state, 'pane-1', {
+        placement: 'after',
+        leaf: leaf('shared-identity'),
+        splitId: 'shared-identity',
+      })
+    ).toThrow('duplicate')
+    const full = buildBalanced(8)
+    expect(() =>
+      splitPaneBalanced(full, 'pane-8', {
+        placement: 'after',
+        leaf: leaf('pane-9'),
+        splitId: 'balanced-9',
+      })
+    ).toThrow('limit_exceeded')
+    expect(countLeaves(full.center)).toBe(8)
+    expect(countLeaves(state.center)).toBe(3)
+  })
+
+  test('recycles split labels across rebuilt axes rather than preserving branch owners', () => {
+    const previous = buildBalanced(5)
+    const next = splitPaneBalanced(previous, 'pane-3', {
+      placement: 'after',
+      leaf: leaf('reflowed'),
+      splitId: 'new-root',
+    })
+    expect(next.center.kind).toBe('split')
+    if (next.center.kind === 'split' && previous.center.kind === 'split') {
+      expect(next.center.id).toBe('new-root')
+      expect(next.center.children[0].id).toBe(previous.center.id)
+      expect(previous.center.direction).toBe('column')
+      expect(next.center.children[0].kind === 'split' && next.center.children[0].direction).toBe(
+        'row'
+      )
+    }
+  })
+
+  test('close and undo preserve the exact reflowed tree and restore the closed leaf', () => {
+    const balanced = buildBalanced(6)
+    const closed = closePane(balanced, 'pane-3', () => leaf('placeholder'))
+    const restored = undoClosePane(closed)
+    expect(restored.center).toBe(balanced.center)
+    expect(restored.focusedLeafId).toBe('pane-3')
+    expect(listLeaves(restored.center).map((item) => item.id)).toEqual(
+      Array.from({ length: 6 }, (_, index) => `pane-${index + 1}`)
+    )
   })
 })
 

@@ -173,6 +173,11 @@ test('automated accessibility covers nested labelled panes in light and dark', a
   await act(page, 'nested')
   for (const dark of [false, true]) {
     await page.evaluate((value) => document.documentElement.classList.toggle('dark', value), dark)
+    // Theme transitions expose intermediate colour pairings; audit the settled
+    // theme, after the actual browser animations finish.
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})))
+    )
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
 })
@@ -304,6 +309,11 @@ test('floating preview is bounded when narrow and has touch affordance, close, a
   expect(box.x + box.width).toBeLessThanOrEqual(320)
   for (const dark of [false, true]) {
     await page.evaluate((value) => document.documentElement.classList.toggle('dark', value), dark)
+    // Theme transitions expose intermediate colour pairings; audit the settled
+    // theme, after the actual browser animations finish.
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})))
+    )
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
   await page.getByRole('button', { name: 'Close Preview window' }).click()
@@ -380,6 +390,11 @@ for (const width of [320, 1440])
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true
+      )
+      // Theme transitions expose intermediate colour pairings; audit the settled
+      // theme, after the actual browser animations finish.
+      await page.evaluate(() =>
+        Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})))
       )
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
       await layout.screenshot({ path: testInfo.outputPath(`split-${theme}-${width}.png`) })
@@ -662,3 +677,41 @@ for (const cancel of ['dragend', 'close'] as const)
       page.getByRole('group', { name: 'Work panes', exact: true }).getByRole('status')
     ).toBeEmpty()
   })
+
+test('automatic splits reflow into two rows of four without remounting pane content', async ({
+  page,
+}) => {
+  const field = page.getByRole('textbox', { name: 'Editor a', exact: true })
+  await field.fill('Retained while the grid reflows')
+  await field.evaluate((element) => element.setAttribute('data-owner-proof', 'retained'))
+  const panes = page
+    .getByRole('group', { name: 'Work panes', exact: true })
+    .locator('[data-pane-id]')
+  for (let count = 2; count <= 8; count += 1) {
+    await act(page, 'balanced')
+    await expect(panes).toHaveCount(count)
+    await expect(page.getByLabel('Mounts', { exact: true })).toHaveText(String(count))
+    await expect(page.getByLabel('Unmounts', { exact: true })).toHaveText('0')
+    await expect(field).toHaveAttribute('data-owner-proof', 'retained')
+    await expect(field).toHaveValue('Retained while the grid reflows')
+    const boxes = await panes.evaluateAll((elements) =>
+      elements.map((element) => {
+        const box = element.getBoundingClientRect()
+        return { x: box.x, y: box.y, width: box.width, height: box.height }
+      })
+    )
+    const rows = new Map<number, typeof boxes>()
+    for (const box of boxes) {
+      const key = Math.round(box.y)
+      rows.set(key, [...(rows.get(key) ?? []), box])
+    }
+    expect([...rows.values()].map((row) => row.length)).toEqual(
+      count === 2 ? [2] : [Math.ceil(count / 2), Math.floor(count / 2)]
+    )
+    for (const row of rows.values()) {
+      expect(
+        Math.max(...row.map((box) => box.width)) - Math.min(...row.map((box) => box.width))
+      ).toBeLessThanOrEqual(2)
+    }
+  }
+})
