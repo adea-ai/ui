@@ -52,7 +52,11 @@ const MAX_GZIP_BYTES = 50 * 1024
 // consumer's list-row cap from 32 to 34 KiB).
 // Appearance typography roles are emitted as on-demand utilities, keeping the
 // packed atomic consumer below the existing 43 KiB ceiling.
-const MAX_CSS_BYTES = 43 * 1024
+// Re-baselined 43 → 44 KiB (2026-10) for the shared contextual sidebar's
+// component CSS (#322): atomic measured 44,143 once the sidebar joins the
+// packed composition; its mobile overlays are deferred (#324), so the base
+// sheet is the residual cost.
+const MAX_CSS_BYTES = 44 * 1024
 // Busy menu baseline: 50,308/50,470 gzip JS bytes; CSS shares the 43 KiB cap.
 // Re-baselined 50 → 60 KiB (2026-09) for the `cn` swap; measured 58,651 gzip.
 const MAX_BUSY_GZIP_BYTES = 60 * 1024
