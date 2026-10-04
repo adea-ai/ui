@@ -65,10 +65,15 @@ function inspectPackedBundle(
   // Small independent headroom; exclusion and single-runtime gates stay mandatory.
   // Re-baselined 32 → 42 KiB (2026-09) for the `cn` swap: measured 40,437 gzip —
   // the config-extended merge runtime ships cn's compiler and default tables.
-  if (measurement.gzipJsBytes > 42 * 1024)
-    throw new Error('Packed renderer exceeds 42 KiB gzip JS budget')
-  if (measurement.cssBytes > 34 * 1024)
-    throw new Error('Packed renderer exceeds 34 KiB raw CSS budget')
+  // Re-baselined 42 → 55 KiB JS and 34 → 38 KiB CSS (2026-10): the pane close
+  // control is an ActionButton now (consumer-reported gap, Adea PR #1023), so
+  // the shared Tooltip ships with the renderer. Measured 53,294 (compiled) /
+  // 53,669 (solid) gzip JS and 36,970 raw CSS. Re-baselined, not relaxed — the
+  // exclusion and single-runtime gates stay mandatory.
+  if (measurement.gzipJsBytes > 55 * 1024)
+    throw new Error('Packed renderer exceeds 55 KiB gzip JS budget')
+  if (measurement.cssBytes > 38 * 1024)
+    throw new Error('Packed renderer exceeds 38 KiB raw CSS budget')
 }
 async function outputsFor(result: Awaited<ReturnType<typeof build>>) {
   return (Array.isArray(result) ? result : [result]).flatMap((output) =>

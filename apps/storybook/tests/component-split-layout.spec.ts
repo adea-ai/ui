@@ -168,6 +168,37 @@ test('keyboard closing focuses the host-selected survivor and removes only the c
   await expect(page.getByRole('textbox', { name: 'Editor b' })).toHaveCount(0)
 })
 
+test('the leaf close action keeps its name and explains itself on hover', async ({ page }) => {
+  await act(page, 'split')
+  const close = page.getByRole('button', { name: 'Close Pane b', exact: true })
+  await close.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Close Pane b.')
+  // A layout without a close action renders none, so the tooltip cannot leak
+  // into panes the host cannot dismiss.
+  await expect(page.getByRole('button', { name: 'Close Other pane', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('tooltip')).toHaveCount(1)
+})
+
+test('the pane drag affordance carries a native hover hint naming its pane', async ({ page }) => {
+  await act(page, 'split')
+  await act(page, 'host-presentation')
+  const panes = page.getByRole('group', { name: 'Work panes', exact: true })
+  await expect(panes.locator('[data-pane-id="a"] [data-pane-drag-handle]')).toHaveAttribute(
+    'title',
+    'Drag Pane a to move'
+  )
+  await expect(panes.locator('[data-pane-id="b"] [data-pane-drag-handle]')).toHaveAttribute(
+    'title',
+    'Drag Pane b to move'
+  )
+  // Without a move handler the header is not a drag affordance and stays hint-free.
+  await expect(
+    page
+      .getByRole('group', { name: 'Host work panes', exact: true })
+      .locator('[data-pane-drag-handle][title]')
+  ).toHaveCount(0)
+})
+
 test('automated accessibility covers nested labelled panes in light and dark', async ({ page }) => {
   await act(page, 'split')
   await act(page, 'nested')

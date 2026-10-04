@@ -163,6 +163,17 @@ test('the default modal close button stays anchored to the panel after entrance 
   expect(rightInset).toBeLessThan(22)
 })
 
+test('the corner close action keeps its name and explains itself on hover', async ({ page }) => {
+  await page.getByRole('button', { name: 'Open workspace details' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Workspace details' })
+  await expect(dialog).toBeVisible()
+  const close = dialog.getByRole('button', { name: 'Close', exact: true })
+  await close.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Close dialog.')
+  await close.click()
+  await expect(page.getByLabel('Close status')).toHaveText('Closing')
+})
+
 test('the settings surface stays inside narrow viewports and leaves its body scrollable', async ({
   page,
 }) => {

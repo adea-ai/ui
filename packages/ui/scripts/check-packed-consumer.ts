@@ -597,14 +597,23 @@ try {
                       : 32
           if (Buffer.byteLength(css) > cssCapKiB * 1024)
             throw new Error(`CSS exceeds measured ${cssCapKiB} KiB cap: ${Buffer.byteLength(css)}`)
-          // JS gzip, measured: overlay 37,922; shell 24,434. The 32 KiB cap held
-          // while the merge runtime was `clsx` + `tailwind-merge`; the `cn` swap
-          // (2026-09) replaced it with the config-extended runtime, which ships
-          // cn's compiler and default tables for `createCn(extend)` — the setup
-          // the cn docs prescribe for published libraries. Re-baselined, not
-          // relaxed: the number still bounds the whole overlay/shell floor.
-          if ((sample.name === 'overlay' || sample.name === 'shell') && bytes > 38 * 1024)
-            throw new Error('Overlay/shell exceeds measured 38 KiB gzip cap')
+          // JS gzip, measured: shell 19,003. The 32 KiB cap held while the merge
+          // runtime was `clsx` + `tailwind-merge`; the `cn` swap (2026-09) replaced
+          // it with the config-extended runtime, which ships cn's compiler and
+          // default tables for `createCn(extend)` — the setup the cn docs
+          // prescribe for published libraries. Re-baselined, not relaxed: the
+          // number still bounds the shell floor.
+          if (sample.name === 'shell' && bytes > 38 * 1024)
+            throw new Error('Shell exceeds measured 38 KiB gzip cap')
+          // Overlay re-baselined 38 → 46 KiB (2026-10): the dialog's icon-only
+          // corner close now carries the shared tooltip (reported by consumer
+          // Adea PR #1023), so the Tooltip machinery is part of the dialog
+          // floor. Measured 44,848 (compiled) / 45,127 (solid) gzip against
+          // main's 37,922; discovered CSS moved 39,385 → 40,317 under its 40 KiB
+          // cap. Re-baselined, not relaxed: the cap still bounds the overlay
+          // floor, now including the shared tooltip.
+          if (sample.name === 'overlay' && bytes > 46 * 1024)
+            throw new Error('Overlay exceeds its re-baselined 46 KiB gzip cap')
           if (phase === 'optional' && bytes > 180 * 1024)
             throw new Error('Optional entry exceeds existing 180 KiB gzip budget')
         } catch (error) {

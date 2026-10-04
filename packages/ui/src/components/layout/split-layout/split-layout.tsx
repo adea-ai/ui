@@ -11,7 +11,7 @@ import {
   type JSX,
 } from 'solid-js'
 import { X, GripVertical } from 'lucide-solid'
-import { Button } from '../../ui/button'
+import { ActionButton } from '../../composites/action-button'
 import { cn } from '#lib/utils'
 import { computeLayoutFrames, type LayoutRect } from './geometry'
 import { paneDropIntent, type PaneDropIntent } from './drop'
@@ -420,14 +420,15 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
                 </span>
                 {actions}
                 {props.onClose ? (
-                  <Button
+                  <ActionButton
                     variant="ghost"
                     size="icon-xs"
                     aria-label={`Close ${props.labelForLeaf(leaf())}`}
+                    tooltip={`Close ${props.labelForLeaf(leaf())}.`}
                     onClick={() => close(id)}
                   >
                     <X />
-                  </Button>
+                  </ActionButton>
                 ) : null}
               </header>
               <div class="min-h-0 min-w-0 flex-1 overflow-auto">{content}</div>

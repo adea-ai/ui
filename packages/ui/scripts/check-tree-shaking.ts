@@ -117,7 +117,12 @@ const SAMPLES: readonly {
     note: 'corvu calendar',
     brings: 'corvu calendar',
   },
-  { name: 'ModalDialog', names: ['ModalDialog'], note: 'Kobalte dialog', brings: 'Kobalte dialog' },
+  {
+    name: 'ModalDialog',
+    names: ['ModalDialog'],
+    note: 'Kobalte dialog with its icon close tooltip',
+    brings: 'Kobalte dialog, the shared tooltip',
+  },
   {
     name: 'Carousel',
     names: ['Carousel'],
