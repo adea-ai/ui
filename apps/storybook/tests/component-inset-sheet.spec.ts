@@ -57,9 +57,23 @@ test('an end Sheet docks below the top bar with one equal gap and no scrim', asy
       ) * Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
   )
   // Measure the settled panel, not a frame of its slide-in.
-  await sheet.evaluate((element) =>
-    Promise.all(element.getAnimations().map((animation) => animation.finished))
-  )
+  await sheet.evaluate(async (element) => {
+    // Opening can replace the first animation; a canceled finished promise is
+    // an AbortError. Wait for its replacement before measuring the same geometry.
+    let animations = element
+      .getAnimations()
+      .filter((animation) => animation.playState === 'running')
+    while (animations.length) {
+      await Promise.all(
+        animations.map((animation) =>
+          animation.finished.catch((error: unknown) => {
+            if (!(error instanceof DOMException && error.name === 'AbortError')) throw error
+          })
+        )
+      )
+      animations = element.getAnimations().filter((animation) => animation.playState === 'running')
+    }
+  })
   const box = (await sheet.boundingBox())!
   const gap = 1280 - (box.x + box.width)
   expect(gap).toBeGreaterThan(0)

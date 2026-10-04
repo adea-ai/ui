@@ -46,6 +46,7 @@ const coreSamples: PackedSample[] = [
     jsx: '<ContextualSidebar label="Workspace navigation" title="Workspace" open width={272} minimum={208} maximum={448} onOpenChange={() => {}} onWidthChange={() => {}} content={() => <p>Projects</p>} />',
     sources: [
       'components/layout/contextual-sidebar/contextual-sidebar.tsx',
+      'components/layout/contextual-sidebar/mobile-contextual-sidebar.tsx',
       'components/layout/sidebar-nav/sidebar-nav.tsx',
       'components/layout/sidebar-nav/sidebar-nav-resize-handle.tsx',
       'components/layout/pixel-resize-handle/pixel-resize-handle.tsx',
@@ -418,9 +419,54 @@ try {
                 id.slice(0, id.indexOf('/node_modules/solid-js/') + '/node_modules/solid-js'.length)
               )
           )
-          if (solidRoots.size !== 1 || js.length !== 1)
-            throw new Error('Expected one Solid runtime and one JS chunk')
+          if (solidRoots.size !== 1) throw new Error('Expected one Solid runtime')
+          let initialGzip: number | undefined
+          if (sample.name === 'contextual-sidebar-subpath') {
+            const entries = js.filter((chunk) => chunk.isEntry)
+            if (entries.length !== 1) throw new Error('Expected one contextual sidebar entry')
+            const byFile = new Map(js.map((chunk) => [chunk.fileName, chunk]))
+            const initial = new Set<string>()
+            const visit = (file: string) => {
+              if (initial.has(file)) return
+              initial.add(file)
+              const chunk = byFile.get(file)
+              if (!chunk) throw new Error(`Missing static sidebar chunk: ${file}`)
+              for (const dependency of chunk.imports) visit(dependency)
+            }
+            visit(entries[0]!.fileName)
+            const initialCode = js
+              .filter((chunk) => initial.has(chunk.fileName))
+              .map((chunk) => chunk.code)
+              .join('\n')
+            initialGzip = gzipSync(initialCode).length
+            if (initialGzip > 32 * 1024)
+              throw new Error('Desktop contextual sidebar exceeds its 32 KiB gzip bound')
+            const initialModules = js
+              .filter((chunk) => initial.has(chunk.fileName))
+              .flatMap((chunk) => Object.keys(chunk.modules))
+            if (
+              initialModules.some((id) =>
+                /mobile-contextual-sidebar|\/components\/ui\/sheet\//.test(id)
+              )
+            )
+              throw new Error('Desktop sidebar eagerly retains the mobile Sheet')
+            if (
+              !js.some(
+                (chunk) =>
+                  !initial.has(chunk.fileName) &&
+                  Object.keys(chunk.modules).some((id) => id.includes('mobile-contextual-sidebar'))
+              )
+            )
+              throw new Error('Packed sidebar is missing its deferred mobile implementation')
+          } else if (js.length !== 1) {
+            throw new Error('Expected one JS chunk')
+          }
           const code = js.map((chunk) => chunk.code).join('\n')
+          if (
+            sample.name === 'contextual-sidebar-subpath' &&
+            code.includes('font-content text-content font-semibold')
+          )
+            throw new Error('Sidebar retained the unused Text variant constructor')
           const css = chunks
             .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
             .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
@@ -472,7 +518,11 @@ try {
             condition,
             sample: sample.name,
             js: Buffer.byteLength(code),
+            // Keep the existing combined-code budget; report actual separate
+            // chunk transfer too, since each response has its own gzip stream.
             gzip: bytes,
+            transferredGzip: js.reduce((sum, chunk) => sum + gzipSync(chunk.code).length, 0),
+            initialGzip,
             css: Buffer.byteLength(css),
             chunks: js.length,
             solidRuntimes: solidRoots.size,

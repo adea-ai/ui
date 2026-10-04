@@ -48,6 +48,12 @@ sidebar ruler; the host still owns the panel's actual width.
 ## Mobile navigation
 
 At widths up to 48rem, the sidebar is rendered in the shared modal `Sheet`.
+Its implementation loads on the first narrow viewport and remains mounted across
+later viewport changes so closing and focus cleanup retain their lifecycle.
+Desktop initial imports exclude the mobile Sheet; the packed consumer gate checks
+that split in both compiled and Solid conditions while bounding the complete
+payload, including the deferred chunk. Both layouts use `label` as their
+accessible navigation name.
 Pass a stable `restoreFocusRef` when a toolbar button opens it. Supply
 `wideViewportAtLoad` from the app's viewport seed: a wide-loaded stale `open`
 value is cleared if the view mounts after the viewport becomes narrow, while an

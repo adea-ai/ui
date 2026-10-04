@@ -25,7 +25,8 @@ import { cn } from '#lib/utils'
  * stack already sets the rhythm (a card or dialog header), and is the only other
  * option.
  */
-export const headingVariants = cva('font-semibold', {
+// cva only returns a closure. A heading-only consumer must discard Text's recipe.
+export const headingVariants = /* @__PURE__ */ cva('font-semibold', {
   variants: {
     size: {
       /** 30px. An app-level headline — a first-run or empty-app screen. Once per app. */
@@ -130,7 +131,7 @@ export function Heading<T extends ValidComponent = 'h2'>(props: HeadingProps<T>)
  *
  * Defaults: `body` renders a `p`, `code` a `code`, every other variant a `span`.
  */
-export const textVariants = cva('', {
+export const textVariants = /* @__PURE__ */ cva('', {
   variants: {
     variant: {
       /** 14px / 400. Body copy and descriptions. */

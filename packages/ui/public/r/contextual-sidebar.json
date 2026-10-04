@@ -20,6 +20,11 @@
       "path": "src/components/layout/contextual-sidebar/index.ts",
       "type": "registry:ui",
       "target": "components/layout/contextual-sidebar/index.ts"
+    },
+    {
+      "path": "src/components/layout/contextual-sidebar/mobile-contextual-sidebar.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/contextual-sidebar/mobile-contextual-sidebar.tsx"
     }
   ]
 }
