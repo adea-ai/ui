@@ -75,3 +75,8 @@ The standalone `PixelResizeHandle` is also available from
 edge, independent of the host's text direction. Left/right arrows follow the
 visible divider; Home/End choose the pane's minimum/maximum width. Registration,
 collapse, and canceled pointer gestures do not commit a new preference.
+
+The pixel ruler keeps Corvu's keyboard and geometry behavior. Its local pointer
+capture ends on pointer up, cancellation, lost capture, blur, or unmount. This
+fills Corvu 0.2.5's missing native-cancellation coverage without starting that
+version's global pointer-drag handler.

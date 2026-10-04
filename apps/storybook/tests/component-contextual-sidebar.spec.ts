@@ -243,13 +243,97 @@ test('canceling a pointer resize preserves width when navigation closes and reop
   await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2)
   await expect(handle).toHaveAttribute('aria-valuenow', '312')
   await handle.dispatchEvent('pointercancel', { pointerId: 1, pointerType: 'mouse' })
-  await page.mouse.up()
+  // Native cancellation does not guarantee a later pointerup. End feedback and
+  // restore keyboard operation before releasing Playwright's mouse button.
+  await expect(handle).not.toHaveAttribute('data-dragging', '')
   await expect(page.getByLabel('Committed sidebar width')).toHaveText('272')
+  await handle.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(handle).toHaveAttribute('aria-valuenow', '328')
+  await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2)
+  await expect(handle).toHaveAttribute('aria-valuenow', '328')
+  await page.mouse.up()
+  await expect(page.getByLabel('Committed sidebar width')).toHaveText('328')
   const opener = page.getByRole('button', { name: 'Toggle workspace navigation' })
   await opener.click()
   await opener.click()
-  await expect(page.getByLabel('Projected sidebar width')).toHaveText('312')
-  await expect(page.locator('#fixture-contextual-sidebar-desktop')).toHaveCSS('width', '312px')
+  await expect(page.locator('#fixture-contextual-sidebar-desktop')).toHaveCSS('width', '328px')
+  const freshBox = (await handle.boundingBox())!
+  const x = freshBox.x + freshBox.width / 2
+  const y = freshBox.y + freshBox.height / 2
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + 16, y)
+  await page.mouse.up()
+  await expect(handle).toHaveAttribute('aria-valuenow', '344')
+  await expect(page.getByLabel('Committed sidebar width')).toHaveText('344')
+})
+
+for (const finish of ['blur', 'unmount'] as const) {
+  test(`keyboard resize persists when ${finish} happens before keyup`, async ({ page }) => {
+    await mountFixture(page, { width: 800, open: true, wideViewportAtLoad: false })
+    const handle = page.getByRole('separator', { name: 'Resize workspace navigation' })
+    const opener = page.getByRole('button', { name: 'Toggle workspace navigation' })
+    await handle.focus()
+    await page.keyboard.down('ArrowRight')
+    await expect(handle).toHaveAttribute('aria-valuenow', '288')
+    if (finish === 'blur') await opener.focus()
+    else
+      await opener.evaluate((element) => {
+        if (!(element instanceof HTMLButtonElement))
+          throw new Error('Expected shared Button opener')
+        element.click()
+      })
+    await expect(page.getByLabel('Committed sidebar width')).toHaveText('288')
+    await page.keyboard.up('ArrowRight')
+    if (finish === 'unmount') await opener.click()
+    await expect(page.locator('#fixture-contextual-sidebar-desktop')).toHaveCSS('width', '288px')
+  })
+}
+
+test('lost pointer capture stops resizing and restores keyboard control without pointerup', async ({
+  page,
+}) => {
+  await mountFixture(page, { width: 800, open: true, wideViewportAtLoad: false })
+  const handle = page.getByRole('separator', { name: 'Resize workspace navigation' })
+  const box = (await handle.boundingBox())!
+  const x = box.x + box.width / 2
+  const y = box.y + box.height / 2
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + 24, y)
+  await expect(handle).toHaveAttribute('aria-valuenow', '296')
+  expect(
+    await handle.evaluate((element) => {
+      element.releasePointerCapture(1)
+      return element.hasPointerCapture(1)
+    })
+  ).toBe(false)
+  // Engines may process the pending lost-capture event on the next pointer event.
+  await page.mouse.move(x + 64, y)
+  await expect(handle).not.toHaveAttribute('data-dragging', '')
+  await expect(handle).toHaveAttribute('aria-valuenow', '296')
+  await expect(page.getByLabel('Committed sidebar width')).toHaveText('272')
+  await page.keyboard.press('ArrowRight')
+  await expect(handle).toHaveAttribute('aria-valuenow', '312')
+  await page.mouse.up()
+  await expect(page.getByLabel('Committed sidebar width')).toHaveText('312')
+})
+
+test('captured pointer movement clamps to pane bounds outside the ruler', async ({ page }) => {
+  await mountFixture(page, { width: 800, open: true, wideViewportAtLoad: false })
+  const handle = page.getByRole('separator', { name: 'Resize right utility' })
+  const box = (await handle.boundingBox())!
+  const y = box.y + box.height / 2
+  await page.mouse.move(box.x + box.width / 2, y)
+  await page.mouse.down()
+  await page.mouse.move(50, y)
+  await expect(handle).toHaveAttribute('aria-valuenow', '448')
+  await page.mouse.move(790, y)
+  await expect(handle).toHaveAttribute('aria-valuenow', '208')
+  await page.mouse.up()
+  await expect(page.getByLabel('Right utility commit count')).toHaveText('1')
+  await expect(page.getByLabel('Right utility committed width')).toHaveText('208')
 })
 
 for (const width of [800, 320]) {

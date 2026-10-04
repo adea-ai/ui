@@ -1,5 +1,5 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable'
-import { onCleanup } from 'solid-js'
+import { createSignal, onCleanup } from 'solid-js'
 import { cn } from '#lib/utils'
 
 export type PixelResizeHandleProps = {
@@ -24,6 +24,11 @@ export type PixelResizeHandleProps = {
  * pane's actual width and any persistence in its layout owner; this component
  * reports a bounded pixel value and places the shared resizable grip at the
  * matching left or right edge.
+ *
+ * Corvu 0.2.5 supplies geometry, keyboard resizing, ARIA and the shared grip,
+ * but its global drag handler does not end on pointer cancellation. Prevent
+ * that handler through its public start hook and use local pointer capture
+ * for bounded pixel gestures, including cancellation and lost capture.
  */
 export function PixelResizeHandle(props: PixelResizeHandleProps) {
   const maximum = () => Math.max(1, props.maximum)
@@ -34,8 +39,28 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
   const rulerSizes = () => (isRight() ? [1 - ratio(), ratio()] : [ratio(), 1 - ratio()])
   const commit = () => props.onCommit?.(value())
   let interacting = false
-  onCleanup(() => {
+  const [drag, setDrag] = createSignal<{
+    pointerId: number
+    startX: number
+    startValue: number
+    handle: HTMLElement
+  }>()
+  const endPointer = (shouldCommit: boolean) => {
+    const current = drag()
+    if (!current) return
+    setDrag(undefined)
+    if (current.handle.hasPointerCapture(current.pointerId))
+      current.handle.releasePointerCapture(current.pointerId)
+    if (shouldCommit) commit()
+  }
+  const endKeyboard = () => {
+    const wasInteracting = interacting
     interacting = false
+    if (wasInteracting) commit()
+  }
+  onCleanup(() => {
+    endKeyboard()
+    endPointer(false)
   })
 
   return (
@@ -56,7 +81,7 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
       onSizesChange={(sizes) => {
         // Panel registration and teardown also emit sizes. Only user resizing
         // may update the host preference; collapsing must preserve its width.
-        if (!interacting) return
+        if (!interacting || sizes.length !== 2) return
         const next = Math.round((sizes[isRight() ? 1 : 0] ?? ratio()) * maximum())
         const bounded = Math.min(maximum(), Math.max(minimum(), next))
         if (bounded !== value()) props.onChange(bounded)
@@ -75,23 +100,58 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
         aria-valuemax={maximum()}
         aria-valuenow={value()}
         aria-valuetext={`${value()} pixels`}
-        onHandleDragStart={() => {
-          interacting = true
-        }}
-        onHandleDragEnd={() => {
-          if (interacting) commit()
+        data-dragging={drag() ? '' : undefined}
+        onHandleDragStart={(event) => {
+          // Corvu checks defaultPrevented before starting its global handler.
+          event.preventDefault()
+          if (event.button !== 0 || !event.isPrimary) return
+          const handle = event.currentTarget
+          if (!(handle instanceof HTMLElement)) return
+          endPointer(false)
           interacting = false
+          handle.focus()
+          handle.setPointerCapture(event.pointerId)
+          setDrag({
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startValue: value(),
+            handle,
+          })
         }}
-        onPointerCancel={() => {
-          interacting = false
+        onPointerMove={(event: PointerEvent) => {
+          const current = drag()
+          if (!current || event.pointerId !== current.pointerId) return
+          if (!current.handle.hasPointerCapture(current.pointerId)) {
+            endPointer(false)
+            return
+          }
+          const delta = (event.clientX - current.startX) * (isRight() ? -1 : 1)
+          const next = Math.min(
+            maximum(),
+            Math.max(minimum(), Math.round(current.startValue + delta))
+          )
+          if (next !== value()) props.onChange(next)
         }}
-        onLostPointerCapture={() => {
-          interacting = false
+        onPointerUp={(event: PointerEvent) => {
+          if (event.pointerId === drag()?.pointerId) endPointer(true)
+        }}
+        onPointerCancel={(event: PointerEvent) => {
+          if (event.pointerId === drag()?.pointerId) endPointer(false)
+        }}
+        onLostPointerCapture={(event: PointerEvent) => {
+          if (event.pointerId === drag()?.pointerId) endPointer(false)
         }}
         onBlur={() => {
-          interacting = false
+          endKeyboard()
+          endPointer(false)
         }}
         onKeyDown={(event) => {
+          const current = drag()
+          if (current && !current.handle.hasPointerCapture(current.pointerId)) endPointer(false)
+          if (drag()) {
+            event.preventDefault()
+            return
+          }
           if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) interacting = true
           // Corvu operates on physical panel order. Home/End here describe
           // the controlled pane width, including a pane after the separator.
@@ -102,8 +162,7 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
         }}
         onKeyUp={(event) => {
           if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-            commit()
-            interacting = false
+            endKeyboard()
           }
         }}
         class="pointer-events-auto"
