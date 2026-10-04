@@ -83,8 +83,12 @@ function inspectPackedBundle(
   // headroom; the 76 KiB gzip JS cap leaves 182 bytes in the Solid condition.
   // Re-baselined 64 → 76 KiB (2026-09) for the `cn` swap: measured 72,832 gzip —
   // the config-extended merge runtime ships cn's compiler and default tables.
-  if (measurement.gzipJsBytes > 76 * 1024)
-    throw new Error('Packed appearance host/editor exceeds 76 KiB gzip JS budget')
+  // Re-baselined 76 → 80 KiB (2026-10) when the popup became a docked inset
+  // Sheet: Kobalte Dialog and the shared dialog focus restoration replace the
+  // Popover, measured at 79,124 compiled gzip JS (+2,060) with CSS unchanged in
+  // budget at 52,658 raw bytes.
+  if (measurement.gzipJsBytes > 80 * 1024)
+    throw new Error('Packed appearance host/editor exceeds 80 KiB gzip JS budget')
   if (measurement.cssBytes > 52 * 1024)
     throw new Error('Packed appearance host/editor exceeds measured 52 KiB raw CSS budget')
 }
