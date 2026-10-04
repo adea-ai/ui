@@ -74,6 +74,21 @@ describe('registry', () => {
     expect(names.length).toBeGreaterThan(50)
   })
 
+  test('ships component-scoped styles with the component registry payload', () => {
+    const surface = registryItems.find((item) => item.name === 'annotation-surface')
+    const stylePath = 'src/components/ui/annotation-surface/annotation-surface.css'
+    const style = surface?.files.find((file) => file.path === stylePath)
+
+    expect(style?.target).toBe('components/ui/annotation-surface/annotation-surface.css')
+    expect(style?.type).toBe('registry:ui')
+    expect(readFileSync(join(publicRegistryDir, stylePath), 'utf8')).toBe(
+      readFileSync(
+        resolve(import.meta.dir, '../src/components/ui/annotation-surface/annotation-surface.css'),
+        'utf8'
+      )
+    )
+  })
+
   test('preserves nested conversation install paths without target collisions', () => {
     const targets = registryItems.flatMap((item) => item.files.map((file) => file.target))
     expect(new Set(targets).size).toBe(targets.length)

@@ -156,12 +156,16 @@ function componentFiles(dir: string): string[] {
       }
       // Stories and MDX are the workshop's, not the consumer's: copying them
       // into someone's project would ship our documentation as their source.
+      // Story stylesheets are the same review surface as the story files.
       if (entry.endsWith('.stories.tsx') || entry.endsWith('.stories.ts')) continue
+      if (entry.endsWith('.stories.css')) continue
       if (entry.endsWith('.mdx')) continue
       // Tests are the same: a consumer wants the component, not our assertions
       // about it, and `bun:test` is not a dependency they agreed to.
       if (/\.test\.(ts|tsx)$/.test(entry)) continue
-      if (!/\.(ts|tsx)$/.test(entry)) continue
+      // Component-scoped CSS is imported by the component so it follows that
+      // component through both package and standalone registry installs.
+      if (!/\.(ts|tsx|css)$/.test(entry)) continue
       files.push(path)
     }
   }
