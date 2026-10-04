@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.110.0](https://github.com/adea-ai/ui/compare/v0.109.1...v0.110.0) (2026-10-04)
+
+
+### Features
+
+* **layout:** balance automatic splits through a two-row grid ([#327](https://github.com/adea-ai/ui/issues/327)) ([fafc2cf](https://github.com/adea-ai/ui/commit/fafc2cfd3c9fd922a358b5ee1136a5429e33bd4b))
+
 ## [0.109.1](https://github.com/adea-ai/ui/compare/v0.109.0...v0.109.1) (2026-10-04)
 
 
