@@ -12,11 +12,6 @@
   ],
   "files": [
     {
-      "path": "src/components/layout/contextual-sidebar/contextual-sidebar.stories.css",
-      "type": "registry:ui",
-      "target": "components/layout/contextual-sidebar/contextual-sidebar.stories.css"
-    },
-    {
       "path": "src/components/layout/contextual-sidebar/contextual-sidebar.tsx",
       "type": "registry:ui",
       "target": "components/layout/contextual-sidebar/contextual-sidebar.tsx"

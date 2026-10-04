@@ -156,7 +156,9 @@ function componentFiles(dir: string): string[] {
       }
       // Stories and MDX are the workshop's, not the consumer's: copying them
       // into someone's project would ship our documentation as their source.
+      // Story stylesheets are the same review surface as the story files.
       if (entry.endsWith('.stories.tsx') || entry.endsWith('.stories.ts')) continue
+      if (entry.endsWith('.stories.css')) continue
       if (entry.endsWith('.mdx')) continue
       // Tests are the same: a consumer wants the component, not our assertions
       // about it, and `bun:test` is not a dependency they agreed to.
