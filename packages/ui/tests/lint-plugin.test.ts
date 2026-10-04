@@ -679,6 +679,10 @@ export function Examples({ ready, refresh, props }: { ready: boolean; refresh():
   return <>
     <SharedButton type="button" class="dev-resources__refresh" aria-label="Refresh resources" disabled={!ready} onClick={refresh}><RefreshIcon aria-hidden="true" /></SharedButton>
     <SharedButton aria-label="Open source"><><svg aria-hidden="true" viewBox="0 0 1 1"><path d="M0 0h1" /></svg></></SharedButton>
+    <SharedButton aria-label="SVG text"><svg viewBox="0 0 20 20"><g><text x="0" y="10">Save</text></g></svg></SharedButton>
+    <SharedButton aria-label="SVG HTML text"><svg viewBox="0 0 20 20"><g><foreignObject><span>Save</span></foreignObject></g></svg></SharedButton>
+    <SharedButton aria-label="SVG nested spread"><svg viewBox="0 0 20 20"><g {...props}><path d="M0 0h1" /></g></svg></SharedButton>
+    <SharedButton aria-label="SVG children spread"><svg {...{ children: <text>Save</text> }}><path d="M0 0h1" /></svg></SharedButton>
     <SharedButton aria-label="Search"><span><Icons.Search aria-hidden="true" /></span></SharedButton>
     <SharedButton aria-label="Span children override"><span children="visible text"><Icons.Search aria-hidden="true" /></span></SharedButton>
     <SharedButton aria-label="Span HTML override"><span dangerouslySetInnerHTML={{ __html: 'visible text' }}><Icons.Search aria-hidden="true" /></span></SharedButton>

@@ -819,6 +819,57 @@ const iconChildrenKind = (
   return hasIcon ? 'icon' : 'empty'
 }
 
+const SVG_TEXT_CONTAINERS = new Set(['text', 'foreignObject'])
+
+/** A raw SVG may be labelled or contain dynamic text instead of an icon. */
+const svgMayContainVisibleText = (children: any[]): boolean => {
+  for (const child of children) {
+    if (!child) return true
+    if (child.type === 'JSXText') {
+      if (String(child.value ?? '').trim()) return true
+      continue
+    }
+    if (child.type === 'JSXFragment') {
+      if (svgMayContainVisibleText(child.children ?? [])) return true
+      continue
+    }
+    if (child.type === 'JSXExpressionContainer') {
+      const expression = child.expression
+      if (!expression || expression.type === 'JSXEmptyExpression') continue
+      if (expression.type === 'JSXElement' || expression.type === 'JSXFragment') {
+        if (
+          svgMayContainVisibleText(
+            expression.type === 'JSXElement' ? [expression] : (expression.children ?? [])
+          )
+        )
+          return true
+        continue
+      }
+      const text = staticStringValue(expression)
+      if (text !== null) {
+        if (text.trim()) return true
+        continue
+      }
+      if (
+        expression.type === 'Literal' &&
+        (expression.value === null || typeof expression.value === 'boolean')
+      )
+        continue
+      return true
+    }
+    if (child.type !== 'JSXElement') return true
+
+    const name = child.openingElement?.name
+    if (name?.type !== 'JSXIdentifier') return true
+    if (SVG_TEXT_CONTAINERS.has(name.name)) return true
+    if (hasContentOverride(child.openingElement)) return true
+    if (name.name === 'title' || name.name === 'desc') continue
+    if (!/^[a-z]/.test(name.name) || name.name.includes('-')) return true
+    if (svgMayContainVisibleText(child.children ?? [])) return true
+  }
+  return false
+}
+
 /**
  * Proves only the uncomplicated icon-only forms that can be read without
  * executing Solid expressions: imported Lucide components, raw SVG, fragments,
@@ -851,7 +902,10 @@ const iconChildKind = (
 
   const name = child.openingElement?.name
   if (name?.type === 'JSXIdentifier' && name.name === 'svg')
-    return hasContentOverride(child.openingElement) ? 'unknown' : 'icon'
+    return hasContentOverride(child.openingElement) ||
+      svgMayContainVisibleText(child.children ?? [])
+      ? 'unknown'
+      : 'icon'
   if (isImportedJsxComponent(name, icons, context))
     return hasContentOverride(child.openingElement) ? 'unknown' : 'icon'
   if (name?.type === 'JSXIdentifier' && name.name === 'span') {

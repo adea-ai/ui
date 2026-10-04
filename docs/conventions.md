@@ -96,7 +96,9 @@ review boundary; the rule does not execute Solid expressions or infer what a
 component renders. Dynamic size or tooltip values also remain a review boundary
 because their runtime values cannot be established statically.
 
-The lint plugin suite exercises the real Oxlint CLI. By default it builds the
+The lint plugin suite exercises the real Oxlint CLI. `bun run check:packed-lint`
+runs those same canaries against the actual npm archive after the library build;
+`verify` and the Registry CI gate include it. By default the direct test command builds the
 source plugin; set `ADEA_UI_LINT_PLUGIN` to an extracted package's exported
 `./lint` entry to run the same canaries against the published artifact. That
 mode loads the supplied module directly and never rebuilds or falls back to
