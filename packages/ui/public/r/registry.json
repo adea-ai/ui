@@ -61,7 +61,6 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [
@@ -569,7 +568,6 @@
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [
@@ -1213,7 +1211,6 @@
       ],
       "registryDependencies": [
         "@adea-ai/ui/dialog",
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [
@@ -1609,6 +1606,11 @@
           "path": "src/components/layout/contextual-sidebar/index.ts",
           "type": "registry:ui",
           "target": "components/layout/contextual-sidebar/index.ts"
+        },
+        {
+          "path": "src/components/layout/contextual-sidebar/mobile-contextual-sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/contextual-sidebar/mobile-contextual-sidebar.tsx"
         }
       ]
     },

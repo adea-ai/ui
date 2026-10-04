@@ -14,6 +14,12 @@
 export const overlaySurface =
   'bg-popover text-popover-foreground rounded-xl border border-border shadow-lg'
 
+/**
+ * Overlay titles have one fixed typography role. Keep this small recipe shared
+ * without loading the configurable Heading component into every dialog.
+ */
+export const overlayTitle = 'font-semibold text-base tracking-tight leading-none'
+
 /** The span of the portal wrapper that centres a dialog-like overlay. */
 export const overlayPositioner = 'fixed inset-0 z-(--z-dialog) grid place-items-center p-4'
 

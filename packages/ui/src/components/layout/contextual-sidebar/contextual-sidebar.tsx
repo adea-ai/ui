@@ -1,7 +1,6 @@
 import type { Accessor, JSX } from 'solid-js'
 import { Show, createSignal, createUniqueId, onCleanup, onMount } from 'solid-js'
 import { cn } from '#lib/utils'
-import { Sheet, SheetContent, SheetTitle } from '../../ui/sheet'
 import {
   SidebarNav,
   SidebarNavContent,
@@ -10,6 +9,9 @@ import {
   SidebarNavTitle,
 } from '../sidebar-nav/sidebar-nav'
 import { PixelResizeHandle } from '../pixel-resize-handle/pixel-resize-handle'
+
+type MobileModule = typeof import('./mobile-contextual-sidebar')
+type MobileLoad = MobileModule | { error: unknown }
 
 export type ContextualSidebarRenderContext = {
   /** Whether the slot is being rendered inside the modal mobile sheet. */
@@ -67,6 +69,22 @@ export type ContextualSidebarProps = {
  */
 export function ContextualSidebar(props: ContextualSidebarProps) {
   const [isNarrowViewport, setIsNarrowViewport] = createSignal(false)
+  const [mobileLoad, setMobileLoad] = createSignal<MobileLoad>()
+  let mobileRequested = false
+  // Keep the resolved component mounted across viewport changes for Sheet cleanup.
+  const loadMobile = () => {
+    if (mobileRequested) return
+    mobileRequested = true
+    // Native module caching shares successful loads without keeping a rejected promise.
+    void import('./mobile-contextual-sidebar').then(
+      (module) => {
+        if (mobileRequested) setMobileLoad(module)
+      },
+      (error: unknown) => {
+        if (mobileRequested) setMobileLoad({ error })
+      }
+    )
+  }
   const [mobileMount, setMobileMount] = createSignal<
     { element: HTMLElement; connected: boolean } | undefined
   >()
@@ -81,6 +99,7 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
     const media = window.matchMedia('(max-width: 48rem)')
     const updateViewport = () => {
       const wasNarrow = isNarrowViewport()
+      if (media.matches) loadMobile()
       // Close before mounting a modal. A desktop-expanded host state is not
       // mobile intent, and opening the Sheet for one frame can steal focus.
       if (media.matches && !wasNarrow) props.onOpenChange(false)
@@ -90,10 +109,14 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
     // A route can mount after a wide-loaded host crosses into mobile. Clear
     // that stale seed, but preserve a sidebar intentionally opened at a
     // narrow boot viewport.
+    if (media.matches) loadMobile()
     if (media.matches && props.wideViewportAtLoad && props.open) props.onOpenChange(false)
     setIsNarrowViewport(media.matches)
     media.addEventListener('change', updateViewport)
-    onCleanup(() => media.removeEventListener('change', updateViewport))
+    onCleanup(() => {
+      mobileRequested = false
+      media.removeEventListener('change', updateViewport)
+    })
   })
 
   const renderSidebar = (mobile: boolean) => {
@@ -160,21 +183,23 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
   }
 
   return (
-    <Sheet
-      open={isNarrowViewport() && props.open}
-      onOpenChange={(open) => props.onOpenChange(open)}
-    >
+    <>
       <Show when={!isNarrowViewport()}>{(_wide) => renderSidebar(false)}</Show>
-      <Show when={isNarrowViewport()}>
-        <SheetContent
-          side="start"
-          class={cn('gap-0 p-0', props.sheetClass)}
-          restoreFocusRef={props.restoreFocusRef}
-        >
-          <SheetTitle class="sr-only">{props.title} navigation</SheetTitle>
-          {renderSidebar(true)}
-        </SheetContent>
+      <Show when={mobileLoad()} keyed>
+        {(loaded) => {
+          if ('error' in loaded) throw loaded.error
+          return (
+            <loaded.MobileSidebar
+              open={isNarrowViewport() && props.open}
+              onOpenChange={props.onOpenChange}
+              label={props.label}
+              sheetClass={props.sheetClass}
+              restoreFocusRef={props.restoreFocusRef}
+              renderSidebar={() => renderSidebar(true)}
+            />
+          )
+        }}
       </Show>
-    </Sheet>
+    </>
   )
 }
