@@ -463,6 +463,17 @@ try {
           }
           const code = js.map((chunk) => chunk.code).join('\n')
           if (
+            ['overlay', 'contextual-sidebar-subpath'].includes(sample.name) &&
+            js.some((chunk) =>
+              Object.entries(chunk.modules).some(
+                ([id, module]) =>
+                  module.renderedLength > 0 &&
+                  id.endsWith('/components/ui/typography/typography.tsx')
+              )
+            )
+          )
+            throw new Error('Fixed overlay titles retained the configurable typography module')
+          if (
             sample.name === 'contextual-sidebar-subpath' &&
             code.includes('font-content text-content font-semibold')
           )

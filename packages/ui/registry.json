@@ -61,7 +61,6 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [
@@ -537,7 +536,6 @@
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [
@@ -1181,7 +1179,6 @@
       ],
       "registryDependencies": [
         "@adea-ai/ui/dialog",
-        "@adea-ai/ui/typography",
         "lib"
       ],
       "files": [

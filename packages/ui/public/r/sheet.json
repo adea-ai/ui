@@ -9,7 +9,6 @@
   ],
   "registryDependencies": [
     "@adea-ai/ui/dialog",
-    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

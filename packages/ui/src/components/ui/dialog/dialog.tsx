@@ -7,9 +7,14 @@ import {
 import { X } from 'lucide-solid'
 import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { createRenderEffect, onCleanup, Show, splitProps } from 'solid-js'
-import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '#lib/overlay'
+import {
+  overlayMotion,
+  overlayPositioner,
+  overlayScrim,
+  overlaySurface,
+  overlayTitle,
+} from '#lib/overlay'
 import { cn } from '#lib/utils'
-import { headingVariants } from '../typography'
 
 type FocusCycle = {
   content: HTMLElement
@@ -326,12 +331,7 @@ export function DialogFooter(props: ComponentProps<'div'>) {
 
 export function DialogTitle(props: ComponentProps<typeof KobalteDialog.Title>) {
   const [local, rest] = splitProps(props, ['class'])
-  return (
-    <KobalteDialog.Title
-      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
-      {...rest}
-    />
-  )
+  return <KobalteDialog.Title class={cn(overlayTitle, local.class)} {...rest} />
 }
 
 export function DialogDescription(props: ComponentProps<typeof KobalteDialog.Description>) {

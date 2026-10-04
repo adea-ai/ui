@@ -5,9 +5,14 @@ import {
 // Use the alert-specific export rather than DialogRoot.Content, which other imports can replace.
 import type { ComponentProps } from 'solid-js'
 import { createEffect, createSignal, splitProps } from 'solid-js'
-import { overlayMotion, overlayPositioner, overlayScrim, overlaySurface } from '../../../lib/overlay'
+import {
+  overlayMotion,
+  overlayPositioner,
+  overlayScrim,
+  overlaySurface,
+  overlayTitle,
+} from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
-import { headingVariants } from '../typography'
 
 /**
  * AlertDialog.
@@ -116,12 +121,7 @@ export function AlertDialogFooter(props: ComponentProps<'div'>) {
 
 export function AlertDialogTitle(props: ComponentProps<typeof KobalteAlertDialog.Title>) {
   const [local, rest] = splitProps(props, ['class'])
-  return (
-    <KobalteAlertDialog.Title
-      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
-      {...rest}
-    />
-  )
+  return <KobalteAlertDialog.Title class={cn(overlayTitle, local.class)} {...rest} />
 }
 
 export function AlertDialogDescription(

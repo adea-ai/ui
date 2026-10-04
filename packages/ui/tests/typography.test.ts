@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { overlayTitle } from '../src/lib/overlay'
 import {
   headingElement,
   headingVariants,
@@ -9,6 +10,12 @@ import {
 const classes = (value: string) => value.split(/\s+/).filter(Boolean)
 
 describe('headingVariants', () => {
+  test('fixed overlay titles retain the card heading typography contract', () => {
+    expect(classes(overlayTitle)).toEqual(
+      classes(headingVariants({ size: 'card', leading: 'none' }))
+    )
+  })
+
   test('maps each size to one rung of the ladder', () => {
     expect(classes(headingVariants({ size: 'display' }))).toContain('text-3xl')
     expect(classes(headingVariants({ size: 'title' }))).toContain('text-2xl')

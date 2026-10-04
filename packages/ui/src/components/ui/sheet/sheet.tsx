@@ -8,9 +8,9 @@ import { X } from 'lucide-solid'
 import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { cva, type VariantProps } from '#lib/variants'
+import { overlayTitle } from '#lib/overlay'
 import { cn } from '#lib/utils'
 import { createDialogFocusRestoration, DialogOverlay } from '../dialog/dialog'
-import { headingVariants } from '../typography'
 
 /**
  * Sheet.
@@ -215,12 +215,7 @@ export function SheetFooter(props: ComponentProps<'div'>) {
 
 export function SheetTitle(props: ComponentProps<typeof KobalteDialog.Title>) {
   const [local, rest] = splitProps(props, ['class'])
-  return (
-    <KobalteDialog.Title
-      class={cn(headingVariants({ size: 'card', leading: 'none' }), local.class)}
-      {...rest}
-    />
-  )
+  return <KobalteDialog.Title class={cn(overlayTitle, local.class)} {...rest} />
 }
 
 export function SheetDescription(props: ComponentProps<typeof KobalteDialog.Description>) {
