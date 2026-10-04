@@ -747,6 +747,185 @@ const staticStringValue = (node: any): string | null => {
   return null
 }
 
+interface ImportedJsxBindings {
+  named: WeakSet<object>
+  namespaces: WeakSet<object>
+}
+
+const isImportedJsxComponent = (
+  name: any,
+  imports: ImportedJsxBindings,
+  context: LintContext,
+  namespaceExport?: string
+): boolean => {
+  if (name?.type === 'JSXIdentifier' || name?.type === 'Identifier')
+    return isImportedBinding(name, imports.named, context)
+  const memberName = name?.property?.name
+  return (
+    (name?.type === 'JSXMemberExpression' || name?.type === 'MemberExpression') &&
+    (name.object?.type === 'JSXIdentifier' || name.object?.type === 'Identifier') &&
+    (name.property?.type === 'JSXIdentifier' || name.property?.type === 'Identifier') &&
+    (namespaceExport ? memberName === namespaceExport : /^[A-Z]/.test(memberName ?? '')) &&
+    isImportedBinding(name.object, imports.namespaces, context)
+  )
+}
+
+type IconChildKind = 'empty' | 'icon' | 'text' | 'unknown'
+
+const CONTENT_OVERRIDE_PROPS = new Set([
+  'children',
+  'dangerouslySetInnerHTML',
+  'innerHTML',
+  'textContent',
+])
+
+/** Opaque spreads and objects containing content props may override children. */
+const spreadMayOverrideContent = (argument: any): boolean => {
+  while (
+    argument?.type === 'TSAsExpression' ||
+    argument?.type === 'TSSatisfiesExpression' ||
+    argument?.type === 'TSNonNullExpression'
+  )
+    argument = argument.expression
+  if (argument?.type !== 'ObjectExpression') return true
+  return argument.properties.some((property: any) => {
+    if (property.type !== 'Property') return true
+    const key = staticPropertyKey(property.key, property.computed === true)
+    return key === null || CONTENT_OVERRIDE_PROPS.has(key)
+  })
+}
+
+const hasContentOverride = (openingElement: any): boolean =>
+  (openingElement?.attributes ?? []).some((attribute: any) => {
+    if (attribute.type === 'JSXSpreadAttribute') return spreadMayOverrideContent(attribute.argument)
+    return (
+      attribute.type === 'JSXAttribute' &&
+      attribute.name?.type === 'JSXIdentifier' &&
+      CONTENT_OVERRIDE_PROPS.has(attribute.name.name)
+    )
+  })
+
+const iconChildrenKind = (
+  children: any[],
+  icons: ImportedJsxBindings,
+  context: LintContext
+): IconChildKind => {
+  let hasIcon = false
+  for (const child of children) {
+    const kind = iconChildKind(child, icons, context)
+    if (kind === 'text' || kind === 'unknown') return kind
+    if (kind === 'icon') hasIcon = true
+  }
+  return hasIcon ? 'icon' : 'empty'
+}
+
+const SVG_TEXT_CONTAINERS = new Set(['text', 'foreignObject'])
+
+/** A raw SVG may be labelled or contain dynamic text instead of an icon. */
+const svgMayContainVisibleText = (children: any[]): boolean => {
+  for (const child of children) {
+    if (!child) return true
+    if (child.type === 'JSXText') {
+      if (String(child.value ?? '').trim()) return true
+      continue
+    }
+    if (child.type === 'JSXFragment') {
+      if (svgMayContainVisibleText(child.children ?? [])) return true
+      continue
+    }
+    if (child.type === 'JSXExpressionContainer') {
+      const expression = child.expression
+      if (!expression || expression.type === 'JSXEmptyExpression') continue
+      if (expression.type === 'JSXElement' || expression.type === 'JSXFragment') {
+        if (
+          svgMayContainVisibleText(
+            expression.type === 'JSXElement' ? [expression] : (expression.children ?? [])
+          )
+        )
+          return true
+        continue
+      }
+      const text = staticStringValue(expression)
+      if (text !== null) {
+        if (text.trim()) return true
+        continue
+      }
+      if (
+        expression.type === 'Literal' &&
+        (expression.value === null || typeof expression.value === 'boolean')
+      )
+        continue
+      return true
+    }
+    if (child.type !== 'JSXElement') return true
+
+    const name = child.openingElement?.name
+    if (name?.type !== 'JSXIdentifier') return true
+    if (SVG_TEXT_CONTAINERS.has(name.name)) return true
+    if (hasContentOverride(child.openingElement)) return true
+    if (name.name === 'title' || name.name === 'desc') continue
+    if (!/^[a-z]/.test(name.name) || name.name.includes('-')) return true
+    if (svgMayContainVisibleText(child.children ?? [])) return true
+  }
+  return false
+}
+
+/**
+ * Proves only the uncomplicated icon-only forms that can be read without
+ * executing Solid expressions: imported Lucide components, raw SVG, fragments,
+ * whitespace, and spans that contain only those forms.
+ */
+const iconChildKind = (
+  child: any,
+  icons: ImportedJsxBindings,
+  context: LintContext
+): IconChildKind => {
+  if (!child) return 'unknown'
+  if (child.type === 'JSXText') return String(child.value ?? '').trim() ? 'text' : 'empty'
+  if (child.type === 'JSXFragment') return iconChildrenKind(child.children ?? [], icons, context)
+  if (child.type === 'JSXExpressionContainer') {
+    const expression = child.expression
+    if (!expression || expression.type === 'JSXEmptyExpression') return 'empty'
+    if (expression.type === 'JSXElement' || expression.type === 'JSXFragment')
+      return iconChildKind(expression, icons, context)
+    const text = staticStringValue(expression)
+    if (text !== null) return text.trim() ? 'text' : 'empty'
+    if (
+      expression.type === 'Literal' &&
+      (expression.value === null || typeof expression.value === 'boolean')
+    )
+      return 'empty'
+    if (expression.type === 'Literal' && typeof expression.value === 'number') return 'text'
+    return 'unknown'
+  }
+  if (child.type !== 'JSXElement') return 'unknown'
+
+  const name = child.openingElement?.name
+  if (name?.type === 'JSXIdentifier' && name.name === 'svg')
+    return hasContentOverride(child.openingElement) ||
+      svgMayContainVisibleText(child.children ?? [])
+      ? 'unknown'
+      : 'icon'
+  if (isImportedJsxComponent(name, icons, context))
+    return hasContentOverride(child.openingElement) ? 'unknown' : 'icon'
+  if (name?.type === 'JSXIdentifier' && name.name === 'span') {
+    if (hasContentOverride(child.openingElement)) return 'unknown'
+    return iconChildrenKind(child.children ?? [], icons, context)
+  }
+  return 'unknown'
+}
+
+const hasStaticallyIconOnlyChildren = (
+  node: any,
+  icons: ImportedJsxBindings,
+  context: LintContext
+): boolean => {
+  return (
+    !hasContentOverride(node.openingElement) &&
+    iconChildrenKind(node.children ?? [], icons, context) === 'icon'
+  )
+}
+
 const isIconButtonSize = (node: any): boolean =>
   attributeValues(node, 'size').some((value) => {
     const size = staticStringValue(value)
@@ -762,64 +941,97 @@ const actionTooltipStatus = (node: any): 'valid' | 'blank' | 'unknown' | 'missin
   return 'unknown'
 }
 
-const isImportedComponent = (identifier: any, imports: Set<string>): boolean =>
-  identifier?.type === 'Identifier' && imports.has(identifier.name)
-
 /** Requires shared icon actions to carry the shared explanatory-tooltip contract. */
 const requireActionButtonTooltip: RuleModule = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        'Consumer icon-size shared Button actions use ActionButton with a nonblank tooltip; dynamic values remain a review boundary.',
+        'Icon-sized shared Buttons and statically proven icon-only Buttons use ActionButton with a tooltip; icon-only ActionButtons need one too.',
     },
     schema: [],
     messages: {
       useActionButton:
-        'Icon-size Button actions use ActionButton with a nonblank tooltip. Keep the control name in aria-label; the tooltip explains the action.',
+        'Icon-size or icon-only Button actions must use ActionButton with a nonblank tooltip. Keep the control name in aria-label; the tooltip explains the action.',
       missingTooltip:
-        'An icon-size ActionButton needs a supplied nonblank tooltip. Keep its accessible name in aria-label as well.',
+        'An icon-size or icon-only ActionButton needs a supplied nonblank tooltip. Keep its accessible name in aria-label as well.',
     },
   },
   create(context) {
-    const buttons = new Set<string>()
-    const actionButtons = new Set<string>()
+    const buttons: ImportedJsxBindings = { named: new WeakSet(), namespaces: new WeakSet() }
+    const actionButtons: ImportedJsxBindings = { named: new WeakSet(), namespaces: new WeakSet() }
+    const icons: ImportedJsxBindings = { named: new WeakSet(), namespaces: new WeakSet() }
     const recordImports = (node: any) => {
       const source = node.source?.value
       const target =
         source === BUTTON_MODULE ? buttons : source === ACTION_BUTTON_MODULE ? actionButtons : null
+      if (source === 'lucide-solid') {
+        if (node.importKind === 'type') return
+        for (const specifier of node.specifiers ?? []) {
+          if (!specifier.local || specifier.importKind === 'type') continue
+          if (specifier.type === 'ImportNamespaceSpecifier') icons.namespaces.add(specifier.local)
+          else if (specifier.type === 'ImportSpecifier') {
+            const imported = specifier.imported?.name ?? specifier.imported?.value
+            if (typeof imported === 'string' && /^[A-Z]/.test(imported))
+              icons.named.add(specifier.local)
+          }
+        }
+        return
+      }
       if (!target) return
+      if (node.importKind === 'type') return
       for (const specifier of node.specifiers ?? []) {
-        if (specifier.type !== 'ImportSpecifier') continue
+        if (specifier.type === 'ImportNamespaceSpecifier' && specifier.local) {
+          target.namespaces.add(specifier.local)
+          continue
+        }
+        if (
+          specifier.type !== 'ImportSpecifier' ||
+          !specifier.local ||
+          specifier.importKind === 'type'
+        )
+          continue
         const imported = specifier.imported?.name ?? specifier.imported?.value
         if (
           (source === BUTTON_MODULE && imported === 'Button') ||
           (source === ACTION_BUTTON_MODULE && imported === 'ActionButton')
         )
-          target.add(specifier.local?.name)
+          target.named.add(specifier.local)
       }
     }
 
     return {
-      ImportDeclaration: recordImports,
-      JSXOpeningElement(node: any) {
-        if (!isIconButtonSize(node)) return
-        const name = node.name?.type === 'JSXIdentifier' ? node.name.name : null
-        const isButton = name !== null && buttons.has(name)
-        const isActionButton = name !== null && actionButtons.has(name)
-        const asValues = attributeValues(node, 'as')
-        const targetsButton = asValues.some((value) => isImportedComponent(value, buttons))
-        const targetsActionButton = asValues.some((value) =>
-          isImportedComponent(value, actionButtons)
+      Program(node: any) {
+        for (const statement of node.body ?? [])
+          if (statement.type === 'ImportDeclaration') recordImports(statement)
+      },
+      JSXElement(node: any) {
+        const opening = node.openingElement
+        const isButton = isImportedJsxComponent(opening.name, buttons, context, 'Button')
+        const isActionButton = isImportedJsxComponent(
+          opening.name,
+          actionButtons,
+          context,
+          'ActionButton'
         )
+        const asValues = attributeValues(opening, 'as')
+        const targetsButton = asValues.some((value) =>
+          isImportedJsxComponent(value, buttons, context, 'Button')
+        )
+        const targetsActionButton = asValues.some((value) =>
+          isImportedJsxComponent(value, actionButtons, context, 'ActionButton')
+        )
+        if (!isButton && !isActionButton && !targetsButton && !targetsActionButton) return
+        const iconSized = isIconButtonSize(opening)
+        if (!iconSized && !hasStaticallyIconOnlyChildren(node, icons, context)) return
         if (isButton || targetsButton) {
-          context.report({ node, messageId: 'useActionButton' })
+          context.report({ node: opening, messageId: 'useActionButton' })
           return
         }
         if (!isActionButton && !targetsActionButton) return
-        const status = actionTooltipStatus(node)
+        const status = actionTooltipStatus(opening)
         if (status === 'missing' || status === 'blank')
-          context.report({ node, messageId: 'missingTooltip' })
+          context.report({ node: opening, messageId: 'missingTooltip' })
       },
     }
   },

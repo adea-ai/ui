@@ -35,6 +35,7 @@ build, and breaking one is a failing check rather than a review comment.
 | Every text pairing in the system is measurable and measured                     | `tests/tokens.test.ts` (30 contrast assertions)      |
 | A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                  |
 | No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                       |
+| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`          |
 | No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                              |
 | Every public export belongs to a registry item                                  | `tests/registry.test.ts`                             |
 | The committed registry matches the source                                       | `tests/registry.test.ts`                             |
@@ -52,6 +53,14 @@ commit.
 wiring come from Kobalte or corvu. Where a primitive lacks coverage, say so in the
 component's doc comment and describe what was implemented instead and why — that is
 the one case where a hand-rolled control is correct.
+
+For consumers that enable `adea/require-action-button-tooltip`, an icon-sized or
+statically proven icon-only shared `Button` must use `ActionButton` and a nonblank
+`tooltip`, while keeping its accessible name. The rule recognizes imported
+`lucide-solid` icons, raw SVG, fragments and icon-only spans; visible text remains
+a labelled button. Dynamic children, custom component wrappers, spans with
+content-override props and prop spreads that may supply children are deliberately
+left for review because lint cannot know what they render.
 
 **Write stories that would catch a regression.** A story that only proves a
 component renders is not a specification. Prefer the awkward states: an
