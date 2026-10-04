@@ -46,6 +46,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 const groups = [
+  ['controlled', 'width', [0.3, 0.7]],
   ['horizontal', 'width', [0.28, 0.72]],
   ['vertical', 'height', [0.65, 0.35]],
   ['leading-unsized', 'width', [0.75, 0.25]],

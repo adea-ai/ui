@@ -1,0 +1,15 @@
+<!-- @dsCard group="Layout" height=260 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, PixelResizeHandle } = window.AdeaUI;
+  const [width, setWidth] = createSignal(272);
+  render(() => html`
+    <div style="display:flex;justify-content:flex-end;height:224px">
+      <aside aria-label="Utility pane" style=${() => `position:relative;width:${width()}px;border:1px solid var(--border);background:var(--sidebar);padding:16px`}>
+        <${PixelResizeHandle} side="right" value=${width} minimum=${208} maximum=${448} onChange=${setWidth} label="Resize utility pane" />
+        <p>Drag left to widen. Arrow keys resize; Home and End choose the bounds.</p>
+        <output>${width} pixels</output>
+      </aside>
+    </div>
+  `, document.getElementById('root'));
+</script>

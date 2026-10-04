@@ -4,11 +4,11 @@
   "title": "Sidebar Nav",
   "description": "",
   "dependencies": [
-    "@corvu/resizable@^0.2.5",
     "@kobalte/core@^0.13.14",
     "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/pixel-resize-handle",
     "lib"
   ],
   "files": [
