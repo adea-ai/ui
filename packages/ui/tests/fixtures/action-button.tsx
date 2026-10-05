@@ -122,6 +122,7 @@ function Fixture() {
           touchTarget="comfortable"
           aria-label="Tooltip action"
           tooltip="Open action details"
+          tooltipIcon={<Plus />}
         >
           <Plus />
         </ActionButton>
