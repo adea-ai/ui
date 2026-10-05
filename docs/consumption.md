@@ -196,12 +196,12 @@ they were typed:
 | `@adea-ai/ui` → `CodeBlock`                                     | 25.6 kB    | lucide icons                          |
 | `@adea-ai/ui` → `MessageRow`                                    | 26.7 kB    | nothing                               |
 | `@adea-ai/ui` → `CalendarSurface`                               | 29.6 kB    | corvu calendar                        |
-| `@adea-ai/ui` → `ModalDialog`                                   | 48.9 kB    | Kobalte dialog, the shared tooltip    |
+| `@adea-ai/ui` → `ModalDialog`                                   | 49.6 kB    | Kobalte dialog, the shared tooltip    |
 | `@adea-ai/ui/components/ui/carousel` → `Carousel`               | 34.2 kB    | embla                                 |
-| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 40.5 kB    | Kobalte tooltip                       |
-| `@adea-ai/ui` → `NavigationMenu`                                | 56.0 kB    | Kobalte navigation menu               |
+| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 41.2 kB    | Kobalte tooltip                       |
+| `@adea-ai/ui` → `NavigationMenu`                                | 56.5 kB    | Kobalte navigation menu               |
 | `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _360.0 kB_ | — and `Button` is 6.1% of it          |
+| _root plus chart and carousel entries_                          | _360.7 kB_ | — and `Button` is 6.1% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the
@@ -216,6 +216,12 @@ and under 25.0% of the whole library, and no sampled component may exceed
 
 A size regression is silent — nothing fails, the
 application just gets bigger — which is why it is a gate rather than a report.
+Re-baselined 2026-10 (accent pass): the shared overlay vocabulary gained the
+menu swatch tone ladder and the dialog-family surface split, so every bundle
+that reaches `lib/overlay.ts` grew by its share. Measured against the previous
+table: ModalDialog 48.9 → 49.6 kB, ListRow 40.5 → 41.2 kB, NavigationMenu
+56.0 → 56.5 kB, the root 360.0 → 360.7 kB. `Button` — the floor — did not
+move; the ratios held.
 
 ---
 
@@ -495,5 +501,9 @@ The packed core fixtures enforce complete CSS discovery, including shared helper
 Button is 32,155 raw CSS bytes, ModalDialog is 39,385, and AppShell is 25,389.
 Their CSS caps are 32/40/32 KiB respectively. Dialog's earlier partial fixture
 measured 25,088 bytes because it omitted dialog/button sources and overlay helpers;
-that was incomplete styling, not a usable baseline. Existing JavaScript budgets
-remain unchanged. Optional Chart/Carousel CSS caps are 28/35 KiB.
+that was incomplete styling, not a usable baseline. Optional Chart/Carousel CSS
+caps are 28/35 KiB. One JavaScript budget moved in the 2026-10 accent pass: the
+contextual-sidebar probe bundles `lib/overlay` whole, and the swatch tone ladder
+plus the dialog-surface split grew it to 43,088 bytes solid gzip against main's
+43,006 — a cap that held 2 bytes of headroom. Re-baselined 42 → 43 KiB, not
+relaxed.

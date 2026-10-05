@@ -1,3 +1,4 @@
+import { Layers } from 'lucide-solid'
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../src/components/ui/tooltip/tooltip'
@@ -16,6 +17,14 @@ function Fixture() {
         <TooltipContent>Tooltip without a caret</TooltipContent>
       </Tooltip>
       <button type="button">Next action</button>
+      <Tooltip openDelay={0} forceMount>
+        <TooltipTrigger as="button" type="button" aria-label="Layers">
+          <Layers />
+        </TooltipTrigger>
+        {/* The icon slot is the side rail's icon+label tip on the shared
+            component; the trigger keeps its own accessible name. */}
+        <TooltipContent icon={<Layers />}>Layer tree</TooltipContent>
+      </Tooltip>
       <button type="button" onClick={() => setControlledOpen(true)}>
         Open controlled tooltip
       </button>

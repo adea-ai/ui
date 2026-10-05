@@ -104,8 +104,6 @@ export function AccentChoices(props: AppearanceEditorProps) {
   // user will see it.
   const resolvedAppearance = () =>
     props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
-  // The accents the previewed theme pair carries, offered after the presets.
-  const themeAccents = () => props.themeAccentOptions ?? []
   const accentSelection = () => (isCustomAccent(props) ? 'custom' : props.draft.accent)
   return (
     <Radio
@@ -122,7 +120,6 @@ export function AccentChoices(props: AppearanceEditorProps) {
     >
       <AccentSwatchGroups
         accentOptions={props.accentOptions}
-        themeAccentOptions={themeAccents()}
         resolvedAppearance={resolvedAppearance()}
         themeDefaultColor={
           resolvedAppearance() === 'light'

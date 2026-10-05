@@ -9,3 +9,4 @@ export {
   SelectValue,
   type SelectTriggerProps,
 } from './select'
+export type { MenuSwatchTone } from '../../../lib/overlay'

@@ -1,12 +1,14 @@
 import { DropdownMenu as KobalteDropdownMenu } from '@kobalte/core/dropdown-menu'
 import { Check, ChevronRight, Circle } from 'lucide-solid'
 import type { Accessor, ComponentProps } from 'solid-js'
-import { createContext, splitProps, useContext } from 'solid-js'
+import { createContext, Show, splitProps, useContext } from 'solid-js'
 import {
   menuContentPadding,
   destructiveMenuItem,
   menuItem,
   menuLabel,
+  menuSwatchTone,
+  type MenuSwatchTone,
   menuSeparator,
   overlayMotion,
   overlaySurface,
@@ -192,6 +194,13 @@ export function DropdownMenuPortal(props: ComponentProps<typeof KobalteDropdownM
 }
 
 export type DropdownMenuContentProps = ComponentProps<typeof KobalteDropdownMenu.Content> & {
+  /**
+   * Kept for callers that hid the arrow explicitly; the arrow is now hidden by
+   * default. Pass `false` to draw one. The default flipped because Kobalte
+   * reserves half of the arrow's 30px box as popper gutter — a menu anchored to
+   * its trigger floated 15px off it, which read as a gap rather than as a
+   * pointer, and every anchored caller already passed `hideArrow`.
+   */
   hideArrow?: boolean
   /** Mount under an owner element such as a modal, keeping the menu in its accessible subtree. */
   portalMount?: HTMLElement
@@ -213,7 +222,12 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
         )}
         {...rest}
       >
-        {!local.hideArrow && <KobalteDropdownMenu.Arrow aria-hidden="true" class={popoverArrow} />}
+        {local.hideArrow === false && (
+          /* Rendered only when a caller asks for it back: the popper folds half
+             the arrow's box into the content's gutter, so an arrow and a flush
+             menu have never been true at once. */
+          <KobalteDropdownMenu.Arrow aria-hidden="true" class={popoverArrow} />
+        )}
         {local.children}
       </KobalteDropdownMenu.Content>
     </KobalteDropdownMenu.Portal>
@@ -233,6 +247,10 @@ export function DropdownMenuItem(
      * whenever `shortcut` is drawn.
      */
     keyshortcuts?: string
+    /** Draw a leading colour dot from the shared tone ladder — the accent or
+     * status role the option's card badge carries. `aria-hidden`; the label
+     * carries the meaning. */
+    swatch?: MenuSwatchTone
   }
 ) {
   const [local, rest] = splitProps(props, [
@@ -240,6 +258,7 @@ export function DropdownMenuItem(
     'variant',
     'shortcut',
     'keyshortcuts',
+    'swatch',
     'children',
   ])
 
@@ -255,6 +274,9 @@ export function DropdownMenuItem(
       aria-keyshortcuts={local.keyshortcuts}
       {...rest}
     >
+      <Show when={local.swatch}>
+        <span aria-hidden="true" class={menuSwatchTone({ tone: local.swatch })} />
+      </Show>
       {local.children}
       {local.shortcut ? (
         <span
@@ -292,12 +314,19 @@ export function DropdownMenuShortcut(props: ComponentProps<'span'>) {
 }
 
 export function DropdownMenuCheckboxItem(
-  props: ComponentProps<typeof KobalteDropdownMenu.CheckboxItem>
+  props: ComponentProps<typeof KobalteDropdownMenu.CheckboxItem> & {
+    /** Draw a leading colour dot from the shared tone ladder. `aria-hidden`;
+     * the label carries the meaning. */
+    swatch?: MenuSwatchTone
+  }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'children'])
+  const [local, rest] = splitProps(props, ['class', 'swatch', 'children'])
 
   return (
     <KobalteDropdownMenu.CheckboxItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
+      <Show when={local.swatch}>
+        <span aria-hidden="true" class={menuSwatchTone({ tone: local.swatch })} />
+      </Show>
       {local.children}
       <KobalteDropdownMenu.ItemIndicator
         data-slot="dropdown-menu-indicator"
@@ -315,11 +344,20 @@ export function DropdownMenuRadioGroup(
   return <KobalteDropdownMenu.RadioGroup {...props} />
 }
 
-export function DropdownMenuRadioItem(props: ComponentProps<typeof KobalteDropdownMenu.RadioItem>) {
-  const [local, rest] = splitProps(props, ['class', 'children'])
+export function DropdownMenuRadioItem(
+  props: ComponentProps<typeof KobalteDropdownMenu.RadioItem> & {
+    /** Draw a leading colour dot from the shared tone ladder. `aria-hidden`;
+     * the label carries the meaning. */
+    swatch?: MenuSwatchTone
+  }
+) {
+  const [local, rest] = splitProps(props, ['class', 'swatch', 'children'])
 
   return (
     <KobalteDropdownMenu.RadioItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
+      <Show when={local.swatch}>
+        <span aria-hidden="true" class={menuSwatchTone({ tone: local.swatch })} />
+      </Show>
       {local.children}
       {/* The indicator reads in the accent, like every other selected state in
           the system — a canvas-colored dot on a checked row reads as decoration. */}

@@ -109,7 +109,9 @@ export function ContextMenuCheckboxItem(
   return (
     <KobalteContextMenu.CheckboxItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
       {local.children}
-      <KobalteContextMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center">
+      {/* The indicator reads in the accent, like every other selected state in
+      the system. */}
+      <KobalteContextMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
         <Check class="size-4" />
       </KobalteContextMenu.ItemIndicator>
     </KobalteContextMenu.CheckboxItem>
@@ -126,7 +128,9 @@ export function ContextMenuRadioItem(props: ComponentProps<typeof KobalteContext
   return (
     <KobalteContextMenu.RadioItem class={cn(menuItem, 'pe-8', local.class)} {...rest}>
       {local.children}
-      <KobalteContextMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center">
+      {/* The indicator reads in the accent, like every other selected state in
+      the system. */}
+      <KobalteContextMenu.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
         <Circle class="size-2 fill-current" />
       </KobalteContextMenu.ItemIndicator>
     </KobalteContextMenu.RadioItem>

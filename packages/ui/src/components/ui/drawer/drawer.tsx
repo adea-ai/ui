@@ -69,7 +69,7 @@ export function DrawerContent(props: DrawerContentProps) {
       <DrawerOverlay />
       <DrawerPrimitive.Content
         class={cn(
-          'group/drawer bg-popover text-popover-foreground fixed z-(--z-drawer) flex flex-col border-border shadow-lg',
+          'group/drawer bg-background text-foreground fixed z-(--z-drawer) flex flex-col border-border shadow-lg',
           'data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:max-h-[85vh] data-[side=bottom]:rounded-t-xl data-[side=bottom]:border-t',
           'data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:max-h-[85vh] data-[side=top]:rounded-b-xl data-[side=top]:border-b',
           'data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:w-80 data-[side=left]:rounded-e-xl data-[side=left]:border-e',

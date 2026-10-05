@@ -143,6 +143,20 @@ function Fixture() {
       <button type="button" id="outside">
         Outside the editor
       </button>
+      {/* Drives the stored-preference path the picker no longer offers as a
+          swatch: a saved theme-accent id must survive until a choice replaces
+          it. The host applies a stored preference, then opens the editor on
+          it — so the control restores the draft and opens the sheet, the same
+          sequence `onOpen` performs for a committed draft. */}
+      <button
+        type="button"
+        onClick={() => {
+          setDraft((value) => ({ ...value, accent: 'ansi-blue' }))
+          setOpen(true)
+        }}
+      >
+        Store a theme accent
+      </button>
       <div data-live-preview class="bg-background text-primary">
         Visible application
       </div>

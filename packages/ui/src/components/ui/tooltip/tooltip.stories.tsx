@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { Layers } from 'lucide-solid'
 import { Button } from '../button/button'
 import { Kbd } from '../kbd/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
@@ -94,6 +95,31 @@ export const WithShortcut: Story = {
         <Kbd>K</Kbd>
       </TooltipContent>
     </Tooltip>
+  ),
+}
+
+/**
+ * The icon+label tip: the side rail's hover treatment, offered on the shared
+ * component so a top-bar toolbar can adopt it instead of hand-rolling a row.
+ * The `icon` repeats the trigger's glyph and is `aria-hidden` — the label
+ * carries the meaning and the trigger keeps its own accessible name.
+ */
+export const WithIcon: Story = {
+  render: () => (
+    <div class="flex items-center gap-2">
+      <Tooltip>
+        <TooltipTrigger as={Button} variant="ghost" size="icon-sm" aria-label="Layers">
+          <Layers />
+        </TooltipTrigger>
+        <TooltipContent icon={<Layers />}>Layers</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger as={Button} variant="outline">
+          Text trigger
+        </TooltipTrigger>
+        <TooltipContent icon={<Layers />}>Show the layer tree</TooltipContent>
+      </Tooltip>
+    </div>
   ),
 }
 
