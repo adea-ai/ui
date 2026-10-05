@@ -439,8 +439,11 @@ export function PackedSceneControlsConsumer() {
       const allowedUi =
         // `cn-tables.generated` rides along with `lib/utils` (`cn()` reads the
         // class tables); it is shared infrastructure, not an unrelated module.
+        // `lib/overlay` rides along with the shared tooltip: #329 gave every
+        // tip the dialog surface's top-layer exemption, so any bundle that
+        // renders a tooltip now carries it.
         fixture.name === 'scene-controls'
-          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|utils|variants)\./
+          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
           : /\/components\/(?:composites\/action-button|ui\/(?:button|dropdown-menu|popover|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
       const unrelatedUi = uiModules.filter((id) => !allowedUi.test(id))
       if (unrelatedUi.length)
@@ -909,6 +912,11 @@ export function PackedSceneControlsConsumer() {
               const ordinaryTooltip = page.getByRole('button', { name: 'Tooltip action' })
               await ordinaryTooltip.focus()
               await expect(page.getByRole('tooltip')).toHaveText('Open action details')
+              // The tooltipIcon passthrough survives the packed build: the tip
+              // carries the decorative glyph beside the label.
+              const tooltipIcon = page.getByRole('tooltip').locator('[data-slot="tooltip-icon"]')
+              await expect(tooltipIcon).toHaveAttribute('aria-hidden', 'true')
+              await expect(tooltipIcon.locator('svg')).toBeVisible()
               const polymorphic = page.getByRole('link', { name: 'Polymorphic tooltip link' })
               await polymorphic.focus()
               await expect(page.getByRole('tooltip')).toHaveText('Open the linked action details')
@@ -933,6 +941,7 @@ export function PackedSceneControlsConsumer() {
                   'retained-glyph-size',
                   'keyboard-focus',
                   'tooltip-focus',
+                  'tooltip-icon-passthrough',
                   'menu-return-focus',
                   'no-horizontal-overflow',
                 ],
