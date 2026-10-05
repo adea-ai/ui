@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.112.0](https://github.com/adea-ai/ui/compare/v0.111.0...v0.112.0) (2026-10-05)
+
+
+### Features
+
+* **components:** ActionButton tooltip icon passthrough ([#333](https://github.com/adea-ai/ui/issues/333)) ([3a246be](https://github.com/adea-ai/ui/commit/3a246be8217993fdbe46915e83047047ec9b9a34))
+
 ## [0.111.0](https://github.com/adea-ai/ui/compare/v0.110.1...v0.111.0) (2026-10-05)
 
 
