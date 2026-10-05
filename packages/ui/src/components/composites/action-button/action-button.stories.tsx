@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { Plus } from 'lucide-solid'
+import { Layers, Plus } from 'lucide-solid'
 import { ActionButton } from './action-button'
 
 const meta = {
@@ -27,6 +27,38 @@ export const WithTooltip: Story = {
     await expect(canvas.getByRole('tooltip')).toHaveTextContent(
       'Save the current workspace settings'
     )
+  },
+}
+
+/**
+ * The explanation can repeat the trigger's glyph through the shared tooltip's
+ * `icon` slot, so a bar of icon actions gets the icon+label tip without
+ * hand-composing Button and Tooltip. The glyph is decorative: the trigger keeps
+ * its own accessible name and the label carries the meaning.
+ */
+export const WithTooltipIcon: Story = {
+  render: () => (
+    <ActionButton
+      variant="ghost"
+      size="icon-md"
+      aria-label="Layers"
+      tooltip="Show the layer tree"
+      tooltipIcon={<Layers />}
+    >
+      <Layers />
+    </ActionButton>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button', { name: 'Layers' })
+    await userEvent.tab()
+    await expect(button).toHaveFocus()
+    const tooltip = canvas.getByRole('tooltip')
+    await expect(tooltip).toHaveTextContent('Show the layer tree')
+    const icon = tooltip.querySelector('[data-slot="tooltip-icon"]')
+    expect(icon).not.toBeNull()
+    expect(icon).toHaveAttribute('aria-hidden', 'true')
+    expect(icon?.querySelector('svg')).not.toBeNull()
   },
 }
 

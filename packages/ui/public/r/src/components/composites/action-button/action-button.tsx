@@ -29,6 +29,14 @@ export type ActionButtonProps<T extends ValidComponent = 'button'> = ButtonProps
   tooltip?: string
   /** Placement of the explanation; icon actions live in bars, so it defaults below the control. */
   tooltipSide?: 'top' | 'right' | 'bottom' | 'left'
+  /**
+   * A leading icon repeated inside the explanation, forwarded to the shared
+   * tooltip's `icon` slot so a bar of icon actions gets the icon+label tip
+   * without hand-composing Button and Tooltip. Decorative by contract: the tip
+   * is never the accessible name, so the icon must not carry meaning the label
+   * lacks. Size it by leaving the svg bare; the slot fixes it to control size.
+   */
+  tooltipIcon?: JSX.Element
   /** Disables the action and announces the busy label through a polite status region. */
   busy?: boolean
   /** The activity announced while busy. The Button's accessible name stays unchanged. */
@@ -92,6 +100,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
     'aria-busy',
     'tooltip',
     'tooltipSide',
+    'tooltipIcon',
     'busy',
     'busyLabel',
   ])
@@ -175,7 +184,7 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
           >
             {contents()}
           </TooltipTrigger>
-          <TooltipContent>{local.tooltip}</TooltipContent>
+          <TooltipContent icon={local.tooltipIcon}>{local.tooltip}</TooltipContent>
         </Tooltip>
       </Show>
       <Show when={busy()}>

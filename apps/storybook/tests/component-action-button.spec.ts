@@ -68,6 +68,23 @@ test('comfortable target is opt-in on fine-pointer devices', async ({ page }) =>
   )
 })
 
+test('tooltip icon passthrough renders the decorative glyph beside the label', async ({ page }) => {
+  const button = page.getByRole('button', { name: 'Tooltip action' })
+  await button.focus()
+  await expect(button).toBeFocused()
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toHaveText('Open action details')
+  const icon = tooltip.locator('[data-slot="tooltip-icon"]')
+  await expect(icon).toBeVisible()
+  await expect(icon).toHaveAttribute('aria-hidden', 'true')
+  await expect(icon.locator('svg')).toBeVisible()
+
+  // The glyph rides inside the tip without changing its contract: the trigger
+  // keeps its name and describes itself through the label alone.
+  await expect(button).toHaveAttribute('aria-label', 'Tooltip action')
+  await expect(button).toHaveAttribute('aria-describedby', /.+/)
+})
+
 test('comfortable targets preserve glyphs, keyboard focus and menu return at 320px and 200% text', async ({
   browser,
 }) => {
@@ -116,6 +133,9 @@ test('comfortable targets preserve glyphs, keyboard focus and menu return at 320
     await ordinaryTooltip.focus()
     await expect(ordinaryTooltip).toBeFocused()
     await expect(touchPage.getByRole('tooltip')).toHaveText('Open action details')
+    const tooltipIcon = touchPage.getByRole('tooltip').locator('[data-slot="tooltip-icon"]')
+    await expect(tooltipIcon).toHaveAttribute('aria-hidden', 'true')
+    await expect(tooltipIcon.locator('svg')).toBeVisible()
 
     const polymorphic = touchPage.getByRole('link', { name: 'Polymorphic tooltip link' })
     await polymorphic.focus()
