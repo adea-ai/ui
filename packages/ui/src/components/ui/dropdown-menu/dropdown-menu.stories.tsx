@@ -111,6 +111,41 @@ export const Grouped: Story = {
 }
 
 /**
+ * Items whose option carries a colour on a card — a task's type or priority —
+ * keep that colour in the menu through the shared tone ladder (`swatch`), the
+ * same vocabulary a Badge speaks. The dot is decoration; the label carries the
+ * meaning, and the selected row's check reads in the accent.
+ */
+export const SwatchedItems: Story = {
+  render: () => (
+    <DropdownMenu defaultOpen>
+      <DropdownMenuTrigger as={Button} variant="outline">
+        Priority
+      </DropdownMenuTrigger>
+      <DropdownMenuContent class="w-44">
+        <DropdownMenuRadioGroup defaultValue="normal">
+          <DropdownMenuRadioItem value="urgent" swatch="destructive">
+            Urgent
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="high" swatch="warning">
+            High
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="normal" swatch="primary">
+            Normal
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="low" swatch="info">
+            Low
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="someday" swatch="neutral">
+            Someday
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+}
+
+/**
  * Checkbox items for a multi-select, radio items for a single one.
  *
  * Both are real menu items with the menu's keyboard contract; they are not a

@@ -6,10 +6,10 @@ import {
 import type { ComponentProps } from 'solid-js'
 import { createEffect, createSignal, splitProps } from 'solid-js'
 import {
+  dialogSurface,
   overlayMotion,
   overlayPositioner,
   overlayScrim,
-  overlaySurface,
   overlayTitle,
 } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
@@ -89,7 +89,7 @@ export function AlertDialogContent(props: ComponentProps<typeof KobalteAlertDial
       <div class={overlayPositioner}>
         <KobalteAlertDialogContent
           {...blockDismissal}
-          class={cn(overlaySurface, overlayMotion, 'grid w-full max-w-md gap-4 p-5', local.class)}
+          class={cn(dialogSurface, overlayMotion, 'grid w-full max-w-md gap-4 p-5', local.class)}
           {...rest}
         />
       </div>

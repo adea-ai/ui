@@ -622,25 +622,30 @@ test('donor helper copy distinguishes palette defaults and explicit overrides', 
   ).toBeVisible()
 })
 
-test('the primary accent grid stays six-choice while additional and theme accents remain separate', async ({
+test('the accent picker offers one theme-scoped group: the theme default plus the presets', async ({
   page,
 }) => {
   const accent = page.getByRole('radiogroup', { name: 'Accent', exact: true })
-  const primary = accent.locator('[data-primary-accent-grid]')
-  const ids = await primary
-    .locator('[data-primary-accent]')
+  const grid = accent.locator('[data-accent-grid]')
+  // One grid, theme-scoped: the theme's own primary first, then every preset,
+  // each painted with its value for the resolved appearance. The presets read
+  // in catalogue order, so violet sits in the group instead of an additional
+  // section of its own.
+  const ids = await grid
+    .locator('[data-accent-option]')
     .evaluateAll((elements) =>
-      elements.map((element) => element.getAttribute('data-primary-accent'))
+      elements.map((element) => element.getAttribute('data-accent-option'))
     )
-  expect(ids).toEqual(['theme', 'blue', 'green', 'amber', 'cyan', 'pink'])
-  await expect(primary.getByRole('radio')).toHaveCount(6)
-  await expect(primary.getByRole('radio', { name: 'Theme default' })).toBeChecked()
-  await expect(accent.getByText('Additional colors', { exact: true })).toBeVisible()
-  await expect(accent.locator('[data-additional-accent="violet"]')).toBeVisible()
-  await expect(accent.getByText('Theme accents', { exact: true })).toBeVisible()
-  await expect(accent.locator('[data-theme-accent]')).toHaveCount(4)
+  expect(ids).toEqual(['theme', 'violet', 'blue', 'green', 'amber', 'cyan', 'pink'])
+  await expect(grid.getByRole('radio')).toHaveCount(7)
+  await expect(grid.getByRole('radio', { name: 'Theme default' })).toBeChecked()
+  // The old labelled groups are gone: no additional colors, and the theme
+  // pair's own accent slots are no longer rendered as a group at all.
+  await expect(accent.getByText('Additional colors', { exact: true })).toHaveCount(0)
+  await expect(accent.getByText('Theme accents', { exact: true })).toHaveCount(0)
+  await expect(accent.locator('[data-accent-option^="ansi-"]')).toHaveCount(0)
 
-  const blue = primary.getByRole('radio', { name: 'Blue', exact: true })
+  const blue = grid.getByRole('radio', { name: 'Blue', exact: true })
   await blue.focus()
   await page.keyboard.press('Space')
   await expect(blue).toBeChecked()
@@ -1098,29 +1103,32 @@ test('theme menus scroll inside a fixed cap and the accent row starts at the the
   expect(await accentGroup.getByRole('radio').first().getAttribute('value')).toBe('theme')
 })
 
-test('the accents the theme pair carries are offered after the presets and preview live', async ({
+test('a stored theme accent still resolves even though the picker no longer offers it', async ({
   page,
 }) => {
   const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
   const accentGroup = dialog.getByRole('radiogroup', { name: 'Accent', exact: true })
-  const themeAccents = accentGroup.locator('[data-theme-accent]')
-  // Adea's pair offers its own blue, magenta, cyan and green through
-  // `themeAccentPresets`; they follow the six presets in the swatch grid.
-  await expect(themeAccents).toHaveCount(4)
-  const values = await accentGroup
-    .getByRole('radio')
-    .evaluateAll((radios) => radios.map((radio) => radio.getAttribute('value')))
-  expect(values.indexOf('ansi-blue')).toBeGreaterThan(values.indexOf('pink'))
 
+  // A preference saved before the restructure may hold the pair's own accent
+  // slot. It survives: no swatch checks, the row describes it in the theme's
+  // own words, and it is never the custom field. Dismiss first, then let the
+  // host restore the stored draft and reopen — opening always previews the
+  // draft it was handed.
+  await dialog.getByRole('button', { name: 'Close appearance settings' }).click()
+  await expect(dialog).toHaveCount(0)
+  await page.getByRole('button', { name: 'Store a theme accent' }).click()
+  await expect(dialog).toBeVisible()
+  await expect(accentGroup.locator('[aria-checked="true"]')).toHaveCount(0)
+  await expect(dialog.getByText(/^Theme blue · /)).toBeVisible()
+  await expect(dialog.getByRole('textbox', { name: 'Custom accent' })).toHaveCount(0)
+
+  // Any preset choice replaces the stored slot, and the live preview follows.
   const before = await page
     .locator('[data-live-preview]')
     .evaluate((element) => getComputedStyle(element).color)
-  await accentGroup.locator('[data-theme-accent="ansi-blue"] label').click()
-  await expect(accentGroup.getByRole('radio', { name: 'Theme blue' })).toBeChecked()
-  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"ansi-blue"')
-  // A theme accent is a known choice, never the custom field.
-  await expect(dialog.getByRole('textbox', { name: 'Custom accent' })).toHaveCount(0)
-  await expect(dialog.getByText(/^Theme blue · /)).toBeVisible()
+  await accentGroup.locator('[data-accent-option="blue"] label').click()
+  await expect(accentGroup.getByRole('radio', { name: 'Blue', exact: true })).toBeChecked()
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"blue"')
   await expect
     .poll(() =>
       page.locator('[data-live-preview]').evaluate((element) => getComputedStyle(element).color)

@@ -118,7 +118,6 @@ export function AppearancePanel(props: AppearancePanelProps) {
         >
           <AccentSwatchGroups
             accentOptions={accentPresets}
-            themeAccentOptions={themeAccents()}
             resolvedAppearance={resolvedAppearance()}
             themeDefaultColor="var(--primary)"
           />

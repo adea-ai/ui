@@ -8,10 +8,10 @@ import { X } from 'lucide-solid'
 import type { Accessor, ComponentProps, JSX } from 'solid-js'
 import { createRenderEffect, onCleanup, Show, splitProps } from 'solid-js'
 import {
+  dialogSurface,
   overlayMotion,
   overlayPositioner,
   overlayScrim,
-  overlaySurface,
   overlayTitle,
 } from '../../../lib/overlay'
 import { cn } from '../../../lib/utils'
@@ -282,7 +282,7 @@ export function DialogContent(props: DialogContentProps) {
       <div class={cn(overlayPositioner, local.positioner === 'inset' && 'inset-4 grid-rows-1 p-0')}>
         <KobalteDialogContent
           class={cn(
-            overlaySurface,
+            dialogSurface,
             overlayMotion,
             'relative grid w-full max-w-lg gap-4 p-5',
             local.class

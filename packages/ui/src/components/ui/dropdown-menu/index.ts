@@ -16,3 +16,4 @@ export {
   DropdownMenuTrigger,
   type DropdownMenuContentProps,
 } from './dropdown-menu'
+export type { MenuSwatchTone } from '#lib/overlay'

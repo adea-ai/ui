@@ -109,6 +109,23 @@ test('a controlled tooltip hides caller-visible content only while closed', asyn
   await expect(trigger).not.toHaveAttribute('aria-describedby', /.+/)
 })
 
+test('an icon+label tip renders the side rail treatment as one row', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Layers' })
+  await trigger.focus()
+
+  const tooltip = page.getByRole('tooltip').filter({ hasText: 'Layer tree' })
+  await expect(tooltip).toBeVisible()
+  // The icon repeats the trigger's glyph as decoration, so the tip reads as
+  // one row — the label, not the glyph, carries the meaning.
+  const icon = tooltip.locator('[data-slot="tooltip-icon"]')
+  await expect(icon).toBeVisible()
+  await expect(icon).toHaveAttribute('aria-hidden', 'true')
+  await expect(tooltip).toHaveCSS('display', 'flex')
+  await expect(tooltip).toHaveCSS('align-items', 'center')
+  // The trigger keeps its own accessible name; the tip never becomes it.
+  await expect(trigger).toHaveAttribute('aria-label', 'Layers')
+})
+
 test('a closing tooltip stops intercepting the pointer', async ({ page }) => {
   const trigger = page.getByRole('button', {
     name: 'Focus to open the force-mounted tooltip',

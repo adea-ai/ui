@@ -46,7 +46,7 @@ import { createDialogFocusRestoration, DialogOverlay } from '../dialog/dialog'
 // scrolled programmatically (focus, scrollIntoView, scrollTop), which slid the
 // pinned footer out of view. Only SheetBody scrolls.
 const sheetVariants = cva(
-  'bg-popover text-popover-foreground fixed z-(--z-dialog) flex flex-col overflow-clip border-border shadow-lg',
+  'bg-background text-foreground fixed z-(--z-dialog) flex flex-col overflow-clip border-border shadow-lg',
   {
     variants: {
       side: {

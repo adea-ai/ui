@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu/dropdown-menu'
 import { InputControl } from '../../ui/input/input-control'
-import { SettingsRow } from './appearance-rows'
 import {
   APPEARANCE_EDITOR_FONT_SIZE_MAX,
   APPEARANCE_EDITOR_FONT_SIZE_MIN,
@@ -142,7 +141,7 @@ function FontFamilyMenu(props: {
         size="sm"
         aria-label={`${props.label} font family`}
         disabled={props.disabled}
-        class="w-40 max-w-full justify-between"
+        class="w-32 max-w-full justify-between"
       >
         <span class="truncate">{selectedLabel()}</span>
         <ChevronDown aria-hidden="true" class="ms-2 size-4 shrink-0 text-muted-foreground" />
@@ -298,8 +297,22 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
             )
           }
           return (
-            <SettingsRow title={row.label} icon={<Icon />} description={row.description}>
-              <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+            <section class="flex items-center gap-3 px-4 py-4" data-font-settings-row={row.axis}>
+              <span
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-foreground/5 text-muted-foreground [&_svg]:size-4"
+                aria-hidden="true"
+              >
+                <Icon />
+              </span>
+              {/* One line, always: the copy truncates rather than wrapping the
+                  controls to a second line, so the family menu, the size field
+                  and the title/subtitle stay aligned. The compact widths keep
+                  that true at the appearance sheet's own width. */}
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium">{row.label}</h3>
+                <div class="mt-0.5 truncate text-xs text-muted-foreground">{row.description}</div>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
                 <FontFamilyMenu
                   label={row.label}
                   family={value().family}
@@ -307,7 +320,7 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
                   disabled={props.disabled}
                   onSelect={(family) => updateAxis(row.axis, { family })}
                 />
-                <div class="flex shrink-0 items-center gap-1">
+                <div class="flex items-center gap-1">
                   <InputControl
                     type="number"
                     min={APPEARANCE_EDITOR_FONT_SIZE_MIN}
@@ -318,7 +331,7 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
                     aria-label={`${row.label} font size in pixels`}
                     aria-describedby={sizeHintId}
                     aria-invalid={sizeIsInvalid()}
-                    class="w-16"
+                    class="w-12"
                     onInput={(event) =>
                       setSizeDrafts((current) => ({
                         ...current,
@@ -341,7 +354,7 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
                   {APPEARANCE_EDITOR_FONT_SIZE_MAX} pixels.
                 </span>
               </div>
-            </SettingsRow>
+            </section>
           )
         }}
       </For>

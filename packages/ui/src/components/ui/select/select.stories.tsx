@@ -186,3 +186,39 @@ export const WithTrailingAction: Story = {
     </div>
   ),
 }
+
+/**
+ * Options that carry a colour on a card — a task's type or priority — keep that
+ * colour in the list through the shared tone ladder (`swatch`), the same
+ * vocabulary a Badge speaks. The dot is decoration: the label still carries the
+ * meaning, and the selected row's check reads in the accent.
+ */
+export const SwatchedItems: Story = {
+  render: () => {
+    const priorities = [
+      { value: 'urgent', label: 'Urgent', swatch: 'destructive' as const },
+      { value: 'high', label: 'High', swatch: 'warning' as const },
+      { value: 'normal', label: 'Normal', swatch: 'primary' as const },
+      { value: 'low', label: 'Low', swatch: 'info' as const },
+      { value: 'someday', label: 'Someday', swatch: 'neutral' as const },
+    ]
+    return (
+      <Select
+        options={priorities}
+        optionValue={(option) => option.value}
+        optionTextValue={(option) => option.label}
+        defaultValue={priorities[2]}
+        itemComponent={(props) => (
+          <SelectItem item={props.item} swatch={props.item.rawValue.swatch}>
+            {props.item.rawValue.label}
+          </SelectItem>
+        )}
+      >
+        <SelectTrigger class="w-56" aria-label="Priority">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent />
+      </Select>
+    )
+  },
+}

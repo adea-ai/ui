@@ -2,7 +2,13 @@ import { Select as KobalteSelect } from '@kobalte/core/select'
 import { Check, ChevronDown, ChevronsUpDown } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
-import { menuContentPadding, menuItem, popoverArrow, topLayerProps } from '#lib/overlay'
+import {
+  menuContentPadding,
+  menuItem,
+  menuSwatchTone,
+  type MenuSwatchTone,
+  topLayerProps,
+} from '#lib/overlay'
 import { cn } from '#lib/utils'
 
 /**
@@ -21,7 +27,12 @@ import { cn } from '#lib/utils'
 export function Select<Option, OptGroup = never>(
   props: ComponentProps<typeof KobalteSelect<Option, OptGroup>>
 ) {
-  return <KobalteSelect {...props} />
+  // Kobalte's own default gutter is 8px; without the arrow (removed below) the
+  // popper no longer folds half an arrow box into that offset, and 8px read as
+  // a detached list. Four pixels is shadcn's `sideOffset` — attached, with
+  // room for the trigger's own border.
+  const [local, rest] = splitProps(props, ['gutter'])
+  return <KobalteSelect gutter={local.gutter ?? 4} {...rest} />
 }
 
 export type SelectTriggerProps = ComponentProps<typeof KobalteSelect.Trigger> & {
@@ -153,20 +164,34 @@ export function SelectContent(props: SelectContentProps) {
         {...rest}
       >
         {local.children}
+        {/* No arrow: the list is the trigger's own value opened up, and Kobalte
+            reserves half the arrow's 30px box as popper gutter, which is where
+            the reported gap between a form trigger and its options came from. */}
         <KobalteSelect.Listbox class="flex flex-col" />
-        <KobalteSelect.Arrow aria-hidden="true" class={popoverArrow} />
       </KobalteSelect.Content>
     </KobalteSelect.Portal>
   )
 }
 
-export function SelectItem(props: ComponentProps<typeof KobalteSelect.Item>) {
-  const [local, rest] = splitProps(props, ['class', 'children'])
+export function SelectItem(
+  props: ComponentProps<typeof KobalteSelect.Item> & {
+    /** Draw a leading colour dot from the shared tone ladder — the accent or
+     * status role the option's card badge carries. `aria-hidden`; the label
+     * carries the meaning. */
+    swatch?: MenuSwatchTone
+  }
+) {
+  const [local, rest] = splitProps(props, ['class', 'children', 'swatch'])
 
   return (
     <KobalteSelect.Item class={cn(menuItem, 'pe-8', local.class)} {...rest}>
+      <Show when={local.swatch}>
+        <span aria-hidden="true" class={menuSwatchTone({ tone: local.swatch })} />
+      </Show>
       <KobalteSelect.ItemLabel>{local.children}</KobalteSelect.ItemLabel>
-      <KobalteSelect.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center">
+      {/* The indicator reads in the accent, like every other selected state in
+          the system — the row's own foreground reads as decoration. */}
+      <KobalteSelect.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
         <Check class="size-4" />
       </KobalteSelect.ItemIndicator>
     </KobalteSelect.Item>

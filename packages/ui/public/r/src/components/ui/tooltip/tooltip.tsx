@@ -1,11 +1,12 @@
 import { Tooltip as KobalteTooltip, useTooltipContext } from '@kobalte/core/tooltip'
-import type { ComponentProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
 import {
   createContext,
   createEffect,
   createSignal,
   createUniqueId,
   onCleanup,
+  Show,
   splitProps,
   useContext,
 } from 'solid-js'
@@ -349,13 +350,24 @@ export function TooltipTrigger(props: ComponentProps<typeof KobalteTooltip.Trigg
   )
 }
 
-export type TooltipContentProps = ComponentProps<typeof KobalteTooltip.Content>
+export type TooltipContentProps = ComponentProps<typeof KobalteTooltip.Content> & {
+  /**
+   * A leading icon, repeating the trigger's glyph inside the tip — the side
+   * rail's icon+label treatment, offered so a toolbar or rail tooltip does not
+   * have to hand-roll it. Decorative by contract: the tip is `aria-hidden`
+   * while closed and never the accessible name, so the icon must not be the
+   * only carrier of meaning. Size it by leaving the svg bare; the slot fixes
+   * it to the system's control size.
+   */
+  icon?: JSX.Element
+}
 
 export function TooltipContent(props: TooltipContentProps) {
   const interaction = useContext(TooltipInteractionContext)
   const [local, rest] = splitProps(props, [
     'class',
     'children',
+    'icon',
     'aria-hidden',
     'onEscapeKeyDown',
     'onPointerDownOutside',
@@ -380,6 +392,9 @@ export function TooltipContent(props: TooltipContentProps) {
           'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
           'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           'data-expanded:duration-150 data-closed:duration-100',
+          // An icon+label tip is one row that reads as a unit, so the label
+          // never wraps under the glyph.
+          { 'flex items-center gap-2 whitespace-nowrap': !!local.icon },
           local.class
         )}
         // A tooltip is never interactive: the content is plain text, and the
@@ -404,6 +419,17 @@ export function TooltipContent(props: TooltipContentProps) {
         {...topLayerProps}
         {...rest}
       >
+        <Show when={local.icon}>
+          {(icon) => (
+            <span
+              data-slot="tooltip-icon"
+              aria-hidden="true"
+              class="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4"
+            >
+              {icon()}
+            </span>
+          )}
+        </Show>
         {local.children}
       </KobalteTooltip.Content>
     </KobalteTooltip.Portal>

@@ -22,11 +22,7 @@
  * SOFTWARE.
  */
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { For, Show } from 'solid-js'
-import { cn } from '#lib/utils'
-
-export const PRIMARY_ACCENT_IDS = ['blue', 'green', 'amber', 'cyan', 'pink'] as const
-const primaryAccentIds: ReadonlySet<string> = new Set(PRIMARY_ACCENT_IDS)
+import { For } from 'solid-js'
 
 type AccentOption = Readonly<{
   id: string
@@ -37,104 +33,55 @@ type AccentOption = Readonly<{
 
 type AccentSwatchGroupsProps = {
   accentOptions: readonly AccentOption[]
-  themeAccentOptions: readonly AccentOption[]
+  /**
+   * Accepted for host compatibility and no longer rendered. The picker offers
+   * one theme-scoped group — the theme's own primary followed by the presets —
+   * instead of splitting additional presets and the theme pair's accent slots
+   * into labelled groups of their own. A stored theme-accent id still resolves
+   * (`resolveAccentPreset`) and is still described by the row; it is just no
+   * longer offered as a swatch, and a host can stop feeding this list.
+   */
+  themeAccentOptions?: readonly AccentOption[]
   resolvedAppearance: 'light' | 'dark'
   themeDefaultColor: string
 }
 
+/**
+ * The accent choices, as ONE group: the theme's own primary first, then every
+ * preset the host feeds, each painted with its value for the resolved
+ * appearance — which is what makes the group theme-scoped rather than a
+ * catalogue table. The custom-color entry is the host's (`AccentChoices`
+ * renders it beside this grid), because whether a free-form colour is accepted
+ * is the host's validation to own.
+ */
 export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
-  const primaryAccents = () =>
-    PRIMARY_ACCENT_IDS.flatMap((id) => {
-      const option = props.accentOptions.find((candidate) => candidate.id === id)
-      return option ? [option] : []
-    })
-  const additionalAccents = () =>
-    props.accentOptions.filter(
-      (option) => option.id !== 'theme' && !primaryAccentIds.has(option.id)
-    )
+  const presets = () => props.accentOptions.filter((option) => option.id !== 'theme')
 
   return (
-    <>
-      <div class="grid grid-cols-3 gap-2" data-primary-accent-grid>
-        <AccentSwatch
-          id="theme"
-          label="Theme default"
-          color={props.themeDefaultColor}
-          group="primary"
-        />
-        <For each={primaryAccents()}>
-          {(option) => (
-            <AccentSwatch
-              id={option.id}
-              label={option.label}
-              color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
-              group="primary"
-            />
-          )}
-        </For>
-      </div>
-      <Show when={additionalAccents().length > 0}>
-        <div class="flex flex-col gap-1">
-          <span class="text-xs font-medium text-muted-foreground">Additional colors</span>
-          <div class="flex flex-wrap gap-2">
-            <For each={additionalAccents()}>
-              {(option) => (
-                <AccentSwatch
-                  id={option.id}
-                  label={option.label}
-                  color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
-                  group="additional"
-                />
-              )}
-            </For>
-          </div>
-        </div>
-      </Show>
-      <Show when={props.themeAccentOptions.length > 0}>
-        <div class="flex flex-col gap-1">
-          <span class="text-xs font-medium text-muted-foreground">Theme accents</span>
-          <div class="grid grid-cols-3 gap-2">
-            <For each={props.themeAccentOptions}>
-              {(option) => (
-                <AccentSwatch
-                  id={option.id}
-                  label={'Theme ' + option.label.toLowerCase()}
-                  color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
-                  group="theme"
-                  dashed
-                />
-              )}
-            </For>
-          </div>
-        </div>
-      </Show>
-    </>
+    <div class="grid grid-cols-4 gap-2" data-accent-grid>
+      <AccentSwatch id="theme" label="Theme default" color={props.themeDefaultColor} />
+      <For each={presets()}>
+        {(option) => (
+          <AccentSwatch
+            id={option.id}
+            label={option.label}
+            color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
+          />
+        )}
+      </For>
+    </div>
   )
 }
 
-function AccentSwatch(props: {
-  id: string
-  label: string
-  color: string
-  group: 'primary' | 'additional' | 'theme'
-  dashed?: boolean
-}) {
+function AccentSwatch(props: { id: string; label: string; color: string }) {
   return (
     <Radio.Item
       value={props.id}
       data-accent-option={props.id}
-      data-primary-accent={props.group === 'primary' ? props.id : undefined}
-      data-additional-accent={props.group === 'additional' ? props.id : undefined}
-      data-theme-accent={props.group === 'theme' ? props.id : undefined}
       class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
     >
       <Radio.ItemInput />
-      <Radio.ItemLabel
-        class={cn(
-          'block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary',
-          { 'border-dashed data-[checked]:border-solid': props.dashed }
-        )}
-      >
+      <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
         <span
           class="block size-full rounded-full"
           aria-hidden="true"

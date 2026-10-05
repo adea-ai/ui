@@ -10,9 +10,28 @@
  * "an overlay looks like this" a fact rather than a convention.
  */
 
-/** The panel itself: fill, hairline edge, radius, elevation. */
+import { cva, type VariantProps } from './variants'
+
+/** The panel itself: fill, hairline edge, radius, elevation. Menus, popovers
+ * and the command palette float on the elevated overlay rung (`--popover`). */
 export const overlaySurface =
   'bg-popover text-popover-foreground rounded-xl border border-border shadow-lg'
+
+/**
+ * The modal panel: the same hairline edge, radius and elevation, painted on the
+ * *neutral* theme surface instead of the elevated overlay rung.
+ *
+ * `--popover` is the catalogue's `surfaceElevated`, whose derivation amplifies
+ * the canvas hue's chroma on the elevated step. On the dark default's violet
+ * canvas that makes the dialog the most chromatic surface in the ladder —
+ * `oklch(0.2406 0.0088 300.91)`, red above green in sRGB — and on a full dialog
+ * panel that cast reads as a warm tint the canvas never has. shadcn's own
+ * convention already splits the two: a Dialog paints `bg-background`, menus and
+ * popovers paint `bg-popover`. The veil, the hairline and the elevation shadow
+ * carry the separation the lighter fill no longer provides.
+ */
+export const dialogSurface =
+  'bg-background text-foreground rounded-xl border border-border shadow-lg'
 
 /**
  * Overlay titles have one fixed typography role. Keep this small recipe shared
@@ -84,6 +103,31 @@ export const menuLabel =
 
 /** The rule between menu groups. */
 export const menuSeparator = 'bg-border -mx-1 my-1 h-px'
+
+/**
+ * A leading colour swatch on a menu or select row: the sanctioned way to carry
+ * a card-tone colour into a list of options. The tones are the system's accent
+ * and status roles — the vocabulary a Badge already speaks — so the colour an
+ * option shows in a menu is the colour its badge carries on a card, and a
+ * caller never passes a raw colour into a list. The dot is `aria-hidden`; the
+ * label carries the meaning, so a tone is never the only signal.
+ */
+export const menuSwatchTone = cva('size-2 shrink-0 rounded-full', {
+  variants: {
+    tone: {
+      neutral: 'bg-muted-foreground',
+      primary: 'bg-primary',
+      success: 'bg-success',
+      warning: 'bg-warning',
+      destructive: 'bg-destructive',
+      info: 'bg-info',
+    },
+  },
+  defaultVariants: { tone: 'neutral' },
+})
+
+/** The tones a menu row's swatch can take. */
+export type MenuSwatchTone = NonNullable<VariantProps<typeof menuSwatchTone>['tone']>
 
 /** Padding shared by every menu-list surface. */
 export const menuContentPadding = 'p-1'
