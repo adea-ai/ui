@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.113.0](https://github.com/adea-ai/ui/compare/v0.112.1...v0.113.0) (2026-10-06)
+
+
+### Features
+
+* **update-dialog:** share the release-channel row ([#335](https://github.com/adea-ai/ui/issues/335)) ([596da7a](https://github.com/adea-ai/ui/commit/596da7aa94cfbb78f3ede7c575324e24c2187715))
+
 ## [0.112.1](https://github.com/adea-ai/ui/compare/v0.112.0...v0.112.1) (2026-10-06)
 
 
