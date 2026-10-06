@@ -243,7 +243,11 @@ export function CommandItem(props: ComponentProps<typeof CmdkItem>) {
       class={cn(
         commandItem,
         'data-[disabled=true]:pointer-events-none data-[disabled=true]:text-muted-foreground',
-        'group/command-item text-popover-foreground data-[selected=true]:bg-card data-[selected=true]:text-popover-foreground',
+        // The selected row sits on the accent rung — the same primary-subtle
+        // fill the settings navigation's selected row owns — instead of the
+        // popover rung, so what is chosen keeps the accent the checked menus
+        // already carry in their indicators.
+        'group/command-item text-popover-foreground data-[selected=true]:bg-primary-subtle data-[selected=true]:text-foreground',
         local.class
       )}
       {...rest}

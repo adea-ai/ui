@@ -142,7 +142,7 @@ export function TabsTrigger(props: TabsTriggerProps) {
         'text-foreground',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4',
         local.appearance === 'segmented'
-          ? 'h-control-sm rounded-md px-control-sm data-[selected]:bg-card data-[selected]:shadow-xs'
+          ? 'h-control-sm rounded-md px-control-sm data-[selected]:bg-primary-subtle data-[selected]:text-foreground'
           : tabs.orientation() === 'vertical'
             ? 'h-control-md justify-start rounded-none border-s-2 border-transparent ps-3 pe-2 data-[selected]:border-primary'
             : 'h-control-md -mb-px rounded-none border-b-2 border-transparent px-2 pb-2 data-[selected]:border-primary',
