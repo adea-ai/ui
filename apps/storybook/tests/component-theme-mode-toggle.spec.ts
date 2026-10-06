@@ -53,7 +53,10 @@ test('controlled mode selection owns roving focus and explanatory tooltips witho
   const group = page.getByRole('group', { name: 'Appearance', exact: true })
   const system = group.getByRole('button', { name: 'System', exact: true })
   const light = group.getByRole('button', { name: 'Light', exact: true })
-  await system.focus()
+  // Tab into the group: keyboard intent announces the tooltip (a programmatic
+  // focus() is exactly what the tooltip focus gate keeps quiet).
+  await page.keyboard.press('Tab')
+  await expect(system).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('Use system appearance')
   await system.press('ArrowRight')
   await expect(light).toBeFocused()
