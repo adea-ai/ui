@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.112.1](https://github.com/adea-ai/ui/compare/v0.112.0...v0.112.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* **deps:** override seroval past solid-js's pin ([#336](https://github.com/adea-ai/ui/issues/336)) ([baee0eb](https://github.com/adea-ai/ui/commit/baee0eb25aea28a481604e78cfbddc7f07486221))
+
 ## [0.112.0](https://github.com/adea-ai/ui/compare/v0.111.0...v0.112.0) (2026-10-05)
 
 
