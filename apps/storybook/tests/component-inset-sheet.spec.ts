@@ -113,3 +113,38 @@ test('a menu inside the Sheet is reachable, and Escape closes only the menu', as
   await expect(sheet.getByRole('button', { name: /^Type:/ })).toContainText('Bug')
   await expect(sheet).toBeVisible()
 })
+
+test('a banded header and footer step onto the muted rung while the body keeps the panel surface', async ({
+  page,
+}) => {
+  // The fixture opens the flat sheet first; the band is the contrast case.
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Edit task' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Edit appearance' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Appearance' })
+  await expect(sheet).toBeVisible()
+
+  const surfaces = await sheet.evaluate((element) => ({
+    header: getComputedStyle(element.querySelector("[data-slot='sheet-header']")!).backgroundColor,
+    footer: getComputedStyle(element.querySelector("[data-slot='sheet-footer']")!).backgroundColor,
+    body: getComputedStyle(element.querySelector("[data-slot='sheet-body']")!).backgroundColor,
+  }))
+  // The bands leave the panel surface (--background) for the subtle-fill rung;
+  // the scrolling body stays on the panel surface. Equality across header and
+  // footer pins one rung — the treatment is a token step, not two new colours.
+  expect(surfaces.header).not.toBe(surfaces.body)
+  expect(surfaces.footer).not.toBe(surfaces.body)
+  expect(surfaces.header).toBe(surfaces.footer)
+
+  // The flat default is unchanged: the unbanded sheet's parts share one surface.
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  await page.getByRole('button', { name: 'Edit task' }).click()
+  const flat = page.getByRole('dialog', { name: 'Edit task' })
+  await expect(flat).toBeVisible()
+  const flatSurfaces = await flat.evaluate((element) => ({
+    header: getComputedStyle(element.querySelector("[data-slot='sheet-header']")!).backgroundColor,
+    body: getComputedStyle(element.querySelector("[data-slot='sheet-body']")!).backgroundColor,
+  }))
+  expect(flatSurfaces.header).toBe(flatSurfaces.body)
+})
