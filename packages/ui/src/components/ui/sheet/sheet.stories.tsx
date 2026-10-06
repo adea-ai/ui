@@ -117,6 +117,41 @@ export const InsetForm: Story = {
   },
 }
 
+/**
+ * The banded anatomy: header and footer on the elevation ladder's subtle-fill
+ * rung (`--muted`), scrolling body on the panel surface. This is the two-toned
+ * "panel beside the work" treatment — the same rung cards and sidebars sit on —
+ * not a new colour. The flat panel remains the default; a host opts a whole
+ * sheet family in by passing `band` where it composes the parts.
+ */
+export const BandedInset: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger as={Button} variant="outline">
+        Edit appearance
+      </SheetTrigger>
+      <SheetContent side="end" closeLabel="Close appearance">
+        <SheetHeader band>
+          <SheetTitle>Appearance</SheetTitle>
+          <SheetDescription>Changes preview immediately.</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <p class="text-sm text-muted-foreground">
+            The body keeps the panel surface; only the title and decision bands step onto the muted
+            rung.
+          </p>
+        </SheetBody>
+        <SheetFooter band>
+          <Button size="sm" variant="outline">
+            Cancel
+          </Button>
+          <Button size="sm">Save</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  ),
+}
+
 /** From the end edge, edge to edge over a scrim, for a details inspector. */
 export const FromTheEnd: Story = {
   render: () => (
