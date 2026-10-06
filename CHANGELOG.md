@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.114.0](https://github.com/adea-ai/ui/compare/v0.113.1...v0.114.0) (2026-10-06)
+
+
+### Features
+
+* **overlay:** published tinted band variants for sheet and dialog headers ([#340](https://github.com/adea-ai/ui/issues/340)) ([4817be4](https://github.com/adea-ai/ui/commit/4817be4e08d4d5dab5bcbfb16a7dd4bff373896d))
+
 ## [0.113.1](https://github.com/adea-ai/ui/compare/v0.113.0...v0.113.1) (2026-10-06)
 
 
