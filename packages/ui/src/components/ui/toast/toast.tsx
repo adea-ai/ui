@@ -106,6 +106,18 @@ function ToastCard(props: ToastComponentProps & ToastOptions) {
 }
 
 /**
+ * The error contract, resolved: destructive tone, persistent unless the caller
+ * says otherwise. Exported because this decision is the part a caller depends
+ * on and the part testable without a browser — the card render itself needs one.
+ */
+export function errorToastOptions(
+  title: string,
+  options?: Omit<ToastOptions, 'title' | 'tone'>
+): ToastOptions {
+  return { ...options, title, tone: 'destructive', persistent: options?.persistent ?? true }
+}
+
+/**
  * The toast API. `show` is the general form; the tone helpers are shorthand for
  * the four cases that come up constantly.
  */
@@ -118,8 +130,15 @@ export const toast = {
   success(title: string, options?: Omit<ToastOptions, 'title' | 'tone'>): number {
     return toast.show({ ...options, title, tone: 'success' })
   },
+  /**
+   * A failure the user caused. Persistent by default — an error that times out
+   * while its reader is mid-sentence has not been reported — but `persistent`
+   * stays caller-owned: a failure inside a retry loop (a failed "check again",
+   * a background poll) passes `persistent: false` and a `duration`, because a
+   * dismiss-only toast there is one more thing to close by hand.
+   */
   error(title: string, options?: Omit<ToastOptions, 'title' | 'tone'>): number {
-    return toast.show({ ...options, title, tone: 'destructive', persistent: true })
+    return toast.show(errorToastOptions(title, options))
   },
   warning(title: string, options?: Omit<ToastOptions, 'title' | 'tone'>): number {
     return toast.show({ ...options, title, tone: 'warning' })

@@ -75,6 +75,36 @@ export const Tones: Story = {
 }
 
 /**
+ * The caller-owned persistence seam beside the default. `toast.error` persists
+ * until dismissed because a failure the user missed is a failure unreported; a
+ * failure inside a retry loop instead passes `persistent: false` and a duration
+ * above the region's 5 s default, so it leaves on its own — nothing to close by
+ * hand before every "check again".
+ */
+export const TimedError: Story = {
+  render: () => (
+    <>
+      <div class="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            toast.error('Could not reach the control plane', {
+              persistent: false,
+              duration: 7000,
+              description: 'Retrying on a timer; this toast leaves on its own.',
+            })
+          }
+        >
+          Timed error
+        </Button>
+      </div>
+      <Toaster />
+    </>
+  ),
+}
+
+/**
  * An undo, which is the pattern this component exists to make cheap.
  *
  * The row is gone immediately and the message offers a way back. Compare with an
