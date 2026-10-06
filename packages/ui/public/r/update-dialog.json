@@ -11,11 +11,18 @@
     "@adea-ai/ui/badge",
     "@adea-ai/ui/button",
     "@adea-ai/ui/dialog",
+    "@adea-ai/ui/native-select",
     "@adea-ai/ui/progress",
+    "@adea-ai/ui/settings",
     "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [
+    {
+      "path": "src/components/composites/update-dialog/channel-control.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/update-dialog/channel-control.tsx"
+    },
     {
       "path": "src/components/composites/update-dialog/index.ts",
       "type": "registry:ui",
