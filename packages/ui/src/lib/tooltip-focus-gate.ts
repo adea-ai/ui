@@ -137,7 +137,17 @@ export function installTooltipFocusGate(doc: Document = document): () => void {
   const onPointerGestureEnd = () => {
     pointerGestureActive = false
   }
+  const dropPhantom = () => {
+    phantomFocusTarget = undefined
+    if (phantomReleaseAttached) {
+      phantomReleaseAttached = false
+      doc.removeEventListener('pointermove', onPointerMove, true)
+    }
+  }
   const onFocus = (event: FocusEvent) => {
+    // Focus that moves on retires the phantom: there is nothing left to
+    // release, so the parked pointer listener goes with it.
+    if (phantomFocusTarget && event.target !== phantomFocusTarget) dropPhantom()
     if (pointerGestureActive) return
     if (!isButtonLikeFocusTarget(event.target)) return
     const keyboardIntentActive = Date.now() - lastTabKeyDownAt <= TOOLTIP_FOCUS_INTENT_WINDOW_MS
@@ -151,13 +161,9 @@ export function installTooltipFocusGate(doc: Document = document): () => void {
   }
   const releasePhantomFocus = () => {
     if (pointerGestureActive) return
+    if (!phantomFocusTarget) return
     const phantom = phantomFocusTarget
-    if (!phantom) return
-    phantomFocusTarget = undefined
-    if (phantomReleaseAttached) {
-      phantomReleaseAttached = false
-      doc.removeEventListener('pointermove', onPointerMove, true)
-    }
+    dropPhantom()
     if ((doc as Document).activeElement !== phantom) return
     if (typeof (phantom as HTMLElement).blur === 'function') (phantom as HTMLElement).blur()
   }

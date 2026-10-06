@@ -170,6 +170,34 @@ describe('the installed gate', () => {
     dispose()
   })
 
+  test('focus moving on retires the phantom and parks no release listener', () => {
+    const doc = stubDocument()
+    const dispose = installTooltipFocusGate(doc as unknown as Document)
+
+    const phantom = {
+      closest: () => ({}),
+      blurred: 0,
+      blur() {
+        phantom.blurred += 1
+      },
+    }
+    doc.activeElement = phantom
+    doc.dispatch('keydown', { key: 'Enter' })
+    doc.dispatch('focus', focusEvent(phantom))
+    expect(doc.listenerCount('pointermove')).toBe(1)
+
+    // The user Tabbed on (a passing focus event) before any pointer activity:
+    // nothing left to release, and the pointer listener goes with it.
+    doc.dispatch('keydown', { key: 'Tab' })
+    doc.dispatch('focus', focusEvent(buttonTarget()))
+    expect(doc.listenerCount('pointermove')).toBe(0)
+
+    doc.dispatch('pointermove', {})
+    expect(phantom.blurred).toBe(0)
+
+    dispose()
+  })
+
   test('a phantom that already lost focus is dropped without a blur', () => {
     const doc = stubDocument()
     const dispose = installTooltipFocusGate(doc as unknown as Document)
