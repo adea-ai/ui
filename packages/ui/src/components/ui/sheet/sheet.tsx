@@ -34,8 +34,9 @@ import { createDialogFocusRestoration, DialogOverlay } from '../dialog/dialog'
  *
  * Its parts read alike everywhere: `SheetHeader` holds a heading, a description
  * and a full-width rule beneath, with the close button in the corner;
- * `SheetBody` scrolls on its own; `SheetFooter` is a full-width tinted band that
- * holds the decision.
+ * `SheetBody` scrolls on its own; `SheetFooter` is a full-width band that holds
+ * the decision. Pass `band` to the header, the footer, or both to step those
+ * parts onto the ladder's subtle-fill rung (see `SheetFooter`).
  *
  * Controlled sheets opened from outside a `SheetTrigger` restore focus to the
  * element focused before opening. Pass `restoreFocusRef` when a stable external
@@ -174,13 +175,20 @@ export function SheetCloseButton(props: ComponentProps<typeof KobalteDialog.Clos
   return <KobalteDialog.CloseButton class={cn(local.class)} {...rest} />
 }
 
-export function SheetHeader(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+/**
+ * The sheet's title band: a heading, a description and the full-width rule
+ * beneath, with the close button in the corner. `band` steps the band onto the
+ * subtle-fill rung (see `SheetFooter`) — the two-toned anatomy of a sheet that
+ * reads as a panel beside the work rather than one flat canvas.
+ */
+export function SheetHeader(props: ComponentProps<'div'> & { band?: boolean }) {
+  const [local, rest] = splitProps(props, ['class', 'band'])
   return (
     <div
       data-slot="sheet-header"
       class={cn(
         'flex shrink-0 flex-col gap-1.5 border-b border-border p-4 pe-12 text-start',
+        { 'bg-muted': local.band },
         local.class
       )}
       {...rest}
@@ -199,13 +207,27 @@ export function SheetBody(props: ComponentProps<'div'>) {
   )
 }
 
-export function SheetFooter(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+/**
+ * The sheet's decision band: a full-width, hairline-ruled strip that holds the
+ * actions. `band` paints it with `--muted` — the elevation ladder's
+ * subtle-fill rung, one step up from the panel's `--background` — so the sheet
+ * reads two-toned: title band and decision band on the raised rung, scrolling
+ * body on the panel surface. The rung already exists for cards, sidebars and
+ * input fills; this is the panel-shaped overlay family claiming it. Opt-in
+ * because the flat panel is the documented default: the centred modal
+ * separates with veil, hairline and shadow instead (the elevated overlay rung
+ * amplifies the canvas chroma, which reads as a cast across a large panel),
+ * and a host opts a whole sheet family in by passing the prop where it composes
+ * the parts — not by restyling them from the outside.
+ */
+export function SheetFooter(props: ComponentProps<'div'> & { band?: boolean }) {
+  const [local, rest] = splitProps(props, ['class', 'band'])
   return (
     <div
       data-slot="sheet-footer"
       class={cn(
         'flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border bg-background px-4 py-3',
+        { 'bg-muted': local.band },
         local.class
       )}
       {...rest}

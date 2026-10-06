@@ -69,6 +69,23 @@ function Fixture() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+      <Sheet>
+        <SheetTrigger as={Button}>Edit appearance</SheetTrigger>
+        <SheetContent side="end" closeLabel="Close appearance">
+          <SheetHeader band>
+            <SheetTitle>Appearance</SheetTitle>
+            <SheetDescription>Changes preview immediately.</SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <p class="text-sm text-muted-foreground">
+              The body keeps the panel surface; the bands step onto the muted rung.
+            </p>
+          </SheetBody>
+          <SheetFooter band>
+            <Button size="sm">Save</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </main>
   )
 }

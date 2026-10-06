@@ -314,12 +314,19 @@ export function DialogContent(props: DialogContentProps) {
   )
 }
 
-export function DialogHeader(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+/**
+ * The dialog's title block. `band` steps it onto the elevation ladder's
+ * subtle-fill rung (`--muted`), the same treatment as the sheet parts' band —
+ * for the dialog family whose panel anatomy matches a sheet's (a title band
+ * over a full-bleed shell, such as a settings dialog) rather than the centred
+ * modal's documented flat surface. See `SheetFooter` for the rung's rationale.
+ */
+export function DialogHeader(props: ComponentProps<'div'> & { band?: boolean }) {
+  const [local, rest] = splitProps(props, ['class', 'band'])
   return (
     <div
       data-slot="dialog-header"
-      class={cn('flex flex-col gap-1.5 pe-6 text-start', local.class)}
+      class={cn('flex flex-col gap-1.5 pe-6 text-start', { 'bg-muted': local.band }, local.class)}
       {...rest}
     />
   )
