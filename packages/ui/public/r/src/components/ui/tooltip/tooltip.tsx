@@ -12,6 +12,7 @@ import {
 } from 'solid-js'
 import { isServer } from 'solid-js/web'
 import { tooltipTip, topLayerProps } from '../../../lib/overlay'
+import { acquireTooltipFocusGate, releaseTooltipFocusGate } from '../../../lib/tooltip-focus-gate'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -161,6 +162,15 @@ export function TooltipProvider(props: TooltipProviderProps) {
 export type TooltipRootProps = ComponentProps<typeof KobalteTooltip>
 
 export function Tooltip(props: TooltipRootProps) {
+  // One document-level focus gate for every tooltip in the document: the first
+  // tooltip acquires it, the last to unmount releases it. This is what keeps a
+  // dialog's autofocus and an overlay's focus restoration from opening a tip —
+  // see #lib/tooltip-focus-gate for the contract and the two over-reach traps
+  // (pointer gestures and separator resize grips) it must not swallow.
+  if (!isServer) {
+    acquireTooltipFocusGate()
+    onCleanup(releaseTooltipFocusGate)
+  }
   const timing = useContext(TooltipTimingContext)
   const [local, rest] = splitProps(props, ['open', 'defaultOpen', 'onOpenChange', 'disabled'])
   const id = createUniqueId()
