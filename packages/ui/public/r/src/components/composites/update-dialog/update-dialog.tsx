@@ -148,7 +148,7 @@ export type UpdateAdapter = Readonly<{
   isDesktopRuntime(): boolean
 }>
 
-type ChannelControlActions = Readonly<{
+export type ChannelControlActions = Readonly<{
   /** Disabled while the app is checking, downloading, installing, or saving a channel. */
   disabled: Accessor<boolean>
   /** Persist a channel change, then check that channel without retaining a stale offer. */
