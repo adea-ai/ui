@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.113.1](https://github.com/adea-ai/ui/compare/v0.113.0...v0.113.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* **toast:** let callers override the error toast's persistent default ([#339](https://github.com/adea-ai/ui/issues/339)) ([79b1267](https://github.com/adea-ai/ui/commit/79b126715169ed4cf338ca7f341b8ba2de907675))
+
 ## [0.113.0](https://github.com/adea-ai/ui/compare/v0.112.1...v0.113.0) (2026-10-06)
 
 
