@@ -1,6 +1,6 @@
 import { SettingsRow } from '../settings'
 import { NativeSelect } from '../../ui/native-select'
-import { createSignal, onMount, Show, type Accessor } from 'solid-js'
+import { createEffect, createSignal, onCleanup, Show, type Accessor } from 'solid-js'
 
 import type { ChannelControlActions } from './update-dialog'
 
@@ -29,6 +29,12 @@ export type UpdateChannelControlProps = {
   disabled?: Accessor<boolean>
   /** Per-channel row descriptions, when the defaults don't fit the app. */
   descriptions?: Partial<Record<UpdateChannel, string>>
+  /**
+   * Re-read the persisted channel whenever this value changes. Supply it when
+   * the channel can move while the dialog is closed — a service that gets torn
+   * down, or a CLI writing the same setting — and hand it the dialog's `open`.
+   */
+  reloadOn?: Accessor<unknown>
 }
 
 /**
@@ -44,12 +50,23 @@ export function UpdateChannelControl(props: UpdateChannelControlProps) {
   const [saving, setSaving] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
 
-  onMount(() => {
+  createEffect(() => {
+    props.reloadOn?.()
+    let active = true
+    onCleanup(() => {
+      active = false
+    })
     void props
       .read()
-      .then(setChannel)
-      .catch(() => setError('The current update channel could not be read.'))
-      .finally(() => setLoaded(true))
+      .then((value) => {
+        if (active) setChannel(value)
+      })
+      .catch(() => {
+        if (active) setError('The current update channel could not be read.')
+      })
+      .finally(() => {
+        if (active) setLoaded(true)
+      })
   })
 
   const save = async (value: string) => {
