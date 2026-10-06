@@ -140,6 +140,12 @@ export type SidebarNavSectionProps = ComponentProps<'div'> & {
   count?: number
   /** A control at the trailing edge of the heading row. */
   action?: JSX.Element
+  /**
+   * When the trailing action shows. `hover` (default) reveals it on hover or
+   * focus; `always` keeps it visible, for a section whose primary action is
+   * creating its first item.
+   */
+  actionVisibility?: 'hover' | 'always'
   /** Semantic heading element for a host's section hierarchy. */
   headingAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }
@@ -156,6 +162,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
     'triggerProps',
     'count',
     'action',
+    'actionVisibility',
     'headingAs',
     'children',
   ])
@@ -237,7 +244,13 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
           </Show>
         </Polymorphic>
         <Show when={local.action}>
-          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100">
+          <span
+            data-slot="sidebar-nav-section-action"
+            class={cn('shrink-0', {
+              'opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100':
+                local.actionVisibility !== 'always',
+            })}
+          >
             {local.action}
           </span>
         </Show>
