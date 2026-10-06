@@ -124,6 +124,9 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 844 })
+    // The previous width left focus on the opener; blur it so the Tab below
+    // walks from the top of the document again.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     // Tab to the opener: keyboard intent announces the tooltip (a programmatic
     // focus() is exactly what the tooltip focus gate keeps quiet).
     await page.keyboard.press('Tab')

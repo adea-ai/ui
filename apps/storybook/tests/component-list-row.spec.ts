@@ -262,8 +262,11 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   await expect(buttonTooltip).toBeHidden()
   await expect(linkTooltip).toBeVisible()
   await expect(button).toHaveAttribute('aria-describedby', 'report-help')
-  await button.evaluate((element) => element.blur())
-  await button.focus()
+  // The rows are adjacent tab stops; real keyboard hops are the focus the
+  // gate lets announce a tip (a programmatic focus() stays quiet). Tab takes
+  // the tip to the next row, Shift+Tab brings it back to the button.
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Shift+Tab')
   await expect(buttonTooltip).toBeVisible()
   await expect(linkTooltip).toBeHidden()
 
@@ -271,10 +274,10 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   await button.press('Escape')
   await expect(buttonTooltip).toBeHidden()
   await expect(button).toHaveAttribute('aria-describedby', 'report-help')
-  await link.focus()
+  await page.keyboard.press('Tab')
   await expect(buttonTooltip).toBeHidden()
   await expect(linkTooltip).toBeVisible()
-  await button.focus()
+  await page.keyboard.press('Shift+Tab')
   await expect(linkTooltip).toBeHidden()
   await expect(buttonTooltip).toBeVisible()
 
@@ -286,8 +289,8 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   await expect(button).toHaveAttribute('aria-describedby', 'report-help')
 
   // Reopen through focus, then verify Kobalte's intentional scroll dismissal.
-  await link.focus()
-  await button.focus()
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Shift+Tab')
   await expect(linkTooltip).toBeHidden()
   await expect(buttonTooltip).toBeVisible()
   await page.evaluate(() => window.scrollBy(0, -1))
@@ -327,6 +330,11 @@ test('preserves native button and link semantics, refs, events, and keyboard too
   await expect(link).not.toHaveAttribute('aria-describedby', /list-row-tooltip/)
   await expect(page.getByLabel('Activations')).toHaveText('3')
   await expect(page.getByLabel('Submissions')).toHaveText('0')
+  // The accessibility scan measures the resting page: dismiss whatever tip the
+  // focus hops left open (a keyboard-held trigger legitimately refuses a
+  // pointer close), so the scan never judges a tooltip mid-overlay.
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expectAccessible(page)
 })
 
