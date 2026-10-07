@@ -2375,9 +2375,19 @@
           "target": "components/conversation/chat-composer.tsx"
         },
         {
+          "path": "src/components/conversation/composer-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/composer-menu.tsx"
+        },
+        {
           "path": "src/components/conversation/conversation-avatar.tsx",
           "type": "registry:ui",
           "target": "components/conversation/conversation-avatar.tsx"
+        },
+        {
+          "path": "src/components/conversation/conversation-pane.tsx",
+          "type": "registry:ui",
+          "target": "components/conversation/conversation-pane.tsx"
         },
         {
           "path": "src/components/conversation/conversation-surface.tsx",

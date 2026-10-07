@@ -1,12 +1,15 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { File, LockKeyhole, Sparkles, Terminal } from 'lucide-solid'
-import { createSignal } from 'solid-js'
+import { AtSign, File, LockKeyhole, Sparkles, Terminal } from 'lucide-solid'
+import { createSignal, For, Show } from 'solid-js'
 import { Avatar, AvatarFallback } from '../ui/avatar/avatar'
 import { Badge } from '../ui/badge/badge'
 import { Button } from '../ui/button/button'
+import { Checkbox } from '../ui/checkbox/checkbox'
 import { ConversationAvatar } from './conversation-avatar'
+import { ConversationPane } from './conversation-pane'
 import { ConversationSurface } from './conversation-surface'
 import { ComposerAttachmentButton, MessageComposer } from './message-composer'
+import { ComposerMenu, ComposerMenuItem } from './composer-menu'
 import { MessageBody, MessageDayDivider, MessageRow } from './message-row'
 import { AttachmentCard, ThreadPanel } from './thread-panel'
 
@@ -407,6 +410,172 @@ export const Avatars: Story = {
           A
         </Badge>
       </ConversationAvatar>
+    </div>
+  ),
+}
+
+/**
+ * The whole frame: header, transcript, composer, and an open thread beside all
+ * of it. Narrow the viewport below the collapse width and the thread overlays
+ * the conversation while the conversation steps aside invisibly.
+ */
+export const Pane: Story = {
+  render: () => {
+    const [draft, setDraft] = createSignal('')
+    const rows = Array.from({ length: 12 }, (_, index) => index)
+    return (
+      <div class="h-[32rem] w-full max-w-4xl overflow-hidden rounded-xl border border-border">
+        <ConversationPane
+          gutter
+          header={
+            <header class="flex items-center justify-between gap-2 border-border border-b px-4 py-2">
+              <div class="min-w-0">
+                <p class="text-muted-foreground text-2xs font-bold tracking-wider uppercase">
+                  Direct conversation
+                </p>
+                <h2 class="truncate text-lg font-bold tracking-tight">Ada Lovelace</h2>
+              </div>
+              <Button variant="ghost" size="icon-sm" aria-label="Conversation details">
+                <Terminal />
+              </Button>
+            </header>
+          }
+          composer={
+            <MessageComposer
+              value={draft()}
+              onValueChange={setDraft}
+              onSubmit={() => undefined}
+              showHint
+            />
+          }
+          thread={
+            <ThreadPanel
+              label="You"
+              count={1}
+              onClose={() => undefined}
+              root={
+                <MessageRow senderKind="user" senderName="You" time="09:14">
+                  <MessageBody text="Can you check the ACL case before we commit to it?" />
+                </MessageRow>
+              }
+            >
+              <MessageRow senderKind="agent" senderName="Ada Lovelace" time="09:16">
+                <MessageBody text="Checked — a bulk clone inherits ACLs that CoW skips." />
+              </MessageRow>
+            </ThreadPanel>
+          }
+        >
+          <ConversationSurface gutter aria-label="Ada Lovelace message history">
+            <MessageDayDivider label="Today" />
+            <For each={rows}>
+              {(index) => (
+                <MessageRow
+                  senderKind={index % 3 === 0 ? 'user' : 'agent'}
+                  senderName={index % 3 === 0 ? 'You' : 'Ada Lovelace'}
+                  time={`09:${String(index + 10).padStart(2, '0')}`}
+                >
+                  <MessageBody text={`Transcript row ${index + 1}; the pane frames it.`} />
+                </MessageRow>
+              )}
+            </For>
+          </ConversationSurface>
+        </ConversationPane>
+      </div>
+    )
+  },
+}
+
+/**
+ * The composer's two menus: mention suggestions in the `menu` slot, and an
+ * attachment picker anchored to its own control. Both are the shared
+ * `ComposerMenu` panel; what the rows offer is the caller's model.
+ */
+export const ComposerMenus: Story = {
+  render: () => {
+    const [draft, setDraft] = createSignal('Ask @Ada')
+    const [pickerOpen, setPickerOpen] = createSignal(true)
+    const [attached, setAttached] = createSignal<readonly string[]>([])
+    const files = ['launch-brief.md', 'acl-notes.txt']
+    return (
+      <div class="w-[44rem]">
+        <MessageComposer
+          value={draft()}
+          onValueChange={setDraft}
+          onSubmit={() => undefined}
+          showHint
+          menu={
+            <ComposerMenu label="Mention an Agent">
+              <ComposerMenuItem onClick={() => setDraft('Ask @Ada Lovelace ')}>
+                <AtSign aria-hidden="true" />
+                Ada Lovelace
+              </ComposerMenuItem>
+            </ComposerMenu>
+          }
+          leading={
+            <div class="relative">
+              <ComposerAttachmentButton
+                count={attached().length}
+                open={pickerOpen()}
+                onClick={() => setPickerOpen((open) => !open)}
+              />
+              <Show when={pickerOpen()}>
+                <ComposerMenu label="Attach a file" class="absolute bottom-9 left-0 z-(--z-menu)">
+                  <For each={files}>
+                    {(file) => (
+                      <Checkbox
+                        label={<span>{file}</span>}
+                        checked={attached().includes(file)}
+                        onChange={(checked: boolean) =>
+                          setAttached((current) =>
+                            checked ? [...current, file] : current.filter((name) => name !== file)
+                          )
+                        }
+                      />
+                    )}
+                  </For>
+                </ComposerMenu>
+              </Show>
+            </div>
+          }
+        />
+      </div>
+    )
+  },
+}
+
+/**
+ * Host progress in the composer's live region: a dictation line while it
+ * listens, and the alert rung when it fails. Sending and send-failure copy
+ * stay the composer's own.
+ */
+export const ComposerStatus: Story = {
+  render: () => (
+    <div class="flex w-[44rem] flex-col gap-4">
+      <MessageComposer
+        value="Taking notes by voice"
+        onValueChange={() => undefined}
+        onSubmit={() => undefined}
+        trailing={
+          <Button variant="ghost" size="icon-sm" aria-label="Cancel dictation" aria-pressed="true">
+            <Sparkles />
+          </Button>
+        }
+        status={
+          <p class="text-muted-foreground px-2 text-xs">
+            Listening… Select the microphone again to cancel.
+          </p>
+        }
+      />
+      <MessageComposer
+        value=""
+        onValueChange={() => undefined}
+        onSubmit={() => undefined}
+        status={
+          <p role="alert" class="text-destructive px-2 text-xs">
+            Dictation stopped unexpectedly. Your existing draft is unchanged.
+          </p>
+        }
+      />
     </div>
   ),
 }
