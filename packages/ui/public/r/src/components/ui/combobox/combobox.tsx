@@ -135,7 +135,10 @@ export function ComboboxItem(props: ComponentProps<typeof KobalteCombobox.Item>)
       <KobalteCombobox.ItemLabel>{local.children}</KobalteCombobox.ItemLabel>
       {/* The indicator reads in the accent, like every other selected state in
       the system. */}
-      <KobalteCombobox.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
+      <KobalteCombobox.ItemIndicator
+        data-slot="combobox-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Check class="size-4" />
       </KobalteCombobox.ItemIndicator>
     </KobalteCombobox.Item>

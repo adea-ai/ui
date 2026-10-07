@@ -83,14 +83,21 @@ export const popoverArrow = 'fill-popover stroke-border'
 /**
  * A menu row: the shared height, radius, hover fill and focus treatment for
  * every item inside a menu, listbox or command list.
+ *
+ * The row sizes and dims the icons a caller puts in it, but not the glyph of
+ * its selection indicator (any `[data-slot$=-indicator]`): a descendant `svg`
+ * rule outranks a single utility on the glyph, so without the exclusion a
+ * radio item's `size-2` dot drew as a 16px muted disc and every check lost the
+ * indicator's accent.
  */
 export const menuItem = [
   'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none',
   'transition-colors ease-out',
   'data-[highlighted]:bg-surface-hover data-[highlighted]:text-foreground',
   'data-[disabled]:pointer-events-none data-[disabled]:text-muted-foreground',
-  '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4',
-  '[&_svg:not([class*=text-])]:text-muted-foreground',
+  '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+  '[&_svg:not([data-slot$=-indicator]_*)]:size-4',
+  '[&_svg:not([class*=text-]):not([data-slot$=-indicator]_*)]:text-muted-foreground',
 ].join(' ')
 
 /** A destructive action keeps readable text and marks its row with a status edge. */
