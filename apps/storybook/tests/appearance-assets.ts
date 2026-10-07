@@ -88,8 +88,14 @@ function inspectPackedBundle(
   // Popover, measured at 79,124 compiled gzip JS (+2,060). The fixture now
   // scans Sheet instead of Popover for utilities, measured at 55,204 raw CSS
   // (+2,546 for Sheet's sides, variants and slide motion): CSS cap 52 → 56 KiB.
-  if (measurement.gzipJsBytes > 80 * 1024)
-    throw new Error('Packed appearance host/editor exceeds 80 KiB gzip JS budget')
+  // Re-baselined 80 → 84 KiB (2026-10) when the popover trigger became the
+  // shared ActionButton: the tooltip (its open-intent interaction model and
+  // content) joins the graph so the icon control explains itself under the
+  // consumer tooltip contract, measured at 83,131 compiled gzip JS in the
+  // packed image (+4,007; the local toolchain measures 79,089). CSS measured
+  // 55,591 raw — inside the 56 KiB cap.
+  if (measurement.gzipJsBytes > 84 * 1024)
+    throw new Error('Packed appearance host/editor exceeds 84 KiB gzip JS budget')
   if (measurement.cssBytes > 56 * 1024)
     throw new Error('Packed appearance host/editor exceeds measured 56 KiB raw CSS budget')
 }
