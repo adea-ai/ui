@@ -10,6 +10,13 @@ export {
   type ConversationSurfaceProps,
   type ConversationReadingPosition,
 } from './conversation-surface'
+export { ConversationPane, type ConversationPaneProps } from './conversation-pane'
+export {
+  ComposerMenu,
+  ComposerMenuItem,
+  type ComposerMenuProps,
+  type ComposerMenuItemProps,
+} from './composer-menu'
 export {
   ComposerAttachmentButton,
   ComposerHint,

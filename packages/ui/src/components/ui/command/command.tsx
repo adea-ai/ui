@@ -286,3 +286,38 @@ export function CommandShortcut(props: {
     </span>
   )
 }
+
+/**
+ * The status line a command surface reports under its list: searching, offline,
+ * a partial result caveat. The copy and the live-role semantics (`status`,
+ * `alert`) are the caller's — a palette's failure modes are app facts — but the
+ * line's shape is not something every caller should redraw.
+ */
+export function CommandStatus(props: ComponentProps<'p'>) {
+  const [local, rest] = splitProps(props, ['class'])
+
+  return (
+    <p
+      data-slot="command-status"
+      class={cn('text-muted-foreground px-4 py-4 text-center text-sm', local.class)}
+      {...rest}
+    />
+  )
+}
+
+/**
+ * The keyboard hint a palette footer carries, right-aligned under the list so
+ * it reads as furniture rather than a result. Muted on purpose: the arrows are
+ * what the user has already been doing by the time they read it.
+ */
+export function CommandHint(props: ComponentProps<'p'>) {
+  const [local, rest] = splitProps(props, ['class'])
+
+  return (
+    <p
+      data-slot="command-hint"
+      class={cn('text-muted-foreground px-4 pb-1.5 text-right text-xs', local.class)}
+      {...rest}
+    />
+  )
+}

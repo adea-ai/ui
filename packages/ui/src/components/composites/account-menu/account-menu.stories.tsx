@@ -131,3 +131,25 @@ export const AfterCloseAction: Story = {
     )
   },
 }
+
+/**
+ * While an update waits, the trigger and the `updates` row each carry an accent
+ * dot and their accessible names gain "update available" — the dot is drawn,
+ * the words are announced. Both triggers render here: the bare icon button and
+ * the rail row.
+ */
+export const UpdateAvailable: Story = {
+  render: () => (
+    <div class="flex flex-col items-start gap-6">
+      <AccountMenu items={standardItems} authenticated platform="desktop" updateAvailable />
+      <AccountMenu
+        items={standardItems}
+        authenticated
+        platform="desktop"
+        updateAvailable
+        railTrigger
+        placement="right-start"
+      />
+    </div>
+  ),
+}

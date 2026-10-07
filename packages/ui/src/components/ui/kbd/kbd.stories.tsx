@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { Button } from '../button'
 import { Kbd, KbdChord, KbdGroup } from './kbd'
+import { platformModifierKey, searchShortcutKeyshortcuts } from './platform-modifier'
 
 /**
  * Kbd.
@@ -109,6 +110,39 @@ export const Chord: Story = {
       <Button variant="outline" size="sm" class="w-fit gap-2" aria-keyshortcuts="Meta+K">
         Search projects
         <KbdChord size="compact" keys="⌘K" />
+      </Button>
+    </div>
+  ),
+}
+
+/**
+ * The platform-aware chord, and why the glyph is a helper and not a literal.
+ *
+ * A global chord binds Meta and Ctrl alike, so the cap draws the modifier the
+ * running OS renders: `platformModifierKey()` is ⌘ on Apple platforms and the
+ * spelled-out Ctrl elsewhere — which is also why the drawing below is a
+ * `KbdGroup` and not a `KbdChord`: one cap per entry, and a word does not
+ * split into one cap per character. `searchShortcutKeyshortcuts` keeps the
+ * announced `aria-keyshortcuts` truthful to the binding for the same reason.
+ */
+export const PlatformModifier: Story = {
+  render: () => (
+    <div class="flex max-w-md flex-col gap-3 text-sm">
+      <p class="text-muted-foreground">
+        The same binding, drawn for this machine: the helper picks the glyph, and the group gives a
+        spelled-out modifier its caps.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        class="w-fit gap-2"
+        aria-keyshortcuts={searchShortcutKeyshortcuts}
+      >
+        Search workspace
+        <KbdGroup size="compact" class="gap-0.5" aria-hidden="true">
+          <Kbd size="compact">{platformModifierKey()}</Kbd>
+          <Kbd size="compact">K</Kbd>
+        </KbdGroup>
       </Button>
     </div>
   ),

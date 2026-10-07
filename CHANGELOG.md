@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.122.0](https://github.com/adea-ai/ui/compare/v0.121.0...v0.122.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** pending-update indicator on account menus and command footer furniture ([#368](https://github.com/adea-ai/ui/issues/368)) ([d3cb03a](https://github.com/adea-ai/ui/commit/d3cb03a18a72118d6d33158b73e16fffebfbf510))
+
+## [0.121.0](https://github.com/adea-ai/ui/compare/v0.120.0...v0.121.0) (2026-10-07)
+
+
+### Features
+
+* **conversation:** pane layout, composer menus and a host status slot ([#370](https://github.com/adea-ai/ui/issues/370)) ([72dc425](https://github.com/adea-ai/ui/commit/72dc42556c2e89fb4287255fa9570e66023ac5a8))
+* **kbd:** platform-aware modifier helpers for advertised chords ([#369](https://github.com/adea-ai/ui/issues/369)) ([e2245c2](https://github.com/adea-ai/ui/commit/e2245c25a232fa371a93b2e7da535a70365e98ce))
+
 ## [0.120.0](https://github.com/adea-ai/ui/compare/v0.119.1...v0.120.0) (2026-10-07)
 
 

@@ -411,32 +411,34 @@ model.** A component that decided its own list, its own icons or its own column
 names could only ever serve one product, so those stay in the app and the library
 takes the presentation plus the behaviour that is easy to get wrong.
 
-| In adea                                   | Here                                         | What changed                                                                               |
-| ----------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `conversation-avatar`                     | `ConversationAvatar`                         | kinds `user`/`agent`/`system`, no domain type                                              |
-| `message-row`                             | `MessageRow`                                 | slots for attachments, links, actions; `streaming` added                                   |
-| `message-composer`                        | `MessageComposer`                            | controlled value, slots, draft survives a failed send                                      |
-| `conversation-surface`                    | `ConversationSurface`                        | sticks to bottom only when already there                                                   |
-| `thread-panel`                            | `ThreadPanel`                                | `aside` landmark, root message pinned                                                      |
-| `modal-dialog`                            | `ModalDialog`                                | unmounts closed, `inert` background, explicit label                                        |
-| `account-menu`                            | `AccountMenu`                                | **items come from the caller**                                                             |
-| `global-workspace-rail`                   | `SideRail` + `SideRailItem` + `AccountMenu`  | composition; the rail's content is domain                                                  |
-| `task-board`                              | `Board`                                      | column ids and `canDrop` are the caller's                                                  |
-| `task-detail`, `artifact-detail`          | `DetailPanel` + `DetailPanelSection`/`Field` | `aside` with a label, sticky header                                                        |
-| `capability-card`, `agent-status`         | `StatusChip` + `StatusList`                  | six tones, `unknown` distinct from `neutral`                                               |
-| `agent-roster`, channel and room lists    | `Item` / `ListRow`                           | the row ladder                                                                             |
-| `room-icon`, `plugin-logo`                | `EntityIcon`                                 | monogram fallback, tone owns its own contrast                                              |
-| `version-dialog`                          | `UpdateDialog`                               | an adapter supplies the transport                                                          |
-| `workspace-brand`                         | `EntityIcon` + the type scale                | an eyebrow and a title are not a component                                                 |
-| `account-drawer`                          | `Drawer` + `AccountMenu`                     | a composition                                                                              |
-| `settings-section`                        | `SettingsSection`                            | unchanged in intent                                                                        |
-| grouped settings navigation               | `SettingsLayout` + `SettingsNavigation`      | host owns selection, hash/preferences and panel content                                    |
-| `workspace-states` (empty/error/skeleton) | `Empty`, `Skeleton`                          | the empty state takes an action slot                                                       |
-| `keyed-rows`                              | `keyedRows` (a util)                         | unchanged — this one is the highest-value port                                             |
-| `notifications`                           | **stays in adea**                            | URL construction and preview redaction are app policy                                      |
-| `on-screen-controls`                      | `SceneControls`                              | shared movement/jump/zoom arrangement and hold lifecycle; host maps callbacks to its scene |
-| `scene-settings`                          | **stays in adea**                            | Agent Sim's 3D scene settings are domain, not design                                       |
-| `virtual-*`                               | **stays in adea**                            | the virtual-room transport is domain                                                       |
+| In adea                                   | Here                                         | What changed                                                                                 |
+| ----------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `conversation-avatar`                     | `ConversationAvatar`                         | kinds `user`/`agent`/`system`, no domain type                                                |
+| `message-row`                             | `MessageRow`                                 | slots for attachments, links, actions; `streaming` added                                     |
+| `message-composer`                        | `MessageComposer`                            | controlled value, slots, draft survives a failed send                                        |
+| `conversation-surface`                    | `ConversationSurface`                        | sticks to bottom only when already there                                                     |
+| `thread-panel`                            | `ThreadPanel`                                | `aside` landmark, root message pinned                                                        |
+| conversation layout CSS                   | `ConversationPane`                           | header/transcript/composer/thread slots; the thread column and its narrow overlay are shared |
+| mention/attachment menu CSS               | `ComposerMenu` + `ComposerMenuItem`          | the panel and the row are shared; what the rows offer is the caller's model                  |
+| `modal-dialog`                            | `ModalDialog`                                | unmounts closed, `inert` background, explicit label                                          |
+| `account-menu`                            | `AccountMenu`                                | **items come from the caller**                                                               |
+| `global-workspace-rail`                   | `SideRail` + `SideRailItem` + `AccountMenu`  | composition; the rail's content is domain                                                    |
+| `task-board`                              | `Board`                                      | column ids and `canDrop` are the caller's                                                    |
+| `task-detail`, `artifact-detail`          | `DetailPanel` + `DetailPanelSection`/`Field` | `aside` with a label, sticky header                                                          |
+| `capability-card`, `agent-status`         | `StatusChip` + `StatusList`                  | six tones, `unknown` distinct from `neutral`                                                 |
+| `agent-roster`, channel and room lists    | `Item` / `ListRow`                           | the row ladder                                                                               |
+| `room-icon`, `plugin-logo`                | `EntityIcon`                                 | monogram fallback, tone owns its own contrast                                                |
+| `version-dialog`                          | `UpdateDialog`                               | an adapter supplies the transport                                                            |
+| `workspace-brand`                         | `EntityIcon` + the type scale                | an eyebrow and a title are not a component                                                   |
+| `account-drawer`                          | `Drawer` + `AccountMenu`                     | a composition                                                                                |
+| `settings-section`                        | `SettingsSection`                            | unchanged in intent                                                                          |
+| grouped settings navigation               | `SettingsLayout` + `SettingsNavigation`      | host owns selection, hash/preferences and panel content                                      |
+| `workspace-states` (empty/error/skeleton) | `Empty`, `Skeleton`                          | the empty state takes an action slot                                                         |
+| `keyed-rows`                              | `keyedRows` (a util)                         | unchanged — this one is the highest-value port                                               |
+| `notifications`                           | **stays in adea**                            | URL construction and preview redaction are app policy                                        |
+| `on-screen-controls`                      | `SceneControls`                              | shared movement/jump/zoom arrangement and hold lifecycle; host maps callbacks to its scene   |
+| `scene-settings`                          | **stays in adea**                            | Agent Sim's 3D scene settings are domain, not design                                         |
+| `virtual-*`                               | **stays in adea**                            | the virtual-room transport is domain                                                         |
 
 ### Returning focus from a controlled dialog
 
