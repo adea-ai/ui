@@ -1,12 +1,28 @@
-<!-- @dsCard group="Forms" height=150 -->
+<!-- @dsCard group="Forms" height=310 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
-  const { render, html, Icons, RadioGroup, RadioGroupItem } = window.AdeaUI
+  const { render, html, Icons, RadioGroup, RadioGroupItem, EntityIcon } = window.AdeaUI
   render(
     () => html`
       <${RadioGroup} defaultValue="md" aria-label="Density">
         <${RadioGroupItem} value="sm" label="Compact" description="28px rows." />
         <${RadioGroupItem} value="md" label="Comfortable" description="32px rows. The default." />
+      <//>
+      <${RadioGroup} defaultValue="folder" aria-label="Source type" style="width:384px">
+        <${RadioGroupItem}
+          variant="card"
+          value="folder"
+          label="Folder"
+          description="Index Markdown and text files from a folder on this computer."
+          media=${html`<${EntityIcon} name="Folder" size="sm" icon=${Icons.Folder} />`}
+        />
+        <${RadioGroupItem}
+          variant="card"
+          value="mail"
+          label="Mail"
+          description="Index messages from a connected mailbox."
+          media=${html`<${EntityIcon} name="Mail" size="sm" icon=${Icons.Mail} />`}
+        />
       <//>
     `,
     document.getElementById('root')

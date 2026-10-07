@@ -1,4 +1,4 @@
-<!-- @dsCard group="Forms" height=96 -->
+<!-- @dsCard group="Forms" height=150 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const { render, html, Icons, InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } =
@@ -16,6 +16,10 @@
             aria-label="Clear search"
             ><${Icons.X} /><//
         ><//>
+        <${InputGroup} size="sm"
+          ><${InputGroupAddon}><${Icons.Search} /><//
+          ><${InputGroupInput} placeholder="Search the graph…" aria-label="Search, small"
+        /><//>
       </div>
     `,
     document.getElementById('root')

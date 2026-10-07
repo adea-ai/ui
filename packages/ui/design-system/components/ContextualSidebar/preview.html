@@ -5,12 +5,12 @@
   const [width, setWidth] = createSignal(272);
   const [open, setOpen] = createSignal(true);
   let opener;
-  const content = () => html`<${SidebarNavSection} label="Projects"><${SidebarNavItem} as="button" type="button" active=${true}>Atlas workspace<//><//>`;
+  const content = (_context) => html`<${SidebarNavSection} label="Projects"><${SidebarNavItem} as="button" type="button" active=${true}>Atlas workspace<//><//>`;
   render(() => html`
     <div style=${() => `display:grid;grid-template-columns:${open() ? width() : 0}px minmax(0,1fr);height:348px;border:1px solid var(--border);background:var(--background)`}>
-      <${ContextualSidebar} label="Workspace navigation" title="Workspace" open=${open} width=${width} minimum=${208} maximum=${448} onOpenChange=${setOpen} onWidthChange=${setWidth} restoreFocusRef=${() => opener} content=${content} />
+      <${ContextualSidebar} label="Workspace navigation" title="Workspace" open=${open} width=${width} minimum=${208} maximum=${448} onOpenChange=${setOpen} onWidthChange=${setWidth} restoreFocusRef=${(_unused) => opener} content=${content} />
       <main style="padding:16px">
-        <${Button} size="sm" ref=${(element) => opener = element} onClick=${() => setOpen((previous) => !previous)}>Toggle navigation<//>
+        <${Button} size="sm" ref=${(element) => opener = element} onClick=${(_event) => setOpen((previous) => !previous)}>Toggle navigation<//>
         <p>The host owns width, persistence, and view-specific projects or sessions.</p>
       </main>
     </div>

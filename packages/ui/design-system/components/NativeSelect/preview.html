@@ -1,4 +1,4 @@
-<!-- @dsCard group="Forms" height=90 -->
+<!-- @dsCard group="Forms" height=140 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const { render, html, Icons, NativeSelect } = window.AdeaUI
@@ -11,6 +11,13 @@
           <option value="explicit">Explicit</option>
           <option value="derived">Derived</option><//
         >
+        <div style="display:flex;gap:8px;align-items:center;padding-top:6px">
+          <${NativeSelect} size="sm" aria-label="Relationship, small"
+            ><option>Small</option><//
+          ><${NativeSelect} size="lg" aria-label="Relationship, large"
+            ><option>Large</option><//
+          >
+        </div>
       </div>
     `,
     document.getElementById('root')

@@ -1,10 +1,11 @@
-<!-- @dsCard group="Typography" height=440 -->
+<!-- @dsCard group="Typography" height=460 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 16px"></div>
 <script>
   const { render, html, Heading, Text } = window.AdeaUI
   render(
     () => html`
       <div style="display:flex;flex-direction:column;gap:6px">
+        <${Text} variant="overline">Workspace<//>
         <${Heading} size="display">Nothing here yet<//>
         <${Heading} size="title" numeric=${true}>1,284 runs this week<//>
         <${Heading} size="page">Workspace settings<//>

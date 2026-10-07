@@ -621,7 +621,7 @@ function componentReadme(item: string, card: Card): string {
 
 function declarationsFor(item: string, card: Card): string {
   const path = sourceFor(item, card)
-  const relativePath = path.slice(join(PACKAGE, 'src').length + 1).replace(/\.tsx$/, '.d.ts')
+  const relativePath = path.slice(join(PACKAGE, 'src').length + 1).replace(/\.tsx?$/, '.d.ts')
   const declared = join(PACKAGE, 'dist', relativePath)
   if (!existsSync(declared)) throw new Error(`${declared} is missing — run \`bun run build\` first`)
   const text = readFileSync(declared, 'utf8')

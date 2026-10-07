@@ -1,4 +1,4 @@
-<!-- @dsCard group="Forms" height=260 -->
+<!-- @dsCard group="Forms" height=440 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const {
@@ -11,6 +11,7 @@
     FieldDescription,
     FieldError,
     FieldTextArea,
+    FieldGroup,
   } = window.AdeaUI
   render(
     () => html`
@@ -30,6 +31,13 @@
           ><${FieldTextArea} placeholder="What should this session accomplish?" rows=${3}
         /><//>
       </div>
+      <${FieldGroup} columns=${2} style="width:576px">
+        <${Field}><${FieldLabel}>Host<//><${FieldInput} placeholder="127.0.0.1" /><//>
+        <${Field}><${FieldLabel}>Port<//><${FieldInput} inputMode="numeric" placeholder="11434" /><//>
+        <${Field} class="col-span-full"
+          ><${FieldLabel}>Model<//><${FieldInput} placeholder="nomic-embed-text" /><//
+        >
+      <//>
     `,
     document.getElementById('root')
   )

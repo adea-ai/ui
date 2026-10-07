@@ -1,4 +1,4 @@
-<!-- @dsCard group="Navigation" height=56 -->
+<!-- @dsCard group="Navigation" height=88 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const {
@@ -10,6 +10,7 @@
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbSeparator,
+    BreadcrumbPage,
   } = window.AdeaUI
   render(
     () => html`
@@ -19,6 +20,13 @@
           ><${BreadcrumbSeparator} /> <${BreadcrumbItem}><${BreadcrumbLink} href="#">Projects<//><//
           ><${BreadcrumbSeparator} />
           <${BreadcrumbItem}><${BreadcrumbLink} current=${true}>packages/ui<//><//>
+        <//><//
+      >
+      <${Breadcrumb}
+        ><${BreadcrumbList}>
+          <${BreadcrumbItem}><${BreadcrumbLink} href="#">Knowledge<//><//
+          ><${BreadcrumbSeparator} />
+          <${BreadcrumbItem}><${BreadcrumbPage}>Release notes<//><//>
         <//><//
       >
     `,
