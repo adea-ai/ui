@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.115.1](https://github.com/adea-ai/ui/compare/v0.115.0...v0.115.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **ui:** banded settings header, 24px resize and section targets, single-owner top-bar insets ([#349](https://github.com/adea-ai/ui/issues/349)) ([62a43c5](https://github.com/adea-ai/ui/commit/62a43c5599495cffccc798867ea21507dbacc371))
+
+## [0.115.0](https://github.com/adea-ai/ui/compare/v0.114.0...v0.115.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** input sizes, tree row actions, inline list-row trailing, pressable top-bar title content ([#348](https://github.com/adea-ai/ui/issues/348)) ([be0fe59](https://github.com/adea-ai/ui/commit/be0fe591bbf0830a9c796c48ec7dc8a58a77a919))
+* **ui:** pending StatusChip tone, always-visible section action, mobile-only sidebar title ([#346](https://github.com/adea-ai/ui/issues/346)) ([8558a76](https://github.com/adea-ai/ui/commit/8558a76b4a93985b6e2fddfb49733871962a1213))
+
 ## [0.114.0](https://github.com/adea-ai/ui/compare/v0.113.1...v0.114.0) (2026-10-06)
 
 

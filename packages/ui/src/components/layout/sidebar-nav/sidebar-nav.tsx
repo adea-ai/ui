@@ -88,7 +88,12 @@ export function SidebarNavContent(props: ComponentProps<'div'>) {
   return (
     <div
       data-slot="sidebar-nav-content"
-      class={cn('flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2', local.class)}
+      class={cn(
+        /* A stable gutter keeps rows from shifting sideways when the list
+           grows past the fold and the scrollbar appears. */
+        'flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2 [scrollbar-gutter:stable]',
+        local.class
+      )}
       {...rest}
     />
   )
@@ -140,6 +145,12 @@ export type SidebarNavSectionProps = ComponentProps<'div'> & {
   count?: number
   /** A control at the trailing edge of the heading row. */
   action?: JSX.Element
+  /**
+   * When the trailing action shows. `hover` (default) reveals it on hover or
+   * focus; `always` keeps it visible, for a section whose primary action is
+   * creating its first item.
+   */
+  actionVisibility?: 'hover' | 'always'
   /** Semantic heading element for a host's section hierarchy. */
   headingAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }
@@ -156,6 +167,7 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
     'triggerProps',
     'count',
     'action',
+    'actionVisibility',
     'headingAs',
     'children',
   ])
@@ -229,6 +241,11 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
               }}
               class={cn(
                 'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(any-pointer:coarse)]:min-h-11',
+                /* WCAG 2.5.8: the row's vertical padding sits on the header, so
+                   the bare label would be a ~16px target. Stretch the button
+                   across that padding; the row's height does not change. A
+                   coarse pointer already gets min-h-11 on an unpadded row. */
+                '-my-1.5 py-1.5 [@media(any-pointer:coarse)]:my-0 [@media(any-pointer:coarse)]:py-0',
                 local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
               )}
             >
@@ -237,7 +254,13 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
           </Show>
         </Polymorphic>
         <Show when={local.action}>
-          <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100">
+          <span
+            data-slot="sidebar-nav-section-action"
+            class={cn('shrink-0', {
+              'opacity-0 transition-opacity ease-out group-hover/section-header:opacity-100 focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100':
+                local.actionVisibility !== 'always',
+            })}
+          >
             {local.action}
           </span>
         </Show>

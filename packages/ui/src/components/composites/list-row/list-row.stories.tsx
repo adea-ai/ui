@@ -164,6 +164,30 @@ export const ActionHeavyDescription: Story = {
   ),
 }
 
+/**
+ * A short, truncating label whose one action must stay beside it: with
+ * `stackTrailing={false}` the narrow container keeps the action inline instead
+ * of dropping it onto its own line.
+ */
+export const InlineTrailing: Story = {
+  render: () => (
+    <div class="w-64 rounded-xl border border-border p-2">
+      <ListRow
+        leading={<CircleDot />}
+        description="iOS 18.2 · booted"
+        stackTrailing={false}
+        trailing={
+          <Button size="sm" variant="outline">
+            Start
+          </Button>
+        }
+      >
+        iPhone 16 Pro
+      </ListRow>
+    </div>
+  ),
+}
+
 /** Interactive rows use native buttons or links and expose a keyboard tooltip. */
 export const Interactive: Story = {
   render: () => (
