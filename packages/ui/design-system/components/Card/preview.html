@@ -14,10 +14,11 @@
     CardFooter,
     Button,
     Badge,
+    ListRow,
   } = window.AdeaUI
   render(
     () => html`
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
         <${Card} style="width:384px">
           <${CardHeader}>
             <${CardTitle}>Release 0.55.0<//>
@@ -32,6 +33,23 @@
           <${CardFooter} style="gap:8px"
             ><${Button} size="sm">View notes<//><${Button} size="sm" variant="ghost">Dismiss<//><//
           >
+        <//>
+        <${Card} size="sm" style="width:256px">
+          <${CardHeader}>
+            <${CardTitle}>Local service<//>
+            <${CardDescription}>Small: 12px padding and gap.<//>
+          <//>
+          <${CardContent}
+            ><p style="margin:0;font-size:14px;color:var(--muted-foreground)">
+              Running on port 11434.
+            </p><//
+          >
+          <${CardFooter}><${Button} size="xs" variant="outline">Restart<//><//>
+        <//>
+        <${Card} size="flush" style="width:256px">
+          <${ListRow}>Notes<//>
+          <${ListRow}>Mail<//>
+          <${ListRow}>Chat<//>
         <//>
       </div>
     `,

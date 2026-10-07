@@ -1,13 +1,29 @@
-<!-- @dsCard group="Data display" height=64 -->
+<!-- @dsCard group="Data display" height=100 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const { render, html, Icons, EntityIcon } = window.AdeaUI
+  const mark = (_unused) =>
+    html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--info)" d="M12 2 22 20H2z" /></svg>`
   render(
     () => html`
       <div style="display:flex;gap:12px;align-items:center">
         <${EntityIcon} name="Kitchen" /><${EntityIcon} name="Engineering" /><${EntityIcon}
           name="Agent HQ"
         /><${EntityIcon} name="Plugin Registry" />
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <${EntityIcon} name="Vendor mark, own colour" size="lg" icon=${mark()} /><${EntityIcon}
+          name="Vendor mark, monochrome"
+          size="lg"
+          icon=${mark()}
+          monochrome=${true}
+        /><${EntityIcon}
+          name="Vendor mark, monochrome on primary"
+          size="lg"
+          tone="primary"
+          icon=${mark()}
+          monochrome=${true}
+        />
       </div>
     `,
     document.getElementById('root')

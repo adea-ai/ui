@@ -1,7 +1,8 @@
-<!-- @dsCard group="Navigation" height=140 -->
+<!-- @dsCard group="Navigation" height=260 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
-  const { render, html, Icons, Tabs, TabsList, TabsTrigger, TabsContent } = window.AdeaUI
+  const { render, html, Icons, For, Tabs, TabsList, TabsTrigger, TabsContent } = window.AdeaUI
+  const sections = ['Overview', 'Access', 'Folders', 'Schedule', 'Validation', 'Advanced']
   render(
     () => html`
       <div style="display:flex;flex-direction:column;gap:20px">
@@ -24,6 +25,18 @@
             ><p style="margin:8px 0 0;font-size:14px;color:var(--muted-foreground)">
               Commits that touched this file.
             </p><//
+          >
+        <//>
+        <${Tabs} defaultValue="document" style="width:480px">
+          <${TabsList} fill=${true}
+            ><${TabsTrigger} value="document">Document<//><${TabsTrigger} value="answer">Answer<//><//
+          >
+        <//>
+        <${Tabs} defaultValue="overview" style="width:320px">
+          <${TabsList} scrollable=${true} aria-label="Source settings"
+            ><${For} each=${sections}
+              >${(label) => html`<${TabsTrigger} value=${label.toLowerCase()}>${label}<//>`}<//
+            ><//
           >
         <//>
         <${Tabs} defaultValue="preview" style="width:480px">

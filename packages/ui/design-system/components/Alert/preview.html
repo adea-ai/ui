@@ -1,7 +1,7 @@
-<!-- @dsCard group="Feedback" height=420 -->
+<!-- @dsCard group="Feedback" height=460 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
-  const { render, html, Icons, Alert, AlertTitle, AlertDescription } = window.AdeaUI
+  const { render, html, Icons, Alert, AlertTitle, AlertDescription, AlertAction, Button } = window.AdeaUI
   render(
     () => html`
       <div style="display:flex;flex-direction:column;gap:12px;max-width:576px">
@@ -19,7 +19,11 @@
         >
         <${Alert} variant="warning"
           ><${AlertTitle}>Budget nearly spent<//
-          ><${AlertDescription}>92% of this month's run budget is used.<//><//
+          ><${AlertDescription}>92% of this month's run budget is used.<//
+          ><${AlertAction}
+            ><${Button} size="xs" variant="outline">Raise budget<//
+            ><${Button} size="xs" variant="outline">Open usage<//><//
+          ><//
         >
         <${Alert} variant="destructive"
           ><${AlertTitle}>Two checks failed<//
