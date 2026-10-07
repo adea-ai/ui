@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.119.0](https://github.com/adea-ai/ui/compare/v0.118.3...v0.119.0) (2026-10-07)
+
+
+### Features
+
+* **settings:** narrow-width tab strip for SettingsLayout, plus CodeBlock and Item opt-ins ([#362](https://github.com/adea-ai/ui/issues/362)) ([ca506f8](https://github.com/adea-ai/ui/commit/ca506f855d49b3334c0eee7054d704a20a2a197b))
+
 ## [0.118.3](https://github.com/adea-ai/ui/compare/v0.118.2...v0.118.3) (2026-10-07)
 
 
