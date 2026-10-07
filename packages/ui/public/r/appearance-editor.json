@@ -9,6 +9,7 @@
     "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/action-button",
     "@adea-ai/ui/button",
     "@adea-ai/ui/dropdown-menu",
     "@adea-ai/ui/input",

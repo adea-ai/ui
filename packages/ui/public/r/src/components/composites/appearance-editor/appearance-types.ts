@@ -57,6 +57,32 @@ export type AppearanceEditorProps = {
   class?: string
   /** Leave Reset/Cancel/Save to the host, which renders `AppearanceEditorActions`. */
   hideActions?: boolean
+  /**
+   * Where the typeface settings sit in the option list. `inline` — the default
+   * — renders them between the accent and glass rows, where they read as one
+   * more palette choice. `end` closes the list with them: hosts whose option
+   * order is palette-and-surface first, text last, pass `end` instead of
+   * recomposing the editor.
+   */
+  fontSettingsPlacement?: 'inline' | 'end'
+  /**
+   * How the accent row renders its choices. `swatches` — the default — paints
+   * each choice as a colour circle. `labels` renders every choice as a named
+   * chip, for hosts whose accent contract is textual rather than chromatic.
+   */
+  accentEntryStyle?: 'swatches' | 'labels'
+  /**
+   * Whether the accent row leads with a "Theme default" swatch. Default on.
+   * Hosts whose default accent already is one of the catalogue presets pass
+   * `false`: the extra entry would duplicate the preset's own colour.
+   */
+  showThemeDefaultAccent?: boolean
+  /**
+   * Whether the swatch accent style captions its custom-colour entry. Default
+   * on. `false` leaves the custom chip to name itself — for hosts where the
+   * caption reads as a second "Custom" label on the control.
+   */
+  showCustomAccentCaption?: boolean
 }
 
 export type AppearancePopoverProps = AppearanceEditorProps & {
