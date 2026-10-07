@@ -124,12 +124,14 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 844 })
-    // The previous width left focus on the opener; blur it so the Tab below
-    // walks from the top of the document again.
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     // Tab to the opener: keyboard intent announces the tooltip (a programmatic
-    // focus() is exactly what the tooltip focus gate keeps quiet).
-    await page.keyboard.press('Tab')
+    // focus() is exactly what the tooltip focus gate keeps quiet). Walk rather
+    // than count stops — the previous width left focus on this opener, and an
+    // engine's sequential-focus start after a manual blur differs.
+    for (let hop = 0; hop < 8; hop += 1) {
+      await page.keyboard.press('Tab')
+      if (await opener.evaluate((element) => element === document.activeElement)) break
+    }
     await expect(opener).toBeFocused()
     await expect(page.getByRole('tooltip')).toBeVisible()
     await opener.click()
@@ -144,6 +146,13 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
       .toBeLessThan(1)
     await page.keyboard.press('Escape')
     await expect(menu).toHaveCount(0)
+    console.log(
+      'AFTER-ESCAPE FOCUS:',
+      await page.evaluate(() => {
+        const active = document.activeElement
+        return `${active?.tagName}.${active?.getAttribute('aria-label') ?? active?.id ?? ''} phantom-listener:${'n/a'}`
+      })
+    )
     await expect(opener).toBeFocused()
   }
   expect(errors).toEqual([])
