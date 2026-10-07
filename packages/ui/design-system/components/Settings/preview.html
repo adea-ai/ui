@@ -1,4 +1,4 @@
-<!-- @dsCard group="Composites" height=660 -->
+<!-- @dsCard group="Composites" height=1000 -->
 <div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
 <script>
   const { render, html, Icons, createSignal, SettingsLayout, SettingsPage, SettingsSection, SettingsRow, TabsContent, Input, Switch, Button } = window.AdeaUI;
@@ -27,6 +27,7 @@
     id="settings-navigation-card"
     value=${() => value()}
     onChange=${(next) => setValue(next)}
+    navigationLayout="rail"
     aria-label="Settings sections"
     groups=${groups}
     style="min-height:0;min-width:0;flex:1"
@@ -56,6 +57,33 @@
           <//>
         <//>
       <//>
+    <//>
+    <${TabsContent} value="notifications">
+      <${SettingsSection} title="Notifications" description="Where updates are delivered." />
+    <//>
+    <${TabsContent} value="data">
+      <${SettingsSection} title="Data controls" description="Retention and private content." />
+    <//>
+    <${TabsContent} value="access">
+      <${SettingsSection} title="Access" description="Permissions for this workspace." />
+    <//>
+  <//>
+</div>
+<div style="display:flex;height:300px;width:360px;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden">
+  <${SettingsLayout}
+    id="settings-navigation-strip-card"
+    navigationLayout="strip"
+    value=${() => value()}
+    onChange=${(next) => setValue(next)}
+    aria-label="Settings sections, narrow"
+    groups=${groups}
+    style="min-height:0;min-width:0;flex:1"
+  >
+    <${TabsContent} value="account">
+      <${SettingsSection} title="Account" description="Session and product information." />
+    <//>
+    <${TabsContent} value="preferences">
+      <${SettingsSection} title="Preferences" description="Below 48rem the rail becomes a strip of tabs above the panels." />
     <//>
     <${TabsContent} value="notifications">
       <${SettingsSection} title="Notifications" description="Where updates are delivered." />

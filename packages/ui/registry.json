@@ -2186,7 +2186,9 @@
       "type": "registry:ui",
       "title": "Settings",
       "description": "",
-      "dependencies": [],
+      "dependencies": [
+        "@kobalte/core@^0.13.14"
+      ],
       "registryDependencies": [
         "@adea-ai/ui/sidebar-nav",
         "@adea-ai/ui/tabs",

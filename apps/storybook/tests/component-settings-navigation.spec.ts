@@ -85,13 +85,15 @@ test('named groups keep controlled tabs related to their panels and support vert
   ).toEqual([])
 })
 
-test('selected rows reveal inside the list at narrow and 200 percent layouts', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+test('selected rows reveal inside the rail at a wide 200 percent layout', async ({ page }) => {
+  // 200 percent of a 1600px window is still 800 CSS pixels: the rail, not the strip.
+  await page.setViewportSize({ width: 1600, height: 500 })
   await page.evaluate(() => {
     document.documentElement.style.zoom = '2'
   })
 
   const list = page.getByRole('tablist', { name: 'Settings sections', exact: true })
+  await expect(list).toHaveAttribute('aria-orientation', 'vertical')
   const diagnostics = list.getByRole('tab', { name: 'Diagnostics and recovery', exact: true })
   await page.getByRole('button', { name: 'Select diagnostics', exact: true }).click()
   await expect(diagnostics).toHaveAttribute('aria-selected', 'true')
@@ -106,25 +108,120 @@ test('selected rows reveal inside the list at narrow and 200 percent layouts', a
       })
     )
     .toBe(true)
+  expect(await list.evaluate((tablist) => getComputedStyle(tablist).overflowX)).toBe('hidden')
+})
+
+test('below 48rem the rail becomes a scrollable strip of tabs above the panels', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+
+  const root = page.locator('#settings-navigation-fixture')
+  const list = page.getByRole('tablist', { name: 'Settings sections', exact: true })
+  const tabs = list.getByRole('tab')
+  const account = list.getByRole('tab', { name: 'Account', exact: true })
+  const appearance = list.getByRole('tab', { name: 'Appearance', exact: true })
+  const privacy = list.getByRole('tab', { name: 'Privacy', exact: true })
+  const diagnostics = list.getByRole('tab', { name: 'Diagnostics and recovery', exact: true })
+
+  await expect(root).toHaveAttribute('data-navigation-layout', 'strip')
+  await expect(list).toHaveAttribute('aria-orientation', 'horizontal')
+  expect(await list.evaluate((element) => getComputedStyle(element).overflowX)).toBe('auto')
+
+  // Stacked: the strip spans the layout above the panels, not beside them.
+  const listBox = (await list.boundingBox())!
+  const panelBox = (await page.locator('#settings-panel-account').boundingBox())!
+  const rootBox = (await root.boundingBox())!
+  expect(listBox.y + listBox.height).toBeLessThanOrEqual(panelBox.y + 1)
+  expect(Math.abs(listBox.width - rootBox.width)).toBeLessThanOrEqual(1)
+
+  // One row, groups in source order, every label whole rather than truncated.
+  expect(await tabs.allTextContents()).toEqual([
+    'Account',
+    'Appearance',
+    'Workspace defaults',
+    'Privacy',
+    'Notifications',
+    'Diagnostics and recovery',
+  ])
+  const boxes = await tabs.evaluateAll((elements) =>
+    elements.map((element) => {
+      const box = element.getBoundingClientRect()
+      const label = element.querySelector('span:last-child')!
+      return { top: box.top, left: box.left, clipped: label.scrollWidth > label.clientWidth }
+    })
+  )
+  expect(new Set(boxes.map((box) => Math.round(box.top))).size).toBe(1)
+  expect(boxes.map((box) => box.left)).toEqual(
+    boxes.map((box) => box.left).toSorted((a, b) => a - b)
+  )
+  expect(boxes.some((box) => box.clipped)).toBe(false)
+  // Visible group headings drop out; each tab still names its group.
+  await expect(
+    list.locator('[data-slot="settings-navigation-group"] > [aria-hidden="true"]')
+  ).toHaveCount(0)
+  await expect(page.locator(`#${await privacy.getAttribute('aria-describedby')}`)).toHaveText(
+    'Access and privacy'
+  )
+
+  // Horizontal keys follow the visible axis.
+  await account.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(appearance).toBeFocused()
+  await expect(appearance).toHaveAttribute('aria-selected', 'true')
+  await page.keyboard.press('ArrowLeft')
+  await expect(account).toBeFocused()
+  await page.keyboard.press('End')
+  await expect(diagnostics).toBeFocused()
+  await expect(diagnostics).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByLabel('Selected section', { exact: true })).toHaveText('diagnostics')
+  await page.keyboard.press('Home')
+  await expect(account).toHaveAttribute('aria-selected', 'true')
+
+  // A host-driven selection scrolls the strip to reveal it, and only the strip.
+  await page.getByRole('button', { name: 'Select diagnostics', exact: true }).click()
+  await expect(diagnostics).toHaveAttribute('aria-selected', 'true')
+  await expect.poll(() => list.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0)
+  await expect
+    .poll(() =>
+      diagnostics.evaluate((element) => {
+        const target = element.getBoundingClientRect()
+        const strip = element.closest('[role="tablist"]')!.getBoundingClientRect()
+        return target.left >= strip.left - 1 && target.right <= strip.right + 1
+      })
+    )
+    .toBe(true)
 
   const overflow = await page.evaluate(() => ({
     documentClientWidth: document.documentElement.clientWidth,
     documentScrollWidth: document.documentElement.scrollWidth,
-    listClientWidth: document.querySelector('[aria-label="Settings sections"]')?.clientWidth ?? 0,
   }))
-  const navigationOverflowX = await list.evaluate((tablist) => getComputedStyle(tablist).overflowX)
-  expect(overflow.documentScrollWidth, JSON.stringify({ overflow })).toBeLessThanOrEqual(
+  expect(overflow.documentScrollWidth, JSON.stringify(overflow)).toBeLessThanOrEqual(
     overflow.documentClientWidth
   )
-  expect(overflow.listClientWidth).toBeGreaterThan(0)
-  expect(navigationOverflowX).toBe('hidden')
-
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(
     accessibility.violations.filter((violation) =>
       ['serious', 'critical'].includes(violation.impact ?? '')
     )
   ).toEqual([])
+})
+
+test('crossing the breakpoint switches between rail and strip in place', async ({ page }) => {
+  const list = page.getByRole('tablist', { name: 'Settings sections', exact: true })
+  const privacy = list.getByRole('tab', { name: 'Privacy', exact: true })
+  await privacy.click()
+  await expect(list).toHaveAttribute('aria-orientation', 'vertical')
+
+  await page.setViewportSize({ width: 700, height: 800 })
+  await expect(list).toHaveAttribute('aria-orientation', 'horizontal')
+  // Selection and panel survive the change of axis.
+  await expect(privacy).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#settings-panel-privacy')).toBeVisible()
+
+  await page.setViewportSize({ width: 1024, height: 800 })
+  await expect(list).toHaveAttribute('aria-orientation', 'vertical')
+  await expect(privacy).toHaveAttribute('aria-selected', 'true')
 })
 
 test('a row-forced navigation keeps earlier rows reachable after a reveal pan', async ({
