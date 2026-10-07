@@ -54,7 +54,9 @@ test('announces loading and errors with a heading and usable retry action', asyn
   const error = page.getByRole('alert')
   await expect(error.getByRole('heading', { name: 'Graph unavailable', level: 1 })).toBeVisible()
   const retry = page.getByRole('button', { name: 'Try again', exact: true })
-  await retry.focus()
+  // Tab into the action: keyboard intent announces the tooltip (a programmatic
+  // focus() is exactly what the tooltip focus gate keeps quiet).
+  await page.keyboard.press('Tab')
   await expect(retry).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('Retry loading the graph')
   await retry.click()

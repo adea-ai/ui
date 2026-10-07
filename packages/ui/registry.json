@@ -1998,6 +1998,7 @@
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/action-button",
         "@adea-ai/ui/button",
         "@adea-ai/ui/dropdown-menu",
         "@adea-ai/ui/input",
@@ -2638,6 +2639,11 @@
           "path": "src/lib/tokens.ts",
           "type": "registry:lib",
           "target": "lib/tokens.ts"
+        },
+        {
+          "path": "src/lib/tooltip-focus-gate.ts",
+          "type": "registry:lib",
+          "target": "lib/tooltip-focus-gate.ts"
         },
         {
           "path": "src/lib/utils.ts",

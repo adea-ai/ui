@@ -46,7 +46,9 @@ test.beforeEach(async ({ page }) => {
 
 test('the tooltip never renders a caret and never takes the pointer', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
-  await trigger.focus()
+  // Keyboard intent — a Tab key press moving focus — announces the tip.
+  await page.keyboard.press('Tab')
+  await expect(trigger).toBeFocused()
 
   const tooltip = page.getByRole('tooltip')
   await expect(tooltip).toBeVisible()
@@ -59,6 +61,30 @@ test('the tooltip never renders a caret and never takes the pointer', async ({ p
   await expect(tooltip).toHaveCSS('pointer-events', 'none')
 })
 
+test('programmatic focus never opens a tooltip, and the released phantom cannot pin a hover', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Focus to open the force-mounted tooltip' })
+
+  // The autofocus a dialog or sheet gives its first control, and the focus a
+  // closing overlay restores to its opener, both land without a keyboard
+  // signal. The gate stops the focus event before any tooltip hears it.
+  await trigger.focus()
+  await expect(trigger).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+
+  // The first pointer activity — anywhere — releases the suppressed focus, so
+  // a pointer session takes over from the script.
+  await page.mouse.move(1, 1)
+
+  // A real hover then opens the tip, and leaving closes it: the
+  // focused-trigger close-refusal has nothing left to pin the tooltip with.
+  await trigger.hover()
+  await expect(page.getByRole('tooltip')).toBeVisible()
+  await page.mouse.move(4, 320)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+})
+
 test('a force-mounted tooltip leaves the accessibility tree as its close animation starts', async ({
   page,
 }) => {
@@ -68,7 +94,8 @@ test('a force-mounted tooltip leaves the accessibility tree as its close animati
   })
 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await trigger.focus()
+  await page.keyboard.press('Tab')
+  await expect(trigger).toBeFocused()
 
   const tooltip = page.getByRole('tooltip')
   await expect(tooltip).toHaveText('Tooltip without a caret')
@@ -111,7 +138,12 @@ test('a controlled tooltip hides caller-visible content only while closed', asyn
 
 test('an icon+label tip renders the side rail treatment as one row', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'Layers' })
-  await trigger.focus()
+  // Third stop from the top: the force-mounted trigger, the next action, then
+  // this icon control.
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await expect(trigger).toBeFocused()
 
   const tooltip = page.getByRole('tooltip').filter({ hasText: 'Layer tree' })
   await expect(tooltip).toBeVisible()

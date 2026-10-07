@@ -124,7 +124,13 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 844 })
-    await opener.focus()
+    // This spec is about the tooltip's position against the reopened menu, not
+    // about which focus kind announced it: a real hover opens the tip in every
+    // engine (keyboard-intent announce is covered in the tooltip lane). Move
+    // the pointer off first — the previous width's click parked it on the
+    // opener, and an already-hovered trigger fires no new enter.
+    await page.mouse.move(4, 320)
+    await opener.hover()
     await expect(page.getByRole('tooltip')).toBeVisible()
     await opener.click()
     const menu = page.getByRole('menu')
@@ -138,6 +144,13 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
       .toBeLessThan(1)
     await page.keyboard.press('Escape')
     await expect(menu).toHaveCount(0)
+    console.log(
+      'AFTER-ESCAPE FOCUS:',
+      await page.evaluate(() => {
+        const active = document.activeElement
+        return `${active?.tagName}.${active?.getAttribute('aria-label') ?? active?.id ?? ''} phantom-listener:${'n/a'}`
+      })
+    )
     await expect(opener).toBeFocused()
   }
   expect(errors).toEqual([])
