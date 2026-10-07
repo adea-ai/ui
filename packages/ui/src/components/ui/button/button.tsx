@@ -35,6 +35,13 @@ export const buttonVariants = cva(
           'border border-border bg-transparent text-foreground hover:bg-surface-hover hover:border-input',
         /** No chrome until hover. The default for toolbar and row actions. */
         ghost: 'text-foreground hover:bg-surface-hover',
+        /**
+         * A ghost that opens something: a sheet, menu or popover trigger in a
+         * toolbar. While its surface is open it holds the menubar's pressed
+         * rung, so the open control never reads identical to its closed
+         * neighbours.
+         */
+        toolbar: 'text-foreground hover:bg-surface-hover data-[expanded]:bg-surface-active',
         /** A tinted primary, for a secondary action inside a primary flow. */
         subtle: 'bg-primary-subtle text-primary hover:bg-primary-subtle/80',
         success: 'bg-success text-success-foreground hover:bg-success/90',
