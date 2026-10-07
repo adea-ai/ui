@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.117.0](https://github.com/adea-ai/ui/compare/v0.116.0...v0.117.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** quiet rung resize grip, rail-aware contextual sidebar sheet width, comfortable transcript density ([#352](https://github.com/adea-ai/ui/issues/352)) ([c0742d4](https://github.com/adea-ai/ui/commit/c0742d457e7838e8327ee0c29fd9e22ee2c6a842))
+
 ## [0.116.0](https://github.com/adea-ai/ui/compare/v0.115.1...v0.116.0) (2026-10-07)
 
 
