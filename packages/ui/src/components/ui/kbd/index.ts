@@ -8,3 +8,8 @@ export {
   type KbdChordProps,
   type KbdSize,
 } from './kbd'
+export {
+  platformModifierKey,
+  searchShortcutKeyshortcuts,
+  searchShortcutLabel,
+} from './platform-modifier'
