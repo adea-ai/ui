@@ -34,6 +34,7 @@
 import { EyeOff, Palette, PanelsTopLeft, SlidersHorizontal } from 'lucide-solid'
 import { Show, createSignal, createUniqueId } from 'solid-js'
 import { cn } from '#lib/utils'
+import { ActionButton } from '../action-button'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
 import { AppearanceFontSettingsGroup } from './font-settings-group'
@@ -144,12 +145,17 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
             </Show>
           </div>
         </Show>
-        <AppearanceFontSettingsGroup
-          settings={props.draft.fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
-          menuPortalMount={props.menuPortalMount}
-          disabled={props.saving}
-          onChange={(fonts) => props.onChange({ fonts })}
-        />
+        {/* Inline, the typefaces read as one more palette choice; `end` hands
+            the closing slot to them for hosts whose order is palette and
+            surface first, text last. */}
+        <Show when={props.fontSettingsPlacement !== 'end'}>
+          <AppearanceFontSettingsGroup
+            settings={props.draft.fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
+            menuPortalMount={props.menuPortalMount}
+            disabled={props.saving}
+            onChange={(fonts) => props.onChange({ fonts })}
+          />
+        </Show>
         <SettingsRow title="Glass" icon={<PanelsTopLeft />} description={glassDescription()}>
           <GlassChoices {...props} />
         </SettingsRow>
@@ -189,6 +195,14 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
             Manage themes
           </Button>
         </SettingsRow>
+        <Show when={props.fontSettingsPlacement === 'end'}>
+          <AppearanceFontSettingsGroup
+            settings={props.draft.fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
+            menuPortalMount={props.menuPortalMount}
+            disabled={props.saving}
+            onChange={(fonts) => props.onChange({ fonts })}
+          />
+        </Show>
       </div>
       <Show when={!props.hideActions}>
         {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
@@ -262,11 +276,14 @@ export function AppearancePopover(props: AppearancePopoverProps) {
 
   return (
     <Sheet open={props.open} onOpenChange={(open) => (open ? props.onOpen() : props.onDismiss())}>
+      {/* The trigger is an icon-only action, so it explains itself through the
+          shared ActionButton's tooltip (keyboard focus included) rather than a
+          bare aria-label. */}
       <SheetTrigger
-        as={Button}
-        type="button"
+        as={ActionButton}
         variant="ghost"
         size="icon-sm"
+        tooltip="Open appearance settings"
         aria-label="Appearance settings"
       >
         <Palette />

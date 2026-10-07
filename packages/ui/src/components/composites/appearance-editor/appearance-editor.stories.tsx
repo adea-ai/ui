@@ -48,6 +48,7 @@ function Example(props: {
   saving?: boolean
   recovery?: boolean
   empty?: boolean
+  seams?: boolean
 }) {
   const [draft, setDraft] = createSignal({ ...defaults })
   const [committed, setCommitted] = createSignal({ ...defaults })
@@ -85,6 +86,14 @@ function Example(props: {
       !isThemeAccentId(draft().accent)
         ? 'Custom colors are validated by the host; this example accepts presets.'
         : undefined,
+    // The composition seam: typefaces close the list, and the accent row is
+    // named chips without a separate theme-default entry or a Custom caption.
+    ...(props.seams && {
+      fontSettingsPlacement: 'end' as const,
+      accentEntryStyle: 'labels' as const,
+      showThemeDefaultAccent: false,
+      showCustomAccentCaption: false,
+    }),
   })
   return (
     <div class="w-full max-w-lg">
@@ -110,6 +119,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 export const Default: Story = { render: () => <Example /> }
+/**
+ * The composition seam, set the way a host whose option order is palette and
+ * surface first, text last reads it: typefaces close the list, and the accent
+ * row is named chips — presets plus one Custom control, no separate
+ * theme-default entry, no caption over the custom chip.
+ */
+export const HostOrderedRows: Story = { render: () => <Example seams /> }
 export const AnchoredPopup: Story = { render: () => <Example popup /> }
 export const PendingSave: Story = { render: () => <Example saving /> }
 export const RecoveredPreferences: Story = { render: () => <Example recovery /> }

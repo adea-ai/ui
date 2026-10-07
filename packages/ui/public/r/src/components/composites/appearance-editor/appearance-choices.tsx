@@ -105,6 +105,13 @@ export function AccentChoices(props: AppearanceEditorProps) {
   const resolvedAppearance = () =>
     props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
   const accentSelection = () => (isCustomAccent(props) ? 'custom' : props.draft.accent)
+  const showThemeDefault = () => props.showThemeDefaultAccent ?? true
+  // The named-chip style feeds the same resolved preset list to both entries:
+  // "Theme default" leads only when the host has not folded it into a preset.
+  const labelEntries = () => {
+    const presets = props.accentOptions.filter((option) => option.id !== 'theme')
+    return showThemeDefault() ? [{ id: 'theme', label: 'Theme default' }, ...presets] : presets
+  }
   return (
     <Radio
       value={accentSelection()}
@@ -118,24 +125,55 @@ export function AccentChoices(props: AppearanceEditorProps) {
         })
       }
     >
-      <AccentSwatchGroups
-        accentOptions={props.accentOptions}
-        resolvedAppearance={resolvedAppearance()}
-        themeDefaultColor={
-          resolvedAppearance() === 'light'
-            ? props.lightTheme.colors.accent
-            : props.darkTheme.colors.accent
+      <Show
+        when={(props.accentEntryStyle ?? 'swatches') === 'labels'}
+        fallback={
+          <>
+            <AccentSwatchGroups
+              accentOptions={props.accentOptions}
+              resolvedAppearance={resolvedAppearance()}
+              showThemeDefault={showThemeDefault()}
+              themeDefaultColor={
+                resolvedAppearance() === 'light'
+                  ? props.lightTheme.colors.accent
+                  : props.darkTheme.colors.accent
+              }
+            />
+            <div class="flex flex-col gap-1">
+              <Show when={props.showCustomAccentCaption ?? true}>
+                <span class="text-xs font-medium text-muted-foreground">Custom</span>
+              </Show>
+              <Radio.Item value="custom">
+                <Radio.ItemInput />
+                <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                  Custom
+                </Radio.ItemLabel>
+              </Radio.Item>
+            </div>
+          </>
         }
-      />
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-muted-foreground">Custom</span>
-        <Radio.Item value="custom">
-          <Radio.ItemInput />
-          <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-            Custom
-          </Radio.ItemLabel>
-        </Radio.Item>
-      </div>
+      >
+        {/* The named-chip style: one grid, every choice a labelled control,
+            including the custom colour — nothing to caption from above. */}
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" data-accent-grid>
+          <For each={labelEntries()}>
+            {(option) => (
+              <Radio.Item value={option.id} class="min-w-0" data-accent-option={option.id}>
+                <Radio.ItemInput />
+                <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                  {option.label}
+                </Radio.ItemLabel>
+              </Radio.Item>
+            )}
+          </For>
+          <Radio.Item value="custom" class="min-w-0">
+            <Radio.ItemInput />
+            <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+              Custom
+            </Radio.ItemLabel>
+          </Radio.Item>
+        </div>
+      </Show>
     </Radio>
   )
 }

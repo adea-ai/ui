@@ -198,7 +198,10 @@ test('disabled menu text stays legible and selected shortcuts follow their row i
       fill: color(style.backgroundColor),
       shortcut: getComputedStyle(shortcut).color,
       expectedRow: getComputedStyle(theme).getPropertyValue('--foreground').trim(),
-      expectedFill: color(getComputedStyle(theme).getPropertyValue('--card').trim()),
+      // The selected row reports a choice, so it sits on the accent rung
+      // (primary-subtle) like the settings navigation's selected row — not on
+      // the neutral card rung it read as before the accent pass.
+      expectedFill: color(getComputedStyle(theme).getPropertyValue('--primary-subtle').trim()),
     }
   })
   expect(selected.shortcut).toBe(selected.row)

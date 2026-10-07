@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { For } from 'solid-js'
+import { For, Show } from 'solid-js'
 
 type AccentOption = Readonly<{
   id: string
@@ -44,6 +44,12 @@ type AccentSwatchGroupsProps = {
   themeAccentOptions?: readonly AccentOption[]
   resolvedAppearance: 'light' | 'dark'
   themeDefaultColor: string
+  /**
+   * Whether the group leads with the "Theme default" swatch. Hosts whose
+   * default accent already is a preset omit it — a second entry for the same
+   * colour reads as a duplicate choice.
+   */
+  showThemeDefault?: boolean
 }
 
 /**
@@ -59,7 +65,9 @@ export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
 
   return (
     <div class="grid grid-cols-4 gap-2" data-accent-grid>
-      <AccentSwatch id="theme" label="Theme default" color={props.themeDefaultColor} />
+      <Show when={props.showThemeDefault ?? true}>
+        <AccentSwatch id="theme" label="Theme default" color={props.themeDefaultColor} />
+      </Show>
       <For each={presets()}>
         {(option) => (
           <AccentSwatch
