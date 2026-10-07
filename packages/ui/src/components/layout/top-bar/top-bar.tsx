@@ -42,11 +42,15 @@ export function TopBar(props: TopBarProps) {
     <header
       data-slot="top-bar"
       class={cn(
-        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-card text-card-foreground px-3 md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
+        'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-card text-card-foreground md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
         local.glass && 'glass-panel',
         local.draggable && 'window-drag',
-        local.macosInset && 'window-inset-macos',
-        local.windowsInset && 'window-inset-windows',
+        /* Each edge gets exactly one inline-padding utility. A window inset
+           and px-3 would share a layer and tie-break by build order, and a
+           build that put px-3 last hid the leading controls under the
+           traffic lights. */
+        local.macosInset ? 'window-inset-macos' : 'ps-3',
+        local.windowsInset ? 'window-inset-windows' : 'pe-3',
         local.class
       )}
       {...rest}
