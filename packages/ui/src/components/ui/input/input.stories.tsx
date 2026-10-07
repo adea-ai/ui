@@ -13,8 +13,9 @@ import { Input } from './input'
  * them separate is what lets an input sit inside a custom control without
  * inheriting a form's ARIA graph.
  *
- * Height comes from `h-control-md`. An input cannot be given a new height
- * without a new token, which is what keeps it aligned with Button and Select.
+ * Height comes from the control tokens: `size` picks the `sm`, `md` (default)
+ * or `lg` rung. An input cannot be given a height off that ladder, which is
+ * what keeps it aligned with Button and Select.
  */
 const meta = {
   title: 'Primitives/Forms/Input',
@@ -145,6 +146,17 @@ export const Suggestions: Story = {
     <div class="flex w-80 flex-col gap-1.5">
       <Label for="input-function-key">Function key</Label>
       <Input id="input-function-key" suggestions={['engineering', 'design', 'operations']} />
+    </div>
+  ),
+}
+
+/** The control rungs; `sm` sits beside `icon-sm` actions in a dense toolbar. */
+export const Sizes: Story = {
+  render: () => (
+    <div class="flex w-80 flex-col gap-2">
+      <Input size="sm" aria-label="Small" placeholder="Filter files" />
+      <Input aria-label="Medium" placeholder="Workspace name" />
+      <Input size="lg" aria-label="Large" placeholder="Workspace name" />
     </div>
   ),
 }

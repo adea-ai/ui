@@ -27,6 +27,13 @@ export type ContextualSidebarProps = {
   label: string
   /** Visible navigation title and mobile dialog title. */
   title: string
+  /**
+   * Where the title row shows. `always` (default) draws it on desktop and in
+   * the mobile sheet; `mobile` keeps the desktop title for assistive
+   * technology only and drops the desktop row, for hosts whose top bar
+   * already names the context. A `header` slot keeps the row visible.
+   */
+  titleVisibility?: 'always' | 'mobile'
   /** Host-controlled expanded state for the desktop panel and mobile dialog. */
   open: boolean
   onOpenChange(open: boolean): void
@@ -157,6 +164,9 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
       >
         <Show when={!mobile && props.open}>
           <PixelResizeHandle
+            // The ruler spans the sidebar as a pointer-events-none overlay; lift
+            // it above the neighbouring pane so the edge stays grabbable.
+            class="z-(--z-docked)"
             side="left"
             value={props.width}
             minimum={props.minimum}
@@ -169,10 +179,19 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
           />
         </Show>
         <Show when={!mobile || mobileMount()?.connected}>
-          <SidebarNavHeader class={cn(mobile && 'pe-12', props.headerClass)}>
-            <SidebarNavTitle as={props.headingAs ?? 'h2'}>{props.title}</SidebarNavTitle>
-            {props.header?.(context)}
-          </SidebarNavHeader>
+          <Show
+            when={mobile || props.titleVisibility !== 'mobile' || props.header}
+            fallback={
+              <SidebarNavTitle as={props.headingAs ?? 'h2'} class="sr-only">
+                {props.title}
+              </SidebarNavTitle>
+            }
+          >
+            <SidebarNavHeader class={cn(mobile && 'pe-12', props.headerClass)}>
+              <SidebarNavTitle as={props.headingAs ?? 'h2'}>{props.title}</SidebarNavTitle>
+              {props.header?.(context)}
+            </SidebarNavHeader>
+          </Show>
           <SidebarNavContent class={props.contentClass}>{props.content(context)}</SidebarNavContent>
           {props.footer ? (
             <SidebarNavFooter class={props.footerClass}>{props.footer(context)}</SidebarNavFooter>

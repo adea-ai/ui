@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip'
  * with no text (unreadable to anyone who cannot see it) and a bare word with no
  * explanation ("Needs configuration" — of what?).
  *
- * The tones are deliberately not a rainbow. Six cover what a status can actually
+ * The tones are deliberately not a rainbow. Seven cover what a status can actually
  * mean:
  *
  * - `neutral` — fine, and there is nothing to say about it.
@@ -21,6 +21,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip'
  * - `warning` — degraded, or needs a decision from the user.
  * - `danger` — blocked, failed, unrecoverable without intervention.
  * - `info` — in flight or scheduled; work is happening, nothing is wrong.
+ * - `pending` — running now with no result yet (a check, a build). The ring
+ *   turns, so it reads as live rather than as a settled state.
  * - `unknown` — the honest absence of information.
  *
  * `unknown` is not the same as `neutral`, and collapsing them is the mistake
@@ -39,6 +41,7 @@ export const statusDotVariants = cva('size-2 shrink-0 rounded-full', {
       warning: 'bg-warning',
       danger: 'bg-destructive',
       info: 'bg-info',
+      pending: 'border-2 border-info border-r-transparent motion-safe:animate-spin',
       unknown: 'border border-muted-foreground bg-transparent',
     },
   },
@@ -51,10 +54,18 @@ const labelTone: Record<StatusTone, string> = {
   warning: 'text-foreground',
   danger: 'text-foreground',
   info: 'text-foreground',
+  pending: 'text-foreground',
   unknown: 'text-muted-foreground',
 }
 
-export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'unknown'
+export type StatusTone =
+  | 'neutral'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'pending'
+  | 'unknown'
 
 export type StatusChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   tone?: StatusTone
