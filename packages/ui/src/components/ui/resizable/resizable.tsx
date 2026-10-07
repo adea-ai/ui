@@ -94,12 +94,13 @@ export function ResizableHandle(props: ResizableHandleProps) {
       class={cn(
         'group/resize bg-border relative flex w-px shrink-0 items-center justify-center',
         /* Widen the hit target without moving the visual line: the divider is
-           a hairline, but a hairline is far too small to grab. */
-        'after:absolute after:inset-y-0 after:-inset-x-1 after:w-3',
+           a hairline, but a hairline is far too small to grab. 24px on the
+           drag axis meets WCAG 2.5.8's minimum target. */
+        'after:absolute after:inset-y-0 after:-inset-x-3 after:w-6',
         'transition-colors ease-out hover:bg-primary',
         'focus-visible:bg-primary focus-visible:outline-none',
         'data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full',
-        'data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full',
+        'data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-3 data-[orientation=vertical]:after:h-6 data-[orientation=vertical]:after:w-full',
         local.class
       )}
       {...rest}
