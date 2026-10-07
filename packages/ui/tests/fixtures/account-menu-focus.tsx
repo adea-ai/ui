@@ -68,6 +68,12 @@ function Fixture() {
         showSession={false}
         items={[{ id: 'settings', label: 'Settings', shortcut: '⌘,', keyshortcuts: 'Meta+,' }]}
       />
+      <AccountMenu
+        label="Pending update"
+        authenticated
+        updateAvailable
+        items={[{ id: 'updates', label: 'Updates' }]}
+      />
       <Show when={cleanupMenuMounted()}>
         <AccountMenu
           label="Unmount test menu"
