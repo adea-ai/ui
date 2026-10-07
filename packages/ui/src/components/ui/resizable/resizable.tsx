@@ -70,8 +70,13 @@ export function ResizablePanel(props: ComponentProps<typeof Resizable.Panel> & {
 
 export type ResizableHandleProps = ComponentProps<typeof Resizable.Handle> & {
   class?: string
-  /** Draw a visible grip in the middle of the divider. */
-  withHandle?: boolean
+  /**
+   * Draw a visible grip in the middle of the divider: `true` is the bordered
+   * chip with its grip icon; `'rung'` is a quieter translucent bar with no
+   * icon, for edges that should read as barely there. Either way the divider
+   * keeps its full 24px hit target.
+   */
+  withHandle?: boolean | 'rung'
   /**
    * The divider's accessible name. It is a focusable control — arrow keys move
    * the split — so it needs one; without it a screen reader announces an
@@ -97,7 +102,8 @@ export function ResizableHandle(props: ResizableHandleProps) {
            a hairline, but a hairline is far too small to grab. 24px on the
            drag axis meets WCAG 2.5.8's minimum target. */
         'after:absolute after:inset-y-0 after:-inset-x-3 after:w-6',
-        'transition-colors ease-out hover:bg-primary',
+        'transition-colors ease-out',
+        local.withHandle === 'rung' ? 'hover:bg-primary/45' : 'hover:bg-primary',
         'focus-visible:bg-primary focus-visible:outline-none',
         'data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full',
         'data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-3 data-[orientation=vertical]:after:h-6 data-[orientation=vertical]:after:w-full',
@@ -105,7 +111,12 @@ export function ResizableHandle(props: ResizableHandleProps) {
       )}
       {...rest}
     >
-      {local.withHandle ? (
+      {local.withHandle === 'rung' ? (
+        <div
+          data-slot="resizable-grip"
+          class="z-(--z-docked) h-11 w-1.5 flex-none rounded-full bg-border/55 group-data-[orientation=vertical]/resize:h-1.5 group-data-[orientation=vertical]/resize:w-11"
+        />
+      ) : local.withHandle ? (
         <div class="bg-border z-(--z-docked) flex h-4 w-2.5 items-center justify-center rounded-sm border border-border">
           <GripVertical class="size-2.5 text-muted-foreground" />
         </div>
