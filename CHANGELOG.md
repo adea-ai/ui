@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.118.3](https://github.com/adea-ai/ui/compare/v0.118.2...v0.118.3) (2026-10-07)
+
+
+### Bug Fixes
+
+* **menu:** keep item indicator glyphs out of the row's icon rules ([#360](https://github.com/adea-ai/ui/issues/360)) ([79ac1cb](https://github.com/adea-ai/ui/commit/79ac1cba8ed46df49b760c1a92078c67ee7aae05))
+
 ## [0.118.2](https://github.com/adea-ai/ui/compare/v0.118.1...v0.118.2) (2026-10-07)
 
 
