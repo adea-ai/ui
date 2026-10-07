@@ -29,6 +29,7 @@ const meta = {
         'destructive',
         'outline',
         'ghost',
+        'toolbar',
         'subtle',
         'success',
         'link',
@@ -78,8 +79,9 @@ export const Default: Story = {}
  *
  * `default` is the one primary action in a view; `secondary` is a quieter peer;
  * `outline` belongs on a surface that already has a fill; `ghost` is the default
- * for toolbar and row actions, where chrome would be noise; `subtle` is a tinted
- * primary for a secondary step inside a primary flow.
+ * for toolbar and row actions, where chrome would be noise; `toolbar` is a ghost
+ * that opens a sheet or menu and holds the pressed rung while it is open;
+ * `subtle` is a tinted primary for a secondary step inside a primary flow.
  */
 export const Variants: Story = {
   render: () => (
