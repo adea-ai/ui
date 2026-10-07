@@ -92,6 +92,21 @@ test('a shortcut glyph stays out of the item accessible name', async ({ page }) 
   await expect(settings.locator('[aria-hidden="true"]').last()).toHaveText('⌘,')
 })
 
+test('a pending update marks the trigger and the updates row, in words and in a dot', async ({
+  page,
+}) => {
+  // The dot is aria-hidden, so the trigger's name carries the state.
+  const trigger = page.getByRole('button', { name: 'Pending update, update available' })
+  await expect(trigger).toBeVisible()
+  await expect(trigger.locator('[data-slot="account-menu-update-dot"]')).toHaveCount(1)
+
+  await trigger.click()
+  const updates = page.getByRole('menuitem', { name: 'Updates, update available', exact: true })
+  await expect(updates).toBeVisible()
+  await expect(updates.locator('[data-slot="account-menu-update-dot"]')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+})
+
 test('a rail menu can open beside its trigger with its bottom aligned', async ({ page }) => {
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   await opener.click()

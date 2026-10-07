@@ -84,6 +84,14 @@ export type AccountMenuProps = {
   platform?: 'desktop' | 'web'
   /** Whether a session exists. Decides the sign-in/sign-out row. */
   authenticated: boolean
+  /**
+   * Draw the pending-update indicator: an accent dot on the trigger and on the
+   * `updates` row — the id `createAppMenuItems` mints, the same convention the
+   * fallback icons follow — and extend both accessible names with "update
+   * available", because the dot itself carries no text. The updater remains the
+   * caller's: the prop only mirrors its state into the menu.
+   */
+  updateAvailable?: boolean
   /** Local-only applications can omit the session actions altogether. */
   showSession?: boolean
   /** Disable the session row while a sign-in or sign-out is in flight. */
@@ -116,6 +124,7 @@ export function AccountMenu(props: AccountMenuProps) {
     'items',
     'platform',
     'authenticated',
+    'updateAvailable',
     'showSession',
     'busy',
     'label',
@@ -142,6 +151,21 @@ export function AccountMenu(props: AccountMenuProps) {
   const visible = () =>
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
+  // The pending update reaches the user twice on each surface: as a dot and as
+  // words. The dot is aria-hidden, so the accessible names carry the state —
+  // which is why the names are extended here rather than left to the caller.
+  const triggerName = () =>
+    `${local.label ?? 'Account and settings'}${local.updateAvailable ? ', update available' : ''}`
+  const updateDot = () => (
+    <Show when={local.updateAvailable}>
+      <span
+        data-slot="account-menu-update-dot"
+        aria-hidden="true"
+        class="absolute top-1.5 right-2.5 size-2 rounded-full bg-primary"
+      />
+    </Show>
+  )
+
   // Built by reference at each return, not once up front: Solid fixes a node's
   // owner chain when the JSX expression runs, and an eagerly created tree would
   // never see the Tooltip provider below — Kobalte's TooltipTrigger then throws
@@ -164,13 +188,15 @@ export function AccountMenu(props: AccountMenuProps) {
             ref={(element: HTMLButtonElement) => (trigger = element)}
             variant="ghost"
             size={local.size ?? 'icon-md'}
-            class={cn('text-muted-foreground', local.class)}
-            aria-label={local.label ?? 'Account and settings'}
+            class={cn('relative text-muted-foreground', local.class)}
+            data-slot="account-menu-trigger"
+            aria-label={triggerName()}
             onFocus={() => local.onIntent?.()}
             onPointerEnter={() => local.onIntent?.()}
             {...rest}
           >
             <UserRound aria-hidden="true" />
+            {updateDot()}
           </TooltipTrigger>
         }
       >
@@ -180,13 +206,15 @@ export function AccountMenu(props: AccountMenuProps) {
         <DropdownMenuTrigger
           as={SideRailButton}
           ref={(element: HTMLButtonElement) => (trigger = element)}
-          label={local.label ?? 'Account and settings'}
-          class={local.class}
+          label={triggerName()}
+          class={cn('relative', local.class)}
+          data-slot="account-menu-trigger"
           onFocus={() => local.onIntent?.()}
           onPointerEnter={() => local.onIntent?.()}
           {...rest}
         >
           <UserRound aria-hidden="true" />
+          {updateDot()}
         </DropdownMenuTrigger>
       </Show>
       <DropdownMenuContent
@@ -211,6 +239,11 @@ export function AccountMenu(props: AccountMenuProps) {
             {(item) => (
               <DropdownMenuItem
                 disabled={item.disabled}
+                aria-label={
+                  local.updateAvailable && item.id === 'updates'
+                    ? `${item.label}, update available`
+                    : undefined
+                }
                 onSelect={() => {
                   pendingAfterClose = item.onSelectAfterClose
                     ? { callback: item.onSelectAfterClose }
@@ -222,6 +255,13 @@ export function AccountMenu(props: AccountMenuProps) {
               >
                 {item.icon ?? renderFallbackIcon(item.id)}
                 <span>{item.label}</span>
+                <Show when={local.updateAvailable && item.id === 'updates'}>
+                  <span
+                    data-slot="account-menu-update-dot"
+                    aria-hidden="true"
+                    class="ms-auto size-2 shrink-0 rounded-full bg-primary"
+                  />
+                </Show>
               </DropdownMenuItem>
             )}
           </For>

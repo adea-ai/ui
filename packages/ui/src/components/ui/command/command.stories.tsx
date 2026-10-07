@@ -4,11 +4,13 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandHint,
   CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
   CommandShortcut,
+  CommandStatus,
 } from './command'
 
 /**
@@ -97,6 +99,35 @@ export const EmptyState: Story = {
           </CommandGroup>
         </CommandList>
       </Command>
+    </div>
+  ),
+}
+
+/**
+ * The footer furniture of a searching palette: a live status line for what the
+ * search is doing (the copy and the `status` role are the caller's), and the
+ * keyboard hint. Both are `p` elements the host stacks under the list.
+ */
+export const StatusAndHint: Story = {
+  render: () => (
+    <div class="w-144 overflow-hidden rounded-xl border border-border shadow-xl">
+      <Command shouldFilter={false}>
+        <CommandInput placeholder="Find a Project, conversation, Agent, or Task" />
+        <CommandList>
+          <CommandGroup heading="Results">
+            <CommandItem>
+              <Box />
+              New session
+            </CommandItem>
+            <CommandItem>
+              <Settings />
+              Open settings
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+      <CommandStatus role="status">Offline. Quick navigation remains available.</CommandStatus>
+      <CommandHint>↑↓ move · Enter open · Esc close</CommandHint>
     </div>
   ),
 }
