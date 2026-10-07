@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.115.1](https://github.com/adea-ai/ui/compare/v0.115.0...v0.115.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **ui:** banded settings header, 24px resize and section targets, single-owner top-bar insets ([#349](https://github.com/adea-ai/ui/issues/349)) ([62a43c5](https://github.com/adea-ai/ui/commit/62a43c5599495cffccc798867ea21507dbacc371))
+
 ## [0.115.0](https://github.com/adea-ai/ui/compare/v0.114.0...v0.115.0) (2026-10-07)
 
 
