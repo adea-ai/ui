@@ -2641,6 +2641,11 @@
           "target": "lib/tokens.ts"
         },
         {
+          "path": "src/lib/tooltip-focus-gate.ts",
+          "type": "registry:lib",
+          "target": "lib/tooltip-focus-gate.ts"
+        },
+        {
           "path": "src/lib/utils.ts",
           "type": "registry:lib",
           "target": "lib/utils.ts"

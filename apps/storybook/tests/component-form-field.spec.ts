@@ -212,6 +212,12 @@ test('keeps composite inputs inside the shared field and clear tooltip contracts
     visibility: getComputedStyle(element).visibility,
   }))
   expect(clearStyle).toEqual({ disabled: false, pointerEvents: 'auto', visibility: 'visible' })
+  // The tooltip focus gate keeps a programmatic focus() quiet, so the tip is
+  // announced by a real hover here (keyboard intent is covered elsewhere).
+  // Move the pointer first: it releases the focus() phantom away from the
+  // control, so the hover's enter is not undone by the release blur.
+  await page.mouse.move(4, 320)
+  await clear.hover()
   await expect(clearTooltip).toHaveText('Clear API key')
   await clear.click()
   await expect(secret).toHaveValue('')
