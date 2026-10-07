@@ -9,17 +9,28 @@ import { cn } from '#lib/utils'
  * when a consumer needs only the control; `Input` adds native datalist
  * suggestions for forms that need them.
  */
-export type InputControlProps = ComponentProps<'input'>
+export type InputControlProps = Omit<ComponentProps<'input'>, 'size'> & {
+  /**
+   * The control rung, matching `SelectTrigger`: `sm` for a dense toolbar or
+   * pane filter beside `icon-sm` actions, `md` (the default) everywhere else.
+   */
+  size?: 'sm' | 'md' | 'lg'
+}
 
 export function InputControl(props: InputControlProps) {
-  const [local, rest] = splitProps(props, ['class', 'type'])
+  const [local, rest] = splitProps(props, ['class', 'type', 'size'])
 
   return (
     <input
       data-slot="input"
       type={local.type ?? 'text'}
       class={cn(
-        'h-control-md w-full min-w-0 rounded-md border border-input bg-transparent px-control-md py-1 text-sm',
+        'w-full min-w-0 rounded-md border border-input bg-transparent py-1',
+        {
+          'h-control-sm px-control-sm text-xs': local.size === 'sm',
+          'h-control-md px-control-md text-sm': local.size === 'md' || local.size === undefined,
+          'h-control-lg px-control-lg text-sm': local.size === 'lg',
+        },
         'transition-[color,box-shadow,border-color] ease-out outline-none',
         'placeholder:text-muted-foreground',
         'selection:bg-primary selection:text-primary-foreground',

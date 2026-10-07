@@ -99,7 +99,9 @@ export function TopBarTitle(
     <div
       data-slot="top-bar-title"
       class={cn(
-        'truncate text-sm font-medium',
+        /* The title slot sits in the drag region; a link, button or field
+           placed in it (a breadcrumb, a view's search) must stay pressable. */
+        'truncate text-sm font-medium [&_:is(a,button,input)]:window-no-drag',
         local.align === 'center' && 'text-center',
         local.class
       )}
@@ -114,7 +116,10 @@ export function TopBarBreadcrumb(props: ComponentProps<'div'>) {
   return (
     <div
       data-slot="top-bar-breadcrumb"
-      class={cn('flex min-w-0 items-center gap-1.5 text-sm', local.class)}
+      class={cn(
+        'flex min-w-0 items-center gap-1.5 text-sm [&_:is(a,button,input)]:window-no-drag',
+        local.class
+      )}
       {...rest}
     />
   )

@@ -18,6 +18,12 @@ export type ListRowControlProps<T extends ValidComponent = 'div'> = PolymorphicP
     trailing?: JSX.Element
     /** A second line that wraps and grows the row to fit its content. */
     description?: string
+    /**
+     * Whether a described row may drop its trailing slot onto its own line when
+     * the row gets narrow (the default). Pass `false` for a short, truncating
+     * label whose single action must stay beside it.
+     */
+    stackTrailing?: boolean
     /** Native button type; defaults to `button` for button rows. */
     type?: ComponentProps<'button'>['type']
   }
@@ -37,6 +43,7 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
     'leading',
     'trailing',
     'description',
+    'stackTrailing',
     'type',
     'tabIndex',
     'children',
@@ -52,6 +59,7 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
       aria-current={local.selected ? 'true' : undefined}
       data-selected={local.selected ? '' : undefined}
       data-description={local.description ? '' : undefined}
+      data-stack-trailing={local.stackTrailing === false ? 'never' : undefined}
       class={cn(
         'group/row list-row-description flex min-w-0 items-center gap-2.5 rounded-md px-2 text-sm',
         'transition-colors ease-out outline-none',
