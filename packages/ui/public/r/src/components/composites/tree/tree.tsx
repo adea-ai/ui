@@ -238,7 +238,12 @@ export function Tree(props: TreeProps) {
         role="tree"
         aria-multiselectable={local.selectionMode === 'multiple' ? 'true' : undefined}
         data-slot="tree"
-        class={cn('flex min-w-0 flex-col', local.class)}
+        class={cn(
+          /* A virtualized host remounts rows as it scrolls; scroll anchoring
+             would latch onto the focused row and fight the scrollbar. */
+          'flex min-w-0 flex-col [overflow-anchor:none]',
+          local.class
+        )}
         onKeyDown={handleKeyDown}
       >
         {local.children}
@@ -379,6 +384,31 @@ export function TreeRow(props: TreeRowProps) {
         </span>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * TreeRowActions.
+ *
+ * Row-level commands (rename, copy, delete) that stay out of the way until the
+ * row is hovered or holds focus, so a long tree reads as names rather than a
+ * wall of buttons. Put it in `TreeRow`'s `trailing` slot beside any status that
+ * must stay visible. `pinned` keeps the actions shown, e.g. while a destructive
+ * action waits for its confirming second press.
+ */
+export function TreeRowActions(props: ComponentProps<'span'> & { pinned?: boolean }) {
+  const [local, rest] = splitProps(props, ['class', 'pinned'])
+  return (
+    <span
+      data-slot="tree-row-actions"
+      data-pinned={local.pinned ? '' : undefined}
+      class={cn(
+        'flex shrink-0 items-center gap-1 opacity-0 transition-opacity ease-out',
+        'group-hover/tree-row:opacity-100 group-focus-within/tree-row:opacity-100 data-pinned:opacity-100',
+        local.class
+      )}
+      {...rest}
+    />
   )
 }
 

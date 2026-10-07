@@ -1,7 +1,6 @@
-import type { ComponentProps } from 'solid-js'
 import { createUniqueId, For, Show, splitProps } from 'solid-js'
 import { useFormFieldControl } from '../../../lib/form-field'
-import { InputControl } from './input-control'
+import { InputControl, type InputControlProps } from './input-control'
 
 /**
  * Input.
@@ -12,10 +11,11 @@ import { InputControl } from './input-control'
  * them separate is what lets an input sit inside a custom control without
  * inheriting a form's ARIA graph.
  *
- * Height comes from `h-control-md`; an input cannot be given a new height
- * without a new token, which is what keeps it aligned with Button and Select.
+ * Height comes from the control tokens (`size`, `md` by default); an input
+ * cannot be given a height off that ladder, which is what keeps it aligned
+ * with Button and Select.
  */
-export type InputProps = ComponentProps<'input'> & {
+export type InputProps = InputControlProps & {
   /** Native text suggestions; custom values remain valid and submit unchanged. */
   suggestions?: readonly string[]
 }

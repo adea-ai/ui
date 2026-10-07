@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createMemo, createSignal, For } from 'solid-js'
-import { FileText, Folder } from 'lucide-solid'
-import { Tree, TreeRow } from './tree'
+import { FileText, Folder, Pencil } from 'lucide-solid'
+import { ActionButton } from '../action-button/action-button'
+import { Tree, TreeRow, TreeRowActions } from './tree'
 import type { TreeItemDescriptor } from './tree-navigation'
 
 const nodes = [
@@ -24,7 +25,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Donor-shaped file rows with host-owned expansion and selection state. */
+/**
+ * Donor-shaped file rows with host-owned expansion and selection state. File
+ * rows carry a rename action in `TreeRowActions`, shown on hover or focus.
+ */
 export const FileHierarchy: Story = {
   args: {
     'aria-label': 'Workspace files',
@@ -86,6 +90,20 @@ export const FileHierarchy: Story = {
                       <Folder aria-hidden="true" class="text-muted-foreground" />
                     ) : (
                       <FileText aria-hidden="true" class="text-muted-foreground" />
+                    )
+                  }
+                  trailing={
+                    item.expandable ? undefined : (
+                      <TreeRowActions>
+                        <ActionButton
+                          variant="ghost"
+                          size="icon-xs"
+                          tooltip={`Rename ${node.label}`}
+                          aria-label={`Rename ${node.label}`}
+                        >
+                          <Pencil aria-hidden="true" />
+                        </ActionButton>
+                      </TreeRowActions>
                     )
                   }
                 >
