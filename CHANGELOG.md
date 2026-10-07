@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.116.0](https://github.com/adea-ai/ui/compare/v0.115.1...v0.116.0) (2026-10-07)
+
+
+### Features
+
+* **appearance-editor:** composition seams for row order and accent entries ([#341](https://github.com/adea-ai/ui/issues/341)) ([d3c6ab1](https://github.com/adea-ai/ui/commit/d3c6ab119aa046af134396f88c7c9611e6f97b8a))
+* **primitives:** accent the remaining selection states ([#342](https://github.com/adea-ai/ui/issues/342)) ([8edfb28](https://github.com/adea-ai/ui/commit/8edfb2866d9931685398beff411383a68e9e5aea))
+
+
+### Bug Fixes
+
+* **tooltip:** tooltips open on hover and keyboard intent, never programmatic focus ([#343](https://github.com/adea-ai/ui/issues/343)) ([b31e769](https://github.com/adea-ai/ui/commit/b31e769251a39e08a7513c07e40d52a6e6221398))
+
 ## [0.115.1](https://github.com/adea-ai/ui/compare/v0.115.0...v0.115.1) (2026-10-07)
 
 
