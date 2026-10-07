@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.122.0](https://github.com/adea-ai/ui/compare/v0.121.0...v0.122.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** pending-update indicator on account menus and command footer furniture ([#368](https://github.com/adea-ai/ui/issues/368)) ([d3cb03a](https://github.com/adea-ai/ui/commit/d3cb03a18a72118d6d33158b73e16fffebfbf510))
+
 ## [0.121.0](https://github.com/adea-ai/ui/compare/v0.120.0...v0.121.0) (2026-10-07)
 
 
