@@ -153,6 +153,11 @@
    * rule rather than a matching one — which is what they were not, before.
    */
   --primary-hover: oklch(0.4643 0.1668 301.69);
+  /*
+   * The selected-state tint. A share of `--primary`, so it follows an accent with
+   * no block of its own; the share is this theme's, measured by @adea-ai/themes so
+   * body text clears 4.5:1 on it over every surface, for every accent it offers.
+   */
   --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
@@ -283,6 +288,11 @@
    * rule rather than a matching one — which is what they were not, before.
    */
   --primary-hover: oklch(0.7823 0.1668 301.69);
+  /*
+   * The selected-state tint. A share of `--primary`, so it follows an accent with
+   * no block of its own; the share is this theme's, measured by @adea-ai/themes so
+   * body text clears 4.5:1 on it over every surface, for every accent it offers.
+   */
   --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   /* The window chrome, one step off the canvas. */
   --chrome: var(--surface);
@@ -310,7 +320,13 @@
  * adea's six accent presets, as a selection rather than a constant. `data-accent` sits on
  * the same element as `dark` — in both applications that is `<html>` — and each
  * block overrides the roles an accent owns: the interactive primary, its label,
- * its hover rung, its tint and the focus ring.
+ * its hover rung and the focus ring.
+ *
+ * The tint, `--primary-subtle`, is not one of them. It is a share of `var(--primary)`
+ * declared on the same element, so it already follows the accent; and the share is
+ * the theme's own, measured by @adea-ai/themes so body text clears 4.5:1 on it. A
+ * block keyed only on the appearance could carry only the appearance-wide ceiling,
+ * which would undo that measurement for every theme that needs a lighter wash.
  *
  * The values are adea's accent presets, passed through the same two rules
  * `deriveAccentRoles` applies in the product:
@@ -330,14 +346,12 @@
   --primary: oklch(0.4907 0.2412 292.58);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.4407 0.2412 292.58);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.4907 0.2412 292.58);
 }
 .dark[data-accent='violet'] {
   --primary: oklch(0.709 0.1592 293.54);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.759 0.1592 293.54);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.709 0.1592 293.54);
 }
 
@@ -345,14 +359,12 @@
   --primary: oklch(0.5461 0.2152 262.88);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.4961 0.2152 262.88);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5461 0.2152 262.88);
 }
 .dark[data-accent='blue'] {
   --primary: oklch(0.7137 0.1434 254.62);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.7637 0.1434 254.62);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.7137 0.1434 254.62);
 }
 
@@ -360,14 +372,12 @@
   --primary: oklch(0.5273 0.1371 150.07);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.4773 0.1371 150.07);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5273 0.1371 150.07);
 }
 .dark[data-accent='green'] {
   --primary: oklch(0.8003 0.1821 151.71);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.8503 0.1363 151.71);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.8003 0.1821 151.71);
 }
 
@@ -375,14 +385,12 @@
   --primary: oklch(0.5553 0.1455 49);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.5053 0.1455 49);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5553 0.1455 49);
 }
 .dark[data-accent='amber'] {
   --primary: oklch(0.8369 0.1644 84.43);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.8869 0.0991 84.43);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.8369 0.1644 84.43);
 }
 
@@ -390,14 +398,12 @@
   --primary: oklch(0.5198 0.0936 223.13);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.4698 0.0936 223.13);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5198 0.0936 223.13);
 }
 .dark[data-accent='cyan'] {
   --primary: oklch(0.7971 0.1339 211.53);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.8471 0.102 211.53);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.7971 0.1339 211.53);
 }
 
@@ -405,14 +411,12 @@
   --primary: oklch(0.5246 0.199 3.96);
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.4746 0.199 3.96);
-  --primary-subtle: color-mix(in oklch, var(--primary) 10%, transparent);
   --ring: oklch(0.5246 0.199 3.96);
 }
 .dark[data-accent='pink'] {
   --primary: oklch(0.7253 0.1752 349.76);
   --primary-foreground: oklch(0 0 0);
   --primary-hover: oklch(0.7753 0.1752 349.76);
-  --primary-subtle: color-mix(in oklch, var(--primary) 16%, transparent);
   --ring: oklch(0.7253 0.1752 349.76);
 }
 /* @end generated accents */

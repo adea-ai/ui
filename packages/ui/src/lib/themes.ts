@@ -296,6 +296,16 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
   }
 }
 
+/**
+ * A variant's `--primary-subtle`: the tint over `var(--primary)` at the strength its
+ * catalogue record measures (`primarySubtleAlpha`). A variant that is not in the
+ * catalogue has nothing to measure, and gets its appearance's ceiling.
+ */
+export function primarySubtleFor(theme: Pick<ThemeVariant, 'id' | 'appearance'>): string {
+  const record = getTheme(theme.id)
+  return record ? primarySubtleCss(record) : primarySubtleCss(theme.appearance)
+}
+
 /** The catalogue, in catalogue order. */
 export const builtinThemes: readonly ThemeVariant[] = Object.freeze(catalogue.map(toVariant))
 
@@ -462,12 +472,17 @@ export function accentVariables(
   const preset = resolveAccentPreset(accentId, light, dark)
   if (!preset) return undefined
 
+  // `--primary-subtle` is deliberately not here. It is a `color-mix()` over
+  // `var(--primary)`, so the theme's own declaration (`themeCssVariables`, or the
+  // default block in `theme.css`) already follows the accent; and its strength is the
+  // *theme's*, measured by `primarySubtleAlpha` to hold body text at 4.5:1 for every
+  // accent the theme offers. Writing one here would replace that measured strength
+  // with whatever this function was given, which is how an accent used to undo it.
   const roles = accentRoles(preset, appearance)
   return {
     '--primary': roles.primary,
     '--primary-foreground': roles.primaryForeground,
     '--primary-hover': roles.primaryHover,
-    '--primary-subtle': roles.primarySubtle,
     '--ring': roles.ring,
   }
 }
@@ -502,12 +517,15 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
      * step cannot be expressed as a mix (see `primaryHover`). Left out, a theme switch
      * would keep the previous theme's hover on the new theme's primary.
      *
-     * `--primary-subtle` is a mix over `--primary`, so it would follow on its own —
-     * it is written anyway so the pair is applied together and neither is left to
-     * depend on which stylesheet happened to load.
+     * `--primary-subtle` is a mix over `--primary`, so it follows an accent on its
+     * own, but its *strength* is per theme: `primarySubtleCss(record)` lowers the
+     * appearance ceiling only as far as this theme needs for body text to clear 4.5:1
+     * on the tint, over every surface, for every accent it offers. It has to be
+     * written per theme for that reason — the appearance-wide value is not legible on
+     * every palette.
      */
     '--primary-hover': primaryHover(c.primary, theme.appearance),
-    '--primary-subtle': primarySubtleCss(theme.appearance),
+    '--primary-subtle': primarySubtleFor(theme),
     '--secondary': c.secondary,
     '--secondary-foreground': c.secondaryForeground,
     '--muted': c.muted,

@@ -1,5 +1,14 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { accentPresets, Badge, Button, colorTokens, designTokens, Input } from '@adea-ai/ui'
+import {
+  accentPresets,
+  Badge,
+  Button,
+  colorTokens,
+  designTokens,
+  Input,
+  themeCssVariables,
+  useTheme,
+} from '@adea-ai/ui'
 import { For } from 'solid-js'
 import { ColorSwatch, TokenTable, TokenRow } from './token-preview'
 
@@ -242,7 +251,23 @@ export const DataRoles: Story = {
  * against the canvas.
  */
 export const AccentPresets: Story = {
-  render: () => (
+  render: () => <AccentPresetsWorkshop />,
+}
+
+/**
+ * The presets, each in its own `data-accent` scope.
+ *
+ * In the applications `data-accent` sits on `<html>`, beside the theme, and the
+ * theme's `--primary-subtle` follows the accent there because both are declared on
+ * the same element. Here each preset is a nested scope, and a custom property
+ * computed on `<html>` inherits as the value it computed to — the theme primary's
+ * tint. So each scope re-declares the active theme's own tint expression, which then
+ * resolves against the preset's `--primary`, at the strength the theme measured.
+ */
+function AccentPresetsWorkshop() {
+  const theme = useTheme()
+  const subtle = () => themeCssVariables(theme.variant())['--primary-subtle']
+  return (
     <div class="flex max-w-3xl flex-col gap-6">
       <p class="max-w-prose text-sm text-muted-foreground">
         Every accent is passed through two rules, the same ones adea's
@@ -259,6 +284,7 @@ export const AccentPresets: Story = {
             <div
               class="flex flex-wrap items-center gap-4 rounded-lg border border-border p-4"
               data-accent={preset.id === 'theme' ? undefined : preset.id}
+              style={preset.id === 'theme' ? undefined : { '--primary-subtle': subtle() }}
             >
               <div class="w-56 shrink-0">
                 <div class="text-sm font-medium">{preset.label}</div>
@@ -295,7 +321,7 @@ export const AccentPresets: Story = {
         the moment someone picks a pale one.
       </p>
     </div>
-  ),
+  )
 }
 
 /**
