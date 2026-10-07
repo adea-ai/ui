@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.118.0](https://github.com/adea-ai/ui/compare/v0.117.0...v0.118.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** opt-in sizes, slots and parts for consumers dropping local CSS ([#354](https://github.com/adea-ai/ui/issues/354)) ([3dc04a2](https://github.com/adea-ai/ui/commit/3dc04a29c1ddf7c9914e567af0d521e9cb3fd7b0))
+
 ## [0.117.0](https://github.com/adea-ai/ui/compare/v0.116.0...v0.117.0) (2026-10-07)
 
 
