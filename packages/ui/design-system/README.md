@@ -35,11 +35,11 @@ Three decisions make an interface recognisably this system: **a tinted canvas wi
 
 - Two control heights carry the product: **28px `control-height-sm`** in toolbars and **32px `control-height-md`** in forms. Never set a 40px control or a 16px body next to them.
 - Rows are 32px by default (`row-height-md`). `data-density="compact"` moves the control and row ladders one rung tighter. `control-height-2xl` (48px) is the touch target and never shrinks.
-- The shell is a component, and its geometry is tokens: `rail-width` 56px (expanded 236px), `sidebar-width` 256px, `topbar-height` 48px, `statusbar-height` 28px.
+- The shell is a component, and its geometry is tokens: `rail-width` 56px (expanded 236px), `sidebar-width` 256px, `panel-width` 390px, `topbar-height` 48px, `statusbar-height` 28px.
 
 ## Shape and elevation
 
-- Radii: `radius-sm` 6px for badges and kbd, `radius-md` 8px for controls, `radius-lg` 10px for cards, `radius-xl` 14px for dialogs.
+- Radii: `radius-sm` 6px for kbd and menu items, `radius-md` 8px for controls and badges, `radius-lg` 10px for cards, `radius-xl` 14px for dialogs.
 - Elevation comes from the surface ladder first and shadows second: `shadow-sm` for cards, `shadow-md` for menus, `shadow-lg` for dialogs. Overlays stack on named rungs only (`z-dialog` < `z-menu` < `z-tooltip` < `z-toast`).
 
 ## Motion

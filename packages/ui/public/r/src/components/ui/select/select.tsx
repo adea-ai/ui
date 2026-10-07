@@ -46,6 +46,7 @@ export function SelectTrigger(props: SelectTriggerProps) {
 
   return (
     <KobalteSelect.Trigger
+      data-slot="select-trigger"
       class={cn(
         'border-input bg-transparent flex w-fit items-center justify-between gap-2 rounded-md border px-control-md',
         'whitespace-nowrap transition-[color,box-shadow,border-color] ease-out outline-none',

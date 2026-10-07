@@ -35,6 +35,14 @@ import { cn } from '../../../lib/utils'
  * `shape="rounded"` is the default because a rounded square reads as an object
  * and a circle reads as a person; use `circle` only when the tile really does
  * hold a face.
+ *
+ * `monochrome` is for a third-party brand mark — a vendor logo drawn with its
+ * own `fill`. A brand's hex is chosen for a white page: GitHub's near-black and
+ * Slack's aubergine all but vanish on a dark tile, and no tone can be picked
+ * that suits every brand in both themes. `monochrome` repaints any explicitly
+ * filled shape in the tile's glyph colour (the tone's), so the mark stays
+ * recognisable by its shape and legible in every theme. Stroke-drawn icons
+ * (Lucide, `fill="none"`) are left alone.
  */
 export const entityIconVariants = cva(
   'relative inline-flex shrink-0 items-center justify-center overflow-hidden border font-semibold select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
@@ -90,6 +98,8 @@ export type EntityIconProps = Omit<ComponentProps<'span'>, 'children'> &
     badge?: JSX.Element
     /** A second edge, drawn outside the tile — an active or selected ring. */
     ring?: boolean
+    /** Repaint a brand mark's own fills in the tile's glyph colour. */
+    monochrome?: boolean
   }
 
 /**
@@ -143,6 +153,7 @@ export function EntityIcon(props: EntityIconProps) {
     'fallback',
     'badge',
     'ring',
+    'monochrome',
     'shape',
     'size',
     'tone',
@@ -159,9 +170,13 @@ export function EntityIcon(props: EntityIconProps) {
 
   return (
     <span
+      data-slot="entity-icon"
       class={cn(
         entityIconVariants({ shape: local.shape, size: local.size, tone: local.tone }),
         local.ring && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+        // A presentation attribute (`fill="#4A154B"`) loses to any CSS rule, so
+        // this overrides the brand's hex without touching the caller's SVG.
+        local.monochrome && "[&_[fill]:not([fill='none'])]:fill-current",
         local.class
       )}
       role="img"

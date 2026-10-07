@@ -3,6 +3,7 @@ import { overlayTitle } from '../src/lib/overlay'
 import {
   headingElement,
   headingVariants,
+  textDefaultTone,
   textElement,
   textVariants,
 } from '../src/components/ui/typography/typography'
@@ -95,6 +96,18 @@ describe('textVariants', () => {
     expect(classes(textVariants({ variant: 'code' }))).toEqual(['font-code', 'text-code'])
   })
 
+  test('gives the overline one recipe, muted unless the caller names a tone', () => {
+    expect(classes(textVariants({ variant: 'overline' }))).toEqual([
+      'text-2xs',
+      'font-medium',
+      'tracking-wide',
+      'uppercase',
+    ])
+    expect(textDefaultTone('overline')).toBe('muted')
+    expect(textDefaultTone('caption')).toBeUndefined()
+    expect(textDefaultTone(undefined)).toBeUndefined()
+  })
+
   test('keeps tone independent of size', () => {
     expect(classes(textVariants({ variant: 'caption', tone: 'muted' }))).toEqual([
       'text-xs',
@@ -110,6 +123,7 @@ describe('textVariants', () => {
       strong: 'span',
       caption: 'span',
       micro: 'span',
+      overline: 'span',
       code: 'code',
     })
   })

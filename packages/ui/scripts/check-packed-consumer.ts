@@ -593,13 +593,19 @@ try {
           // fixture's JS floor.
           if (sample.name === 'contextual-sidebar-subpath' && bytes > 43 * 1024)
             throw new Error('Contextual sidebar exceeds its re-baselined 43 KiB gzip bound')
+          // Overlay CSS re-baselined 40 → 41 KiB (2026-10): DialogContent gained
+          // its width ladder (`size`: max-w-md/lg/2xl/3xl) and bare `code` reads
+          // the code-font role, both discovered into this fixture. Measured
+          // 40,966 against main's 40,715, which held 245 bytes of headroom.
+          // Re-baselined, not relaxed: the cap still bounds the fixture's
+          // complete stylesheet.
           const cssCapKiB =
             sample.name === 'contextual-sidebar-subpath'
               ? 50
               : sample.name === 'update-dialog'
                 ? 48
                 : sample.name === 'overlay'
-                  ? 40
+                  ? 41
                   : ['conversation-transcript', 'conversation-composer', 'busy-send'].includes(
                         sample.name
                       )

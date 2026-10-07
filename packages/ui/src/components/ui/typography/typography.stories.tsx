@@ -161,3 +161,19 @@ export const Tones: Story = {
     </div>
   ),
 }
+
+/**
+ * `overline` is the small uppercase label over a group — a list group's
+ * heading, a navigation group, an eyebrow above a page title. It is muted unless
+ * the caller names a tone, and it renders a `span`: it labels a group, it is not
+ * a heading in the outline.
+ */
+export const Overline: Story = {
+  render: () => (
+    <div class="flex max-w-prose flex-col gap-1">
+      <Text variant="overline">Workspace</Text>
+      <Heading size="page">Sources</Heading>
+      <Text tone="muted">Where the knowledge base reads documents from.</Text>
+    </div>
+  ),
+}

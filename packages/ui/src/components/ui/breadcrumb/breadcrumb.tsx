@@ -61,14 +61,7 @@ export function BreadcrumbLink(props: BreadcrumbLinkProps) {
   return (
     <Show
       when={!local.current}
-      fallback={
-        <span
-          data-slot="breadcrumb-page"
-          aria-current="page"
-          class={cn('font-medium text-foreground', local.class)}
-          {...(rest as ComponentProps<'span'>)}
-        />
-      }
+      fallback={<BreadcrumbPage class={local.class} {...(rest as ComponentProps<'span'>)} />}
     >
       <a
         data-slot="breadcrumb-link"
@@ -80,6 +73,23 @@ export function BreadcrumbLink(props: BreadcrumbLinkProps) {
         {...rest}
       />
     </Show>
+  )
+}
+
+/**
+ * The current page: the last crumb, as text rather than a link to itself, and
+ * marked `aria-current="page"`. The same element `BreadcrumbLink current`
+ * renders, for a trail whose last crumb is never a link.
+ */
+export function BreadcrumbPage(props: ComponentProps<'span'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return (
+    <span
+      data-slot="breadcrumb-page"
+      aria-current="page"
+      class={cn('font-medium text-foreground', local.class)}
+      {...rest}
+    />
   )
 }
 

@@ -8,6 +8,7 @@
   ],
   "registryDependencies": [
     "@adea-ai/ui/tooltip",
+    "@adea-ai/ui/typography",
     "lib"
   ],
   "files": [

@@ -271,10 +271,33 @@ export type DialogContentProps = ComponentProps<typeof KobalteDialogContent> & {
   closeButton?: JSX.Element | false
   /** Use a 1rem inset as the positioner bounds for tall, viewport-filling surfaces. */
   positioner?: 'default' | 'inset'
+  /**
+   * The panel's maximum width. `md` (32rem) is the default and right for a
+   * confirmation or a short form; `sm` (28rem) for a single question; `lg`
+   * (42rem) for a picker or a form with two columns; `xl` (48rem) for a
+   * multi-step flow that needs a table or a preview beside its fields.
+   */
+  size?: DialogContentSize
 }
 
+/** The dialog width ladder, so a caller picks a rung instead of a `max-w-*`. */
+export const dialogContentSizes = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-3xl',
+} as const
+
+export type DialogContentSize = keyof typeof dialogContentSizes
+
 export function DialogContent(props: DialogContentProps) {
-  const [local, rest] = splitProps(props, ['class', 'children', 'closeButton', 'positioner'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'children',
+    'closeButton',
+    'positioner',
+    'size',
+  ])
 
   return (
     <KobalteDialog.Portal>
@@ -284,7 +307,8 @@ export function DialogContent(props: DialogContentProps) {
           class={cn(
             dialogSurface,
             overlayMotion,
-            'relative grid w-full max-w-lg gap-4 p-5',
+            'relative grid w-full gap-4 p-5',
+            dialogContentSizes[local.size ?? 'md'],
             local.class
           )}
           {...rest}

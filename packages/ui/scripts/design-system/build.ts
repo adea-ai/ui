@@ -342,6 +342,7 @@ function writeTokens(): void {
         'rail-item-height',
         'sidebar-width',
         'sidebar-width-compact',
+        'panel-width',
         'topbar-height',
         'statusbar-height',
         'tooltip-max-width',

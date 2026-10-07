@@ -64,6 +64,7 @@ export function Switch(props: SwitchProps) {
 
   return (
     <KobalteSwitch
+      data-slot="switch"
       id={field ? undefined : local.id}
       title={local.title}
       class={cn('group/switch flex items-center gap-2.5', local.class)}

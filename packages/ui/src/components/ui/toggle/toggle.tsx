@@ -58,6 +58,7 @@ export function Toggle(props: ToggleProps) {
 
   return (
     <ToggleButton
+      data-slot="toggle"
       class={cn(toggleVariants({ variant: local.variant, size: local.size }), local.class)}
       {...rest}
     />

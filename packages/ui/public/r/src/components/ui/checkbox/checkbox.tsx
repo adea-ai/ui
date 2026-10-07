@@ -64,6 +64,7 @@ export function Checkbox(props: CheckboxProps) {
 
   return (
     <KobalteCheckbox
+      data-slot="checkbox"
       id={field ? undefined : local.id}
       title={local.title}
       class={cn('group/checkbox flex items-start gap-2.5', local.class)}

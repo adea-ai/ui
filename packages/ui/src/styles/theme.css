@@ -591,6 +591,9 @@
   --rail-item-height: 2.25rem;
   --sidebar-width: 16rem; /* 256px */
   --sidebar-width-compact: 3rem;
+  /* A side pane's width — a source list or a context panel beside the work, and
+     the same pane when a narrow window moves it into a sheet. */
+  --panel-width: 24.375rem; /* 390px */
   --topbar-height: 3rem;
   --statusbar-height: 1.75rem;
   /* A tip wraps before it can overflow the window carrying it: the 16rem
@@ -850,6 +853,7 @@
   --width-rail-expanded: var(--rail-width-expanded);
   --width-sidebar: var(--sidebar-width);
   --width-sidebar-compact: var(--sidebar-width-compact);
+  --width-panel: var(--panel-width);
 
   --z-docked: var(--z-docked);
   --z-sticky: var(--z-sticky);

@@ -2,6 +2,7 @@ import type { PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { ComponentProps, ValidComponent } from 'solid-js'
 import { createSignal, createUniqueId, Show, splitProps } from 'solid-js'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
+import { Text } from '../../ui/typography'
 import { cn } from '#lib/utils'
 import { ListRowControl, type ListRowControlProps } from './list-row-control'
 
@@ -106,9 +107,9 @@ export function ListGroup(
     <div data-slot="list-group" class={cn('flex flex-col gap-0.5', local.class)} {...rest}>
       <Show when={local.label}>
         <div class="group/list-header flex items-center gap-1 px-2 py-1">
-          <span class="min-w-0 flex-1 truncate text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+          <Text variant="overline" class="min-w-0 flex-1 truncate">
             {local.label}
-          </span>
+          </Text>
           <Show when={local.action}>
             <span class="shrink-0 opacity-0 transition-opacity ease-out group-hover/list-header:opacity-100 focus-within:opacity-100">
               {local.action}

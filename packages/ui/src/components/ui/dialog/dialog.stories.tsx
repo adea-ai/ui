@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { createSignal } from 'solid-js'
+import { createSignal, For } from 'solid-js'
 import { Button } from '../button/button'
 import { Input } from '../input/input'
 import { Label } from '../label/label'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -173,4 +174,39 @@ export const Controlled: Story = {
       </div>
     )
   },
+}
+
+/**
+ * `size` is the panel's width rung: `sm` for one question, `md` (the default)
+ * for a confirmation or a short form, `lg` for a picker or a two-column form,
+ * `xl` for a multi-step flow with a table or preview.
+ */
+export const Sizes: Story = {
+  render: () => (
+    <div class="flex flex-wrap gap-2">
+      <For each={['sm', 'md', 'lg', 'xl'] as const}>
+        {(size) => (
+          <Dialog>
+            <DialogTrigger as={Button} variant="outline">
+              Open {size}
+            </DialogTrigger>
+            <DialogContent size={size}>
+              <DialogHeader>
+                <DialogTitle>Choose a source type</DialogTitle>
+                <DialogDescription>
+                  This dialog is the {size} rung of the dialog width ladder.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose as={Button} variant="ghost">
+                  Cancel
+                </DialogClose>
+                <Button>Continue</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </For>
+    </div>
+  ),
 }

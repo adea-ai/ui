@@ -5,6 +5,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
+  BreadcrumbPage,
   BreadcrumbSeparator,
 } from './breadcrumb'
 
@@ -89,6 +90,27 @@ export const LongPath: Story = {
             </>
           )
         )}
+      </BreadcrumbList>
+    </Breadcrumb>
+  ),
+}
+
+/**
+ * `BreadcrumbPage` is the current page as its own part: text, not a link, with
+ * `aria-current="page"`. It renders exactly what `BreadcrumbLink current` does,
+ * for a trail whose last crumb is never a link.
+ */
+export const CurrentPage: Story = {
+  render: () => (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="#storybook-preview-iframe">Knowledge</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>Release notes</BreadcrumbPage>
+        </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
   ),

@@ -39,7 +39,11 @@ export function Progress(props: ProgressProps) {
   ])
 
   return (
-    <KobalteProgress class={cn('flex w-full flex-col gap-1.5', local.class)} {...rest}>
+    <KobalteProgress
+      data-slot="progress"
+      class={cn('flex w-full flex-col gap-1.5', local.class)}
+      {...rest}
+    >
       <Show when={local.label || !local.hideValue}>
         <div class="flex items-center justify-between gap-3">
           <Show when={local.label}>

@@ -4,6 +4,7 @@ export {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
+  BreadcrumbPage,
   BreadcrumbSeparator,
   type BreadcrumbLinkProps,
 } from './breadcrumb'

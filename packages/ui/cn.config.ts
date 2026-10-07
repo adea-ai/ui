@@ -28,7 +28,7 @@ const controlRungs = [
 const heights = [...controlRungs, 'row-sm', 'row-md', 'row-lg', 'rail-item', 'topbar', 'statusbar']
 
 /** `--width-*` tokens in `theme.css`. */
-const widths = ['rail', 'rail-expanded', 'sidebar', 'sidebar-compact']
+const widths = ['rail', 'rail-expanded', 'sidebar', 'sidebar-compact', 'panel']
 
 /** `--size-*` tokens in `theme.css`. */
 const sizes = [...controlRungs, 'rail-item']

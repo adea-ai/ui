@@ -3,6 +3,7 @@ import { createEffect, createUniqueId, onCleanup, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { sidebarNavItemClass, sidebarNavItemStateClass } from '../../layout/sidebar-nav/sidebar-nav'
 import { TabsList, TabsTrigger, type TabsListProps } from '../../ui/tabs'
+import { Text } from '../../ui/typography'
 
 /** One host-owned destination in a settings tab list. Values must be unique. */
 export type SettingsNavigationItem = {
@@ -128,12 +129,15 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
             <span id={groupId} class="sr-only">
               {group.label}
             </span>
-            <span
+            {/* The overline role on the sidebar's own muted foreground. */}
+            <Text
+              variant="overline"
+              tone="inherit"
               aria-hidden="true"
-              class="px-2 py-1.5 text-2xs font-medium tracking-wide text-sidebar-muted-foreground uppercase"
+              class="px-2 py-1.5 text-sidebar-muted-foreground"
             >
               {group.label}
-            </span>
+            </Text>
             {group.items.map((item) => (
               <TabsTrigger
                 data-slot="settings-navigation-trigger"

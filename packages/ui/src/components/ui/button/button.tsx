@@ -93,6 +93,7 @@ export function Button<T extends ValidComponent = 'button'>(props: ButtonProps<T
     <Polymorphic
       as="button"
       type="button"
+      data-slot="button"
       class={cn(
         buttonVariants({
           variant: local.variant,

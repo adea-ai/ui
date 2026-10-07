@@ -62,6 +62,7 @@ export function Tabs(props: ComponentProps<typeof KobalteTabs>) {
   return (
     <TabsIdContext.Provider value={tabs}>
       <KobalteTabs
+        data-slot="tabs"
         id={id()}
         class={cn(
           'flex min-h-0 min-w-0 flex-col gap-2 data-[orientation=vertical]:flex-row',
@@ -75,6 +76,18 @@ export function Tabs(props: ComponentProps<typeof KobalteTabs>) {
 
 export type TabsListProps = ComponentProps<typeof KobalteTabs.List> & {
   appearance?: 'underline' | 'segmented'
+  /**
+   * Span the container, with the triggers at the start. For a row of tabs that
+   * heads a pane: the underline's rule then runs the pane's full width, the
+   * way the pane's other header rules do, instead of stopping at the last tab.
+   */
+  fill?: boolean
+  /**
+   * Scroll sideways when the triggers outgrow the row, with no visible
+   * scrollbar, instead of overflowing it. Implies `fill`. The underline's rule
+   * is drawn inside the scroller so the selected mark still sits on it.
+   */
+  scrollable?: boolean
 }
 
 /**
@@ -82,17 +95,31 @@ export type TabsListProps = ComponentProps<typeof KobalteTabs.List> & {
  * on. A vertical list has no baseline — its triggers stack — so the rule is
  * dropped there; otherwise it draws as a stray line under the last trigger,
  * spanning only the list's width (the SettingsLayout rail showed exactly that).
+ *
+ * A scrolling list cannot draw that rule as its border: a scroller clips at its
+ * padding edge, and the selected trigger's mark overlaps the border by a pixel
+ * (`-mb-px`), so the mark would be cut off and the list would scroll vertically
+ * by that pixel. It reserves the pixel as padding instead and paints the rule
+ * there with an inset shadow, which lands exactly where the border was.
  */
 export function TabsList(props: TabsListProps) {
-  const [local, rest] = splitProps(props, ['class', 'appearance'])
+  const [local, rest] = splitProps(props, ['class', 'appearance', 'fill', 'scrollable'])
+  const underline = () => local.appearance !== 'segmented'
 
   return (
     <KobalteTabs.List
+      data-slot="tabs-list"
       class={cn(
-        'inline-flex w-fit shrink-0 items-center justify-center',
-        local.appearance === 'segmented'
+        'shrink-0 items-center',
+        local.fill || local.scrollable
+          ? 'flex w-full justify-start'
+          : 'inline-flex w-fit justify-center',
+        local.scrollable && 'no-scrollbar overflow-x-auto overflow-y-hidden',
+        !underline()
           ? 'gap-0.5 rounded-lg bg-surface-hover p-0.5'
-          : 'gap-1 rounded-none border-b border-border data-[orientation=vertical]:border-b-0',
+          : local.scrollable
+            ? 'gap-1 rounded-none pb-px shadow-[inset_0_-1px_0_var(--border)] data-[orientation=vertical]:pb-0 data-[orientation=vertical]:shadow-none'
+            : 'gap-1 rounded-none border-b border-border data-[orientation=vertical]:border-b-0',
         'data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch',
         local.class
       )}
@@ -133,6 +160,7 @@ export function TabsTrigger(props: TabsTriggerProps) {
 
   return (
     <KobalteTabs.Trigger
+      data-slot="tabs-trigger"
       id={triggerId()}
       class={cn(
         'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium',
@@ -158,6 +186,7 @@ export function TabsContent(props: ComponentProps<typeof KobalteTabs.Content>) {
   const tabs = useTabsId()
   return (
     <KobalteTabs.Content
+      data-slot="tabs-content"
       aria-labelledby={
         local['aria-labelledby'] ??
         tabs.triggerIds().get(rest.value) ??
