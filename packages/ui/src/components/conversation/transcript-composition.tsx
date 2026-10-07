@@ -87,6 +87,12 @@ export type TranscriptCompositionProps<T> = Omit<ComponentProps<'div'>, 'childre
   /** Optional controlled disclosure map keyed by `transcriptDisclosureKey`. */
   disclosure?: ReadonlyMap<string, boolean>
   onDisclosureChange?: (key: string, expanded: boolean) => void
+  /**
+   * Row rhythm. `compact` (default) packs rows 4px apart; `comfortable` spaces
+   * them 12px apart and stacks each row's rendered parts, for a chat stream
+   * whose rows are separate messages rather than one running log.
+   */
+  density?: 'compact' | 'comfortable'
 }
 
 type TurnPresentation = NonNullable<TranscriptCompositionRowContext['turn']>
@@ -388,6 +394,7 @@ function TranscriptRowEntry<T>(props: {
       <div
         id={id()}
         data-slot="transcript-row-content"
+        class="group-data-[density=comfortable]/transcript:flex group-data-[density=comfortable]/transcript:flex-col"
         hidden={collapsed()}
         aria-hidden={collapsed() || undefined}
       >
@@ -418,6 +425,7 @@ export function TranscriptComposition<T>(props: TranscriptCompositionProps<T>) {
     'foldMode',
     'foldState',
     'onFoldStateChange',
+    'density',
     'disclosure',
     'onDisclosureChange',
   ])
@@ -512,7 +520,8 @@ export function TranscriptComposition<T>(props: TranscriptCompositionProps<T>) {
     <div
       data-slot="transcript-composition"
       data-fold-state={foldState()}
-      class={cn('flex w-full min-w-0 flex-col gap-1', local.class)}
+      data-density={local.density ?? 'compact'}
+      class={cn('group/transcript flex w-full min-w-0 flex-col gap-1', local.class)}
       {...rest}
     >
       <Show when={local.onFoldStateChange}>
@@ -534,7 +543,10 @@ export function TranscriptComposition<T>(props: TranscriptCompositionProps<T>) {
           </Button>
         </div>
       </Show>
-      <div data-slot="transcript-rows" class="flex min-w-0 flex-col gap-1">
+      <div
+        data-slot="transcript-rows"
+        class={cn('flex min-w-0 flex-col', local.density === 'comfortable' ? 'gap-3' : 'gap-1')}
+      >
         <For each={handles()}>
           {(handle) => (
             <TranscriptRowEntry

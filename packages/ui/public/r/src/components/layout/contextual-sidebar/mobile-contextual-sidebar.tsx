@@ -18,7 +18,12 @@ export function MobileSidebar(props: MobileContextualSidebarProps) {
       <SheetContent
         side="start"
         aria-label={props.label}
-        class={cn('gap-0 p-0', props.sheetClass)}
+        // The sheet leaves the app rail visible beside it: at most 19rem, never
+        // under 9rem, and otherwise the viewport less the rail's width.
+        class={cn(
+          'w-[min(19rem,max(9rem,calc(100vw-var(--rail-width,3.5rem))))] max-w-[min(19rem,max(9rem,calc(100vw-var(--rail-width,3.5rem))))] gap-0 p-0',
+          props.sheetClass
+        )}
         restoreFocusRef={props.restoreFocusRef}
       >
         {props.renderSidebar()}

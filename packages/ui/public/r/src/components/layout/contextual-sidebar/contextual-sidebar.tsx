@@ -45,6 +45,8 @@ export type ContextualSidebarProps = {
   /** Pass the host's initial viewport seed to distinguish stale desktop state. */
   wideViewportAtLoad?: boolean
   resizeLabel?: string
+  /** The resize edge's grip: the default bordered chip, or the quieter rung. */
+  resizeGrip?: 'chip' | 'rung'
   /** Stable external opener used when the modal mobile sheet closes. */
   restoreFocusRef?: Accessor<HTMLElement | undefined>
   /** Called with the nav node so a host can project width onto its layout root. */
@@ -173,6 +175,7 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
             maximum={props.maximum}
             step={props.step}
             label={resizeLabel()}
+            grip={props.resizeGrip}
             controls={navigationId}
             onChange={props.onWidthChange}
             onCommit={props.onWidthCommit}

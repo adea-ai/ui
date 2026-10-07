@@ -120,3 +120,28 @@ export const ThreePanes: Story = {
     </div>
   ),
 }
+
+/** The quieter rung grip: a translucent bar with no icon, for edges that should read as barely there. */
+export const RungGrip: Story = {
+  render: () => (
+    <div class="h-72 w-full max-w-2xl rounded-md border border-border">
+      <ResizablePanelGroup>
+        <ResizablePanel initialSize={0.32} minSize={0.15}>
+          <Panel>
+            <PanelBody>
+              <p class="text-sm text-muted-foreground">Utility pane</p>
+            </PanelBody>
+          </Panel>
+        </ResizablePanel>
+        <ResizableHandle withHandle="rung" />
+        <ResizablePanel minSize={0.3}>
+          <Panel>
+            <PanelBody>
+              <p class="text-sm text-muted-foreground">Center</p>
+            </PanelBody>
+          </Panel>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  ),
+}
