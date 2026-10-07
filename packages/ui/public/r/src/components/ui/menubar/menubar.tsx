@@ -141,7 +141,10 @@ export function MenubarCheckboxItem(props: ComponentProps<typeof KobalteMenubar.
       {local.children}
       {/* The indicator reads in the accent, like every other selected state in
       the system. */}
-      <KobalteMenubar.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
+      <KobalteMenubar.ItemIndicator
+        data-slot="menubar-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Check class="size-4" />
       </KobalteMenubar.ItemIndicator>
     </KobalteMenubar.CheckboxItem>
@@ -159,7 +162,10 @@ export function MenubarRadioItem(props: ComponentProps<typeof KobalteMenubar.Rad
       {local.children}
       {/* The indicator reads in the accent, like every other selected state in
       the system. */}
-      <KobalteMenubar.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
+      <KobalteMenubar.ItemIndicator
+        data-slot="menubar-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Circle class="size-2 fill-current" />
       </KobalteMenubar.ItemIndicator>
     </KobalteMenubar.RadioItem>

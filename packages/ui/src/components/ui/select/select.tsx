@@ -192,7 +192,10 @@ export function SelectItem(
       <KobalteSelect.ItemLabel>{local.children}</KobalteSelect.ItemLabel>
       {/* The indicator reads in the accent, like every other selected state in
           the system — the row's own foreground reads as decoration. */}
-      <KobalteSelect.ItemIndicator class="absolute end-2 flex size-4 items-center justify-center text-primary">
+      <KobalteSelect.ItemIndicator
+        data-slot="select-indicator"
+        class="absolute end-2 flex size-4 items-center justify-center text-primary"
+      >
         <Check class="size-4" />
       </KobalteSelect.ItemIndicator>
     </KobalteSelect.Item>

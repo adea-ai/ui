@@ -113,4 +113,44 @@ test('checked menu indicators render the accent colour end to end', async ({ pag
   await expect(item).toBeVisible()
   const indicator = item.locator('[data-slot="dropdown-menu-indicator"]')
   await expect(await indicator.evaluate((el) => getComputedStyle(el).color)).toBe(primary)
+  // The glyph is what paints, so it is the glyph that must carry the accent:
+  // the row's own icon rules once dimmed it to the muted foreground.
+  const check = indicator.locator('svg')
+  await expect(await check.evaluate((el) => getComputedStyle(el).color)).toBe(primary)
+})
+
+// The row's descendant icon rules (size-4, muted foreground) outrank a single
+// utility on a glyph. A radio dot under them drew as a 16px grey disc; each
+// menu family must draw it as the 8px accent dot its indicator asks for.
+async function expectRadioDot(item: import('@playwright/test').Locator, primary: string) {
+  await expect(item).toBeVisible()
+  await expect(item).toHaveAttribute('aria-checked', 'true')
+  const dot = item.locator('[data-slot$="-indicator"] svg')
+  const painted = await dot.evaluate((el) => {
+    // Computed, not the bounding box: the menu's entry zoom scales the box.
+    const style = getComputedStyle(el)
+    return { color: style.color, fill: style.fill, width: style.width, height: style.height }
+  })
+  expect(painted.width).toBe('8px')
+  expect(painted.height).toBe('8px')
+  expect(painted.color).toBe(primary)
+  expect(painted.fill).toBe(primary)
+}
+
+test('a checked radio item draws the small accent dot in every menu family', async ({ page }) => {
+  await mountFixture(page)
+  const primary = await primaryOf(page)
+
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await expectRadioDot(page.getByRole('menuitemradio', { name: 'Compact' }), primary)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menuitemradio')).toHaveCount(0)
+
+  await page.getByTestId('context-target').click({ button: 'right' })
+  await expectRadioDot(page.getByRole('menuitemradio', { name: 'Compact' }), primary)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menuitemradio')).toHaveCount(0)
+
+  await page.getByRole('menuitem', { name: 'View' }).click()
+  await expectRadioDot(page.getByRole('menuitemradio', { name: 'Compact' }), primary)
 })
