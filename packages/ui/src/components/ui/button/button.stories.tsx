@@ -80,7 +80,7 @@ export const Default: Story = {}
  * `default` is the one primary action in a view; `secondary` is a quieter peer;
  * `outline` belongs on a surface that already has a fill; `ghost` is the default
  * for toolbar and row actions, where chrome would be noise; `toolbar` is a ghost
- * that opens a sheet or menu and holds the pressed rung while it is open;
+ * that opens a sheet or menu and holds the accent tint while it is open;
  * `subtle` is a tinted primary for a secondary step inside a primary flow.
  */
 export const Variants: Story = {
@@ -94,6 +94,27 @@ export const Variants: Story = {
       <Button variant="success">Success</Button>
       <Button variant="destructive">Destructive</Button>
       <Button variant="link">Link</Button>
+    </div>
+  ),
+}
+
+/**
+ * The toolbar rung in both states, side by side. Kobalte marks an open
+ * trigger's element `data-expanded`, and the variant holds the accent's own
+ * tint there — the same accent-driven state the side rail's active
+ * destination draws — so an open toolbar control reads as pressed in the
+ * app's chroma rather than as a neutral grey rung. The story pins the pair
+ * because the open state is exactly the one a visual regression would miss.
+ */
+export const ToolbarPressed: Story = {
+  render: () => (
+    <div class="flex items-center gap-3">
+      <Button variant="toolbar" size="icon-sm" aria-label="Closed panel">
+        <Plus aria-hidden="true" />
+      </Button>
+      <Button variant="toolbar" size="icon-sm" data-expanded="" aria-label="Open panel">
+        <Plus aria-hidden="true" />
+      </Button>
     </div>
   ),
 }
