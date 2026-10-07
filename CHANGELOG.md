@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.122.1](https://github.com/adea-ai/ui/compare/v0.122.0...v0.122.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **ui:** hold the toolbar's expanded rung in the accent tint ([#371](https://github.com/adea-ai/ui/issues/371)) ([5d41e12](https://github.com/adea-ai/ui/commit/5d41e127dc6b3e43ac2427927e37b81cd5d4d91d))
+
 ## [0.122.0](https://github.com/adea-ai/ui/compare/v0.121.0...v0.122.0) (2026-10-07)
 
 
