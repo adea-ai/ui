@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.119.1](https://github.com/adea-ai/ui/compare/v0.119.0...v0.119.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **theme:** write each theme's legible primary-subtle tint ([#364](https://github.com/adea-ai/ui/issues/364)) ([b428a9b](https://github.com/adea-ai/ui/commit/b428a9b61f6e8b32e0b29a0bceb88eef903f53ad))
+
 ## [0.119.0](https://github.com/adea-ai/ui/compare/v0.118.3...v0.119.0) (2026-10-07)
 
 
