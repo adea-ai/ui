@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'A state said in one word, with the reason on hover. The tones are a fixed six rather than a palette: `unknown` is distinct from `neutral` on purpose, because "we have not been told" and "nothing is wrong" are different facts.',
+          'A state said in one word, with the reason on hover. The tones are a fixed seven rather than a palette: `unknown` is distinct from `neutral` on purpose, because "we have not been told" and "nothing is wrong" are different facts.',
       },
     },
   },
@@ -50,6 +50,7 @@ export const Tones: Story = {
       />
       <StatusChip tone="danger" label="Blocked" detail="The workspace key could not be read." />
       <StatusChip tone="info" label="In progress" detail="Started 4 minutes ago." />
+      <StatusChip tone="pending" label="Running" detail="Check started 12 seconds ago." />
       <StatusChip
         tone="unknown"
         label="Activity unknown"
@@ -60,7 +61,7 @@ export const Tones: Story = {
 }
 
 /**
- * The distinction the sixth tone exists for. Both of these are grey; only one of
+ * The distinction the `unknown` tone exists for. Both of these are grey; only one of
  * them is a fact. Collapsing them is how a product quietly lies.
  */
 export const UnknownVersusNeutral: Story = {
