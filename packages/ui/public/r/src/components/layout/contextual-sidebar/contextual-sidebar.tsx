@@ -164,6 +164,9 @@ export function ContextualSidebar(props: ContextualSidebarProps) {
       >
         <Show when={!mobile && props.open}>
           <PixelResizeHandle
+            // The ruler spans the sidebar as a pointer-events-none overlay; lift
+            // it above the neighbouring pane so the edge stays grabbable.
+            class="z-(--z-docked)"
             side="left"
             value={props.width}
             minimum={props.minimum}

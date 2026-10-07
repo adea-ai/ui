@@ -42,7 +42,8 @@ import {
  *
  * Use `Dialog` directly when you need its composition; use this when you want a
  * dialog that is correct by default. `size="settings"` supplies a wide, bounded
- * shell for a shared settings layout; ordinary dialogs keep their compact default.
+ * shell for a shared settings layout, titled by a banded header like a sheet's;
+ * ordinary dialogs keep their compact default.
  */
 export type ModalDialogProps = Omit<
   ComponentProps<typeof DialogContent>,
@@ -154,6 +155,7 @@ export function ModalDialog(props: ModalDialogProps) {
           onCloseAutoFocus={focusRestoration.onCloseAutoFocus}
         >
           <DialogHeader
+            band={local.size === 'settings'}
             class={
               local.size === 'settings'
                 ? 'shrink-0 gap-1 border-b border-border px-5 pt-4 pb-3 pe-14'

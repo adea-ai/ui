@@ -88,7 +88,12 @@ export function SidebarNavContent(props: ComponentProps<'div'>) {
   return (
     <div
       data-slot="sidebar-nav-content"
-      class={cn('flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2', local.class)}
+      class={cn(
+        /* A stable gutter keeps rows from shifting sideways when the list
+           grows past the fold and the scrollbar appears. */
+        'flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2 [scrollbar-gutter:stable]',
+        local.class
+      )}
       {...rest}
     />
   )
@@ -236,6 +241,11 @@ export function SidebarNavSection(props: SidebarNavSectionProps) {
               }}
               class={cn(
                 'flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-2xs font-medium tracking-wide uppercase outline-none transition-colors ease-out hover:text-sidebar-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle [@media(any-pointer:coarse)]:min-h-11',
+                /* WCAG 2.5.8: the row's vertical padding sits on the header, so
+                   the bare label would be a ~16px target. Stretch the button
+                   across that padding; the row's height does not change. A
+                   coarse pointer already gets min-h-11 on an unpadded row. */
+                '-my-1.5 py-1.5 [@media(any-pointer:coarse)]:my-0 [@media(any-pointer:coarse)]:py-0',
                 local.active ? 'text-foreground' : 'text-sidebar-muted-foreground'
               )}
             >
