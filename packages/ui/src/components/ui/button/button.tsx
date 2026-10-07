@@ -37,11 +37,14 @@ export const buttonVariants = cva(
         ghost: 'text-foreground hover:bg-surface-hover',
         /**
          * A ghost that opens something: a sheet, menu or popover trigger in a
-         * toolbar. While its surface is open it holds the menubar's pressed
-         * rung, so the open control never reads identical to its closed
-         * neighbours.
+         * toolbar. While its surface is open it holds the accent's own tint —
+         * the same treatment that drives the side rail's active destination —
+         * so the open control never reads identical to its closed neighbours
+         * and the app's pressed chrome reads as one accent chroma. The
+         * compound hover keeps the tint when an open control is pointed at.
          */
-        toolbar: 'text-foreground hover:bg-surface-hover data-[expanded]:bg-surface-active',
+        toolbar:
+          'text-foreground hover:bg-surface-hover data-[expanded]:bg-primary-subtle data-[expanded]:text-primary data-[expanded]:hover:bg-primary-subtle',
         /** A tinted primary, for a secondary action inside a primary flow. */
         subtle: 'bg-primary-subtle text-primary hover:bg-primary-subtle/80',
         success: 'bg-success text-success-foreground hover:bg-success/90',
