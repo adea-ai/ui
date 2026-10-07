@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.118.1](https://github.com/adea-ai/ui/compare/v0.118.0...v0.118.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **design-system:** build .ts sources and show 0.118 options on cards ([#356](https://github.com/adea-ai/ui/issues/356)) ([f900ff4](https://github.com/adea-ai/ui/commit/f900ff41cae8c00e4f730098f164a7989d71cc01))
+
 ## [0.118.0](https://github.com/adea-ai/ui/compare/v0.117.0...v0.118.0) (2026-10-07)
 
 
