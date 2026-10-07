@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.118.2](https://github.com/adea-ai/ui/compare/v0.118.1...v0.118.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* **toggle:** keep pressed toggle labels at foreground contrast ([#358](https://github.com/adea-ai/ui/issues/358)) ([7d04174](https://github.com/adea-ai/ui/commit/7d041741f271f938e92516f70368168905b2832e))
+
 ## [0.118.1](https://github.com/adea-ai/ui/compare/v0.118.0...v0.118.1) (2026-10-07)
 
 
