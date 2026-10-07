@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.120.0](https://github.com/adea-ai/ui/compare/v0.119.1...v0.120.0) (2026-10-07)
+
+
+### Features
+
+* **ui:** toolbar button variant that holds the pressed rung while open ([#366](https://github.com/adea-ai/ui/issues/366)) ([afd14ba](https://github.com/adea-ai/ui/commit/afd14ba6309d2258efcc680d1e8b568e6fc30121))
+
 ## [0.119.1](https://github.com/adea-ai/ui/compare/v0.119.0...v0.119.1) (2026-10-07)
 
 
