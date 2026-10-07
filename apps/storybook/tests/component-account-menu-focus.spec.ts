@@ -124,15 +124,13 @@ test('a rail tooltip keeps its positioning separate from the reopened menu', asy
   const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 844 })
-    // Tab to the opener: keyboard intent announces the tooltip (a programmatic
-    // focus() is exactly what the tooltip focus gate keeps quiet). Walk rather
-    // than count stops — the previous width left focus on this opener, and an
-    // engine's sequential-focus start after a manual blur differs.
-    for (let hop = 0; hop < 8; hop += 1) {
-      await page.keyboard.press('Tab')
-      if (await opener.evaluate((element) => element === document.activeElement)) break
-    }
-    await expect(opener).toBeFocused()
+    // This spec is about the tooltip's position against the reopened menu, not
+    // about which focus kind announced it: a real hover opens the tip in every
+    // engine (keyboard-intent announce is covered in the tooltip lane). Move
+    // the pointer off first — the previous width's click parked it on the
+    // opener, and an already-hovered trigger fires no new enter.
+    await page.mouse.move(4, 320)
+    await opener.hover()
     await expect(page.getByRole('tooltip')).toBeVisible()
     await opener.click()
     const menu = page.getByRole('menu')
