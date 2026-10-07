@@ -130,6 +130,13 @@ export function Heading<T extends ValidComponent = 'h2'>(props: HeadingProps<T>)
  * foreground without the caller restating it.
  *
  * Defaults: `body` renders a `p`, `code` a `code`, every other variant a `span`.
+ *
+ * `overline` is the small uppercase label above a group — a list group's
+ * heading, a settings navigation group, an eyebrow over a page title. It is the
+ * one variant whose tone defaults to `muted` rather than inheriting, because an
+ * overline in the body foreground competes with the heading it introduces. Pass
+ * `tone` to override. It labels a group; it is not a heading, so it renders a
+ * `span` and stays out of the document outline.
  */
 export const textVariants = /* @__PURE__ */ cva('', {
   variants: {
@@ -144,6 +151,8 @@ export const textVariants = /* @__PURE__ */ cva('', {
       caption: 'text-xs',
       /** 11px / 500. The floor: keyboard keys, the status bar. */
       micro: 'text-2xs font-medium',
+      /** 11px / 500, uppercase and tracked. A group label or eyebrow; muted by default. */
+      overline: 'text-2xs font-medium tracking-wide uppercase',
       /** 12px mono. Ids, paths, hashes, inline code. */
       code: 'font-code text-code',
     },
@@ -168,8 +177,14 @@ export const textElement = {
   strong: 'span',
   caption: 'span',
   micro: 'span',
+  overline: 'span',
   code: 'code',
 } as const
+
+/** The tone a variant takes when the caller names none: muted for `overline`, else inherit. */
+export function textDefaultTone(variant: TextVariant | null | undefined) {
+  return variant === 'overline' ? 'muted' : undefined
+}
 
 type TextVariantProps = VariantProps<typeof textVariants>
 type TextVariant = keyof typeof textElement
@@ -195,7 +210,11 @@ export function Text<T extends ValidComponent = 'p'>(props: TextProps<T>) {
       as={local.as ?? textElement[(local.variant ?? 'body') as TextVariant]}
       data-slot="text"
       class={cn(
-        textVariants({ variant: local.variant, tone: local.tone, numeric: local.numeric }),
+        textVariants({
+          variant: local.variant,
+          tone: local.tone ?? textDefaultTone(local.variant),
+          numeric: local.numeric,
+        }),
         local.class
       )}
       {...(rest as ComponentProps<'p'>)}

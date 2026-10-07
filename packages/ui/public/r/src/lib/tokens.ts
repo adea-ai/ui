@@ -379,11 +379,11 @@ export const radiusTokens: TokenDefinition[] = [
     description:
       '10px — cards and panels. Also the knob: move this one value to re-round the whole system.',
   },
-  { name: 'radius-sm', kind: 'dimension', description: '6px — badges, keyboard keys, menu items.' },
+  { name: 'radius-sm', kind: 'dimension', description: '6px — keyboard keys, menu items.' },
   {
     name: 'radius-md',
     kind: 'dimension',
-    description: '8px — every control: buttons, inputs, selects.',
+    description: '8px — every control: buttons, inputs, selects; and badges.',
   },
   { name: 'radius-xl', kind: 'dimension', description: '14px — dialogs, menus, sheets.' },
   { name: 'radius-2xl', kind: 'dimension', description: '18px — full-window surfaces and media.' },
@@ -596,6 +596,11 @@ export const densityTokens: TokenDefinition[] = [
     name: 'sidebar-width-compact',
     kind: 'dimension',
     description: '48px — the collapsed secondary column.',
+  },
+  {
+    name: 'panel-width',
+    kind: 'dimension',
+    description: '390px — a side pane beside the work, and the same pane as a sheet.',
   },
   { name: 'topbar-height', kind: 'dimension', description: '48px — the window title row.' },
   { name: 'statusbar-height', kind: 'dimension', description: '28px — the bottom readout strip.' },

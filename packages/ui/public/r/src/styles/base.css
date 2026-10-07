@@ -712,11 +712,14 @@
     background: transparent;
   }
 
+  /* The code role, as the `font-code` utility reads it: an appearance setting
+     that picks a code face sets `--font-code`, and bare `code`/`pre` follow it
+     instead of staying on the theme's mono face. */
   code,
   kbd,
   pre,
   samp {
-    font-family: var(--font-mono);
+    font-family: var(--font-code, var(--font-mono));
     font-feature-settings: 'liga' 0;
   }
 }

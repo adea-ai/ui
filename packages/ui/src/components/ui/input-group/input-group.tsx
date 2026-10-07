@@ -15,15 +15,29 @@ import { cn } from '#lib/utils'
  * The focus ring therefore lives on the group and follows `focus-within`. A
  * group containing several focusable things still reads as focused once, which
  * is the correct affordance: the user is somewhere inside it.
+ *
+ * `size` is the control rung, matching `Input`: `sm` for a toolbar search beside
+ * `icon-sm` actions, `md` (the default) everywhere else. The group's input and
+ * text follow it.
  */
-export function InputGroup(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+export type InputGroupProps = ComponentProps<'div'> & {
+  size?: 'sm' | 'md' | 'lg'
+}
+
+export function InputGroup(props: InputGroupProps) {
+  const [local, rest] = splitProps(props, ['class', 'size'])
 
   return (
     <div
       data-slot="input-group"
+      data-size={local.size}
       class={cn(
-        'border-input flex h-control-md w-full min-w-0 items-center gap-1.5 rounded-md border bg-transparent px-control-sm',
+        'group/input-group border-input flex w-full min-w-0 items-center gap-1.5 rounded-md border bg-transparent',
+        {
+          'h-control-sm px-control-xs': local.size === 'sm',
+          'h-control-md px-control-sm': local.size === 'md' || local.size === undefined,
+          'h-control-lg px-control-md': local.size === 'lg',
+        },
         'transition-[color,box-shadow,border-color] ease-out',
         'focus-within:border-ring focus-within:ring-3 focus-within:ring-primary-subtle',
         'has-[[aria-invalid=true]]:border-destructive has-[[aria-invalid=true]]:ring-3 has-[[aria-invalid=true]]:ring-destructive-subtle',
@@ -64,7 +78,7 @@ export function InputGroupInput(props: ComponentProps<'input'>) {
       aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
       aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
       class={cn(
-        'h-full min-w-0 flex-1 bg-transparent text-sm outline-none',
+        'h-full min-w-0 flex-1 bg-transparent text-sm outline-none group-data-[size=sm]/input-group:text-xs',
         'placeholder:text-muted-foreground',
         'disabled:cursor-not-allowed',
         local.class
@@ -94,6 +108,7 @@ export function InputGroupAddon(props: InputGroupAddonProps) {
       class={cn(
         'text-muted-foreground flex shrink-0 items-center gap-1.5 text-sm select-none',
         '[&_svg]:pointer-events-none [&_svg]:size-4',
+        'group-data-[size=sm]/input-group:text-xs group-data-[size=sm]/input-group:[&_svg]:size-3.5',
         { 'order-first': local.align !== 'end', 'order-last': local.align === 'end' },
         local.class
       )}
@@ -130,5 +145,13 @@ export function InputGroupButton(props: ComponentProps<'button'>) {
 /** Text that reads as a value but is not an input, e.g. a unit or a suffix. */
 export function InputGroupText(props: ComponentProps<'span'> & { children?: JSX.Element }) {
   const [local, rest] = splitProps(props, ['class'])
-  return <span class={cn('text-muted-foreground text-sm', local.class)} {...rest} />
+  return (
+    <span
+      class={cn(
+        'text-muted-foreground text-sm group-data-[size=sm]/input-group:text-xs',
+        local.class
+      )}
+      {...rest}
+    />
+  )
 }

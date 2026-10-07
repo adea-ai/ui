@@ -11,4 +11,5 @@ export {
   DialogTitle,
   DialogTrigger,
   type DialogContentProps,
+  type DialogContentSize,
 } from './dialog'

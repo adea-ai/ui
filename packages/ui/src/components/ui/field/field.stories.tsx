@@ -14,6 +14,7 @@ import {
   FormField,
   FieldDescription,
   FieldError,
+  FieldGroup,
   FieldInput,
   FieldLabel,
   FieldLegend,
@@ -265,4 +266,28 @@ export const Number: Story = {
       </div>
     )
   },
+}
+
+/**
+ * `columns={2}` lays paired fields out in two columns from the `sm` breakpoint
+ * up, and in one column below it. A field that needs the full width says
+ * `class="col-span-full"`.
+ */
+export const TwoColumns: Story = {
+  render: () => (
+    <FieldGroup columns={2} class="w-144">
+      <Field>
+        <FieldLabel>Host</FieldLabel>
+        <FieldInput placeholder="127.0.0.1" />
+      </Field>
+      <Field>
+        <FieldLabel>Port</FieldLabel>
+        <FieldInput inputMode="numeric" placeholder="11434" />
+      </Field>
+      <Field class="col-span-full">
+        <FieldLabel>Model</FieldLabel>
+        <FieldInput placeholder="nomic-embed-text" />
+      </Field>
+    </FieldGroup>
+  ),
 }

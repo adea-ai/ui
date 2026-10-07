@@ -105,4 +105,21 @@ export function AlertDescription(props: ComponentProps<'div'>) {
   )
 }
 
+/**
+ * The alert's own actions — a Retry, an Open settings, a Cancel — on a row
+ * under the text, aligned with the title rather than the glyph. Buttons here
+ * are `size="xs" variant="outline"` by convention, so an alert's action reads
+ * as part of the message rather than as the page's primary action.
+ */
+export function AlertAction(props: ComponentProps<'div'>) {
+  const [local, rest] = splitProps(props, ['class'])
+  return (
+    <div
+      data-slot="alert-action"
+      class={cn('col-start-2 mt-1 flex flex-wrap items-center gap-2', local.class)}
+      {...rest}
+    />
+  )
+}
+
 export { alertVariants }

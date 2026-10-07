@@ -140,6 +140,13 @@ can omit the version argument.
 `theme.css` is the preferred entry for an application that has its own Tailwind
 setup: importing `globals.css` as well would import Tailwind twice.
 
+`base.css` also defines `visually-hidden` (and `visually-hidden-until-*`), the
+screen-reader-only utility the components use. It is a supported utility, not an
+internal one: an application that imports `base.css` or `globals.css` uses it
+directly and does not redeclare it. Tailwind's own `sr-only` is equivalent, and
+the components use both; reach for `visually-hidden` when the text should appear
+at a breakpoint, since only it has the `-until-*` companion.
+
 ### The two build conditions
 
 The package ships both a compiled browser build and its source, selected by the bundler:
@@ -361,13 +368,14 @@ additive rather than a migration.
 The window layout is tokens too, so an application cannot pick its own rail width and
 end up a few pixels out of step with the one beside it.
 
-| Token                   | Default | What it is                       |
-| ----------------------- | ------- | -------------------------------- |
-| `--rail-width`          | 56px    | The icon-only side rail.         |
-| `--rail-width-expanded` | 236px   | The labelled rail.               |
-| `--sidebar-width`       | 256px   | The secondary navigation column. |
-| `--topbar-height`       | 48px    | The window title row.            |
-| `--statusbar-height`    | 28px    | The bottom readout strip.        |
+| Token                   | Default | What it is                            |
+| ----------------------- | ------- | ------------------------------------- |
+| `--rail-width`          | 56px    | The icon-only side rail.              |
+| `--rail-width-expanded` | 236px   | The labelled rail.                    |
+| `--sidebar-width`       | 256px   | The secondary navigation column.      |
+| `--panel-width`         | 390px   | A side pane, or that pane as a sheet. |
+| `--topbar-height`       | 48px    | The window title row.                 |
+| `--statusbar-height`    | 28px    | The bottom readout strip.             |
 
 Override them in the app's stylesheet if a product genuinely needs different
 geometry. The Storybook **Layout** section shows each region at its real size.

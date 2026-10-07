@@ -11,8 +11,9 @@ import { Heading } from '../../ui/typography'
  * one where drift is most visible: label sizes, control widths and description
  * placement all wander unless something fixes them.
  *
- * The row is a two-column layout at a fixed label width, so controls line up
- * down the page regardless of how long the labels are. `SettingsRow` also
+ * The row puts the label and description at the start and the control at the
+ * end (stacked on a narrow window), so controls line up down the page's end
+ * edge regardless of how long the labels are. `SettingsRow` also
  * exposes its label and description through the shared form-field context to
  * the first control inside it. `SettingsField` is the visual stacked layout;
  * use `FormField` when the control needs label, help, or validation wiring.

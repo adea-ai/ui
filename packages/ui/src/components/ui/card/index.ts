@@ -1,5 +1,6 @@
 export {
   Card,
+  cardVariants,
   CardAction,
   CardContent,
   CardDescription,

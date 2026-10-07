@@ -140,3 +140,36 @@ export const NotAnAvatar: Story = {
     </div>
   ),
 }
+
+/**
+ * `monochrome` repaints a brand mark's own fills in the tile's glyph colour. A
+ * vendor's hex is chosen for a white page and can vanish on a dark tile; the
+ * repainted mark is recognisable by its shape and legible in every theme.
+ */
+export const Monochrome: Story = {
+  render: () => (
+    <div class="flex items-center gap-3">
+      <EntityIcon name="Vendor mark, own colour" size="lg" icon={<VendorMark />} />
+      <EntityIcon name="Vendor mark, monochrome" size="lg" icon={<VendorMark />} monochrome />
+      <EntityIcon
+        name="Vendor mark, monochrome on primary"
+        size="lg"
+        tone="primary"
+        icon={<VendorMark />}
+        monochrome
+      />
+    </div>
+  ),
+}
+
+/**
+ * A stand-in for a third-party logo: a path with its own fill. A real brand mark
+ * carries a hex there; the story uses a token so the workshop stays on-palette.
+ */
+function VendorMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="var(--info)" d="M12 2 22 20H2z" />
+    </svg>
+  )
+}

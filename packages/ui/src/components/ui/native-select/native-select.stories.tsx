@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { createSignal } from 'solid-js'
+import { createSignal, For } from 'solid-js'
 import { NativeSelect } from './native-select'
 
 const meta = {
@@ -52,6 +52,26 @@ export const Disabled: Story = {
         <option value="all">All relationships</option>
         <option value="explicit">Explicit</option>
       </NativeSelect>
+    </div>
+  ),
+}
+
+/**
+ * `size` is the control rung, matching `Input` and `SelectTrigger`: `sm` beside
+ * `icon-sm` toolbar actions, `md` (the default) in a form, `lg` for a touch form.
+ */
+export const Sizes: Story = {
+  render: () => (
+    <div class="flex flex-col items-start gap-2">
+      <For each={['sm', 'md', 'lg'] as const}>
+        {(size) => (
+          <NativeSelect size={size} aria-label={`Relationship kind, ${size}`} defaultValue="all">
+            <option value="all">All relationships</option>
+            <option value="explicit">Explicit</option>
+            <option value="derived">Derived</option>
+          </NativeSelect>
+        )}
+      </For>
     </div>
   ),
 }

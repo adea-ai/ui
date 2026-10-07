@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { Alert, AlertDescription, AlertTitle } from './alert'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from './alert'
 import { Button } from '../button/button'
 
 /**
@@ -94,6 +94,31 @@ export const WithoutIcon: Story = {
       <AlertDescription>
         Open the command palette with ⌘K. Every action is reachable from there.
       </AlertDescription>
+    </Alert>
+  ),
+}
+
+/**
+ * `AlertAction` puts the alert's own actions on a row under its text, aligned
+ * with the title. The buttons are `size="xs" variant="outline"` by convention,
+ * so the action reads as part of the message rather than as the page's primary
+ * action.
+ */
+export const WithAlertAction: Story = {
+  render: () => (
+    <Alert class="w-144" variant="warning">
+      <AlertTitle>Validation used smaller limits</AlertTitle>
+      <AlertDescription>
+        The source answered slowly, so the check sampled 200 documents instead of 2,000.
+      </AlertDescription>
+      <AlertAction>
+        <Button size="xs" variant="outline">
+          Retry
+        </Button>
+        <Button size="xs" variant="outline">
+          Open settings
+        </Button>
+      </AlertAction>
     </Alert>
   ),
 }

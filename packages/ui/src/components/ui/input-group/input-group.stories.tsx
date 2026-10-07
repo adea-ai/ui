@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { AtSign, Eye, Search, X } from 'lucide-solid'
-import { createSignal } from 'solid-js'
+import { createSignal, For } from 'solid-js'
 import {
   InputGroup,
   InputGroupAddon,
@@ -122,4 +122,25 @@ export const SecretWithClear: Story = {
       />
     )
   },
+}
+
+/**
+ * `size` is the control rung, matching `Input`: `sm` for a toolbar search beside
+ * `icon-sm` actions. The input, addon glyph and text follow the group.
+ */
+export const Sizes: Story = {
+  render: () => (
+    <div class="flex w-80 flex-col gap-2">
+      <For each={['sm', 'md', 'lg'] as const}>
+        {(size) => (
+          <InputGroup size={size}>
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupInput placeholder="Search the graph…" aria-label={`Search, ${size}`} />
+          </InputGroup>
+        )}
+      </For>
+    </div>
+  ),
 }

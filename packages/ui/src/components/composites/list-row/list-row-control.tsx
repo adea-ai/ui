@@ -54,6 +54,7 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
   return (
     <Polymorphic
       as={rowAs()}
+      data-slot="list-row"
       type={rowAs() === 'button' ? (local.type ?? 'button') : local.type}
       tabIndex={local.tabIndex ?? (rowAs() === 'button' || rowAs() === 'a' ? 0 : undefined)}
       aria-current={local.selected ? 'true' : undefined}

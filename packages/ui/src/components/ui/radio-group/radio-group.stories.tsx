@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { FolderOpen, Mail, NotebookPen } from 'lucide-solid'
+import { EntityIcon } from '../entity-icon/entity-icon'
 import { RadioGroup, RadioGroupItem } from './radio-group'
 
 /**
@@ -106,5 +108,40 @@ export const ExternalHelp: Story = {
         <RadioGroupItem value="calendar" label="Calendar" />
       </RadioGroup>
     </div>
+  ),
+}
+
+/**
+ * `variant="card"` draws each option as a bordered card, for a choice whose
+ * options each need a sentence. The whole card is the hit target; the selected
+ * card takes the primary edge. `media` puts an icon between the radio and the
+ * text.
+ */
+export const Cards: Story = {
+  render: () => (
+    <RadioGroup defaultValue="folder" aria-label="Source type" class="w-96">
+      <RadioGroupItem
+        variant="card"
+        value="folder"
+        label="Folder"
+        description="Index Markdown and text files from a folder on this computer."
+        media={<EntityIcon name="Folder" size="sm" icon={FolderOpen} />}
+      />
+      <RadioGroupItem
+        variant="card"
+        value="mail"
+        label="Mail"
+        description="Index messages from a connected mailbox."
+        media={<EntityIcon name="Mail" size="sm" icon={Mail} />}
+      />
+      <RadioGroupItem
+        variant="card"
+        value="notes"
+        label="Notes"
+        description="Not available on this platform."
+        disabled
+        media={<EntityIcon name="Notes" size="sm" icon={NotebookPen} />}
+      />
+    </RadioGroup>
   ),
 }

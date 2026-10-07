@@ -258,3 +258,30 @@ export const ControlledExternalOpener: Story = {
     )
   },
 }
+
+/**
+ * `size="panel"` gives a start or end sheet the shell's panel width
+ * (`--panel-width`, 390px): a side pane that moves into a sheet on a narrow
+ * window keeps the width it had beside the work, so its content does not
+ * reflow.
+ */
+export const PanelSize: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger as={Button} variant="outline">
+        Open sources
+      </SheetTrigger>
+      <SheetContent side="start" variant="edge" size="panel">
+        <SheetHeader>
+          <SheetTitle>Sources</SheetTitle>
+          <SheetDescription>Three sources, last synced 4 minutes ago.</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <p class="text-sm text-muted-foreground">
+            The same pane the wide layout shows beside the document, at the same width.
+          </p>
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
+  ),
+}

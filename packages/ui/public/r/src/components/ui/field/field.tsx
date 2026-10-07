@@ -188,10 +188,30 @@ export function FieldSet(props: ComponentProps<'fieldset'>) {
   return <fieldset class={cn('flex flex-col gap-4', local.class)} {...rest} />
 }
 
+export type FieldGroupProps = ComponentProps<'div'> & {
+  /**
+   * `2` lays the fields out in two columns from the `sm` breakpoint up — a
+   * short form of paired values (host and port, a name and a model). A field
+   * that needs the full width says `class="col-span-full"`. Below `sm` it is
+   * one column again, because two inputs side by side on a phone are each too
+   * narrow to read.
+   */
+  columns?: 1 | 2
+}
+
 /** A visual stack for related controls that does not imply fieldset semantics. */
-export function FieldGroup(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
-  return <div data-slot="field-group" class={cn('flex flex-col gap-4', local.class)} {...rest} />
+export function FieldGroup(props: FieldGroupProps) {
+  const [local, rest] = splitProps(props, ['class', 'columns'])
+  return (
+    <div
+      data-slot="field-group"
+      class={cn(
+        local.columns === 2 ? 'grid gap-4 sm:grid-cols-2' : 'flex flex-col gap-4',
+        local.class
+      )}
+      {...rest}
+    />
+  )
 }
 
 export function FieldLegend(props: ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {

@@ -1,6 +1,6 @@
 import { RadioGroup as KobalteRadioGroup } from '@kobalte/core/radio-group'
 import { Circle } from 'lucide-solid'
-import type { ComponentProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
 import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
@@ -37,6 +37,7 @@ export function RadioGroup(props: ComponentProps<typeof KobalteRadioGroup>) {
   })
   return (
     <KobalteRadioGroup
+      data-slot="radio-group"
       id={field?.id ?? local.id}
       aria-label={local['aria-label']}
       aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
@@ -58,14 +59,31 @@ export type RadioGroupItemProps = ComponentProps<typeof KobalteRadioGroup.Item> 
    */
   label?: string
   description?: string
+  /**
+   * `card` draws the option as a bordered, selectable card — for a choice
+   * whose options need a sentence each (a source type, a sync budget), where a
+   * bare radio row reads as a form field rather than a decision. The whole card
+   * is the hit target, and the selected card takes the primary edge.
+   */
+  variant?: 'default' | 'card'
+  /** A leading icon or `EntityIcon` between the radio and the text, for `card`. */
+  media?: JSX.Element
 }
 
+/**
+ * A card option's label stretches an invisible layer over the whole card, so a
+ * click anywhere on it — padding, media, description — selects the option
+ * through the label's native association with the radio input. Wrapping the
+ * card in a `<label>` would nest the item's own label inside another.
+ */
 export function RadioGroupItem(props: RadioGroupItemProps) {
   const [local, rest] = splitProps(props, [
     'class',
     'controlClass',
     'label',
     'description',
+    'variant',
+    'media',
     'children',
     'aria-label',
     'aria-labelledby',
@@ -74,11 +92,23 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
     'aria-busy',
     'title',
   ])
+  const card = () => local.variant === 'card'
 
   return (
     <KobalteRadioGroup.Item
+      data-slot="radio-group-item"
+      data-variant={card() ? 'card' : undefined}
       title={local.title}
-      class={cn('group/radio flex items-start gap-2.5', local.class)}
+      class={cn(
+        'group/radio flex items-start gap-2.5',
+        {
+          'relative rounded-lg border border-border bg-card px-3 py-2.5 transition-[color,box-shadow,border-color,background-color] ease-out hover:bg-surface-hover data-[checked]:border-primary data-[disabled]:cursor-not-allowed data-[disabled]:hover:bg-card':
+            card(),
+          'has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-primary-subtle':
+            card(),
+        },
+        local.class
+      )}
       {...rest}
     >
       <KobalteRadioGroup.ItemInput
@@ -104,10 +134,17 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
           <Circle class="size-2 fill-current" />
         </KobalteRadioGroup.ItemIndicator>
       </KobalteRadioGroup.ItemControl>
+      {local.media ? (
+        <span data-slot="radio-group-item-media" class="flex shrink-0 items-center">
+          {local.media}
+        </span>
+      ) : null}
       {local.children ?? (
         <div class="grid gap-0.5 leading-none">
           {local.label ? (
-            <KobalteRadioGroup.ItemLabel class="text-sm font-medium">
+            <KobalteRadioGroup.ItemLabel
+              class={cn('text-sm font-medium', card() && 'after:absolute after:inset-0')}
+            >
               {local.label}
             </KobalteRadioGroup.ItemLabel>
           ) : null}

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { For } from 'solid-js'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
 
 /**
@@ -132,6 +133,52 @@ export const DisabledTab: Story = {
       <TabsContent value="history">
         <p class="text-sm text-muted-foreground">No commits yet.</p>
       </TabsContent>
+    </Tabs>
+  ),
+}
+
+/**
+ * `fill` spans the container, so the underline's rule runs the full width of the
+ * pane it heads — level with the pane's other header rules — instead of
+ * stopping after the last tab.
+ */
+export const Fill: Story = {
+  render: () => (
+    <Tabs defaultValue="document" class="w-144">
+      <TabsList fill>
+        <TabsTrigger value="document">Document</TabsTrigger>
+        <TabsTrigger value="answer">Answer</TabsTrigger>
+      </TabsList>
+      <TabsContent value="document">
+        <p class="text-sm text-muted-foreground">The rule runs to the pane's end edge.</p>
+      </TabsContent>
+      <TabsContent value="answer">
+        <p class="text-sm text-muted-foreground">The answer view.</p>
+      </TabsContent>
+    </Tabs>
+  ),
+}
+
+/**
+ * `scrollable` scrolls the row sideways when its triggers outgrow it, with no
+ * visible scrollbar. The rule is painted inside the scroller, so the selected
+ * mark still sits on it rather than being clipped.
+ */
+export const Scrollable: Story = {
+  render: () => (
+    <Tabs defaultValue="overview" class="w-80">
+      <TabsList scrollable aria-label="Source settings">
+        <For each={['Overview', 'Access', 'Folders', 'Schedule', 'Validation', 'Advanced']}>
+          {(label) => <TabsTrigger value={label.toLowerCase()}>{label}</TabsTrigger>}
+        </For>
+      </TabsList>
+      <For each={['Overview', 'Access', 'Folders', 'Schedule', 'Validation', 'Advanced']}>
+        {(label) => (
+          <TabsContent value={label.toLowerCase()}>
+            <p class="text-sm text-muted-foreground">{label} settings for this source.</p>
+          </TabsContent>
+        )}
+      </For>
     </Tabs>
   ),
 }

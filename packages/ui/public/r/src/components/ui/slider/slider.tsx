@@ -42,6 +42,7 @@ export function Slider(props: SliderProps) {
 
   return (
     <KobalteSlider
+      data-slot="slider"
       class={cn(
         'relative flex touch-none flex-col justify-center select-none',
         'data-[orientation=vertical]:h-full data-[orientation=vertical]:w-5 data-[orientation=horizontal]:w-full',

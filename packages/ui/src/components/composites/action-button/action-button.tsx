@@ -115,6 +115,9 @@ export function ActionButton<T extends ValidComponent = 'button'>(props: ActionB
 
   const buttonProps = () => ({
     ...rest,
+    // The inner Button would otherwise announce itself as a plain `button`; a
+    // caller's own slot still wins.
+    'data-slot': (rest as { 'data-slot'?: string })['data-slot'] ?? 'action-button',
     variant: local.variant,
     size: local.size,
     touchTarget: local.touchTarget,

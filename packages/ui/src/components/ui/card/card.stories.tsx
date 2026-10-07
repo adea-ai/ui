@@ -10,6 +10,7 @@ import {
 } from './card'
 import { Badge } from '../badge/badge'
 import { Button } from '../button/button'
+import { ListRow } from '../../composites/list-row/list-row'
 
 /**
  * Card.
@@ -132,5 +133,45 @@ export const Minimal: Story = {
         </p>
       </CardContent>
     </Card>
+  ),
+}
+
+/**
+ * `size` is the padding rung. `sm` tightens the card and its parts together, so
+ * the header, content and footer stay aligned; `flush` drops the block padding
+ * for a card whose body is a list or a scroller running edge to edge.
+ */
+export const Sizes: Story = {
+  render: () => (
+    <div class="flex flex-wrap items-start gap-4">
+      <Card class="w-72">
+        <CardHeader>
+          <CardTitle>Default</CardTitle>
+          <CardDescription>16px padding and gap.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p class="text-sm text-muted-foreground">The local service is running.</p>
+        </CardContent>
+      </Card>
+      <Card size="sm" class="w-72">
+        <CardHeader>
+          <CardTitle>Small</CardTitle>
+          <CardDescription>12px padding and gap.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p class="text-sm text-muted-foreground">The local service is running.</p>
+        </CardContent>
+        <CardFooter>
+          <Button size="xs" variant="outline">
+            Restart
+          </Button>
+        </CardFooter>
+      </Card>
+      <Card size="flush" class="w-72">
+        <ListRow>Notes</ListRow>
+        <ListRow>Mail</ListRow>
+        <ListRow>Chat</ListRow>
+      </Card>
+    </div>
   ),
 }

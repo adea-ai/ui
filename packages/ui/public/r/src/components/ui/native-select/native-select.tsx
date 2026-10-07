@@ -4,7 +4,14 @@ import { createEffect, For, onMount, Show, splitProps } from 'solid-js'
 import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
-export type NativeSelectProps = ComponentProps<'select'> & {
+export type NativeSelectProps = Omit<ComponentProps<'select'>, 'size'> & {
+  /**
+   * The control rung, matching `Input` and `SelectTrigger`: `sm` for a dense
+   * toolbar or pane filter, `md` (the default) everywhere else. This replaces the
+   * native `size` attribute, which turns a select into a list box — a different
+   * control that this styled single-line select is not.
+   */
+  size?: 'sm' | 'md' | 'lg'
   /** Render the choices from data instead of raw option children. */
   options?: readonly NativeSelectOption[]
   /** Initialize an uncontrolled selection after its native options mount. */
@@ -62,6 +69,7 @@ export type NativeSelectOption = Readonly<{
 export function NativeSelect(props: NativeSelectProps) {
   const [local, rest] = splitProps(props, [
     'class',
+    'size',
     'children',
     'defaultValue',
     'options',
@@ -108,7 +116,13 @@ export function NativeSelect(props: NativeSelectProps) {
         aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
         aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
         class={cn(
-          'h-control-md min-w-0 appearance-none rounded-md border border-input bg-transparent px-control-md pr-9 text-sm',
+          'min-w-0 appearance-none rounded-md border border-input bg-transparent',
+          {
+            'h-control-sm px-control-sm pr-8 text-xs': local.size === 'sm',
+            'h-control-md px-control-md pr-9 text-sm':
+              local.size === 'md' || local.size === undefined,
+            'h-control-lg px-control-lg pr-9 text-sm': local.size === 'lg',
+          },
           'transition-[color,box-shadow,border-color] ease-out outline-none',
           'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
           'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive-subtle',
@@ -132,7 +146,10 @@ export function NativeSelect(props: NativeSelectProps) {
       <ChevronDownIcon
         data-slot="native-select-icon"
         aria-hidden="true"
-        class="pointer-events-none absolute end-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        class={cn(
+          'pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground',
+          local.size === 'sm' ? 'size-3.5' : 'size-4'
+        )}
       />
     </span>
   )

@@ -60,6 +60,16 @@ const sheetVariants = cva(
         edge: '',
         inset: 'panel-dialog-inset w-lg rounded-xl border',
       },
+      /**
+       * `panel` gives a start or end sheet the shell's panel width
+       * (`--panel-width`, 390px) — the width a pane that collapses into a sheet
+       * on a narrow window already had beside the work, so its content does not
+       * reflow when it moves. Top and bottom sheets span the window either way.
+       */
+      size: {
+        default: '',
+        panel: '',
+      },
     },
     compoundVariants: [
       {
@@ -82,8 +92,15 @@ const sheetVariants = cva(
         variant: 'edge',
         class: 'inset-y-0 end-0 h-full w-80 max-w-[85vw] rounded-s-xl border-s',
       },
+      {
+        side: ['start', 'end'],
+        variant: 'edge',
+        size: 'panel',
+        class: 'w-panel max-w-[92vw]',
+      },
+      { side: ['start', 'end'], variant: 'inset', size: 'panel', class: 'w-panel' },
     ],
-    defaultVariants: { side: 'end', variant: 'edge' },
+    defaultVariants: { side: 'end', variant: 'edge', size: 'default' },
   }
 )
 
@@ -107,6 +124,7 @@ export function SheetContent(props: SheetContentProps) {
     'class',
     'side',
     'variant',
+    'size',
     'children',
     'closeButton',
     'closeLabel',
@@ -134,7 +152,7 @@ export function SheetContent(props: SheetContentProps) {
       <KobalteDialogContent
         data-variant={variant()}
         class={cn(
-          sheetVariants({ side: local.side, variant: variant() }),
+          sheetVariants({ side: local.side, variant: variant(), size: local.size }),
           'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:duration-200',
           'data-closed:animate-out data-closed:fade-out-0 data-closed:duration-150',
           local.class

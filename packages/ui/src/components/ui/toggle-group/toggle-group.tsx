@@ -38,6 +38,7 @@ export function ToggleGroup(props: ToggleGroupProps) {
 
   return (
     <KobalteToggleGroup
+      data-slot="toggle-group"
       multiple={local.multiple ?? false}
       class={cn(
         'flex w-fit flex-row items-center',
@@ -68,6 +69,7 @@ export function ToggleGroupItem(props: ToggleGroupItemProps) {
 
   return (
     <KobalteToggleGroup.Item
+      data-slot="toggle-group-item"
       class={cn(toggleVariants({ variant: local.variant, size: local.size }), local.class)}
       onKeyDown={(event) => {
         invokeEventHandler(local.onKeyDown, event)

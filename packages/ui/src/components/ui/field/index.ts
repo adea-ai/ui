@@ -10,6 +10,7 @@ export {
   FieldSeparator,
   FieldSet,
   FieldTextArea,
+  type FieldGroupProps,
   type FormFieldProps,
 } from './field'
 export { NumberField } from './number-field'

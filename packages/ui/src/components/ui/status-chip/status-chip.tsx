@@ -90,6 +90,7 @@ export function StatusChip(props: StatusChipProps) {
 
   const chip = (
     <span
+      data-slot="status-chip"
       class={cn(
         'inline-flex w-fit items-center gap-1.5 text-xs font-medium whitespace-nowrap',
         labelTone[local.tone ?? 'neutral'],

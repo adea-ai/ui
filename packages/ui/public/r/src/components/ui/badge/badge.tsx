@@ -63,6 +63,7 @@ export function Badge<T extends ValidComponent = 'span'>(props: BadgeProps<T>) {
   return (
     <Polymorphic
       as="span"
+      data-slot="badge"
       class={cn(badgeVariants({ variant: local.variant, size: local.size }), local.class)}
       {...(rest as ComponentProps<'span'>)}
     />
