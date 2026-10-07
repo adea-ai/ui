@@ -47,6 +47,14 @@ export type ItemProps = ComponentProps<'div'> &
     media?: JSX.Element
     /** A trailing slot: a badge, a timestamp, a menu trigger. */
     trailing?: JSX.Element
+    /**
+     * Move the trailing slot onto its own line, end-aligned under the body, once
+     * the item is narrower than 28rem — the width `ListRow` stacks its trailing
+     * controls at. Off by default: a row of badges and an icon button fits beside
+     * the body, but a pair of labelled buttons squeezes a phone-width body to a
+     * few characters.
+     */
+    stackTrailing?: boolean
   }
 
 export function Item(props: ItemProps) {
@@ -56,13 +64,22 @@ export function Item(props: ItemProps) {
     'size',
     'media',
     'trailing',
+    'stackTrailing',
     'children',
   ])
 
   return (
     <div
       data-slot="item"
-      class={cn(itemVariants({ variant: local.variant, size: local.size }), local.class)}
+      data-stack-trailing={local.stackTrailing ? '' : undefined}
+      class={cn(
+        itemVariants({ variant: local.variant, size: local.size }),
+        // The item is its own query container: the trailing slot answers to the
+        // width the item was given, not the viewport, so an item in a narrow
+        // column of a wide window stacks too.
+        { '@container/item flex-wrap': local.stackTrailing },
+        local.class
+      )}
       {...rest}
     >
       <Show when={local.media}>
@@ -77,7 +94,13 @@ export function Item(props: ItemProps) {
         {local.children}
       </div>
       <Show when={local.trailing}>
-        <span data-slot="item-trailing" class="flex shrink-0 items-center gap-2">
+        <span
+          data-slot="item-trailing"
+          class={cn('flex shrink-0 items-center gap-2', {
+            '@max-md/item:w-full @max-md/item:flex-wrap @max-md/item:justify-end':
+              local.stackTrailing,
+          })}
+        >
           {local.trailing}
         </span>
       </Show>
@@ -90,12 +113,25 @@ export function ItemTitle(props: ComponentProps<'div'>) {
   return <div data-slot="item-title" class={cn('truncate font-medium', local.class)} {...rest} />
 }
 
-export function ItemDescription(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+export type ItemDescriptionProps = ComponentProps<'div'> & {
+  /**
+   * Clamp to two lines. On by default, so a grid of items keeps one height; pass
+   * `false` where the description is the content — a setting's explanation, an
+   * error the reader has to read in full.
+   */
+  clamp?: boolean
+}
+
+export function ItemDescription(props: ItemDescriptionProps) {
+  const [local, rest] = splitProps(props, ['class', 'clamp'])
   return (
     <div
       data-slot="item-description"
-      class={cn('text-muted-foreground line-clamp-2 text-xs text-pretty', local.class)}
+      class={cn(
+        'text-muted-foreground text-xs text-pretty',
+        { 'line-clamp-2': local.clamp !== false },
+        local.class
+      )}
       {...rest}
     />
   )

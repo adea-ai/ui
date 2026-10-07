@@ -1,7 +1,9 @@
-<!-- @dsCard group="Data display" height=240 -->
+<!-- @dsCard group="Data display" height=520 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
-  const { render, html, Icons, Item, ItemTitle, ItemDescription } = window.AdeaUI
+  const { render, html, Icons, Item, ItemTitle, ItemDescription, Button } = window.AdeaUI
+  const fullDescription =
+    'Signed updates download in the background and install the next time the app is idle. Open workspaces and drafts are restored after the restart.'
   render(
     () => html`
       <div style="display:flex;flex-direction:column;gap:12px;width:384px">
@@ -16,6 +18,19 @@
         <${Item} variant="muted" media=${html`<${Icons.FileText} />`}
           ><${ItemTitle}>Muted<//
           ><${ItemDescription}>Inset: a quoted message, a disabled row.<//><//
+        >
+        <${Item} variant="outline" media=${html`<${Icons.FileText} />`}
+          ><${ItemTitle}>Unclamped description<//
+          ><${ItemDescription} clamp=${false}>${fullDescription}<//><//
+        >
+        <${Item}
+          variant="outline"
+          style="width:288px"
+          stackTrailing=${true}
+          media=${html`<${Icons.FileText} />`}
+          trailing=${html`<${Button} size="sm" variant="outline">Rename<//><${Button} size="sm" variant="destructive">Remove<//>`}
+          ><${ItemTitle}>Stacked actions<//
+          ><${ItemDescription}>Below 28rem the actions move under the body.<//><//
         >
       </div>
     `,
