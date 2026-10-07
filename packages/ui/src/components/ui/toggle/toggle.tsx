@@ -15,12 +15,12 @@ import { cn } from '#lib/utils'
  * Kobalte supplies the pressed state and the keyboard behaviour; the styling
  * adds the one thing a headless primitive cannot know — that a pressed toggle
  * in a toolbar should read as *filled*, not merely outlined. Pressed reads on
- * the accent rung (`primary-subtle` with the accent glyph): pressed is the
+ * the accent rung (`primary-subtle`, foreground text, accent glyph): pressed is the
  * control's on state, the same family the checked checkbox and switch own, so
  * it keeps a touch of the user's accent instead of a neutral fill.
  */
 export const toggleVariants = cva(
-  `${controlInteractive} inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap select-none hover:bg-surface-hover hover:text-foreground data-[pressed]:bg-primary-subtle data-[pressed]:text-primary disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0`,
+  `${controlInteractive} inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap select-none hover:bg-surface-hover hover:text-foreground data-[pressed]:bg-primary-subtle data-[pressed]:text-foreground data-[pressed]:[&_svg]:text-primary disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0`,
   {
     variants: {
       variant: {

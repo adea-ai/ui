@@ -84,6 +84,11 @@ test('the accent rung renders on the states that report a choice', async ({ page
   await expect(pressedToggle).toHaveAttribute('data-pressed', '')
   await expect(await backgroundOf(pressedToggle)).toBe(subtle)
   await expect(await backgroundOf(idleToggle)).not.toBe(subtle)
+  // The label stays foreground: accent text on the accent tint fails 4.5:1 in
+  // some themes, so only the glyph carries the accent.
+  await expect(await pressedToggle.evaluate((element) => getComputedStyle(element).color)).not.toBe(
+    await primaryOf(page)
+  )
 
   // The command palette's selected row sits on the same rung.
   const input = page.getByTestId('palette').locator('input')
