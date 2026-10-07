@@ -284,9 +284,13 @@ appearance view, and `ThemeToggle` is the light/dark switch on its own.
 `SettingsLayout` composes a controlled vertical tab root, grouped `SettingsNavigation`,
 and a scrollable panel viewport. Supply the selected `value`, `onChange`, navigation
 groups, and matching `TabsContent` panels. The host owns URL or preference updates
-and panel content; the layout contracts its rail at narrow widths, reports repeated
-activation through `onReselect`, and reveals the selected row by default. Use
-`SettingsNavigation` directly when you already own the surrounding tabs composition.
+and panel content; below 48rem of viewport width the rail becomes a horizontal,
+scrollable strip of tabs above the panels (groups in order, Left/Right keys,
+`aria-orientation="horizontal"`), and `navigationLayout="rail" | "strip"` pins one
+shape at every width. The layout reports repeated activation through `onReselect`
+and reveals the selected row on either axis by default. Use `SettingsNavigation`
+directly when you already own the surrounding tabs composition; it follows the
+enclosing `Tabs` orientation.
 Shared tabs associate panels with custom trigger IDs in browser and server renders;
 an explicit panel `aria-labelledby` takes precedence. Independent tab roots keep
 their associations separate.

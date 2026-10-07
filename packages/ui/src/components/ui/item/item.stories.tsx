@@ -103,3 +103,74 @@ export const Empty: Story = {
     </div>
   ),
 }
+
+const fullDescription =
+  'Signed updates download in the background and install the next time the app is idle. Your open workspaces, drafts and terminal sessions are restored after the restart, and nothing installs while a run is in progress.'
+
+/**
+ * `clamp={false}` shows the whole description. The default two-line clamp keeps a
+ * grid of results one height; a setting or an error the reader must read in
+ * full opts out.
+ */
+export const FullDescription: Story = {
+  render: () => (
+    <div class="flex w-96 flex-col gap-3">
+      <Item variant="outline" media={<FileText />}>
+        <ItemTitle>Clamped (default)</ItemTitle>
+        <ItemDescription>{fullDescription}</ItemDescription>
+      </Item>
+      <Item variant="outline" media={<FileText />}>
+        <ItemTitle>Unclamped</ItemTitle>
+        <ItemDescription clamp={false}>{fullDescription}</ItemDescription>
+      </Item>
+    </div>
+  ),
+}
+
+function workspaceActions(name: string) {
+  return (
+    <>
+      <Button size="sm" variant="outline" aria-label={`Rename ${name}`}>
+        Rename
+      </Button>
+      <Button size="sm" variant="destructive" aria-label={`Remove ${name}`}>
+        Remove
+      </Button>
+    </>
+  )
+}
+
+/**
+ * `stackTrailing` moves the trailing slot under the body once the item is
+ * narrower than 28rem, end-aligned, so labelled actions do not squeeze the body
+ * to a few characters. The first item is wide and keeps one line; the second is
+ * phone-width and stacks.
+ */
+export const StackedTrailing: Story = {
+  render: () => {
+    return (
+      <div class="flex flex-col gap-3">
+        <Item
+          variant="outline"
+          class="w-[36rem]"
+          stackTrailing
+          media={<FileText />}
+          trailing={workspaceActions('the wide workspace')}
+        >
+          <ItemTitle>Design system</ItemTitle>
+          <ItemDescription>Shared by everyone in the organisation.</ItemDescription>
+        </Item>
+        <Item
+          variant="outline"
+          class="w-80"
+          stackTrailing
+          media={<FileText />}
+          trailing={workspaceActions('the narrow workspace')}
+        >
+          <ItemTitle>Design system</ItemTitle>
+          <ItemDescription>Shared by everyone in the organisation.</ItemDescription>
+        </Item>
+      </div>
+    )
+  },
+}

@@ -150,7 +150,9 @@ describe('registry', () => {
       resolve(import.meta.dir, '../src/components/composites/settings/index.ts'),
       'utf8'
     )
-    expect(settingsExports).toContain('export { SettingsLayout, type SettingsLayoutProps }')
+    expect(settingsExports).toMatch(
+      /export \{\s*SettingsLayout,\s*type SettingsLayoutProps,\s*type SettingsNavigationLayout,?\s*\}/
+    )
     expect(settingsExports).toContain('SettingsNavigation,')
     expect(targets).toContain('components/composites/settings/settings-layout.tsx')
     expect(targets).toContain('components/composites/settings/settings-navigation.tsx')

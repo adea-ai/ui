@@ -1,3 +1,4 @@
+import type { JSX } from 'solid-js'
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { CodeBlock, InlineCode } from './code-block'
 
@@ -11,6 +12,14 @@ const sample = `export function keyedRows<T, K>(
     return list().map((item) => next.get(key(item)) ?? create(item))
   })
 }`
+
+const tallSample = Array.from(
+  { length: 60 },
+  (_, index) => `const line${index + 1} = ${index + 1}`
+).join('\n')
+
+const longLines = `$ bun run --cwd packages/ui check:packed-settings-navigation --reporter=line --retries=0 --workers=1
+error: expected the settings navigation to reveal the selected row inside its scroller, but the row was clipped by 48px on its trailing edge`
 
 const meta = {
   title: 'UI/Code Block',
@@ -29,11 +38,13 @@ const meta = {
     language: { control: 'text' },
     complete: { control: 'boolean' },
     showLineNumbers: { control: 'boolean' },
+    wrap: { control: 'boolean' },
+    maxHeight: { control: 'text' },
   },
   decorators: [
-    () => (
+    (Story: () => JSX.Element) => (
       <div class="w-[36rem]">
-        <CodeBlock code={sample} language="tsx" />
+        <Story />
       </div>
     ),
   ],
@@ -68,11 +79,28 @@ export const Streaming: Story = {
  */
 export const TallRepeatsActions: Story = {
   args: {
-    code: Array.from({ length: 60 }, (_, index) => `const line${index + 1} = ${index + 1}`).join(
-      '\n'
-    ),
+    code: tallSample,
     language: 'ts',
   },
+}
+
+/**
+ * `maxHeight` caps the body and scrolls it, so a long log or file stays one
+ * screen tall inside a message. The header stays put and the region keeps its
+ * tab stop, so the keyboard scrolls it too. Under the tall threshold, the action
+ * row is not repeated: it never leaves the reader's view.
+ */
+export const MaxHeight: Story = {
+  args: { code: tallSample, language: 'ts', maxHeight: 240, showLineNumbers: true },
+}
+
+/**
+ * `wrap` soft-wraps long lines instead of scrolling sideways — for a command or a
+ * log line in a narrow column, where sideways scrolling hides the end of the
+ * message. Line numbers stay on the first visual line of each wrapped line.
+ */
+export const Wrap: Story = {
+  args: { code: longLines, language: 'sh', wrap: true, showLineNumbers: true },
 }
 
 /**

@@ -7,7 +7,7 @@ import { Input } from '../../ui/input/input'
 import { Switch } from '../../ui/switch/switch'
 import { TabsContent } from '../../ui/tabs/tabs'
 import { SettingsField, SettingsPage, SettingsRow, SettingsSection } from './settings'
-import { SettingsLayout } from './settings-layout'
+import { SettingsLayout, type SettingsNavigationLayout } from './settings-layout'
 import type { SettingsNavigationGroup } from './settings-navigation'
 
 /**
@@ -175,60 +175,89 @@ export const WithSectionAction: Story = {
   ),
 }
 
-/** Grouped vertical settings tabs whose routes and controlled selection belong to the host. */
-export const GroupedNavigation: Story = {
-  render: () => {
-    const [value, setValue] = createSignal('account')
-    const [reselected, setReselected] = createSignal('none')
-    const groups: readonly SettingsNavigationGroup[] = [
-      {
-        label: 'Workspace',
-        items: [
-          { value: 'account', label: 'Account', icon: <UserRound aria-hidden="true" /> },
-          { value: 'preferences', label: 'Preferences', icon: <Settings aria-hidden="true" /> },
-          { value: 'notifications', label: 'Notifications', icon: <Bell aria-hidden="true" /> },
-        ],
-      },
-      {
-        label: 'Privacy',
-        items: [
-          { value: 'data', label: 'Data controls', icon: <Database aria-hidden="true" /> },
-          { value: 'access', label: 'Access', icon: <ShieldCheck aria-hidden="true" /> },
-        ],
-      },
-    ]
+function GroupedNavigationDemo(props: { id: string; navigationLayout?: SettingsNavigationLayout }) {
+  const [value, setValue] = createSignal('account')
+  const [reselected, setReselected] = createSignal('none')
+  const groups: readonly SettingsNavigationGroup[] = [
+    {
+      label: 'Workspace',
+      items: [
+        { value: 'account', label: 'Account', icon: <UserRound aria-hidden="true" /> },
+        { value: 'preferences', label: 'Preferences', icon: <Settings aria-hidden="true" /> },
+        { value: 'notifications', label: 'Notifications', icon: <Bell aria-hidden="true" /> },
+      ],
+    },
+    {
+      label: 'Privacy',
+      items: [
+        { value: 'data', label: 'Data controls', icon: <Database aria-hidden="true" /> },
+        { value: 'access', label: 'Access', icon: <ShieldCheck aria-hidden="true" /> },
+      ],
+    },
+  ]
 
-    return (
-      <div class="flex h-screen flex-col">
-        <SettingsLayout
-          id="settings-navigation-story"
-          value={value()}
-          onChange={(next) => setValue(next)}
-          aria-label="Settings sections"
-          groups={groups}
-          class="min-h-0 min-w-0 flex-1"
-          onReselect={setReselected}
-        >
-          <TabsContent value="account">
-            <SettingsSection title="Account" description="Session and product information." />
-          </TabsContent>
-          <TabsContent value="preferences">
-            <SettingsSection title="Preferences" description="Workspace defaults." />
-          </TabsContent>
-          <TabsContent value="notifications">
-            <SettingsSection title="Notifications" description="Where updates are delivered." />
-          </TabsContent>
-          <TabsContent value="data">
-            <SettingsSection title="Data controls" description="Retention and private content." />
-          </TabsContent>
-          <TabsContent value="access">
-            <SettingsSection title="Access" description="Permissions for this workspace." />
-          </TabsContent>
-        </SettingsLayout>
-        <output class="sr-only" aria-label="Reselected settings section">
-          {reselected()}
-        </output>
-      </div>
+  return (
+    <div class="flex h-screen flex-col">
+      <SettingsLayout
+        id={props.id}
+        value={value()}
+        onChange={(next) => setValue(next)}
+        aria-label="Settings sections"
+        groups={groups}
+        navigationLayout={props.navigationLayout}
+        class="min-h-0 min-w-0 flex-1"
+        onReselect={setReselected}
+      >
+        <TabsContent value="account">
+          <SettingsSection title="Account" description="Session and product information." />
+        </TabsContent>
+        <TabsContent value="preferences">
+          <SettingsSection title="Preferences" description="Workspace defaults." />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <SettingsSection title="Notifications" description="Where updates are delivered." />
+        </TabsContent>
+        <TabsContent value="data">
+          <SettingsSection title="Data controls" description="Retention and private content." />
+        </TabsContent>
+        <TabsContent value="access">
+          <SettingsSection title="Access" description="Permissions for this workspace." />
+        </TabsContent>
+      </SettingsLayout>
+      <output class="sr-only" aria-label="Reselected settings section">
+        {reselected()}
+      </output>
+    </div>
+  )
+}
+
+/**
+ * Grouped vertical settings tabs whose routes and controlled selection belong to
+ * the host. Below 48rem of viewport width the rail becomes the strip shown in
+ * `NarrowStrip`; resize the canvas to see it switch.
+ */
+export const GroupedNavigation: Story = {
+  render: () => <GroupedNavigationDemo id="settings-navigation-story" />,
+}
+
+/**
+ * The narrow-width shape, pinned with `navigationLayout="strip"`: one horizontal,
+ * scrollable row of tabs above the panels, groups in order and separated by a
+ * rule. It is a horizontal tab list, so Left/Right move between sections, and
+ * each tab keeps its group as its accessible description.
+ */
+export const NarrowStrip: Story = {
+  render: () => <GroupedNavigationDemo id="settings-navigation-strip" navigationLayout="strip" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const list = canvas.getByRole('tablist', { name: 'Settings sections' })
+    expect(list.getAttribute('aria-orientation')).toBe('horizontal')
+    const account = canvas.getByRole('tab', { name: 'Account' })
+    const data = canvas.getByRole('tab', { name: 'Data controls' })
+    expect(account.getAttribute('aria-selected')).toBe('true')
+    const groupLabel = canvasElement.querySelector(
+      `#${CSS.escape(data.getAttribute('aria-describedby') ?? '')}`
     )
+    expect(groupLabel?.textContent).toBe('Privacy')
   },
 }

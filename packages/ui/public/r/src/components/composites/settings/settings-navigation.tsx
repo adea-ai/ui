@@ -1,5 +1,6 @@
+import { useTabsContext } from '@kobalte/core/tabs'
 import type { JSX } from 'solid-js'
-import { createEffect, createUniqueId, onCleanup, splitProps } from 'solid-js'
+import { createEffect, createUniqueId, onCleanup, Show, splitProps } from 'solid-js'
 import { cn } from '../../../lib/utils'
 import { sidebarNavItemClass, sidebarNavItemStateClass } from '../../layout/sidebar-nav/sidebar-nav'
 import { TabsList, TabsTrigger, type TabsListProps } from '../../ui/tabs'
@@ -47,6 +48,14 @@ export type SettingsNavigationProps = Omit<
  * the controlled value, panel content, icons and any persistence or routing.
  * Use ordinary tabs for a short, ungrouped row of view choices.
  *
+ * The shape follows the enclosing `Tabs` orientation rather than a prop of its
+ * own, so the visual axis can never disagree with the arrow keys Kobalte
+ * binds: `vertical` is the grouped rail, `horizontal` is a single scrollable
+ * strip of tabs (what `SettingsLayout` shows below 48rem). The strip keeps the
+ * groups in order, separated by a rule; their visible headings drop out, since
+ * an overline between tabs reads as another tab, but each tab still carries its
+ * group as its accessible description.
+ *
  * Kobalte owns roving focus, arrow keys, selection and tab/panel ARIA. This
  * component adds no URL, storage or host-specific state. Set
  * `revealSelected={false}` when the surrounding layout does not use an internal
@@ -88,12 +97,16 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
     'onReselect',
     'revealSelected',
   ])
+  const tabs = useTabsContext()
+  const strip = () => tabs.orientation() === 'horizontal'
   const triggers = new Map<string, HTMLButtonElement>()
   const groupIdPrefix = `settings-navigation-${createUniqueId()}`
 
   createEffect(() => {
     const value = local.value
     const reveal = local.revealSelected
+    // Tracked so a rail that becomes a strip (or back) re-reveals on the new axis.
+    strip()
     if (reveal === false) return
 
     const revealCurrent = () => {
@@ -111,9 +124,17 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
     <TabsList
       data-slot="settings-navigation"
       aria-label={local['aria-label']}
-      orientation="vertical"
+      orientation={tabs.orientation()}
       class={cn(
-        'flex max-h-full min-h-0 min-w-0 shrink-0 flex-col items-stretch justify-start gap-2 overflow-x-hidden overflow-y-auto px-2 py-2',
+        // Positioned so the visually hidden group names are laid out (and
+        // clipped) inside the list: unpositioned, their absolute boxes escape a
+        // scrolled strip and widen the page by however far it has scrolled.
+        'relative flex min-w-0 shrink-0 justify-start',
+        strip()
+          ? // The block padding is the room the focus ring needs: a scroller
+            // clips at its padding edge, and this one scrolls sideways only.
+            'scroll-fade w-full flex-row items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-border px-2 py-1.5'
+          : 'max-h-full min-h-0 flex-col items-stretch gap-2 overflow-x-hidden overflow-y-auto px-2 py-2',
         local.class
       )}
       {...rest}
@@ -124,24 +145,30 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
           <div
             role="none"
             data-slot="settings-navigation-group"
-            class="flex min-w-0 flex-col gap-0.5"
+            class={cn(
+              'flex gap-0.5',
+              strip()
+                ? 'shrink-0 flex-row items-center not-first:ms-1 not-first:border-s not-first:border-border not-first:ps-2'
+                : 'min-w-0 flex-col'
+            )}
           >
             <span id={groupId} class="sr-only">
               {group.label}
             </span>
-            {/* The overline role on the sidebar's own muted foreground. */}
-            <Text
-              variant="overline"
-              tone="inherit"
-              aria-hidden="true"
-              class="px-2 py-1.5 text-sidebar-muted-foreground"
-            >
-              {group.label}
-            </Text>
+            <Show when={!strip()}>
+              {/* The overline role on the sidebar's own muted foreground. */}
+              <Text
+                variant="overline"
+                tone="inherit"
+                aria-hidden="true"
+                class="px-2 py-1.5 text-sidebar-muted-foreground"
+              >
+                {group.label}
+              </Text>
+            </Show>
             {group.items.map((item) => (
               <TabsTrigger
                 data-slot="settings-navigation-trigger"
-                orientation="vertical"
                 aria-describedby={groupId}
                 value={item.value}
                 disabled={item.disabled}
@@ -155,11 +182,12 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
                 class={cn(
                   sidebarNavItemClass,
                   sidebarNavItemStateClass.idle,
-                  'h-row-lg w-full justify-start border-0 px-3 py-2 text-left data-[selected]:bg-primary-subtle data-[selected]:text-foreground'
+                  'h-row-lg justify-start border-0 px-3 py-2 text-left data-[selected]:bg-primary-subtle data-[selected]:text-foreground',
+                  strip() ? 'w-auto shrink-0' : 'w-full'
                 )}
               >
                 {item.icon}
-                <span class="min-w-0 truncate">{item.label}</span>
+                <span class={cn('min-w-0', { truncate: !strip() })}>{item.label}</span>
               </TabsTrigger>
             ))}
           </div>

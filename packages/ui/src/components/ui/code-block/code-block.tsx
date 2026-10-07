@@ -69,6 +69,19 @@ export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children'> & {
   showLineNumbers?: boolean
   /** The height above which the action row is repeated below the block. */
   tallThreshold?: number
+  /**
+   * Cap the code body's height and scroll it vertically past that. A number is
+   * pixels; a string is any CSS length (`'20rem'`, `'50vh'`). Unset, the block
+   * grows with its content.
+   */
+  maxHeight?: number | string
+  /**
+   * Soft-wrap long lines inside the block instead of scrolling sideways. Off by
+   * default: wrapped code loses its column alignment, so it is for prose-like
+   * output (logs, long commands) in a narrow column. Wraps the plain renderer and
+   * any `pre` inside `highlight` output; line numbers stay on the first visual line.
+   */
+  wrap?: boolean
 }
 
 /** The height a block must exceed before its actions are repeated. */
@@ -103,6 +116,8 @@ export function CodeBlock(props: CodeBlockProps) {
     'lineHeight',
     'showLineNumbers',
     'tallThreshold',
+    'maxHeight',
+    'wrap',
     'class',
     'ref',
   ])
@@ -114,6 +129,8 @@ export function CodeBlock(props: CodeBlockProps) {
   const label = () => local.title ?? local.language ?? 'code'
   const regionLabel = () => (local.language ? `${local.language} code` : 'code')
   const lines = createMemo(() => local.code.replace(/\n$/, '').split('\n'))
+  const maxHeight = () =>
+    typeof local.maxHeight === 'number' ? `${local.maxHeight}px` : local.maxHeight
 
   const copy = async () => {
     const ok = await copyText(local.code)
@@ -160,7 +177,15 @@ export function CodeBlock(props: CodeBlockProps) {
         <Actions />
       </div>
       <div
-        class="scroll-fade overflow-x-auto"
+        data-slot="code-block-body"
+        data-wrap={local.wrap ? '' : undefined}
+        class={cn('scroll-fade overflow-x-auto', {
+          // A capped body scrolls on both axes; the region is already a tab stop,
+          // so the keyboard reaches the vertical overflow the same way.
+          'overflow-y-auto': local.maxHeight !== undefined,
+          '[&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]': local.wrap,
+        })}
+        style={maxHeight() === undefined ? undefined : { 'max-height': maxHeight() }}
         // A region that scrolls must be focusable, and a tab stop needs a name.
         tabindex="0"
         role="region"
@@ -181,7 +206,7 @@ export function CodeBlock(props: CodeBlockProps) {
                         >
                           {index() + 1}
                         </span>
-                        <span>{line || ' '}</span>
+                        <span class={cn({ 'min-w-0': local.wrap })}>{line || ' '}</span>
                       </span>
                     )}
                   </For>

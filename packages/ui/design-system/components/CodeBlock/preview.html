@@ -1,7 +1,16 @@
-<!-- @dsCard group="Code" height=220 -->
+<!-- @dsCard group="Code" height=420 -->
 <div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
 <script>
   const { render, html, Icons, CodeBlock, InlineCode } = window.AdeaUI
+  // wrap and maxHeight: a long log stays one column wide and a few lines tall.
+  const logLines = [
+    '$ bun run --cwd packages/ui check:packed-settings-navigation --reporter=line --retries=0',
+    'Building the packed fixture from the compiled and the Solid-source export conditions',
+    'ok 1 named groups keep controlled tabs related to their panels and support vertical keys',
+    'ok 2 below 48rem the rail becomes a scrollable strip of tabs above the panels',
+    'ok 3 crossing the breakpoint switches between rail and strip in place',
+    'ok 4 a row-forced navigation keeps earlier rows reachable after a reveal pan',
+  ].join('\n')
   render(
     () => html`
       <div style="width:576px;display:flex;flex-direction:column;gap:12px">
@@ -9,6 +18,12 @@
           complete=${true}
           language="tsx"
           code=${'import { Button } from \'@adea-ai/ui\'\n\nexport function Save() {\n  return <Button variant="default" size="sm">Save</Button>\n}'}
+        />
+        <${CodeBlock}
+          language="sh"
+          wrap=${true}
+          maxHeight=${120}
+          code=${logLines}
         />
         <p style="margin:0;font-size:14px">
           Pass the list to <${InlineCode}>keyedRows<//> with a key function.
