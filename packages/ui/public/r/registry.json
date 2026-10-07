@@ -885,6 +885,11 @@
           "path": "src/components/ui/kbd/kbd.tsx",
           "type": "registry:ui",
           "target": "components/ui/kbd/kbd.tsx"
+        },
+        {
+          "path": "src/components/ui/kbd/platform-modifier.ts",
+          "type": "registry:ui",
+          "target": "components/ui/kbd/platform-modifier.ts"
         }
       ]
     },
