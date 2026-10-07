@@ -54,11 +54,15 @@ import {
   formatOklch,
   parseColor,
   primaryHover,
-  primarySubtleCss,
   shiftLightness,
 } from '@adea-ai/themes'
 
-import { themeById, themeCssVariables, type ThemeVariant } from '../src/lib/themes'
+import {
+  primarySubtleFor,
+  themeById,
+  themeCssVariables,
+  type ThemeVariant,
+} from '../src/lib/themes'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const THEME_CSS = join(ROOT, 'src', 'styles', 'theme.css')
@@ -101,7 +105,12 @@ function derivedDeclarations(theme: ThemeVariant): string[] {
     `   * rule rather than a matching one — which is what they were not, before.`,
     `   */`,
     `  --primary-hover: ${primaryHover(theme.colors.primary, theme.appearance)};`,
-    `  --primary-subtle: ${primarySubtleCss(theme.appearance)};`,
+    `  /*`,
+    `   * The selected-state tint. A share of \`--primary\`, so it follows an accent with`,
+    `   * no block of its own; the share is this theme's, measured by @adea-ai/themes so`,
+    `   * body text clears 4.5:1 on it over every surface, for every accent it offers.`,
+    `   */`,
+    `  --primary-subtle: ${primarySubtleFor(theme)};`,
     `  /* The window chrome, one step off the canvas. */`,
     `  --chrome: var(--surface);`,
     `  /*`,
@@ -280,14 +289,13 @@ const ACCENT_OPEN =
   '/* @generated accents — run `bun run theme:build` after changing the catalogue */'
 const ACCENT_CLOSE = '/* @end generated accents */'
 
-/** The five declarations one accent sets. */
+/** The four declarations one accent sets. */
 function accentDeclarations(appearance: 'light' | 'dark', preset: (typeof ACCENTS)[number]) {
   const roles = accentRoles(preset, appearance)
   return [
     `  --primary: ${roles.primary};`,
     `  --primary-foreground: ${roles.primaryForeground};`,
     `  --primary-hover: ${roles.primaryHover};`,
-    `  --primary-subtle: ${roles.primarySubtle};`,
     `  --ring: ${roles.ring};`,
   ]
 }
@@ -295,10 +303,15 @@ function accentDeclarations(appearance: 'light' | 'dark', preset: (typeof ACCENT
 /**
  * The twelve accent blocks, from the catalogue's preset list.
  *
- * A block sets five properties and no more. `--primary-hover` and `--primary-subtle`
- * are expressions over `--primary`, so they are identical in every block by
- * construction — which is the point: they used to be five hand-written literals per
+ * A block sets four properties and no more. `--primary-hover` comes from the same
+ * `accentRoles` rule as the default's — it used to be a hand-written literal per
  * block, and the default's rule disagreed with all twelve of them.
+ *
+ * `--primary-subtle` is not one of them. It is a share of `var(--primary)`, declared
+ * on the same element, so the theme's own declaration already follows the accent;
+ * and the share is the *theme's*, measured per theme so body text clears 4.5:1 on
+ * it. A block keyed only on the appearance can carry only the appearance-wide
+ * ceiling, which would undo that measurement on every theme that needs less.
  *
  * `[data-accent]` is the light block and `.dark[data-accent]` the dark one, because
  * the accent is a selection on the same element that carries the theme rather than a

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { accentPresets, Badge, Button, colorTokens, designTokens, Input } from '@adea-ai/ui'
-import { For } from 'solid-js'
+import { createSignal, For, onCleanup, onMount } from 'solid-js'
 import { ColorSwatch, TokenTable, TokenRow } from './token-preview'
 
 /**
@@ -242,7 +242,35 @@ export const DataRoles: Story = {
  * against the canvas.
  */
 export const AccentPresets: Story = {
-  render: () => (
+  render: () => <AccentPresetsWorkshop />,
+}
+
+/** The theme's tint expression, as `ThemeProvider` writes it on the root. */
+const rootTint = () =>
+  document.documentElement.style.getPropertyValue('--primary-subtle').trim() || undefined
+
+/**
+ * The presets, each in its own `data-accent` scope.
+ *
+ * In the applications `data-accent` sits on `<html>`, beside the theme, and the
+ * theme's `--primary-subtle` follows the accent there because both are declared on
+ * the same element. Here each preset is a nested scope, and a custom property
+ * computed on `<html>` inherits as the value it computed to — the theme primary's
+ * tint. So each scope re-declares the active theme's own tint expression, which then
+ * resolves against the preset's `--primary`, at the strength the theme measured.
+ *
+ * The expression is read from the root's inline style, where `ThemeProvider` writes
+ * it, rather than from `useTheme()`: Storybook re-renders a mounted story without
+ * its JSX decorators, so the story cannot rely on sitting inside the provider.
+ */
+function AccentPresetsWorkshop() {
+  const [subtle, setSubtle] = createSignal(rootTint())
+  onMount(() => {
+    const observer = new MutationObserver(() => setSubtle(rootTint()))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
+    onCleanup(() => observer.disconnect())
+  })
+  return (
     <div class="flex max-w-3xl flex-col gap-6">
       <p class="max-w-prose text-sm text-muted-foreground">
         Every accent is passed through two rules, the same ones adea's
@@ -259,6 +287,9 @@ export const AccentPresets: Story = {
             <div
               class="flex flex-wrap items-center gap-4 rounded-lg border border-border p-4"
               data-accent={preset.id === 'theme' ? undefined : preset.id}
+              style={
+                preset.id === 'theme' || !subtle() ? undefined : { '--primary-subtle': subtle() }
+              }
             >
               <div class="w-56 shrink-0">
                 <div class="text-sm font-medium">{preset.label}</div>
@@ -295,7 +326,7 @@ export const AccentPresets: Story = {
         the moment someone picks a pale one.
       </p>
     </div>
-  ),
+  )
 }
 
 /**
