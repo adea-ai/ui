@@ -71,6 +71,12 @@ export type MessageComposerProps = Omit<ComponentProps<'form'>, 'onSubmit'> & {
   trailing?: JSX.Element
   /** A menu rendered above the field, e.g. mention suggestions. */
   menu?: JSX.Element
+  /**
+   * Host progress rendered in the composer's own live region, e.g. dictation
+   * state — plain paragraphs are progress, a `role="alert"` paragraph is a
+   * failure. Sending and send-failure copy stays the composer's own.
+   */
+  status?: JSX.Element
   /** The reply target, drawn as a strip above the field. */
   replyTo?: { label: string; onDismiss: () => void }
   /** Ref to the actual message textarea, for host focus and selection behavior. */
@@ -102,6 +108,7 @@ export function MessageComposer(props: MessageComposerProps) {
     'leading',
     'trailing',
     'menu',
+    'status',
     'replyTo',
     'inputRef',
     'inputId',
@@ -281,6 +288,7 @@ export function MessageComposer(props: MessageComposerProps) {
         >
           {pendingLabel()}…
         </Show>
+        <Show when={local.status}>{local.status}</Show>
       </div>
     </form>
   )

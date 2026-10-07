@@ -38,6 +38,12 @@ export type ConversationSurfaceProps = ComponentProps<'div'> & {
   empty?: JSX.Element
   /** A header that scrolls with the transcript, e.g. a day divider or a banner. */
   header?: JSX.Element
+  /**
+   * The shared page gutter: reading padding inside the scroller plus a stable
+   * gutter, so the scrollbar never shifts the text when it appears. The page
+   * frame around the surface is `ConversationPane`'s job.
+   */
+  gutter?: boolean
 }
 
 export function ConversationSurface(props: ConversationSurfaceProps) {
@@ -50,6 +56,7 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
     'onReadingPositionChange',
     'empty',
     'header',
+    'gutter',
     'children',
     'onScroll',
     'ref',
@@ -84,7 +91,11 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
         }}
         onScroll={onScroll}
         tabindex={local.tabindex ?? 0}
-        class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        class={cn(
+          'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+          local.gutter &&
+            'px-[clamp(0.8rem,3vw,2.5rem)] pt-[1.35rem] pb-[1.1rem] [scrollbar-gutter:stable] max-[30rem]:px-2'
+        )}
         {...rest}
       >
         <div ref={follow.bindContent} data-slot="conversation-content">
