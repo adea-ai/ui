@@ -13,7 +13,10 @@ export type PixelResizeHandleProps = {
   label?: string
   controls?: string
   class?: string
-  /** The grip drawn on the edge: the default bordered chip, or the quieter rung. */
+  /**
+   * The grip drawn on the edge: the quieter rung by default, or the bordered
+   * chip for hosts that want the heavier affordance.
+   */
   grip?: 'chip' | 'rung'
   onChange(value: number): void
   onCommit?(value: number): void
@@ -95,7 +98,7 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
         aria-hidden="true"
       />
       <ResizableHandle
-        withHandle={props.grip === 'rung' ? 'rung' : true}
+        withHandle={props.grip === 'chip' ? true : 'rung'}
         label={props.label ?? `Resize ${props.side} pane`}
         aria-controls={props.controls}
         aria-valuemin={minimum()}
