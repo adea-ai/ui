@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.122.2](https://github.com/adea-ai/ui/compare/v0.122.1...v0.122.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ui:** default sidebar and resize grips to the rung ([#375](https://github.com/adea-ai/ui/issues/375)) ([be2acf1](https://github.com/adea-ai/ui/commit/be2acf1081257252b4aa51e0577d536ada56f5a3))
+
 ## [0.122.1](https://github.com/adea-ai/ui/compare/v0.122.0...v0.122.1) (2026-10-07)
 
 
