@@ -221,7 +221,11 @@ try {
     join(consumer, 'sidebar-style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n" +
       "@source './sidebar.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/sidebar-nav';\n@source './node_modules/@adea-ai/ui/src/components/ui/button';\n@source './node_modules/@adea-ai/ui/src/components/ui/collapsible';\n" +
-      "@source './node_modules/@adea-ai/ui/src/components/composites/action-button';\n@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n@source './node_modules/@adea-ai/ui/src/components/ui/dropdown-menu';\n"
+      "@source './node_modules/@adea-ai/ui/src/components/composites/action-button';\n@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n@source './node_modules/@adea-ai/ui/src/components/ui/dropdown-menu';\n" +
+      // The fixture's resize handle renders from ui/resizable: without this
+      // source the hairline, hit target and grip classes are absent from the
+      // packed sheet and the grip collapses to an empty box.
+      "@source './node_modules/@adea-ai/ui/src/components/ui/resizable';\n"
   )
   for (const condition of ['compiled', 'solid']) {
     await run(
