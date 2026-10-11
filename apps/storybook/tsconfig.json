@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["bun-types", "node"],
+    "types": ["bun-types", "node", "vite/client"],
     "paths": {
       /*
        * Resolve the design system to its source rather than to `dist`. The library

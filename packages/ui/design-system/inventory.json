@@ -19,6 +19,13 @@
         "group": "Overlays"
       }
     ],
+    "annotation-surface": [
+      {
+        "card": "AnnotationSurface",
+        "group": "Data display",
+        "source": "ui/annotation-surface/index.ts"
+      }
+    ],
     "aspect-ratio": [
       {
         "card": "AspectRatio",

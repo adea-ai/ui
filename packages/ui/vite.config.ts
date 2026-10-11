@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync, readdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
 
@@ -18,6 +18,14 @@ const entries = Object.fromEntries([
     resolve(import.meta.dirname, 'src/components', file),
   ]),
 ])
+const sourceRoot = resolve(import.meta.dirname, 'src')
+
+function isComponentCssImport(id: string, importer?: string): boolean {
+  if (!id.endsWith('.css') || !importer) return false
+  const sourceFile = isAbsolute(id) ? id : resolve(dirname(importer), id)
+  const sourceRelative = relative(sourceRoot, sourceFile).split(sep).join('/')
+  return sourceRelative.startsWith('components/')
+}
 
 /**
  * Library build.
@@ -34,7 +42,8 @@ const entries = Object.fromEntries([
  *
  * `solid-js`, Kobalte, corvu, and the rest stay external: bundling a copy of
  * `solid-js` into a library is how two reactive runtimes end up in one app.
- * CSS is emitted through Tailwind so the utilities components use are real.
+ * Component CSS stays a relative side-effect import beside its compiled
+ * module, so an unused component does not add its styles to every app.
  */
 export default defineConfig({
   plugins: [
@@ -49,6 +58,43 @@ export default defineConfig({
             fileName,
             source: readFileSync(resolve(import.meta.dirname, '../..', fileName), 'utf8'),
           })
+        }
+      },
+    },
+    {
+      name: 'component-css-side-effects',
+      generateBundle(_options, bundle) {
+        const emitted = new Set<string>()
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type !== 'chunk') continue
+          const sourceModule =
+            chunk.facadeModuleId ?? Object.keys(chunk.modules).find((id) => id.endsWith('.tsx'))
+          if (!sourceModule) continue
+          for (const imported of chunk.imports.filter((file) => file.endsWith('.css'))) {
+            const sourceFile = isAbsolute(imported)
+              ? imported
+              : imported.replaceAll(sep, '/').startsWith('components/')
+                ? resolve(sourceRoot, imported)
+                : resolve(dirname(sourceModule), imported)
+            const sourceRelative = relative(sourceRoot, sourceFile)
+            const sourceRelativePosix = sourceRelative.split(sep).join('/')
+            if (!sourceRelativePosix.startsWith('components/')) continue
+
+            const source = readFileSync(sourceFile)
+            if (/@import\b|url\(/i.test(source.toString('utf8')))
+              throw new Error(
+                `Component CSS side-effect asset dependencies need an explicit copy rule: ${sourceRelativePosix}`
+              )
+
+            const outputFile = sourceRelativePosix
+            if (emitted.has(outputFile)) continue
+            emitted.add(outputFile)
+            this.emitFile({
+              type: 'asset',
+              fileName: outputFile,
+              source,
+            })
+          }
         }
       },
     },
@@ -70,7 +116,11 @@ export default defineConfig({
        * copy of a stateful package in the consumer's bundle rather than an
        * error. Inverting the test means a new dependency is external by default.
        */
-      external: (id) => !id.startsWith('.') && !id.startsWith('/') && !id.startsWith('#'),
+      // Leave relative component CSS imports intact. The plugin above copies
+      // their source alongside the preserved component module in `dist`.
+      external: (id, importer) =>
+        isComponentCssImport(id, importer) ||
+        (!id.startsWith('.') && !id.startsWith('/') && !id.startsWith('#')),
       output: {
         preserveModules: true,
         preserveModulesRoot: 'src',
@@ -83,8 +133,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   css: {
-    // The package ships CSS through the `./globals.css` export rather than as
-    // a build artifact that components import, so no CSS modules are needed.
+    // Component CSS uses named class hooks and semantic tokens, not CSS modules.
     modules: false,
   },
 })

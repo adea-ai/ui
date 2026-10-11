@@ -1,0 +1,49 @@
+<!-- @dsCard group="Data display" height=260 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, createSignal, AnnotationSurface } = window.AdeaUI;
+  const [region, setRegion] = createSignal({ x: 0.18, y: 0.2, width: 0.42, height: 0.48 });
+  render(() => html`
+<div style="display:flex;flex-direction:column;gap:8px">
+  <${AnnotationSurface}
+    label="Frame preview. Press Space to create a centered region. Arrow keys adjust it; Escape clears it."
+    tool="region"
+    region=${region()}
+    hint="Drag across the frame or press Space to mark the center."
+    onDragChange=${(drag, phase) => {
+      if (phase === 'cancel') setRegion(undefined);
+      else if (drag && (phase === 'keyboard' || phase === 'move' || phase === 'end')) {
+        const x = Math.min(drag.start.x, drag.current.x);
+        const y = Math.min(drag.start.y, drag.current.y);
+        setRegion({ x, y, width: Math.abs(drag.current.x - drag.start.x), height: Math.abs(drag.current.y - drag.start.y) });
+      }
+    }}
+    onKeyDown=${(event) => {
+      if (event.key === 'Escape' && region()) {
+        event.preventDefault();
+        setRegion(undefined);
+        return;
+      }
+
+      const delta = 0.01;
+      const offset = {
+        ArrowLeft: { x: -delta, y: 0 },
+        ArrowRight: { x: delta, y: 0 },
+        ArrowUp: { x: 0, y: -delta },
+        ArrowDown: { x: 0, y: delta },
+      }[event.key];
+      const current = region();
+      if (!offset || !current) return;
+
+      event.preventDefault();
+      setRegion({
+        ...current,
+        x: Math.min(Math.max(current.x + offset.x, 0), 1 - current.width),
+        y: Math.min(Math.max(current.y + offset.y, 0), 1 - current.height),
+      });
+    }}
+  />
+  <p style="margin:0;color:var(--muted-foreground);font-size:12px">Host-owned viewport geometry with no screenshot pixels.</p>
+</div>
+`, document.getElementById('root'));
+</script>

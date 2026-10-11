@@ -4,8 +4,7 @@
     "noEmit": true,
     "emitDeclarationOnly": false,
     "outDir": null,
-    "rootDir": ".",
-    "types": ["bun-types", "vite/client"]
+    "rootDir": "."
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "scripts/**/*.ts"],
   "exclude": ["dist"]
