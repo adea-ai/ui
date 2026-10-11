@@ -371,3 +371,106 @@ test('tooltip actions stay in sequential keyboard order and open disabled explan
   ).toHaveText('Unavailable action help')
   await expect(unavailable).toHaveAttribute('aria-describedby', /.+/)
 })
+
+test('a focused tooltip releases its layer so one Escape closes the enclosing modal', async ({
+  page,
+}) => {
+  await mountFixture(page)
+  const opener = page.getByRole('button', { name: 'Open tooltip modal', exact: true })
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await opener.click()
+    const modal = page.getByRole('dialog', { name: 'Tooltip modal', exact: true })
+    await modal.getByRole('button', { name: 'Modal action', exact: true }).focus()
+    await expect(page.getByRole('tooltip', { name: 'Modal action help' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(modal).toHaveCount(0)
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(opener).toBeFocused()
+  }
+})
+
+test('a prevented tooltip Escape is delivered once and preserves the enclosing modal', async ({
+  page,
+}) => {
+  await mountFixture(page)
+  await page.getByRole('button', { name: 'Open tooltip modal', exact: true }).click()
+  const modal = page.getByRole('dialog', { name: 'Tooltip modal', exact: true })
+  await modal.getByRole('button', { name: 'Prevent tooltip Escape', exact: true }).focus()
+  await expect(page.getByRole('tooltip', { name: 'Prevented Escape help' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(modal).toBeVisible()
+  await expect(page.getByRole('tooltip', { name: 'Prevented Escape help' })).toBeVisible()
+  await expect(modal.getByLabel('Prevented Escape calls')).toHaveText('1')
+  await modal.getByRole('button', { name: 'Finish tooltip modal', exact: true }).click()
+  await expect(modal).toHaveCount(0)
+})
+
+test('Escape in a nested modal does not call the background tooltip callback', async ({ page }) => {
+  await mountFixture(page)
+  await page.getByRole('button', { name: 'Open tooltip modal', exact: true }).click()
+  const parent = page.getByRole('dialog', { name: 'Tooltip modal', exact: true })
+  await parent.getByRole('button', { name: 'Persistent parent tooltip', exact: true }).focus()
+  await expect(page.getByRole('tooltip', { name: 'Persistent parent help' })).toBeVisible()
+  await parent.getByRole('button', { name: 'Open nested tooltip modal', exact: true }).click()
+  const nested = page.getByRole('dialog', { name: 'Nested tooltip modal', exact: true })
+  await nested.getByRole('button', { name: 'Nested action', exact: true }).focus()
+  const requests = parent.getByLabel('Persistent close requests')
+  const before = await requests.textContent()
+  await page.keyboard.press('Escape')
+  await expect(nested).toHaveCount(0)
+  await expect(parent).toBeVisible()
+  await expect(requests).toHaveText(before ?? '')
+  await parent.getByRole('button', { name: 'Finish tooltip modal', exact: true }).click()
+})
+
+test('an already consumed Escape leaves the focused tooltip and modal intact', async ({ page }) => {
+  await mountFixture(page)
+  await page.getByRole('button', { name: 'Open tooltip modal', exact: true }).click()
+  const modal = page.getByRole('dialog', { name: 'Tooltip modal', exact: true })
+  await modal.getByRole('button', { name: 'Consume next Escape', exact: true }).click()
+  await modal.getByRole('button', { name: 'Prevent tooltip Escape', exact: true }).focus()
+  await expect(page.getByRole('tooltip', { name: 'Prevented Escape help' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(modal).toBeVisible()
+  await expect(modal.getByLabel('Prevented Escape calls')).toHaveText('0')
+  await expect(page.getByRole('tooltip', { name: 'Prevented Escape help' })).toBeVisible()
+  await modal.getByRole('button', { name: 'Finish tooltip modal', exact: true }).click()
+})
+
+for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+  test(`ActionButton places its tooltip at ${side} center`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 2000 })
+    await mountFixture(page)
+    await page.getByRole('button', { name: `Tooltip to ${side}`, exact: true }).click()
+    await page.mouse.move(0, 0)
+    const trigger = page.getByRole('button', { name: 'Directional action', exact: true })
+    await trigger.focus()
+    const tip = page.getByRole('tooltip', { name: 'Directional help' })
+    await expect(tip).toBeVisible()
+    await expect
+      .poll(async () => {
+        const button = await trigger.boundingBox()
+        const content = await tip.boundingBox()
+        if (!button || !content) return false
+        if (side === 'top' || side === 'bottom') {
+          const centered =
+            Math.abs(content.x + content.width / 2 - button.x - button.width / 2) <= 2
+          return (
+            centered &&
+            (side === 'top'
+              ? content.y + content.height <= button.y
+              : content.y >= button.y + button.height)
+          )
+        }
+        const centered =
+          Math.abs(content.y + content.height / 2 - button.y - button.height / 2) <= 2
+        return (
+          centered &&
+          (side === 'left'
+            ? content.x + content.width <= button.x
+            : content.x >= button.x + button.width)
+        )
+      })
+      .toBe(true)
+  })
+}

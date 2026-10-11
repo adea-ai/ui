@@ -829,3 +829,10 @@ existing provider-bound API.
 Catalog detail summaries place actions and feedback beneath identity on narrow
 screens, preserving readable title/description flow. Grouped field sections keep
 their content at the top while sharing the outline and dividers.
+
+A tooltip is explanatory content rather than an interactive overlay. An accepted
+Escape close of a keyboard-focused tooltip releases its layer immediately, so an enclosing modal can handle
+the same Escape instead of being blocked by the tooltip's exit animation.
+`TooltipContent.onEscapeKeyDown` runs once before close and can prevent the
+close; controlled parents can also reject it. Ordinary pointer dismissal keeps
+the shared exit animation.
