@@ -32,6 +32,33 @@ describe('registry', () => {
     ).toEqual([])
   })
 
+  test('keeps the independent resize retry controller synchronized and served', () => {
+    const layoutRoot = resolve(import.meta.dir, '../src/components/layout/split-layout')
+    const primary = readFileSync(join(layoutRoot, 'resize-controller-core.tsx'), 'utf8')
+    const retry = readFileSync(join(layoutRoot, 'resize-controller-core-retry.tsx'), 'utf8')
+    const servedPrimary = readFileSync(
+      join(publicRegistryDir, 'src/components/layout/split-layout/resize-controller-core.tsx'),
+      'utf8'
+    )
+    const servedRetry = readFileSync(
+      join(
+        publicRegistryDir,
+        'src/components/layout/split-layout/resize-controller-core-retry.tsx'
+      ),
+      'utf8'
+    )
+    const splitLayout = registryItems.find((item) => item.name === 'split-layout')!
+    const paths = splitLayout.files.map((file) => file.path)
+
+    expect(retry).toBe(primary)
+    expect(servedPrimary).toBe(primary)
+    expect(servedRetry).toBe(retry)
+    expect(paths).toContain('src/components/layout/split-layout/resize-controller-core.tsx')
+    expect(paths).toContain('src/components/layout/split-layout/resize-controller-core-retry.tsx')
+    expect(paths).toContain('src/components/layout/split-layout/resize-controller-retry-2.tsx')
+    expect(splitLayout.registryDependencies).toContain('@adea-ai/ui/button')
+  })
+
   test('ships generated cn tables with the shared helpers without exporting them', () => {
     const packageJson = JSON.parse(
       readFileSync(resolve(import.meta.dir, '../package.json'), 'utf8')

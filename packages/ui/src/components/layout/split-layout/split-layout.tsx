@@ -1,17 +1,21 @@
-import Resizable from '@corvu/resizable'
 import {
   For,
-  createMemo,
+  createEffect,
   createComputed,
+  createMemo,
   createUniqueId,
   createSignal,
+  onMount,
   onCleanup,
   on,
+  Show,
   type Accessor,
   type JSX,
 } from 'solid-js'
+import { Dynamic } from 'solid-js/web'
 import { X, GripVertical } from 'lucide-solid'
 import { ActionButton } from '../../composites/action-button'
+import { Button } from '../../ui/button'
 import { cn } from '#lib/utils'
 import { computeLayoutFrames, type LayoutRect } from './geometry'
 import { paneDropIntent, type PaneDropIntent } from './drop'
@@ -21,12 +25,16 @@ const DRAG_PREVIEW_MAX_WIDTH = 384
 const DRAG_PREVIEW_MAX_HEIGHT = 256
 import {
   listLeaves,
-  MIN_SPLIT_RATIO,
-  MAX_SPLIT_RATIO,
   type SplitLayoutBranch,
   type SplitLayoutLeaf,
   type SplitLayoutState,
 } from './model'
+import type { SplitLayoutResizeControllerProps } from './resize-controller-core'
+
+type ResizeController<L extends SplitLayoutLeaf> = (
+  props: SplitLayoutResizeControllerProps<L>
+) => JSX.Element
+type ResizeControllerState<L extends SplitLayoutLeaf> = ResizeController<L> | false | 'error'
 
 export type SplitLayoutProps<L extends SplitLayoutLeaf> = {
   state: SplitLayoutState<L>
@@ -57,6 +65,16 @@ function rectStyle(rect: LayoutRect): JSX.CSSProperties {
     top: `${rect.y * 100}%`,
     width: `${rect.width * 100}%`,
     height: `${rect.height * 100}%`,
+  }
+}
+function separatorPlaceholderStyle(branch: SplitLayoutBranch, rect: LayoutRect): JSX.CSSProperties {
+  const horizontal = branch.direction === 'row'
+  return {
+    left: `${(rect.x + (horizontal ? rect.width * branch.ratio : 0)) * 100}%`,
+    top: `${(rect.y + (horizontal ? 0 : rect.height * branch.ratio)) * 100}%`,
+    width: horizontal ? '1px' : `${rect.width * 100}%`,
+    height: horizontal ? `${rect.height * 100}%` : '1px',
+    transform: horizontal ? 'translateX(-50%)' : 'translateY(-50%)',
   }
 }
 function dragPreviewPlaceholder(source: HTMLElement, message: string) {
@@ -171,14 +189,40 @@ function cloneDragPreviewNode(source: Node): Node | undefined {
 export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L>) {
   let root: HTMLDivElement | undefined
   let pendingFrame: number | undefined
+  let disposed = false
+  let resizeLoadGeneration = 0
+  let retryWithAlternateImport = false
+  let alternateImportAttempts = 0
+  let focusHandleAfterRetry = false
+  let focusRecoveryButtonAfterError = false
+  let focusRestoreEpoch = 0
+  let focusEpoch = 0
+  let pendingFocusFrame: number | undefined
   const refs = new Map<string, HTMLElement>()
   const domIds = new Map<string, string>()
   const prefix = createUniqueId()
+  const resizeReloadWarningId = `${prefix}-resize-reload-warning`
   let nextDomId = 0
   let nextDragId = 0
   let dragPreview: HTMLElement | undefined
   const [drag, setDrag] = createSignal<{ id: string; token: string }>()
   const [drop, setDrop] = createSignal<{ id: string; intent: PaneDropIntent }>()
+  const [resizeController, setResizeController] = createSignal<ResizeControllerState<L>>()
+  const cancelPendingFocusRestore = () => {
+    if (pendingFocusFrame !== undefined) cancelAnimationFrame(pendingFocusFrame)
+    pendingFocusFrame = undefined
+  }
+  const trackFocusChange = (event: FocusEvent) => {
+    if (event.target === document.body) return
+    focusEpoch += 1
+    focusHandleAfterRetry = false
+    focusRecoveryButtonAfterError = false
+    cancelPendingFocusRestore()
+  }
+  onMount(() => {
+    document.addEventListener('focusin', trackFocusChange)
+    onCleanup(() => document.removeEventListener('focusin', trackFocusChange))
+  })
   const clearDrag = () => {
     setDrag(undefined)
     setDrop(undefined)
@@ -221,6 +265,79 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
       frame.node.kind === 'split' ? [frame.node] : []
     )
   )
+  createEffect(() => {
+    if (branches().length === 0) {
+      resizeLoadGeneration += 1
+      focusHandleAfterRetry = false
+      focusRecoveryButtonAfterError = false
+      cancelPendingFocusRestore()
+      // Keep a loaded controller so a later split does not re-import a facade
+      // that may have failed before recovery. Clear only transient UI state.
+      if (resizeController() === false || resizeController() === 'error')
+        setResizeController(undefined)
+      return
+    }
+    if (resizeController() !== undefined) return
+    const retry = retryWithAlternateImport
+    const generation = ++resizeLoadGeneration
+    setResizeController(false)
+    const controllerImport = retry
+      ? alternateImportAttempts++ === 0
+        ? import('./resize-controller-retry')
+        : import('./resize-controller-retry-2')
+      : import('./resize-controller')
+    void controllerImport.then(
+      ({ default: Controller }) => {
+        if (disposed || generation !== resizeLoadGeneration || branches().length === 0) return
+        const shouldFocusHandle = focusHandleAfterRetry && focusEpoch === focusRestoreEpoch
+        focusHandleAfterRetry = false
+        focusRecoveryButtonAfterError = false
+        retryWithAlternateImport = false
+        alternateImportAttempts = 0
+        setResizeController(() => Controller)
+        if (shouldFocusHandle)
+          pendingFocusFrame = requestAnimationFrame(() => {
+            pendingFocusFrame = undefined
+            if (
+              disposed ||
+              generation !== resizeLoadGeneration ||
+              branches().length === 0 ||
+              focusEpoch !== focusRestoreEpoch
+            )
+              return
+            const currentFocus = root?.ownerDocument.activeElement
+            if (currentFocus && currentFocus !== root?.ownerDocument.body && currentFocus !== root)
+              return
+            root?.querySelector<HTMLElement>('[data-corvu-resizable-handle]')?.focus({
+              preventScroll: true,
+            })
+          })
+      },
+      () => {
+        // A rejected dynamic import can remain cached under its specifier.
+        // The next split must start from the alternate module entry as well.
+        retryWithAlternateImport = true
+        if (!disposed && generation === resizeLoadGeneration && branches().length > 0) {
+          setResizeController('error')
+          const shouldFocusRetry = focusRecoveryButtonAfterError && focusEpoch === focusRestoreEpoch
+          if (shouldFocusRetry)
+            pendingFocusFrame = requestAnimationFrame(() => {
+              pendingFocusFrame = undefined
+              if (
+                disposed ||
+                generation !== resizeLoadGeneration ||
+                branches().length === 0 ||
+                focusEpoch !== focusRestoreEpoch
+              )
+                return
+              root?.querySelector<HTMLButtonElement>('[data-resize-retry]')?.focus({
+                preventScroll: true,
+              })
+            })
+        }
+      }
+    )
+  })
   createComputed(() => {
     const current = drag()
     if (current && (!props.onMove || !leafMap().has(current.id))) clearDrag()
@@ -288,6 +405,10 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
     )
   )
   onCleanup(() => {
+    disposed = true
+    focusHandleAfterRetry = false
+    focusRecoveryButtonAfterError = false
+    cancelPendingFocusRestore()
     if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame)
     clearDrag()
     refs.clear()
@@ -452,62 +573,89 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
         }}
       </For>
       <span class="sr-only" role="status">
-        {dropLabel()}
+        {dropLabel() ||
+          (resizeController() === 'error'
+            ? alternateImportAttempts >= 2
+              ? 'Resize controls did not load after repeated attempts. Reloading may discard unsaved pane content.'
+              : 'Resize controls did not load.'
+            : '')}
       </span>
       <For each={branches().map((branch) => branch.id)}>
         {(id) => {
           const initial = branchMap().get(id)!
           const branch: Accessor<SplitLayoutBranch<L>> = () => branchMap().get(id) ?? initial
+          const rect = () => frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 }
           return (
-            <Resizable
-              orientation={branch().direction === 'row' ? 'horizontal' : 'vertical'}
-              sizes={[branch().ratio, 1 - branch().ratio]}
-              keyboardDelta={0.05}
-              onSizesChange={(sizes) => {
-                // Corvu also reports panel registration/unregistration while
-                // mounting or disposing a controller. Those incomplete or
-                // hidden-host sizes are not user resize intent.
-                if (!root?.isConnected || root.getClientRects().length === 0) return
-                if (
-                  sizes.length !== 2 ||
-                  sizes.some((size) => !Number.isFinite(size)) ||
-                  Math.abs(sizes[0]! + sizes[1]! - 1) > 0.000001
-                )
-                  return
-                if (sizes[0] !== undefined && Math.abs(sizes[0] - branch().ratio) > 0.000001)
-                  props.onResize(id, sizes[0])
-              }}
-              style={rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 })}
-              class="pointer-events-none absolute flex min-h-0 min-w-0 data-[orientation=vertical]:flex-col"
+            <Show
+              when={typeof resizeController() === 'function'}
+              fallback={
+                <div
+                  role="separator"
+                  aria-label={
+                    props.labelForSeparator?.(branch()) ??
+                    (branch().direction === 'row' ? 'Resize pane columns' : 'Resize pane rows')
+                  }
+                  aria-orientation={branch().direction === 'row' ? 'vertical' : 'horizontal'}
+                  aria-controls={listLeaves(branch())
+                    .map((leaf) => domId(leaf.id))
+                    .join(' ')}
+                  aria-valuemin={10}
+                  aria-valuemax={90}
+                  aria-valuenow={Math.round(branch().ratio * 100)}
+                  aria-disabled="true"
+                  tabIndex={-1}
+                  data-direction={branch().direction}
+                  style={separatorPlaceholderStyle(branch(), rect())}
+                  class="pointer-events-none absolute bg-border"
+                />
+              }
             >
-              <Resizable.Panel
-                minSize={MIN_SPLIT_RATIO}
-                maxSize={MAX_SPLIT_RATIO}
-                aria-hidden="true"
+              <Dynamic
+                component={resizeController() as ResizeController<L>}
+                branch={branch}
+                rect={() => rectStyle(rect())}
+                domId={domId}
+                root={() => root}
+                labelForSeparator={props.labelForSeparator}
+                onResize={props.onResize}
               />
-              <Resizable.Handle
-                aria-label={
-                  props.labelForSeparator?.(branch()) ??
-                  (branch().direction === 'row' ? 'Resize pane columns' : 'Resize pane rows')
-                }
-                aria-orientation={branch().direction === 'row' ? 'vertical' : 'horizontal'}
-                aria-controls={listLeaves(branch())
-                  .map((leaf) => domId(leaf.id))
-                  .join(' ')}
-                aria-valuemin={10}
-                aria-valuemax={90}
-                aria-valuenow={Math.round(branch().ratio * 100)}
-                class="pointer-events-auto relative w-px shrink-0 bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
-              />
-              <Resizable.Panel
-                minSize={MIN_SPLIT_RATIO}
-                maxSize={MAX_SPLIT_RATIO}
-                aria-hidden="true"
-              />
-            </Resizable>
+            </Show>
           )
         }}
       </For>
+      {resizeController() === 'error' ? (
+        <div class="absolute top-2 right-2 z-(--z-menu) flex max-w-sm flex-col items-end gap-2">
+          {alternateImportAttempts >= 2 ? (
+            <p
+              id={resizeReloadWarningId}
+              role="alert"
+              class="rounded-md border bg-background p-2 text-sm shadow-md"
+            >
+              Reloading may discard unsaved pane content.
+            </p>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            data-resize-retry
+            aria-describedby={alternateImportAttempts >= 2 ? resizeReloadWarningId : undefined}
+            onClick={(event) => {
+              if (alternateImportAttempts >= 2) {
+                window.location.reload()
+                return
+              }
+              const ownsFocus = document.activeElement === event.currentTarget
+              focusHandleAfterRetry = ownsFocus
+              focusRecoveryButtonAfterError = ownsFocus
+              focusRestoreEpoch = focusEpoch
+              retryWithAlternateImport = true
+              setResizeController(undefined)
+            }}
+          >
+            {alternateImportAttempts >= 2 ? 'Reload page to retry resizing' : 'Retry pane resizing'}
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

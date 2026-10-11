@@ -14,7 +14,15 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: { headless: true, trace: 'retain-on-failure' },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(process.env['ADEA_CHROMIUM_EXECUTABLE_PATH']
+          ? { launchOptions: { executablePath: process.env['ADEA_CHROMIUM_EXECUTABLE_PATH'] } }
+          : {}),
+      },
+    },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
 })

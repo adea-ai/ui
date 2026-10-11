@@ -23,6 +23,13 @@ async function act(page: import('@playwright/test').Page, detail: string) {
     (value) => window.dispatchEvent(new CustomEvent('layout-fixture', { detail: value })),
     detail
   )
+  await page.waitForFunction(() => {
+    const expected = [...document.querySelectorAll('[data-slot="split-layout"]')].reduce(
+      (count, layout) => count + Math.max(0, layout.querySelectorAll('[data-pane-id]').length - 1),
+      0
+    )
+    return document.querySelectorAll('[data-corvu-resizable-handle]').length === expected
+  })
 }
 test('host header content, pane Tab stops and separator names remain independent', async ({
   page,
