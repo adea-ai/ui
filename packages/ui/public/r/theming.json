@@ -4,7 +4,7 @@
   "title": "Theming",
   "description": "",
   "dependencies": [
-    "@adea-ai/themes@^0.9.10",
+    "@adea-ai/themes@^0.10.4",
     "@kobalte/core@^0.13.14",
     "lucide-solid@^1.51.0"
   ],
