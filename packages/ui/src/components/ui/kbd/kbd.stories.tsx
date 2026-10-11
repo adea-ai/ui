@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { Kbd, KbdGroup } from './kbd'
+import { Kbd, KbdGroup, ShortcutKeys } from './kbd'
+import { Button } from '../button'
 
 /**
  * Kbd.
@@ -59,13 +60,7 @@ export const Combinations: Story = {
   ),
 }
 
-/**
- * Inside a tooltip, where the key cap re-colours itself.
- *
- * A tooltip's surface is the theme-invariant scrim, so a key cap drawn for the
- * canvas reads as a hole there. The component handles this rather than making every
- * caller remember it.
- */
+/** Keys in prose keep their semantic keyboard meaning. */
 export const InContext: Story = {
   render: () => (
     <div class="flex max-w-md flex-col gap-3 text-sm">
@@ -77,6 +72,24 @@ export const InContext: Story = {
         Open the palette with <Kbd>⌘</Kbd> <Kbd>K</Kbd>, or close the active overlay with{' '}
         <Kbd>Esc</Kbd>.
       </p>
+    </div>
+  ),
+}
+
+/** Decorative hints leave the control's accessible name intact. */
+export const CompactControlHints: Story = {
+  render: () => (
+    <div class="flex flex-col items-start gap-3">
+      <Button variant="outline" aria-keyshortcuts="Meta+K">
+        Command palette <ShortcutKeys keys="⌘K" />
+      </Button>
+      <Button variant="outline" aria-keyshortcuts="Shift+Meta+P">
+        Switch project <ShortcutKeys keys="⇧⌘P" />
+      </Button>
+      <KbdGroup size="sm">
+        <Kbd size="sm">Ctrl</Kbd>
+        <Kbd size="sm">Enter</Kbd>
+      </KbdGroup>
     </div>
   ),
 }

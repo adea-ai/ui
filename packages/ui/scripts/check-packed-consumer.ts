@@ -71,6 +71,12 @@ const coreSamples: PackedSample[] = [
     source: 'ui/modal-dialog',
   },
   {
+    name: 'compact-shortcut-keys',
+    imports: "import { Kbd, KbdGroup, ShortcutKeys } from '@adea-ai/ui/components/ui/kbd'",
+    jsx: '<><ShortcutKeys keys="⇧⌘P" /><KbdGroup size="sm"><Kbd size="sm">Enter</Kbd></KbdGroup></>',
+    source: 'ui/kbd',
+  },
+  {
     name: 'catalog-detail-group',
     imports:
       "import { CatalogDetail, CatalogDetailSection } from '@adea-ai/ui/components/composites/catalog-browser'",

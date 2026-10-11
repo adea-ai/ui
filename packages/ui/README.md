@@ -829,3 +829,10 @@ existing provider-bound API.
 Catalog detail summaries place actions and feedback beneath identity on narrow
 screens, preserving readable title/description flow. Grouped field sections keep
 their content at the top while sharing the outline and dividers.
+
+Compact keyboard hints use `ShortcutKeys` from `@adea-ai/ui/components/ui/kbd`.
+It draws one cap per glyph and hides the decorative chord from assistive
+technology. The host control supplies its accessible name and parseable
+`aria-keyshortcuts`. For multi-character key names or keyboard instructions in
+prose, compose `Kbd` and `KbdGroup`; their default size is unchanged, and `size="sm"`
+provides the shared compact cap and group spacing.
