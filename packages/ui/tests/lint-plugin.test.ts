@@ -659,6 +659,62 @@ export function Examples() { return <><Button size="icon-2xs" aria-label="Close"
     expect(output.match(/require-action-button-tooltip/g)).toHaveLength(6)
   })
 
+  test('statically icon-only shared Buttons require ActionButton without an icon size', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'icon-only-button-children.tsx',
+      `import { Button as SharedButton } from '@adea-ai/ui/components/ui/button'
+import * as Buttons from '@adea-ai/ui/components/ui/button'
+import { TooltipTrigger as Trigger } from '@adea-ai/ui/components/ui/tooltip'
+import { RefreshCw as RefreshIcon } from 'lucide-solid'
+import * as Icons from 'lucide-solid'
+export function Examples({ ready, refresh, props }: { ready: boolean; refresh(): void; props: Record<string, unknown> }) {
+  return <>
+    <SharedButton type="button" class="dev-resources__refresh" aria-label="Refresh resources" disabled={!ready} onClick={refresh}><RefreshIcon aria-hidden="true" /></SharedButton>
+    <SharedButton aria-label="Open source"><><svg aria-hidden="true" viewBox="0 0 1 1"><path d="M0 0h1" /></svg></></SharedButton>
+    <SharedButton aria-label="Search"><span><Icons.Search aria-hidden="true" /></span></SharedButton>
+    <Buttons.Button aria-label="Copy"><Icons.Copy aria-hidden="true" /></Buttons.Button>
+    <SharedButton {...props} aria-label="Unknown spread"><RefreshIcon aria-hidden="true" /></SharedButton>
+    <SharedButton {...{ children: 'Save' }} aria-label="Spread children"><RefreshIcon aria-hidden="true" /></SharedButton>
+    <Trigger as={SharedButton} aria-label="Close"><Icons.X aria-hidden="true" /></Trigger>
+  </>
+}
+`
+    )
+    expect(output).toContain('Button actions must use ActionButton with a nonblank tooltip')
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(5)
+  })
+
+  test('icon-only ActionButtons need tooltips while labelled and unresolved children remain review boundaries', () => {
+    const config = writeConfig({ 'require-action-button-tooltip': 'error' })
+    const output = lint(
+      config,
+      'icon-only-action-button-children.tsx',
+      `import { ActionButton as SharedAction } from '@adea-ai/ui/components/composites/action-button'
+import * as Actions from '@adea-ai/ui/components/composites/action-button'
+import { TooltipTrigger as Trigger } from '@adea-ai/ui/components/ui/tooltip'
+import { RefreshCw as RefreshIcon } from 'lucide-solid'
+function CustomIcon() { return <RefreshIcon aria-hidden="true" /> }
+export function Examples({ children, props }: { children: unknown; props: Record<string, unknown> }) {
+  return <>
+    <SharedAction aria-label="Refresh"><RefreshIcon aria-hidden="true" /></SharedAction>
+    <SharedAction aria-label="Refresh" tooltip="Refresh now"><RefreshIcon aria-hidden="true" /></SharedAction>
+    <SharedAction aria-label="Refresh"><RefreshIcon aria-hidden="true" /> Refresh</SharedAction>
+    <SharedAction aria-label="Dynamic action">{children}</SharedAction>
+    <SharedAction aria-label="Wrapped action"><CustomIcon /></SharedAction>
+    <SharedAction {...props} aria-label="Unknown spread"><RefreshIcon aria-hidden="true" /></SharedAction>
+    <Actions.ActionButton aria-label="Duplicate"><RefreshIcon aria-hidden="true" /></Actions.ActionButton>
+    <Trigger as={SharedAction} aria-label="Close"><RefreshIcon aria-hidden="true" /></Trigger>
+    <Trigger as={SharedAction} aria-label="Close" tooltip="Close panel"><RefreshIcon aria-hidden="true" /></Trigger>
+  </>
+}
+`
+    )
+    expect(output).toContain('ActionButton needs a supplied nonblank tooltip')
+    expect(output.match(/require-action-button-tooltip/g)).toHaveLength(3)
+  })
+
   test('icon-size ActionButton requires a supplied nonblank tooltip', () => {
     const config = writeConfig({ 'require-action-button-tooltip': 'error' })
     const output = lint(
@@ -697,7 +753,8 @@ export function Examples() {
       'labelled-buttons.tsx',
       `import { Button } from '@adea-ai/ui/components/ui/button'
 import { ActionButton } from '@adea-ai/ui/components/composites/action-button'
-export function Examples() { return <><Button size="md">Save changes</Button><ActionButton size="sm">Delete project</ActionButton></> }
+import { RefreshCw as RefreshIcon } from 'lucide-solid'
+export function Examples() { return <><Button size="md">Save changes</Button><ActionButton size="sm">Delete project</ActionButton><Button aria-label="Save changes"><RefreshIcon aria-hidden="true" /> Save changes</Button><ActionButton aria-label="Delete project"><RefreshIcon aria-hidden="true" /> Delete project</ActionButton></> }
 `
     )
     expectNoLintFindings(output)
