@@ -24,8 +24,9 @@
  *
  * ## The mapping, and the entry that is not a rename
  *
- * {@link ROLE_FOR} maps canonical roles onto this system's variable vocabulary. One
- * entry will trip a reader: the catalogue's `accent` becomes this system's
+ * The published `@adea-ai/themes/adapters/shadcn` projection maps canonical roles
+ * onto this system's variable vocabulary. One entry will trip a reader: the
+ * catalogue's `accent` becomes this system's
  * `primary`, because in the shadcn vocabulary `--primary` is the action colour — the
  * fill of a primary button, the thing a focus ring is drawn in — while `--accent` is
  * a low-contrast hover wash. The catalogue's `accent` is the former, so it goes to
@@ -39,17 +40,18 @@ import {
   chartSeries,
   getAccent,
   hasTheme,
-  statusForeground,
-  tint,
   primaryHover,
   primarySubtleCss,
+  statusForeground,
   syntaxRoles,
+  tint,
   themes as catalogue,
   themesByAppearance,
   validateCatalogue,
   type AdeaThemeRecord,
   type ContrastFinding,
 } from '@adea-ai/themes'
+import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
 
 export type ThemeAppearance = 'light' | 'dark'
 
@@ -94,6 +96,7 @@ export type ThemeColors = {
   sidebarForeground: string
   sidebarAccent: string
   sidebarBorder: string
+  sidebarMutedForeground: string
 }
 
 /** The sixteen ANSI colours a terminal needs, plus its cursor and selection. */
@@ -167,69 +170,52 @@ export type ThemeVariant = {
   provenance: ThemeProvenance
 }
 
-/**
- * Canonical role → this system's `ThemeColors` key.
- *
- * Read by {@link toVariant}. Every key of `ThemeColors` must appear, so a role added
- * to this system fails the type check rather than silently resolving to `undefined`.
- */
-const ROLE_FOR: Readonly<Record<keyof ThemeColors, keyof AdeaThemeRecord['colors']>> = {
-  background: 'background',
-  foreground: 'text',
-  card: 'surface',
-  cardForeground: 'text',
-  popover: 'surfaceElevated',
-  popoverForeground: 'text',
-  // Not a rename — see this module's header.
-  primary: 'accent',
-  primaryForeground: 'accentForeground',
-  // shadcn's `secondary` and `muted` are both the first surface rung used as a fill.
-  secondary: 'surface',
-  secondaryForeground: 'text',
-  muted: 'surface',
-  mutedForeground: 'textMuted',
-  // shadcn's `accent` is a hover wash, which is exactly `surfaceHover`.
-  accent: 'surfaceHover',
-  accentForeground: 'text',
-  destructive: 'error',
-  // Overwritten below from the measured pairing; nominal here so the table is total.
-  destructiveForeground: 'error',
-  destructiveSubtle: 'error',
-  success: 'success',
-  successForeground: 'success',
-  successSubtle: 'success',
-  warning: 'warning',
-  warningForeground: 'warning',
-  warningSubtle: 'warning',
-  info: 'info',
-  infoForeground: 'info',
-  infoSubtle: 'info',
-  border: 'border',
-  input: 'border',
-  ring: 'accent',
-  sidebar: 'surface',
-  sidebarForeground: 'text',
-  sidebarAccent: 'surfaceHover',
-  sidebarBorder: 'border',
-}
-
 /** Builds the design system's view of one catalogue entry. */
 function toVariant(theme: AdeaThemeRecord): ThemeVariant {
-  const colors = {} as ThemeColors
-  for (const key of Object.keys(ROLE_FOR) as (keyof ThemeColors)[]) {
-    colors[key] = theme.colors[ROLE_FOR[key]]
+  const projected = shadcnVariables(theme)
+  const token = (name: string): string => {
+    const value = projected[`--${name}`]
+    if (!value) throw new Error(`${theme.id} has no shared shadcn projection for --${name}`)
+    return value
   }
-  // The label on a solid destructive fill is measured rather than mapped: on a bright
-  // red it is black and on a deep red it is white, and using the body text would put
-  // white on a mid-tone red at about 3:1.
-  colors.destructiveForeground = statusForeground(theme, 'error')
-  colors.destructiveSubtle = tint(theme.colors.error, theme.colors.background)
-  colors.successForeground = statusForeground(theme, 'success')
-  colors.successSubtle = tint(theme.colors.success, theme.colors.background)
-  colors.warningForeground = statusForeground(theme, 'warning')
-  colors.warningSubtle = tint(theme.colors.warning, theme.colors.background)
-  colors.infoForeground = statusForeground(theme, 'info')
-  colors.infoSubtle = tint(theme.colors.info, theme.colors.background)
+  const colors: ThemeColors = {
+    background: token('background'),
+    foreground: token('foreground'),
+    card: token('card'),
+    cardForeground: token('card-foreground'),
+    popover: token('popover'),
+    popoverForeground: token('popover-foreground'),
+    primary: token('primary'),
+    primaryForeground: token('primary-foreground'),
+    secondary: token('secondary'),
+    secondaryForeground: token('secondary-foreground'),
+    muted: token('muted'),
+    mutedForeground: token('muted-foreground'),
+    accent: token('accent'),
+    accentForeground: token('accent-foreground'),
+    destructive: token('destructive'),
+    // Status foregrounds and opaque subtle fills use the catalogue's dedicated
+    // helpers; its CSS adapter may emit the subtle as a variable-based color-mix.
+    destructiveForeground: statusForeground(theme, 'error'),
+    destructiveSubtle: tint(theme.colors.error, theme.colors.background),
+    success: token('success'),
+    successForeground: statusForeground(theme, 'success'),
+    successSubtle: tint(theme.colors.success, theme.colors.background),
+    warning: token('warning'),
+    warningForeground: statusForeground(theme, 'warning'),
+    warningSubtle: tint(theme.colors.warning, theme.colors.background),
+    info: token('info'),
+    infoForeground: statusForeground(theme, 'info'),
+    infoSubtle: tint(theme.colors.info, theme.colors.background),
+    border: token('border'),
+    input: token('input'),
+    ring: token('ring'),
+    sidebar: token('sidebar'),
+    sidebarForeground: token('sidebar-foreground'),
+    sidebarAccent: token('sidebar-accent'),
+    sidebarBorder: token('sidebar-border'),
+    sidebarMutedForeground: token('sidebar-muted-foreground'),
+  }
 
   const syntax = syntaxRoles(theme)
 
@@ -416,7 +402,7 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
     '--sidebar-primary': c.primary,
     '--sidebar-primary-foreground': c.primaryForeground,
     '--sidebar-ring': c.ring,
-    '--sidebar-muted-foreground': c.mutedForeground,
+    '--sidebar-muted-foreground': c.sidebarMutedForeground,
     '--surface-sunken': c.muted,
     '--surface-hover': c.accent,
     '--surface-active': c.border,

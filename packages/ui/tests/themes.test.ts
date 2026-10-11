@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { parseColor, themes as catalogue } from '@adea-ai/themes'
+import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
 import {
   builtinThemes,
   contrastRatio,
@@ -9,6 +10,9 @@ import {
   themesForAppearance,
   validateThemeRegistry,
 } from '../src/lib/themes'
+
+const asCssName = (role: string): string =>
+  `--${role.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
 
 /**
  * The registry's gate.
@@ -37,6 +41,27 @@ describe('theme registry', () => {
       expect(Object.keys(variables).length, `${theme.id} sets too few roles`).toBeGreaterThan(60)
       for (const [name, value] of Object.entries(variables)) {
         expect(value, `${theme.id} leaves ${name} empty`).toBeTruthy()
+      }
+    }
+  })
+
+  test('the UI color shape forwards the package-owned shadcn projection', () => {
+    for (const theme of builtinThemes) {
+      const record = catalogue.find((entry) => entry.id === theme.id)
+      expect(record, `${theme.id} has no catalogue source`).toBeDefined()
+      if (!record) continue
+      const projected = shadcnVariables(record)
+      const applied = themeCssVariables(theme)
+
+      for (const [role, value] of Object.entries(theme.colors)) {
+        const name = asCssName(role)
+        // ThemeVariants expose resolved opaque subtle fills; shadcnVariables may
+        // intentionally retain a variable-based color-mix for stylesheet use.
+        if (role.endsWith('Subtle')) continue
+        if (projected[name] !== undefined) {
+          expect(projected[name], `${theme.id} ${role} diverged from @adea-ai/themes`).toBe(value)
+        }
+        expect(applied[name], `${theme.id} ${name} changed during UI application`).toBe(value)
       }
     }
   })

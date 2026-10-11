@@ -159,13 +159,13 @@ text actually sits on. Body text must clear **7:1**; secondary text, labels on f
 buttons and the focus ring must clear **4.5:1** (or **3:1** for the ring, which is a
 non-text indicator).
 
-The other 25 variants in the catalogue are held to a **different and lower floor**, and
-the difference is deliberate rather than an oversight: a third-party palette is somebody
-else's solved set, and re-solving it to 7:1 would stop it being that palette.
+The other 29 variants in the catalogue are held to a **different and lower floor**.
+Twenty-five are imported palettes; four are the first-party Slate and High Contrast
+variants. The imported set keeps its source identity rather than being re-solved to 7:1.
 
 Those floors live in [`@adea-ai/themes`](https://github.com/adea-ai/themes), which
-normalizes the upstream palettes and runs **WCAG AA** over every one of them — 4.5:1 for
-text, 3:1 for the ring — so an imported theme is _measured_ rather than assumed. At least
+normalizes imported palettes and runs **WCAG AA** over every non-default variant — 4.5:1
+for text, 3:1 for the ring — so each imported theme is _measured_ rather than assumed. At least
 one of them would have failed on its own published values: Solarized Light's body text
 measures 4.28:1 against its own background, and the catalogue raises its lightness rather
 than shipping a theme that fails the standard.

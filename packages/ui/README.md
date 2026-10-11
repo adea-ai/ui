@@ -95,7 +95,7 @@ notes through the breaking Conventional Commit, rather than a silent patch.
 
 ## Theming
 
-The catalogue is 27 themes across two appearances, grouped into families. The
+The catalogue is 31 themes across two appearances and sixteen families. The
 provider takes an initial selection and every axis is a plain value:
 
 ```tsx
