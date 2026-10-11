@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.123.0](https://github.com/adea-ai/ui/compare/v0.122.3...v0.123.0) (2026-10-11)
+
+
+### Features
+
+* align UI theme projections with Themes 0.10.4 ([#379](https://github.com/adea-ai/ui/issues/379)) ([77e22b8](https://github.com/adea-ai/ui/commit/77e22b81446d1822564e9773b144f6169ec87760))
+
 ## [0.122.3](https://github.com/adea-ai/ui/compare/v0.122.2...v0.122.3) (2026-10-08)
 
 
