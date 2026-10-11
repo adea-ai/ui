@@ -30,6 +30,7 @@ export async function scopeComponentMetadataPlugins(
               exclude: [
                 ...(Array.isArray(existing) ? existing : existing ? [existing] : []),
                 /[/\\]node_modules[/\\]/,
+                /[/\\]resize-controller-core(?:-retry)?\.tsx$/,
               ],
             },
           },

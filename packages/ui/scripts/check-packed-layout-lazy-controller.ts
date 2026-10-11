@@ -4,11 +4,51 @@ import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { extname, join, resolve, sep } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { chromium, webkit, type BrowserType } from '@playwright/test'
+import { chromium, webkit, type BrowserType, type Page } from '@playwright/test'
 import { build, type Plugin } from 'vite'
 import solid from 'vite-plugin-solid'
 
 type Condition = 'compiled' | 'solid'
+type DelayedFrameWindow = Window & {
+  adeaDelayedFrameCount?: () => number
+  adeaFlushDelayedFrames?: () => number
+}
+
+async function waitForActiveSelector(page: Page, selector: string) {
+  await page.waitForFunction((targetSelector) => {
+    const target = document.querySelector<HTMLElement>(targetSelector)
+    return target !== null && document.activeElement === target
+  }, selector)
+}
+
+async function holdPageAnimationFrames(page: Page) {
+  await page.evaluate(() => {
+    const testWindow = window as DelayedFrameWindow
+    const pending = new Map<number, FrameRequestCallback>()
+    const requestAnimationFrame = window.requestAnimationFrame.bind(window)
+    const cancelAnimationFrame = window.cancelAnimationFrame.bind(window)
+    let nextId = 1
+
+    window.requestAnimationFrame = (callback) => {
+      const id = nextId++
+      pending.set(id, callback)
+      return id
+    }
+    window.cancelAnimationFrame = (id) => pending.delete(id)
+    testWindow.adeaDelayedFrameCount = () => pending.size
+    testWindow.adeaFlushDelayedFrames = () => {
+      const callbacks = [...pending.values()]
+      pending.clear()
+      window.requestAnimationFrame = requestAnimationFrame
+      window.cancelAnimationFrame = cancelAnimationFrame
+      delete testWindow.adeaDelayedFrameCount
+      delete testWindow.adeaFlushDelayedFrames
+      callbacks.forEach((callback) => callback(performance.now()))
+      return callbacks.length
+    }
+  })
+}
+
 type PackedChunk = {
   fileName: string
   isEntry: boolean
@@ -857,9 +897,31 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               }),
               [6, 13, 'backward']
             )
+            await holdPageAnimationFrames(rejectedPage)
             await retry.focus()
             await retry.press('Enter')
             await retry.waitFor()
+            await rejectedPage.waitForFunction(
+              () => ((window as DelayedFrameWindow).adeaDelayedFrameCount?.() ?? 0) > 0,
+              undefined,
+              { timeout: 5_000 }
+            )
+            const pendingFocusFrames = await rejectedPage.evaluate(
+              () => (window as DelayedFrameWindow).adeaDelayedFrameCount?.() ?? 0
+            )
+            assert.ok(pendingFocusFrames > 0, 'keyboard retry queues a frame-delayed focus restore')
+            assert.equal(
+              await retry.evaluate((element) => document.activeElement === element),
+              false,
+              'focus stays unset on the remounted action until the scheduled frame runs'
+            )
+            assert.equal(
+              await rejectedPage.evaluate(
+                () => (window as DelayedFrameWindow).adeaFlushDelayedFrames?.() ?? 0
+              ),
+              pendingFocusFrames
+            )
+            await waitForActiveSelector(rejectedPage, '[data-resize-retry]')
             assert.equal(controllerRequests, 2)
             assert.equal(await rejectedPage.getByRole('separator').count(), 1)
             assert.equal(await rejectedEditor.evaluate((element) => element.isConnected), true)
@@ -911,6 +973,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               throw error
             }
             assert.equal(controllerRequests, 3)
+            await waitForActiveSelector(rejectedPage, '[data-corvu-resizable-handle]')
             assert.equal(
               await retrySeparator.evaluate((element) => document.activeElement === element),
               true
@@ -1005,6 +1068,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
             await sharedRetry.focus()
             await sharedRetry.press('Enter')
             await sharedRetry.waitFor()
+            await waitForActiveSelector(sharedFailurePage, '[data-resize-retry]')
             assert.equal(sharedControllerRequests, 1)
             assert.equal(retryControllerRequests, 0)
             assert.equal(
@@ -1013,6 +1077,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
             )
             await sharedRetry.press('Enter')
             await sharedFailurePage.locator('[data-corvu-resizable-handle]').waitFor()
+            await waitForActiveSelector(sharedFailurePage, '[data-corvu-resizable-handle]')
             assert.equal(sharedControllerRequests, 1)
             assert.equal(retryControllerRequests, 1)
             assert.equal(
@@ -1104,6 +1169,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               )
               if (attempt < 3) {
                 await retryUntilExhausted.waitFor()
+                await waitForActiveSelector(exhaustedPage, '[data-resize-retry]')
                 assert.equal(
                   await retryUntilExhausted.evaluate(
                     (element) => document.activeElement === element
@@ -1122,6 +1188,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               name: 'Reload page to retry resizing',
             })
             await reload.waitFor()
+            await waitForActiveSelector(exhaustedPage, '[data-resize-retry]')
             assert.equal(await reload.isEnabled(), true)
             assert.equal(
               await reload.evaluate((element) => document.activeElement === element),
