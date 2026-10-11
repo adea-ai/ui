@@ -144,7 +144,9 @@ export function MessageRow(props: MessageRowProps) {
           <div data-slot="message-body" class="text-sm">
             <Show
               when={!local.deleted}
-              fallback={<p class="text-muted-foreground italic">Message deleted</p>}
+              fallback={
+                <p class="font-content text-content text-muted-foreground italic">Message deleted</p>
+              }
             >
               {local.children}
             </Show>
@@ -376,7 +378,7 @@ function Prose(props: { text: string }) {
   const parts = () => props.text.split(/(`[^`\n]+`)/g).filter(Boolean)
 
   return (
-    <p class="whitespace-pre-wrap">
+    <p class="font-content text-content whitespace-pre-wrap">
       <For each={parts()}>
         {(part) => (
           <Show

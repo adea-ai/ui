@@ -389,19 +389,34 @@ export const radiusTokens: TokenDefinition[] = [
 
 export const typographyTokens: TokenDefinition[] = [
   {
+    name: 'font-ui',
+    kind: 'font-family',
+    description: 'The selected family for interface controls, labels and headings.',
+  },
+  {
+    name: 'font-content',
+    kind: 'font-family',
+    description: 'The selected family for prose, transcripts and long-form reading.',
+  },
+  {
+    name: 'font-code',
+    kind: 'font-family',
+    description: 'The selected family for code, terminals, keyboard keys, ids and paths.',
+  },
+  {
     name: 'font-sans',
     kind: 'font-family',
-    description: 'The selected interface face. Space Grotesk unless the font axis says otherwise.',
+    description: 'Compatibility alias for the selected UI family.',
   },
   {
     name: 'font-mono',
     kind: 'font-family',
-    description: 'The selected monospace face. Code, terminals, ids, paths.',
+    description: 'Compatibility alias for the selected code family.',
   },
   {
     name: 'font-family-space-grotesk',
     kind: 'font-family',
-    description: 'The interface default, and the face the visual language was drawn against.',
+    description: 'The self-hosted Space Grotesk family.',
   },
   {
     name: 'font-family-jetbrains-mono',
@@ -429,6 +444,26 @@ export const typographyTokens: TokenDefinition[] = [
     description: "The platform's own monospace face.",
   },
   {
+    name: 'font-ui-size',
+    kind: 'dimension',
+    description: 'The chosen interface size in pixels; scales the shared UI text ladder.',
+  },
+  {
+    name: 'font-content-size',
+    kind: 'dimension',
+    description: 'The chosen prose and transcript size in pixels.',
+  },
+  {
+    name: 'font-code-size',
+    kind: 'dimension',
+    description: 'The chosen code, terminal and keyboard-key size in pixels.',
+  },
+  {
+    name: 'font-ui-scale',
+    kind: 'number',
+    description: 'The UI size ratio applied to the interface text ladder.',
+  },
+  {
     name: 'ui-tracking',
     kind: 'text',
     description:
@@ -443,13 +478,13 @@ export const typographyTokens: TokenDefinition[] = [
   {
     name: 'text-2xs',
     kind: 'text',
-    description: '11px — the smallest label the system permits: kbd keys, status bar.',
+    description: 'The smallest UI-scaled label: status bar and compact metadata.',
   },
-  { name: 'text-xs', kind: 'text', description: '12px — metadata, badges, secondary rows.' },
+  { name: 'text-xs', kind: 'text', description: 'UI-scaled metadata, badges and secondary rows.' },
   {
     name: 'text-sm',
     kind: 'text',
-    description: '14px — the interface default. Body copy, labels, controls.',
+    description: 'The UI-scaled interface default for labels and controls.',
   },
   { name: 'text-base', kind: 'text', description: '16px — card titles and dialog titles.' },
   { name: 'text-lg', kind: 'text', description: '18px — a section heading inside a page.' },
@@ -458,7 +493,17 @@ export const typographyTokens: TokenDefinition[] = [
   {
     name: 'text-3xl',
     kind: 'text',
-    description: '30px — the largest size in the system. Reserved for an empty-state headline.',
+    description: 'The largest UI-scaled rung. Reserved for an empty-state headline.',
+  },
+  {
+    name: 'text-content',
+    kind: 'text',
+    description: 'The selected content size with the prose line-height.',
+  },
+  {
+    name: 'text-code',
+    kind: 'text',
+    description: 'The selected code size with the code line-height.',
   },
 ]
 
@@ -662,21 +707,17 @@ export const accentPresets: readonly AccentPreset[] = Object.freeze([
 ])
 
 /**
- * The font axis.
+ * The shared font catalogue.
  *
- * The family is a selection, like the accent: `data-font` sits on the same element
- * and each option swaps the interface face. `space-grotesk` is the default because
- * it is the face the visual language was drawn against, and `system` is a
- * first-class option rather than a fallback — an application that wants the
- * platform's own face should be able to say so without losing the rest of the
- * system.
+ * Each stable id can be selected independently for UI, content and code.
+ * `system` is the new default; old single-font preferences migrate to the UI axis.
  */
 export type FontOption = {
-  /** The `data-font` value. `space-grotesk` is the default and needs no attribute. */
+  /** Stable id persisted by hosts and projected through the shared font axes. */
   id: string
   label: string
   description: string
-  /** Which of the two stacks this option sets. */
+  /** Which family stack the selected role uses. */
   stack: 'sans' | 'mono' | 'both'
 }
 
@@ -684,13 +725,13 @@ export const fontOptions: readonly FontOption[] = Object.freeze([
   {
     id: 'space-grotesk',
     label: 'Space Grotesk',
-    description: 'The default, and the face the visual language was drawn against.',
+    description: 'The self-hosted Space Grotesk family.',
     stack: 'both',
   },
   {
     id: 'system',
     label: 'System',
-    description: "The platform's own face. What a terminal or editor usually wants.",
+    description: "The platform's own interface family and system monospace counterpart.",
     stack: 'both',
   },
   {

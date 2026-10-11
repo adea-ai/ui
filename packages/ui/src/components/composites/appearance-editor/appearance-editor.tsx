@@ -36,6 +36,8 @@ import { Show, createUniqueId } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
+import { AppearanceFontSettingsGroup } from './font-settings-group'
+import { DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS } from '#lib/appearance-font-settings'
 
 import { Switch } from '../../ui/switch/switch'
 import {
@@ -54,8 +56,8 @@ import { SettingsRow, TerminalRow, ThemeRow } from './appearance-rows'
  * No ThemeProvider is required, and no catalogue, renderer engine or storage is
  * imported. Hosts normalize unknown IDs and custom colors, report recovery,
  * snapshot on open, preview on changes, commit on Save, and restore on dismissal.
- * Both theme rows remain mounted when mode changes. Typeface/density axes are
- * deliberately absent from Adea #425's accepted surface.
+ * Both theme rows remain mounted when mode changes. Density remains outside the
+ * accepted appearance surface; typeface settings are shared and host-persisted.
  */
 export function AppearanceEditor(props: AppearanceEditorProps) {
   const errorId = createUniqueId()
@@ -140,6 +142,11 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
             </Show>
           </div>
         </Show>
+        <AppearanceFontSettingsGroup
+          settings={props.draft.fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
+          disabled={props.saving}
+          onChange={(fonts) => props.onChange({ fonts })}
+        />
         <SettingsRow title="Glass" icon={<PanelsTopLeft />} description={glassDescription()}>
           <GlassChoices {...props} />
         </SettingsRow>

@@ -9,6 +9,7 @@ import {
 } from '#lib/themes'
 import { AppearanceEditor, AppearancePopover } from './appearance-editor'
 import type { AppearanceDraft } from './appearance-types'
+import { DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS } from '#lib/appearance-font-settings'
 
 // A catalogue long enough that the theme menus exercise their internal
 // scroll: a two-row list never overflows the fixed cap, so a regression to
@@ -35,6 +36,7 @@ const defaults: AppearanceDraft = {
   darkThemeId: 'adea-dark',
   terminalThemeId: 'theme',
   accent: 'theme',
+  fonts: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
   surface: 'theme',
   reduceTransparency: false,
 }
