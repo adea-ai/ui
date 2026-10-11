@@ -140,7 +140,12 @@ export async function renderLayoutServer() {
     plugins: [solid({ ssr: true })],
     resolve: { conditions: ['solid', 'node', 'import'] },
     ssr: { noExternal: true },
-    build: { write: false, minify: false, ssr: serverEntry },
+    build: {
+      write: false,
+      minify: false,
+      ssr: serverEntry,
+      rollupOptions: { output: { codeSplitting: false } },
+    },
   })
   const chunks = (await outputsFor(result)).filter((chunk) => chunk.type === 'chunk')
   if (chunks.length !== 1) throw new Error('Expected one server fixture chunk')

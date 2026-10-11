@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { verifyPackedLayoutLazyController } from './check-packed-layout-lazy-controller'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-renderer-'))
@@ -112,13 +113,56 @@ try {
   for (const name of ['chart.js', 'solid-chartjs', 'embla-carousel', 'embla-carousel-solid'])
     if (existsSync(join(consumer, 'node_modules', name)))
       throw new Error(`Unused optional peer installed: ${name}`)
+  if (!manifest.exports['./components/*'])
+    throw new Error('Packed Button component export prerequisite missing')
+  const packedPackageRoot = join(consumer, 'node_modules/@adea-ai/ui')
+  const packedLayoutRoot = join(packedPackageRoot, 'dist/components/layout/split-layout')
+  const packedLayoutSourceRoot = join(packedPackageRoot, 'src/components/layout/split-layout')
+  const layoutSourceRoot = join(uiRoot, 'src/components/layout/split-layout')
+  const controllerModules = [
+    'resize-controller.tsx',
+    'resize-controller-retry.tsx',
+    'resize-controller-retry-2.tsx',
+    'resize-controller-core.tsx',
+    'resize-controller-core-retry.tsx',
+  ]
+  for (const sourceName of controllerModules) {
+    const compiledName = sourceName.replace(/\.tsx$/, '.js')
+    if (!existsSync(join(packedLayoutRoot, compiledName)))
+      throw new Error(`Packed npm tarball omitted ${compiledName}`)
+    const sourcePath = join(layoutSourceRoot, sourceName)
+    const packedSourcePath = join(packedLayoutSourceRoot, sourceName)
+    if (!existsSync(packedSourcePath)) throw new Error(`Packed npm tarball omitted ${sourceName}`)
+    if (readFileSync(packedSourcePath, 'utf8') !== readFileSync(sourcePath, 'utf8'))
+      throw new Error(`Packed npm source drifted from ${sourceName}`)
+  }
+  const packedRegistry = JSON.parse(
+    readFileSync(join(packedPackageRoot, 'registry.json'), 'utf8')
+  ) as { items: Array<{ name: string; registryDependencies: string[] }> }
+  const packedSplitLayout = packedRegistry.items.find((item) => item.name === 'split-layout')
+  if (!packedSplitLayout?.registryDependencies.includes('@adea-ai/ui/button'))
+    throw new Error('Packed registry omitted the Button dependency for SplitLayout')
   const renderer = readFileSync(
     join(consumer, 'node_modules/@adea-ai/ui/dist/components/layout/split-layout/split-layout.js'),
     'utf8'
   )
-  for (const dependency of ['solid-js', 'solid-js/web', '@corvu/resizable'])
+  for (const dependency of ['solid-js', 'solid-js/web'])
     if (!renderer.includes(`from "${dependency}"`) && !renderer.includes(`from '${dependency}'`))
       throw new Error(`Compiled renderer did not externalize ${dependency}`)
+  if (renderer.includes('@corvu/resizable'))
+    throw new Error('Compiled renderer eagerly imports @corvu/resizable')
+  const resizeController = readFileSync(
+    join(
+      consumer,
+      'node_modules/@adea-ai/ui/dist/components/layout/split-layout/resize-controller-core.js'
+    ),
+    'utf8'
+  )
+  if (
+    !resizeController.includes('from "@corvu/resizable"') &&
+    !resizeController.includes("from '@corvu/resizable'")
+  )
+    throw new Error('Packed resize controller did not externalize @corvu/resizable')
   const license = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/LICENSE'), 'utf8')
   const notice = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/NOTICE'), 'utf8')
   for (const text of [
@@ -154,7 +198,12 @@ try {
     plugins: [solid({ ssr: true })],
     resolve: { conditions: ['solid', 'node', 'import'] },
     ssr: { noExternal: true },
-    build: { write: false, minify: false, ssr: join(consumer, 'server.tsx') },
+    build: {
+      write: false,
+      minify: false,
+      ssr: join(consumer, 'server.tsx'),
+      rollupOptions: { output: { codeSplitting: false } },
+    },
   })
   const serverChunks = (Array.isArray(serverBuild) ? serverBuild : [serverBuild])
     .flatMap((output) => ('output' in output ? output.output : []))
@@ -211,7 +260,7 @@ try {
   )
   writeFileSync(
     join(consumer, 'style.css'),
-    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n" +
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/split-layout.tsx';\n@source './node_modules/@adea-ai/ui/src/components/layout/split-layout/resize-controller-core.tsx';\n" +
       // The pane close control is an ActionButton, so its tooltip ships with
       // the renderer and needs the shared Tooltip styles in the packed sheet.
       "@source './node_modules/@adea-ai/ui/src/components/ui/tooltip';\n" +
@@ -227,13 +276,17 @@ try {
       // packed sheet and the grip collapses to an empty box.
       "@source './node_modules/@adea-ai/ui/src/components/ui/resizable';\n"
   )
-  for (const condition of ['compiled', 'solid']) {
+  for (const condition of ['compiled', 'solid'] as const) {
+    await verifyPackedLayoutLazyController(consumer, condition)
+    const browserProject =
+      process.env['ADEA_PACKED_LAYOUT_BROWSER'] === 'chromium' ? ['--project=chromium'] : []
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
       [
         'test',
         '--config=playwright.layout.config.ts',
         'component-split-layout.spec.ts',
+        ...browserProject,
         '--output',
         `test-results/packed-layout-${condition}`,
       ],
@@ -246,6 +299,7 @@ try {
         'test',
         '--config=playwright.components.config.ts',
         'component-sidebar-nav.spec.ts',
+        ...browserProject,
         '--output',
         `test-results/packed-sidebar-${condition}`,
       ],
@@ -258,6 +312,7 @@ try {
         'test',
         '--config=playwright.components.config.ts',
         'component-top-bar.spec.ts',
+        ...browserProject,
         '--output',
         `test-results/packed-topbar-${condition}`,
       ],
