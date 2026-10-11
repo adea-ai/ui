@@ -131,28 +131,39 @@ describe('appearance editor font settings', () => {
       'localStorage',
       'document',
       fontSettingsBootstrapScript('appearance')
-    ) as (storage: Storage, document: unknown) => void
+    ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
 
     attributes.set('data-font', 'space-grotesk')
-    run(storage as Storage, document)
+    run(storage, document)
 
     expect(attributes.has('data-font')).toBe(false)
     expect(attributes.get('data-ui-font')).toBe('geist')
     expect(attributes.has('data-content-font')).toBe(false)
     expect(attributes.get('data-code-font')).toBe('jetbrains-mono')
     expect(properties.get('--font-ui-size')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX) + 'px')
-    expect(properties.get('--font-content-size')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN) + 'px')
+    expect(properties.get('--font-content-size')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN) + 'px'
+    )
     expect(properties.get('--font-code-size')).toBe('12px')
     expect(properties.get('--font-ui-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX / 14))
-    expect(properties.get('--font-content-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14))
+    expect(properties.get('--font-content-scale')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14)
+    )
     expect(properties.get('--font-code-scale')).toBe('1')
     expect(properties.get('--font-ui-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX / 14))
-    expect(properties.get('--font-content-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14))
+    expect(properties.get('--font-content-scale')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14)
+    )
     expect(properties.get('--font-code-scale')).toBe('1')
   })
 
   test('bootstrap leaves a malformed or inaccessible preference on System defaults', () => {
-    for (const getItem of [() => '{not-json', () => { throw new Error('blocked') }]) {
+    for (const getItem of [
+      () => '{not-json',
+      () => {
+        throw new Error('blocked')
+      },
+    ]) {
       const { attributes, properties } = mockRoot()
       const document = {
         documentElement: {
@@ -165,10 +176,10 @@ describe('appearance editor font settings', () => {
         'localStorage',
         'document',
         fontSettingsBootstrapScript('appearance')
-      ) as (storage: Storage, document: unknown) => void
+      ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
 
       attributes.set('data-font', 'space-grotesk')
-      run({ getItem } as Storage, document)
+      run({ getItem }, document)
 
       expect(attributes.has('data-font')).toBe(false)
       expect(attributes.has('data-ui-font')).toBe(false)

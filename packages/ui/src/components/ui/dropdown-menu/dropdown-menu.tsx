@@ -38,8 +38,92 @@ export function DropdownMenu(props: ComponentProps<typeof KobalteDropdownMenu>) 
   return <KobalteDropdownMenu modal={local.modal ?? false} {...rest} />
 }
 
+const SCROLLABLE_OVERFLOW = /(auto|scroll)/
+const OVERFLOW_PROPERTIES = ['overflow', 'overflow-x', 'overflow-y'] as const
+
+type OverflowProperty = (typeof OVERFLOW_PROPERTIES)[number]
+type OverflowDeclaration = Readonly<{
+  property: OverflowProperty
+  value: string
+  priority: string
+}>
+
+function readInlineOverflow(element: HTMLElement): OverflowDeclaration[] {
+  return OVERFLOW_PROPERTIES.map((property) => ({
+    property,
+    value: element.style.getPropertyValue(property),
+    priority: element.style.getPropertyPriority(property),
+  }))
+}
+
+function declarationsMatch(element: HTMLElement, declarations: OverflowDeclaration[]) {
+  return declarations.every(
+    ({ property, value, priority }) =>
+      element.style.getPropertyValue(property) === value &&
+      element.style.getPropertyPriority(property) === priority
+  )
+}
+
+function bypassUnboundedScrollLookup(trigger: HTMLElement) {
+  const scrollRoot = document.scrollingElement ?? document.documentElement
+  if (window.getComputedStyle(scrollRoot).overflow !== 'hidden') return
+
+  const temporaryStyles: Array<{
+    element: HTMLElement
+    original: OverflowDeclaration[]
+    applied: OverflowDeclaration[]
+  }> = []
+
+  for (let element: HTMLElement | null = trigger; element; ) {
+    const parent = element.parentElement
+    if (element !== scrollRoot) {
+      const computed = window.getComputedStyle(element)
+      const overflow = `${computed.overflow} ${computed.overflowX} ${computed.overflowY}`
+      if (SCROLLABLE_OVERFLOW.test(overflow)) {
+        const original = readInlineOverflow(element)
+        element.style.setProperty('overflow', 'clip', 'important')
+        temporaryStyles.push({ element, original, applied: readInlineOverflow(element) })
+      }
+    }
+    element = parent
+  }
+
+  if (temporaryStyles.length === 0) return
+
+  // Kobalte's keyboard path synchronously walks scroll parents before it opens
+  // the menu. Clipping only non-root scroll ancestors makes that walk stop at
+  // the locked viewport. Restore those declarations once the event handler
+  // finishes, and leave any newer owner write untouched.
+  queueMicrotask(() => {
+    for (const { element, original, applied } of temporaryStyles) {
+      if (!element.isConnected || !declarationsMatch(element, applied)) continue
+      for (const property of OVERFLOW_PROPERTIES) element.style.removeProperty(property)
+      for (const { property, value, priority } of original) {
+        if (value) element.style.setProperty(property, value, priority)
+      }
+    }
+  })
+}
+
 export function DropdownMenuTrigger(props: ComponentProps<typeof KobalteDropdownMenu.Trigger>) {
-  return <KobalteDropdownMenu.Trigger {...props} />
+  const [local, rest] = splitProps(props, ['disabled', 'onKeyDown'])
+  const onKeyDown = (event: KeyboardEvent) => {
+    // Kobalte's MenuTrigger does not consult defaultPrevented before its own
+    // open-key handling. Preserve its existing callback behavior; this wrapper
+    // only makes the pre-open scroll-parent lookup terminate.
+    if (typeof local.onKeyDown === 'function') local.onKeyDown(event)
+    else if (local.onKeyDown) local.onKeyDown[0](local.onKeyDown[1], event)
+
+    const opensMenu = ['Enter', ' ', 'ArrowDown', 'ArrowRight'].includes(event.key)
+    if (local.disabled || !opensMenu) return
+    const trigger = event.currentTarget
+    if (!(trigger instanceof HTMLElement)) return
+    const isNativeLink = trigger instanceof HTMLAnchorElement && trigger.hasAttribute('href')
+    if (isNativeLink && (event.key === 'Enter' || event.key === ' ')) return
+    bypassUnboundedScrollLookup(trigger)
+  }
+
+  return <KobalteDropdownMenu.Trigger {...rest} disabled={local.disabled} onKeyDown={onKeyDown} />
 }
 
 export function DropdownMenuPortal(props: ComponentProps<typeof KobalteDropdownMenu.Portal>) {

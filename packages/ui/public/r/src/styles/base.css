@@ -583,17 +583,16 @@
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: var(--font-sans);
+    font-family: var(--font-ui);
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
   }
 
   body {
     margin: 0;
-    /* The interface default: 14px/1.55, matching the `text-sm` rung. It lives on
-       the body, not the root: every rung is written in rem against a 16px root,
-       so `font-size: var(--text-sm)` on `html` would make 1rem = 14px and
-       `text-sm` would compute to 12.25px — 87.5% of the size it defines. */
+    /* The interface default follows the rem-relative `text-sm` rung, preserving
+       browser root-text enlargement while the preference ratio adjusts the
+       selected UI size. */
     background: var(--background);
     color: var(--foreground);
     font-size: var(--text-sm);
@@ -680,7 +679,8 @@
   kbd,
   pre,
   samp {
-    font-family: var(--font-mono);
+    font-family: var(--font-code);
+    font-size: var(--text-code);
     font-feature-settings: 'liga' 0;
   }
 }

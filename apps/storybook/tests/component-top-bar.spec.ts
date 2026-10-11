@@ -169,13 +169,11 @@ test('toolbar actions remain reachable without document overflow at narrow width
           const actionBounds = (await button.boundingBox())!
           const tooltipStyle = await tooltip.evaluate((element) => ({
             className: element.className,
-            side: element.getAttribute('data-side'),
           }))
           expect(tooltipStyle.className).toContain('bg-card')
           expect(tooltipStyle.className).toContain('text-card-foreground')
           expect(tooltipStyle.className).toContain('text-sm')
           expect(tooltipStyle.className).toContain('font-medium')
-          expect(tooltipStyle.side).toBe('bottom')
           expect(tooltipBounds!.y).toBeGreaterThanOrEqual(actionBounds.y + actionBounds.height)
           const tooltipId = await tooltip.getAttribute('id')
           expect(tooltipId).toBeTruthy()
@@ -252,7 +250,6 @@ test('top-bar action tooltip keeps the shared type and bottom-center placement a
   const tooltipBounds = (await tooltip.boundingBox())!
   const style = await tooltip.evaluate((element) => ({
     className: element.className,
-    side: element.getAttribute('data-side'),
     font: getComputedStyle(element).fontFamily,
     color: getComputedStyle(element).color,
   }))
@@ -260,7 +257,6 @@ test('top-bar action tooltip keeps the shared type and bottom-center placement a
   expect(style.className).toContain('text-card-foreground')
   expect(style.className).toContain('text-sm')
   expect(style.className).toContain('font-medium')
-  expect(style.side).toBe('bottom')
   expect(tooltipBounds.y).toBeGreaterThanOrEqual(actionBounds.y + actionBounds.height)
   expect(tooltipBounds.x + tooltipBounds.width / 2).toBeCloseTo(
     actionBounds.x + actionBounds.width / 2,

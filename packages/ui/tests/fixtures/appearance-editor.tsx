@@ -24,6 +24,10 @@ import {
   type AdeaTheme,
 } from '@adea-ai/themes'
 import {
+  fontSettingsBootstrapScript,
+  normalizeAppearanceEditorFontSettings,
+} from '../../src/lib/appearance-font-settings'
+import {
   AppearanceEditor,
   AppearancePopover,
   type AppearanceDraft,
@@ -78,6 +82,12 @@ function offeredThemeAccents(light: AdeaTheme, dark: AdeaTheme): AccentPreset[] 
 }
 
 function Fixture() {
+  const fontDefaults = normalizeAppearanceEditorFontSettings(undefined).settings
+  const fontBootstrap = fontSettingsBootstrapScript('appearance')
+  const fontApiSmoke = [
+    `${fontDefaults.ui.size}/${fontDefaults.content.size}/${fontDefaults.code.size}`,
+    String(fontBootstrap.includes('data-ui-font')),
+  ].join(';')
   const [open, setOpen] = createSignal(false)
   const [committed, setCommitted] = createSignal({ ...defaults })
   const [draft, setDraft] = createSignal({ ...defaults })
@@ -125,6 +135,9 @@ function Fixture() {
   }
   return (
     <main>
+      <output hidden data-font-settings-api>
+        {fontApiSmoke}
+      </output>
       <button type="button" id="outside">
         Outside the editor
       </button>

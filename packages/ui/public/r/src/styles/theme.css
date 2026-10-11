@@ -418,79 +418,76 @@
 /* @end generated accents */
 
 /* ---------------------------------------------------------------------------
- * 3b. The font axis
+ * 3b. Font axes
  *
- * A selection, like the accent. `data-font` sits on the same element as `dark` and
- * `data-accent`; the default (absent) is Space Grotesk, which is what the visual
- * language was drawn against.
+ * The user can choose independent UI, content and code families and sizes. The
+ * absent attributes resolve to System; the old `data-font` selector remains a
+ * UI-only compatibility alias while persisted legacy `font` values migrate to
+ * `data-ui-font`.
  *
- * `system` is deliberately first-class rather than a fallback: an application that
- * wants the platform's own face — which is what a terminal and a code editor
- * usually look best in — should be able to say so without losing the rest of the
- * system.
- *
- * ## Width compensation
- *
- * A monospace face is roughly 20% wider than Space Grotesk at the same size, and
- * every measurement in this library — control heights, a rail's label budget, a
- * button's padding — was drawn against the proportional face. Switching the UI
- * font to mono without compensating therefore overflows exactly the tight places:
- * a rail label truncates, a two-word button wraps, a status pill clips.
- *
- * `--ui-tracking` and `--ui-word-spacing` are the remedy, and they are tokens
- * rather than one blanket rule because the two families want *opposite*
- * treatment. Mono's space character is a full advance-width cell — three times
- * Space Grotesk's — so a two-word label reads as two floating words and needs
- * negative word spacing; its glyphs also carry more sidebearing, so a tighter
- * track is safe. Neither correction is wanted on a proportional face, which is
- * why the defaults are `normal`.
- *
- * Apply them where chrome is measured: `tracking-(--ui-tracking)
- * word-spacing-(--ui-word-spacing)`. Body copy does not need them — it wraps.
+ * Monospace UI faces keep the established width compensation tokens. Content and
+ * code do not inherit UI tracking corrections.
  * ------------------------------------------------------------------------- */
 
-/* The default, and it has to be declared *before* the blocks below.
- *
- * `:root` and `[data-font='…']` have the same specificity, so the later one wins
- * outright — there is no cascade subtlety here, only a position in the file. Written
- * after them, where it naturally belongs next to the `--font-family-*` stacks it
- * references, the default shadowed all five selections: every typeface resolved to
- * Space Grotesk while the toolbar reported something else.
- *
- * So the default lives here instead, in its own two-line block, and the stacks stay
- * where they are. The references resolve fine even though `--font-family-*` is
- * declared further down, because a custom property is resolved where it is used
- * rather than where it is declared. What matters is the order of two declarations of
- * the *same* property, and this is the only one.
- *
- * `tests/appearance-axes.test.ts` asserts both the order and that there is exactly
- * one such default, because "a block above the default is doing nothing" is invisible
- * to review and to every behavioural test.
- */
 :root {
-  --font-sans: var(--font-family-space-grotesk);
-  --font-mono: var(--font-family-jetbrains-mono);
+  --font-ui: var(--font-family-system);
+  --font-content: var(--font-family-system);
+  --font-code: var(--font-family-system-mono);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+  --font-ui-size: 14px;
+  --font-content-size: 14px;
+  --font-code-size: 12px;
+  --font-ui-scale: 1;
+  --font-content-scale: 1;
+  --font-code-scale: 1;
 }
 
-[data-font='system'] {
-  --font-sans: var(--font-family-system);
-  --font-mono: var(--font-family-system-mono);
+[data-ui-font='space-grotesk'],
+[data-font='space-grotesk'] {
+  --font-ui: var(--font-family-space-grotesk);
 }
+[data-ui-font='geist'],
 [data-font='geist'] {
-  --font-sans: var(--font-family-geist);
-  --font-mono: var(--font-family-geist-mono);
+  --font-ui: var(--font-family-geist);
 }
+[data-ui-font='geist-mono'],
 [data-font='geist-mono'] {
-  --font-sans: var(--font-family-geist-mono);
-  --font-mono: var(--font-family-geist-mono);
+  --font-ui: var(--font-family-geist-mono);
   --ui-tracking: -0.03em;
   --ui-word-spacing: -1.5px;
 }
+[data-ui-font='jetbrains-mono'],
 [data-font='jetbrains-mono'] {
-  --font-sans: var(--font-family-jetbrains-mono);
-  --font-mono: var(--font-family-jetbrains-mono);
+  --font-ui: var(--font-family-jetbrains-mono);
   --ui-tracking: -0.04em;
   --ui-word-spacing: -2.5px;
+}
+
+[data-content-font='space-grotesk'] {
+  --font-content: var(--font-family-space-grotesk);
+}
+[data-content-font='geist'] {
+  --font-content: var(--font-family-geist);
+}
+[data-content-font='geist-mono'] {
+  --font-content: var(--font-family-geist-mono);
+}
+[data-content-font='jetbrains-mono'] {
+  --font-content: var(--font-family-jetbrains-mono);
+}
+
+[data-code-font='space-grotesk'] {
+  --font-code: var(--font-family-jetbrains-mono);
+}
+[data-code-font='geist'] {
+  --font-code: var(--font-family-geist-mono);
+}
+[data-code-font='geist-mono'] {
+  --font-code: var(--font-family-geist-mono);
+}
+[data-code-font='jetbrains-mono'] {
+  --font-code: var(--font-family-jetbrains-mono);
 }
 
 /* ---------------------------------------------------------------------------
@@ -526,38 +523,34 @@
   --font-family-system: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-family-system-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Width compensation for the mono UI fonts. `normal` on the proportional face,
-     tightened by the `[data-font]` blocks above when the UI font is monospace. */
+  /* Width compensation for mono UI faces. */
   --ui-tracking: normal;
   --ui-word-spacing: normal;
 
-  /* Space Grotesk is the default because it is the face the visual language was
-     drawn against: the donor this system's structure comes from sets it, and its
-     slightly narrow, geometric forms are part of the look. The declaration of that
-     default is not here but in the small `:root` block above the `[data-font]`
-     blocks, because it has to precede them; `tests/appearance-axes.test.ts` holds
-     that ordering, and it is why this comment points elsewhere rather than
-     restating a value. */
-
   /* Type scale. Each rung carries its own line-height because the ratio is not
      constant: small text needs more leading to stay readable, display text needs
-     less to stay coherent. */
-  --text-2xs: 0.6875rem; /* 11px */
+     less to stay coherent. Each text role follows its chosen size ratio while its
+     canonical pixel size remains available to native editor integrations. */
+  --text-2xs: calc(0.6875rem * var(--font-ui-scale)); /* 11px at default UI size */
   --text-2xs--line-height: 1.45;
-  --text-xs: 0.75rem; /* 12px */
+  --text-xs: calc(0.75rem * var(--font-ui-scale)); /* 12px at default UI size */
   --text-xs--line-height: 1.5;
-  --text-sm: 0.875rem; /* 14px — the interface default */
+  --text-sm: calc(0.875rem * var(--font-ui-scale)); /* 14px — the interface default */
   --text-sm--line-height: 1.55;
-  --text-base: 1rem;
+  --text-base: calc(1rem * var(--font-ui-scale));
   --text-base--line-height: 1.5;
-  --text-lg: 1.125rem;
+  --text-lg: calc(1.125rem * var(--font-ui-scale));
   --text-lg--line-height: 1.4;
-  --text-xl: 1.25rem;
+  --text-xl: calc(1.25rem * var(--font-ui-scale));
   --text-xl--line-height: 1.35;
-  --text-2xl: 1.5rem;
+  --text-2xl: calc(1.5rem * var(--font-ui-scale));
   --text-2xl--line-height: 1.25;
-  --text-3xl: 1.875rem;
+  --text-3xl: calc(1.875rem * var(--font-ui-scale));
   --text-3xl--line-height: 1.2;
+  --text-content: calc(0.875rem * var(--font-content-scale));
+  --text-content--line-height: var(--text-sm--line-height);
+  --text-code: calc(0.75rem * var(--font-code-scale));
+  --text-code--line-height: var(--text-xs--line-height);
 
   /* Control density. KiroCrew's centre of gravity — a 28px control in toolbars and
      a 32px control in forms — is kept, because the density is the structural half
@@ -774,8 +767,11 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+  --font-ui: var(--font-ui);
+  --font-content: var(--font-content);
+  --font-code: var(--font-code);
   --font-family-space-grotesk: var(--font-family-space-grotesk);
   --font-family-jetbrains-mono: var(--font-family-jetbrains-mono);
   --font-family-geist: var(--font-family-geist);
@@ -799,6 +795,10 @@
   --text-2xl--line-height: var(--text-2xl--line-height);
   --text-3xl: var(--text-3xl);
   --text-3xl--line-height: var(--text-3xl--line-height);
+  --text-content: var(--text-content);
+  --text-content--line-height: var(--text-content--line-height);
+  --text-code: var(--text-code);
+  --text-code--line-height: var(--text-code--line-height);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);

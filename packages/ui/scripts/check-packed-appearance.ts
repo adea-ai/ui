@@ -54,6 +54,10 @@ const replaceImports = (source: string) =>
       '../../src/components/composites/appearance-editor',
       '@adea-ai/ui/components/composites/appearance-editor'
     )
+    .replaceAll(
+      '../../src/lib/appearance-font-settings',
+      '@adea-ai/ui/lib/appearance-font-settings'
+    )
     .replaceAll('../../src/styles/globals.css', './style.css')
 const replaceDestructiveImports = (source: string) =>
   source

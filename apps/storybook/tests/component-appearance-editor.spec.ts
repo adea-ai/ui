@@ -37,7 +37,7 @@ for (const fontSize of ['100%', '200%']) {
       expect(box!.x).toBeGreaterThanOrEqual(panel!.x)
       expect(box!.x + box!.width).toBeLessThanOrEqual(panel!.x + panel!.width + 1)
     }
-    await choices.getByText('Custom', { exact: true }).click()
+    await choices.locator('label').filter({ hasText: 'Custom' }).click()
     await expect(dialog.getByRole('textbox', { name: 'Custom accent' })).toBeVisible()
   })
 }
@@ -64,6 +64,10 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
   if (!inlineEditor) await page.getByRole('button', { name: 'Appearance settings' }).click()
+})
+
+test('font settings host imports resolve through the public package subpath', async ({ page }) => {
+  await expect(page.locator('[data-font-settings-api]')).toHaveText('14/14/12;true')
 })
 
 test('the popup and nested controls retain their shared CSS contract', async ({ page }) => {
@@ -111,7 +115,11 @@ test('the popup and nested controls retain their shared CSS contract', async ({ 
     .poll(() => menu.evaluate((element) => Number.parseFloat(getComputedStyle(element).minWidth)))
     .toBeCloseTo(menuStyle.rem * 13, 1)
   await page.keyboard.press('Escape')
-  await page.getByText('Custom', { exact: true }).click()
+  await page
+    .getByRole('radiogroup', { name: 'Accent', exact: true })
+    .locator('label')
+    .filter({ hasText: 'Custom' })
+    .click()
   const input = await page.getByRole('textbox', { name: 'Custom accent' }).evaluate((element) => {
     const style = getComputedStyle(element)
     const probe = document.createElement('div')
@@ -184,16 +192,14 @@ test('font controls remain keyboard accessible and all text roles scale at 200%'
   })
 
   const metrics = await page.evaluate(() => {
-    const size = (selector: string) => {
-      const element = document.querySelector<HTMLElement>(selector)
-      if (!element) throw new Error(`Missing ${selector} preview`)
-      return Number.parseFloat(getComputedStyle(element).fontSize)
-    }
+    const content = document.querySelector<HTMLElement>('[data-testid="content-font-preview"]')
+    const code = document.querySelector<HTMLElement>('[data-testid="code-font-preview"]')
+    if (!content || !code) throw new Error('Missing content or code font preview')
     return {
       root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
       body: Number.parseFloat(getComputedStyle(document.body).fontSize),
-      content: size('[data-testid="content-font-preview"]'),
-      code: size('[data-testid="code-font-preview"]'),
+      content: Number.parseFloat(getComputedStyle(content).fontSize),
+      code: Number.parseFloat(getComputedStyle(code).fontSize),
     }
   })
   expect(metrics.root).toBe(32)
@@ -214,9 +220,47 @@ test('font controls remain keyboard accessible and all text roles scale at 200%'
   await expect(dialog.getByRole('spinbutton', { name: 'Code font size in pixels' })).toHaveValue(
     '12'
   )
+  await dialog.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await family.scrollIntoViewIfNeeded()
   await family.focus()
+  const captureScrollState = () =>
+    family.evaluate((trigger) => {
+      const state = []
+      for (let element: HTMLElement | null = trigger; element; element = element.parentElement) {
+        const computed = getComputedStyle(element)
+        const declarations = ['overflow', 'overflow-x', 'overflow-y'] as const
+        const overflow = `${computed.overflow} ${computed.overflowX} ${computed.overflowY}`
+        if (element === document.scrollingElement || /(auto|scroll)/.test(overflow)) {
+          state.push({
+            tag: element.tagName,
+            id: element.id,
+            className: element.className,
+            scrollTop: element.scrollTop,
+            scrollLeft: element.scrollLeft,
+            declarations: declarations.map((property) => [
+              property,
+              element.style.getPropertyValue(property),
+              element.style.getPropertyPriority(property),
+            ]),
+          })
+        }
+      }
+      return state
+    })
+  const scrollStateBeforeOpen = await captureScrollState()
+  expect(scrollStateBeforeOpen.some((entry) => entry.scrollTop > 0)).toBe(true)
   await page.keyboard.press('Enter')
-  const menu = page.getByRole('menu')
+  const menu = dialog.getByRole('menu')
+  await expect(menu).toBeVisible()
+  expect(await captureScrollState()).toEqual(scrollStateBeforeOpen)
+  await page.keyboard.press('Escape')
+  await expect(family).toBeFocused()
+  expect(await captureScrollState()).toEqual(scrollStateBeforeOpen)
+
+  await page.keyboard.press('Enter')
+  await expect(menu).toBeVisible()
   const choices = menu.getByRole('menuitemradio')
   await expect(choices).toHaveCount(5)
   await expect(choices.first()).toHaveText('System')
@@ -229,6 +273,7 @@ test('font controls remain keyboard accessible and all text roles scale at 200%'
   await geistMono.focus()
   await page.keyboard.press('Enter')
   await expect(family).toContainText('Geist Mono')
+  await expect(family).toHaveAttribute('aria-expanded', 'false')
   await expect(family).toBeFocused()
 
   await size.fill('100')
@@ -253,7 +298,9 @@ test('font controls remain keyboard accessible and all text roles scale at 200%'
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze()
   expect(
-    accessibility.violations.filter((finding) => ['serious', 'critical'].includes(finding.impact ?? ''))
+    accessibility.violations.filter((finding) =>
+      ['serious', 'critical'].includes(finding.impact ?? '')
+    )
   ).toEqual([])
 })
 
@@ -301,9 +348,11 @@ test('the primary accent grid stays six-choice while additional and theme accent
 }) => {
   const accent = page.getByRole('radiogroup', { name: 'Accent', exact: true })
   const primary = accent.locator('[data-primary-accent-grid]')
-  const ids = await primary.locator('[data-primary-accent]').evaluateAll((elements) =>
-    elements.map((element) => element.getAttribute('data-primary-accent'))
-  )
+  const ids = await primary
+    .locator('[data-primary-accent]')
+    .evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute('data-primary-accent'))
+    )
   expect(ids).toEqual(['theme', 'blue', 'green', 'amber', 'cyan', 'pink'])
   await expect(primary.getByRole('radio')).toHaveCount(6)
   await expect(primary.getByRole('radio', { name: 'Theme default' })).toBeChecked()
@@ -365,7 +414,11 @@ test('nested theme-menu Escape closes only the menu; a second Escape rolls back'
 test('custom accent validates before Save and native capabilities remain truthful', async ({
   page,
 }) => {
-  await page.getByText('Custom', { exact: true }).click()
+  await page
+    .getByRole('radiogroup', { name: 'Accent', exact: true })
+    .locator('label')
+    .filter({ hasText: 'Custom' })
+    .click()
   await page.getByRole('textbox', { name: 'Custom accent' }).fill('invalid')
   await expect(page.getByRole('textbox', { name: 'Custom accent' })).toHaveAttribute(
     'aria-invalid',
@@ -404,6 +457,17 @@ test('a pending save disables changes and duplicate commits', async ({ page }) =
   await expect(page.getByRole('button', { name: /^Dark theme/ })).toBeDisabled()
   await expect(page.getByRole('radio', { name: 'Light', exact: true })).toBeDisabled()
   await expect(page.getByRole('switch', { name: 'Reduce transparency' })).toBeDisabled()
+  const family = page.getByRole('button', { name: 'UI font family', exact: true })
+  await expect(family).toBeDisabled()
+
+  // Dispatch on the disabled element directly so this exercises the shared
+  // trigger adapter even though real pointer/keyboard input cannot target a
+  // native disabled button.
+  await family.evaluate((button) => {
+    button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+    button.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }))
+  })
+  await expect(page.getByRole('dialog').getByRole('menu')).toHaveCount(0)
 })
 
 test('a pending save disables theme choices when the menu is already open', async ({ page }) => {

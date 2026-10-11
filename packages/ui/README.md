@@ -249,7 +249,7 @@ provider takes an initial selection and every axis is a plain value:
 | Appearance | `light`, `dark`, `system`                                                                            | a `dark` class plus `color-scheme` on `<html>`                                      |
 | Theme      | any of the 34 catalogue ids                                                                          | the variant's tokens, written as custom properties on `<html>`                      |
 | Accent     | `theme` (follow the variant), one of six presets, or an accent the theme pair carries (`ansi-blue`…) | a `data-accent` attribute on `<html>`, plus the resolved roles as custom properties |
-| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                         | `data-ui-font`, `data-content-font`, `data-code-font` plus `--font-*-size` values   |
+| Fonts      | UI, content and code family ids from the shared catalogue; sizes from 10–32px                        | `data-ui-font`, `data-content-font`, `data-code-font` plus `--font-*-size` values   |
 
 Older single-font `font` preferences remain readable and migrate their family to
 the UI axis; new preferences store `fonts` with one family and size per axis.

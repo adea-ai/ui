@@ -668,7 +668,7 @@ export function PasteTokenEditor(props: PasteTokenEditorProps) {
               data-slot="paste-token-preview"
               class="bg-scrim text-scrim-foreground z-(--z-tooltip) w-fit max-w-64 rounded-md px-2 py-1 text-xs origin-(--kb-tooltip-content-transform-origin) text-balance data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-expanded:duration-150 data-closed:duration-100"
             >
-              <pre class="m-0 max-h-48 max-w-64 overflow-y-auto whitespace-pre-wrap break-words font-mono">
+              <pre class="m-0 max-h-48 max-w-64 overflow-y-auto whitespace-pre-wrap break-words font-code text-code">
                 {summary().text}
               </pre>
               <Show when={summary().hiddenLines > 0}>

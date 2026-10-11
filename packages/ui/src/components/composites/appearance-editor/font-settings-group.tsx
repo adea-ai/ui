@@ -24,6 +24,7 @@ import {
 
 export type AppearanceFontSettingsGroupProps = {
   settings: AppearanceEditorFontSettings
+  menuPortalMount?: HTMLElement
   onChange: (settings: AppearanceEditorFontSettings) => void
   disabled?: boolean
 }
@@ -59,6 +60,7 @@ const catalogFontOptions = fontOptions.filter((option) => option.id !== 'system'
 function FontFamilyMenu(props: {
   label: string
   family: AppearanceEditorFontFamilyId
+  menuPortalMount?: HTMLElement
   disabled?: boolean
   onSelect: (family: AppearanceEditorFontFamilyId) => void
 }) {
@@ -80,7 +82,11 @@ function FontFamilyMenu(props: {
         <span class="truncate">{selectedLabel()}</span>
         <ChevronDown aria-hidden="true" class="ms-2 size-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent hideArrow class="min-w-48">
+      <DropdownMenuContent
+        hideArrow
+        portalMount={props.menuPortalMount}
+        class="min-w-48"
+      >
         <DropdownMenuRadioGroup
           value={props.family}
           aria-label={`${props.label} system font`}
@@ -88,7 +94,9 @@ function FontFamilyMenu(props: {
             if (family === 'system') props.onSelect('system')
           }}
         >
-          <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system" closeOnSelect>
+            System
+          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
@@ -101,7 +109,9 @@ function FontFamilyMenu(props: {
         >
           <For each={catalogFontOptions}>
             {(option) => (
-              <DropdownMenuRadioItem value={option.id}>{option.label}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value={option.id} closeOnSelect>
+                {option.label}
+              </DropdownMenuRadioItem>
             )}
           </For>
         </DropdownMenuRadioGroup>
@@ -164,15 +174,12 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
             )
           }
           return (
-            <SettingsRow
-              title={row.label}
-              icon={<Icon />}
-              description={row.description}
-            >
+            <SettingsRow title={row.label} icon={<Icon />} description={row.description}>
               <div class="flex min-w-0 max-w-full items-center gap-2">
                 <FontFamilyMenu
                   label={row.label}
                   family={value().family}
+                  menuPortalMount={props.menuPortalMount}
                   disabled={props.disabled}
                   onSelect={(family) => updateAxis(row.axis, { family })}
                 />
