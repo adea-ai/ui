@@ -24,6 +24,7 @@ import {
 
 export type AppearanceFontSettingsGroupProps = {
   settings: AppearanceEditorFontSettings
+  menuPortalMount?: HTMLElement
   onChange: (settings: AppearanceEditorFontSettings) => void
   disabled?: boolean
 }
@@ -55,21 +56,87 @@ const FONT_ROWS = [
 }[]
 
 const catalogFontOptions = fontOptions.filter((option) => option.id !== 'system')
+const MENU_FOCUS_TARGET_SELECTOR =
+  'a[href], area[href], button, input, select, textarea, iframe, [tabindex], [contenteditable], details > summary:first-of-type'
+
+function isMenuTabStop(element: HTMLElement) {
+  return (
+    (element.tabIndex >= 0 ||
+      (element.matches('details > summary:first-of-type') && !element.hasAttribute('tabindex'))) &&
+    !element.matches(':disabled') &&
+    element.getAttribute('aria-disabled') !== 'true' &&
+    element.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
+    element.getClientRects().length > 0
+  )
+}
 
 function FontFamilyMenu(props: {
   label: string
   family: AppearanceEditorFontFamilyId
+  menuPortalMount?: HTMLElement
   disabled?: boolean
   onSelect: (family: AppearanceEditorFontFamilyId) => void
 }) {
+  const [menuOpen, setMenuOpen] = createSignal(false)
+  const [restoreTriggerFocus, setRestoreTriggerFocus] = createSignal(false)
+  const [triggerElement, setTriggerElement] = createSignal<HTMLButtonElement>()
+  let focusTargetAfterTab: HTMLElement | undefined
+
+  const moveFocusOnTab = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab' || event.isComposing) return
+
+    const trigger = triggerElement()
+    const owner = props.menuPortalMount
+    const parentDialog = owner?.closest<HTMLElement>('[role="dialog"]')
+    const focusScope = parentDialog ?? owner?.ownerDocument.body
+    if (!trigger || !parentDialog || !focusScope) return
+
+    const focusStops = Array.from(focusScope.querySelectorAll<HTMLElement>('*')).filter(
+      (element) =>
+        isMenuTabStop(element) &&
+        element.closest('[role="menu"], [hidden], [inert], [aria-hidden="true"]') === null
+    )
+    const orderedFocusStops = [
+      ...focusStops
+        .filter((element) => element.tabIndex > 0)
+        .toSorted((a, b) => a.tabIndex - b.tabIndex),
+      ...focusStops.filter((element) => element.tabIndex <= 0),
+    ]
+    const triggerIndex = orderedFocusStops.indexOf(trigger)
+    if (triggerIndex < 0) return
+    const direction = event.shiftKey ? -1 : 1
+    const adjacent =
+      orderedFocusStops[triggerIndex + direction] ??
+      (direction > 0 ? orderedFocusStops[0] : orderedFocusStops.at(-1))
+
+    event.stopPropagation()
+    setRestoreTriggerFocus(false)
+    if (adjacent) {
+      event.preventDefault()
+      focusTargetAfterTab = adjacent
+      setMenuOpen(false)
+      adjacent.focus({ preventScroll: true })
+    } else {
+      focusTargetAfterTab = undefined
+      setMenuOpen(false)
+    }
+  }
   const selectedLabel = () =>
     fontOptions.find((option) => option.id === props.family)?.label ??
     fontOptions.find((option) => option.id === 'system')?.label ??
     'System'
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu
+      modal={false}
+      open={menuOpen()}
+      onOpenChange={(open) => {
+        setMenuOpen(open)
+        if (open) setRestoreTriggerFocus(false)
+      }}
+    >
       <DropdownMenuTrigger
+        ref={setTriggerElement}
         as={Button}
         variant="outline"
         size="sm"
@@ -80,7 +147,70 @@ function FontFamilyMenu(props: {
         <span class="truncate">{selectedLabel()}</span>
         <ChevronDown aria-hidden="true" class="ms-2 size-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent hideArrow class="min-w-48">
+      <DropdownMenuContent
+        hideArrow
+        portalMount={props.menuPortalMount}
+        class="min-w-48"
+        onFocusOutside={(event) => {
+          // WebKit may briefly focus the owning Popover root while the menu's
+          // focus scope starts. Keep the menu open for that transient target;
+          // genuine focus moves to another control still dismiss it.
+          if (
+            !event.defaultPrevented &&
+            props.menuPortalMount &&
+            event.detail.originalEvent.target === props.menuPortalMount
+          ) {
+            setRestoreTriggerFocus(true)
+            event.preventDefault()
+          } else if (
+            event.detail.originalEvent.target instanceof HTMLElement &&
+            props.menuPortalMount?.contains(event.detail.originalEvent.target)
+          ) {
+            setRestoreTriggerFocus(false)
+          }
+        }}
+        onInteractOutside={(event) => {
+          if (event.detail.originalEvent.type !== 'pointerdown') return
+          const owner = props.menuPortalMount
+          const target = event.detail.originalEvent.target
+          if (!(target instanceof Element) || !owner?.contains(target)) return
+
+          const focusTarget = target.closest<HTMLElement>(MENU_FOCUS_TARGET_SELECTOR)
+          setRestoreTriggerFocus(!focusTarget || !isMenuTabStop(focusTarget))
+        }}
+        onKeyDown={moveFocusOnTab}
+        onEscapeKeyDown={() => setRestoreTriggerFocus(true)}
+        onCloseAutoFocus={(event) => {
+          if (menuOpen()) {
+            event.preventDefault()
+            return
+          }
+          if (focusTargetAfterTab) {
+            const focusTarget = focusTargetAfterTab
+            focusTargetAfterTab = undefined
+            event.preventDefault()
+            queueMicrotask(() => {
+              if (!menuOpen() && focusTarget.isConnected) {
+                focusTarget.focus({ preventScroll: true })
+              }
+            })
+            return
+          }
+          if (!restoreTriggerFocus()) return
+
+          event.preventDefault()
+          setRestoreTriggerFocus(false)
+          const trigger = triggerElement()
+          if (
+            trigger?.isConnected &&
+            !trigger.disabled &&
+            trigger.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
+            trigger.getClientRects().length > 0
+          ) {
+            trigger.focus({ preventScroll: true })
+          }
+        }}
+      >
         <DropdownMenuRadioGroup
           value={props.family}
           aria-label={`${props.label} system font`}
@@ -88,7 +218,9 @@ function FontFamilyMenu(props: {
             if (family === 'system') props.onSelect('system')
           }}
         >
-          <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system" closeOnSelect>
+            System
+          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
@@ -101,7 +233,9 @@ function FontFamilyMenu(props: {
         >
           <For each={catalogFontOptions}>
             {(option) => (
-              <DropdownMenuRadioItem value={option.id}>{option.label}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value={option.id} closeOnSelect>
+                {option.label}
+              </DropdownMenuRadioItem>
             )}
           </For>
         </DropdownMenuRadioGroup>
@@ -145,7 +279,7 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
   }
 
   return (
-    <>
+    <div class="global-appearance-font-settings">
       <For each={FONT_ROWS}>
         {(row) => {
           const Icon = row.icon
@@ -164,15 +298,12 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
             )
           }
           return (
-            <SettingsRow
-              title={row.label}
-              icon={<Icon />}
-              description={row.description}
-            >
-              <div class="flex min-w-0 max-w-full items-center gap-2">
+            <SettingsRow title={row.label} icon={<Icon />} description={row.description}>
+              <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                 <FontFamilyMenu
                   label={row.label}
                   family={value().family}
+                  menuPortalMount={props.menuPortalMount}
                   disabled={props.disabled}
                   onSelect={(family) => updateAxis(row.axis, { family })}
                 />
@@ -214,6 +345,6 @@ export function AppearanceFontSettingsGroup(props: AppearanceFontSettingsGroupPr
           )
         }}
       </For>
-    </>
+    </div>
   )
 }

@@ -95,6 +95,7 @@ Then, once, in the application's stylesheet — after Tailwind:
 @import 'tailwindcss';
 @import '@adea-ai/ui/theme.css';
 @import '@adea-ai/ui/base.css';
+@import '@adea-ai/ui/appearance-font-settings.css'; /* optional: Appearance font roles */
 @import '@adea-ai/ui/fonts.css'; /* optional: the self-hosted typefaces */
 ```
 
@@ -102,13 +103,16 @@ If the application does not already import Tailwind, one line does everything:
 
 ```css
 @import '@adea-ai/ui/globals.css';
+@import '@adea-ai/ui/appearance-font-settings.css';
 @import '@adea-ai/ui/fonts.css';
 ```
 
 `theme.css` is the preferred entry for an app with its own Tailwind setup; importing
 `globals.css` as well would import Tailwind twice. `fonts.css` is optional — it pulls
 the variable faces from `@fontsource-variable`, so an app that would rather use the
-platform's own faces can skip it.
+platform's own faces can skip it. The separate
+`appearance-font-settings.css` entry enables independent UI, content, and code
+font preferences without pulling font assets.
 
 Then render the provider:
 

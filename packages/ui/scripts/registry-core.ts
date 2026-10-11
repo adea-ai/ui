@@ -96,6 +96,8 @@ const LIB_SRC = join(SRC, 'lib')
 const LIB_TARGET_DIR = 'lib'
 /** The item name the private helpers are published under. */
 const LIB_ITEM_NAME = 'lib'
+/** The registry item that carries the shared token and optional role styles. */
+const THEME_ITEM_NAME = 'theme'
 
 const packageJson = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
   name: string
@@ -273,6 +275,11 @@ function buildItems() {
     const componentsDir = join(SRC, 'components')
     const registryDependencies = [...crossFolder]
       .map((path) => {
+        // Styles are served by one shared registry item rather than by a
+        // component folder. An AppearanceEditor copy imports its opt-in role
+        // sheet directly, so installing it also needs that item.
+        if (path.startsWith(`..${sep}styles${sep}`)) return `@adea-ai/ui/${THEME_ITEM_NAME}`
+
         const owner = folders.find((candidate) => {
           const dir = relative(componentsDir, candidate.dir)
           return path === dir || path.startsWith(`${dir}/`)
@@ -286,6 +293,11 @@ function buildItems() {
         return `@adea-ai/ui/${owner.slug}`
       })
       .filter((value) => !value.endsWith(`/${folder.slug}`))
+
+    // The font editor relies on the opt-in role stylesheet, which is delivered
+    // through the shared theme item and imported by the consumer's CSS entry.
+    if (folder.slug === 'appearance-editor')
+      registryDependencies.push(`@adea-ai/ui/${THEME_ITEM_NAME}`)
 
     // Anything reaching for `#lib/*` needs the `lib` item, or the copied file is
     // dead on arrival.
@@ -323,7 +335,7 @@ function buildItems() {
  */
 function styleItem(): RegistryItem {
   return {
-    name: 'theme',
+    name: THEME_ITEM_NAME,
     type: 'registry:style',
     title: 'Adea theme',
     description:
@@ -339,7 +351,13 @@ function styleItem(): RegistryItem {
       `tw-animate-css@${packageJson.dependencies['tw-animate-css']}`,
     ],
     registryDependencies: [],
-    files: ['globals.css', 'theme.css', 'base.css', 'fonts.css'].map((file) => ({
+    files: [
+      'globals.css',
+      'theme.css',
+      'base.css',
+      'appearance-font-settings.css',
+      'fonts.css',
+    ].map((file) => ({
       path: `src/styles/${file}`,
       type: 'registry:style',
       target: `styles/${file}`,

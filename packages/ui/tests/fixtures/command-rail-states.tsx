@@ -56,6 +56,17 @@ function Fixture() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <div class="h-32 w-72 overflow-y-auto" data-testid="vertical-dropdown-scroll-area">
+        <div class="h-48" />
+        <DropdownMenu orientation="vertical">
+          <DropdownMenuTrigger aria-label="Open vertical menu">
+            Open vertical menu
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Vertical first action</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <output aria-label="Menu selection">{menuSelection()}</output>
       <button ref={setCommandDialogOpener} type="button" onClick={() => setDialogOpen(true)}>
         Open command dialog with custom focus

@@ -22,16 +22,22 @@
  * SOFTWARE.
  */
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import type { AccentPreset } from '@adea-ai/themes'
 import { For, Show } from 'solid-js'
 import { cn } from '#lib/utils'
 
 export const PRIMARY_ACCENT_IDS = ['blue', 'green', 'amber', 'cyan', 'pink'] as const
 const primaryAccentIds: ReadonlySet<string> = new Set(PRIMARY_ACCENT_IDS)
 
+type AccentOption = Readonly<{
+  id: string
+  label: string
+  light?: string
+  dark?: string
+}>
+
 type AccentSwatchGroupsProps = {
-  accentOptions: readonly AccentPreset[]
-  themeAccentOptions: readonly AccentPreset[]
+  accentOptions: readonly AccentOption[]
+  themeAccentOptions: readonly AccentOption[]
   resolvedAppearance: 'light' | 'dark'
   themeDefaultColor: string
 }
@@ -76,7 +82,7 @@ export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
                 <AccentSwatch
                   id={option.id}
                   label={option.label}
-                  color={props.resolvedAppearance === 'light' ? option.light : option.dark}
+                  color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
                   group="additional"
                 />
               )}

@@ -45,6 +45,8 @@ export const TEST_ROOTS: readonly TestRoot[] = [
       'packages/ui/src/lib/utils.ts',
       'packages/ui/src/lib/tokens.ts',
       'packages/ui/src/styles/theme.css',
+      'packages/ui/src/styles/appearance-font-settings.css',
+      'packages/ui/src/styles/appearance-font-settings.css',
       'packages/ui/bunfig.toml',
       'packages/ui/package.json',
       'packages/ui/tests/fixtures/',

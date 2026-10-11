@@ -32,7 +32,7 @@
  * custom accent/reduced-transparency are accepted Adea divergences (#425).
  */
 import { EyeOff, Palette, PanelsTopLeft, SlidersHorizontal } from 'lucide-solid'
-import { Show, createUniqueId } from 'solid-js'
+import { Show, createSignal, createUniqueId } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
@@ -144,6 +144,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
         </Show>
         <AppearanceFontSettingsGroup
           settings={props.draft.fonts ?? DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS}
+          menuPortalMount={props.menuPortalMount}
           disabled={props.saving}
           onChange={(fonts) => props.onChange({ fonts })}
         />
@@ -195,7 +196,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
       {/* Sticky so Save/Cancel stay reachable in a tall scroll container: the
           editor scrolls with its host panel, and actions parked at the bottom
           of a long form were unreachable without scrolling past every row. */}
-      <div class="sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
+      <div class="global-appearance-editor-actions sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
         <Button
           type="button"
           size="sm"
@@ -235,6 +236,8 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
  * Its measured available height also bounds scrolling, keeping footer actions
  * reachable when a narrow popup begins below its trigger. */
 export function AppearancePopover(props: AppearancePopoverProps) {
+  const [menuPortalMount, setMenuPortalMount] = createSignal<HTMLElement>()
+
   return (
     <Popover
       open={props.open}
@@ -250,12 +253,15 @@ export function AppearancePopover(props: AppearancePopoverProps) {
       >
         <Palette />
       </PopoverTrigger>
-      <PopoverContent class="w-lg max-w-[calc(100vw-2rem)] max-h-(--kb-popper-content-available-height) overflow-y-auto">
+      <PopoverContent
+        ref={setMenuPortalMount}
+        class="w-lg max-w-[calc(100vw-2rem)] max-h-(--kb-popper-content-available-height) overflow-y-auto"
+      >
         <PopoverTitle>Appearance</PopoverTitle>
         <PopoverDescription>
           Changes preview immediately. Save keeps them; Cancel restores the previous appearance.
         </PopoverDescription>
-        <AppearanceEditor {...props} />
+        <AppearanceEditor {...props} menuPortalMount={menuPortalMount()} />
       </PopoverContent>
     </Popover>
   )

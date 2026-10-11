@@ -35,21 +35,45 @@ export type NormalizedAppearanceEditorFontSettings = Readonly<{
 }>
 
 const fontFamilyIds: ReadonlySet<string> = new Set(fontOptions.map((option) => option.id))
+const fontOptionsById = Object.freeze(
+  Object.fromEntries(fontOptions.map((option) => [option.id, option])) as Record<
+    AppearanceEditorFontFamilyId,
+    FontOption
+  >
+)
+const fontProjectionById = Object.freeze(
+  Object.fromEntries(
+    fontOptions.map((option) => [
+      option.id,
+      {
+        familyVariables: option.familyVariables,
+        uiTracking: option.uiTracking,
+        uiWordSpacing: option.uiWordSpacing,
+      },
+    ])
+  ) as Record<
+    AppearanceEditorFontFamilyId,
+    Pick<FontOption, 'familyVariables' | 'uiTracking' | 'uiWordSpacing'>
+  >
+)
 const fontAxisProjection = Object.freeze({
   ui: Object.freeze({
     familyAttribute: 'data-ui-font',
+    familyProperty: '--font-ui',
     sizeProperty: '--font-ui-size',
     scaleProperty: '--font-ui-scale',
     defaultSize: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS.ui.size,
   }),
   content: Object.freeze({
     familyAttribute: 'data-content-font',
+    familyProperty: '--font-content',
     sizeProperty: '--font-content-size',
     scaleProperty: '--font-content-scale',
     defaultSize: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS.content.size,
   }),
   code: Object.freeze({
     familyAttribute: 'data-code-font',
+    familyProperty: '--font-code',
     sizeProperty: '--font-code-size',
     scaleProperty: '--font-code-scale',
     defaultSize: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS.code.size,
@@ -152,9 +176,9 @@ export function normalizeAppearanceEditorFontSettings(
  * Project normalized font preferences onto a document root.
  *
  * This is shared by `ThemeProvider` and hosts that own their own appearance
- * persistence, so the UI/content/code axes always use the same supported ids,
- * size limits, attributes, and CSS variables. Passing a legacy UI family is
- * supported by normalizing first with `normalizeAppearanceEditorFontSettings`.
+ * persistence, so UI/content/code use the same catalogue ids, theme tokens,
+ * sizes, and projected CSS variables. The marker activates the optional role
+ * stylesheet and survives CSS import reordering.
  */
 export function applyAppearanceFontSettings(
   root: HTMLElement,
@@ -164,13 +188,20 @@ export function applyAppearanceFontSettings(
   const { settings } = normalized
 
   root.removeAttribute('data-font')
+  root.setAttribute('data-font-settings', '')
   for (const axis of APPEARANCE_EDITOR_FONT_AXES) {
     const projection = fontAxisProjection[axis]
     const setting = settings[axis]
+    const option = fontOptionsById[setting.family]
     if (setting.family === 'system') root.removeAttribute(projection.familyAttribute)
     else root.setAttribute(projection.familyAttribute, setting.family)
+    root.style.setProperty(projection.familyProperty, `var(${option.familyVariables[axis]})`)
     root.style.setProperty(projection.sizeProperty, String(setting.size) + 'px')
     root.style.setProperty(projection.scaleProperty, String(setting.size / projection.defaultSize))
+    if (axis === 'ui') {
+      root.style.setProperty('--ui-tracking', option.uiTracking)
+      root.style.setProperty('--ui-word-spacing', option.uiWordSpacing)
+    }
   }
 
   return normalized
@@ -182,11 +213,19 @@ export function applyAppearanceFontSettings(
  * The stored object is read from `localStorage[storageKey].fonts`. A legacy
  * top-level `font` family migrates into UI only; content/code use the shared
  * defaults. The script applies the same catalogue whitelist, limits, attributes,
- * and CSS properties as `applyAppearanceFontSettings` before styles paint.
+ * and CSS properties as `applyAppearanceFontSettings` before styles paint. When
+ * `persistedVersion` is supplied, only a record with that exact top-level version
+ * is used; absent or mismatched records receive the System defaults.
  */
-export function fontSettingsBootstrapScript(storageKey: string): string {
+export function fontSettingsBootstrapScript(storageKey: string, persistedVersion?: number): string {
+  if (persistedVersion !== undefined && !Number.isSafeInteger(persistedVersion)) {
+    throw new RangeError('persistedVersion must be a safe integer')
+  }
   const axisConfig = JSON.stringify(fontAxisProjection)
+  const fontProjection = JSON.stringify(fontProjectionById)
   const fontIds = `[${fontOptions.map((option) => safeScriptStringLiteral(option.id)).join(',')}]`
+  const persistedVersionGuard =
+    persistedVersion === undefined ? '' : `&&parsed.version===${JSON.stringify(persistedVersion)}`
 
-  return `(function(){var r=document.documentElement;var axes=JSON.parse(${safeScriptStringLiteral(axisConfig)});var ids=${fontIds};var has=function(v,k){return Object.prototype.hasOwnProperty.call(v,k)};var record=function(v){return typeof v==='object'&&v!==null&&!Array.isArray(v)};var p={};try{var raw=localStorage.getItem(${safeScriptStringLiteral(storageKey)});var parsed=raw?JSON.parse(raw):{};if(record(parsed))p=parsed;}catch(e){}var saved=record(p.fonts)?p.fonts:{};var valid=function(v,d){return ids.indexOf(v)>=0?v:d};var size=function(v,d){var n=typeof v==='number'?v:typeof v==='string'&&v.trim()!==''?Number(v):NaN;return Number.isFinite(n)?Math.min(${APPEARANCE_EDITOR_FONT_SIZE_MAX},Math.max(${APPEARANCE_EDITOR_FONT_SIZE_MIN},Math.round(n))):d};for(var axis in axes){if(!has(axes,axis))continue;var spec=axes[axis];var candidate=saved[axis];var value=record(candidate)?candidate:{};var legacyUi=axis==='ui'&&!has(value,'family');var family=legacyUi?valid(p.font,'system'):valid(value.family,'system');if(family==='system')r.removeAttribute(spec.familyAttribute);else r.setAttribute(spec.familyAttribute,family);var px=size(value.size,spec.defaultSize);r.style.setProperty(spec.sizeProperty,px+'px');r.style.setProperty(spec.scaleProperty,String(px/spec.defaultSize));}r.removeAttribute('data-font');})();`
+  return `(function(){var r=document.documentElement;var axes=JSON.parse(${safeScriptStringLiteral(axisConfig)});var projection=JSON.parse(${safeScriptStringLiteral(fontProjection)});var ids=${fontIds};var has=function(v,k){return Object.prototype.hasOwnProperty.call(v,k)};var record=function(v){return typeof v==='object'&&v!==null&&!Array.isArray(v)};var p={};try{var raw=localStorage.getItem(${safeScriptStringLiteral(storageKey)});var parsed=raw?JSON.parse(raw):{};if(record(parsed)${persistedVersionGuard})p=parsed;}catch(e){}var saved=record(p.fonts)?p.fonts:{};var valid=function(v,d){return ids.indexOf(v)!==-1?v:d};var size=function(v,d){var n=typeof v==='number'?v:typeof v==='string'&&v.trim()!==''?Number(v):NaN;return Number.isFinite(n)?Math.min(${APPEARANCE_EDITOR_FONT_SIZE_MAX},Math.max(${APPEARANCE_EDITOR_FONT_SIZE_MIN},Math.round(n))):d};r.setAttribute('data-font-settings','');for(var axis in axes){if(!has(axes,axis))continue;var spec=axes[axis];var candidate=saved[axis];var value=record(candidate)?candidate:{};var legacyUi=axis==='ui'&&!has(value,'family');var family=legacyUi?valid(p.font,'system'):valid(value.family,'system');var font=projection[family];if(family==='system')r.removeAttribute(spec.familyAttribute);else r.setAttribute(spec.familyAttribute,family);r.style.setProperty(spec.familyProperty,'var('+font.familyVariables[axis]+')');var px=size(value.size,spec.defaultSize);r.style.setProperty(spec.sizeProperty,px+'px');r.style.setProperty(spec.scaleProperty,String(px/spec.defaultSize));if(axis==='ui'){r.style.setProperty('--ui-tracking',font.uiTracking);r.style.setProperty('--ui-word-spacing',font.uiWordSpacing);}}r.removeAttribute('data-font');})();`
 }

@@ -54,7 +54,24 @@ const replaceImports = (source: string) =>
       '../../src/components/composites/appearance-editor',
       '@adea-ai/ui/components/composites/appearance-editor'
     )
+    .replaceAll(
+      '../../src/lib/appearance-font-settings',
+      '@adea-ai/ui/lib/appearance-font-settings'
+    )
+    .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/ui/input/input', '@adea-ai/ui/components/ui/input')
     .replaceAll('../../src/styles/globals.css', './style.css')
+    .replaceAll("import '../../src/styles/appearance-font-settings.css'\n", '')
+const replaceFontControlsImports = (source: string) =>
+  source
+    .replaceAll(
+      '../../src/lib/appearance-font-settings',
+      '@adea-ai/ui/lib/appearance-font-settings'
+    )
+    .replaceAll('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
+    .replaceAll('../../src/components/ui/input/input', '@adea-ai/ui/components/ui/input')
+    .replaceAll('../../src/styles/globals.css', './controls-style.css')
+    .replaceAll("import '../../src/styles/appearance-font-settings.css'\n", '')
 const replaceDestructiveImports = (source: string) =>
   source
     .replaceAll('../../src/components/ui/alert/alert', '@adea-ai/ui/components/ui/alert')
@@ -106,6 +123,23 @@ try {
     })
   )
   await run('bun', ['install', '--ignore-scripts'], consumer, {}, true)
+  const installedUi = join(consumer, 'node_modules/@adea-ai/ui')
+  const installedManifest = JSON.parse(readFileSync(join(installedUi, 'package.json'), 'utf8'))
+  const appearanceCssPath = installedManifest.exports?.['./appearance-font-settings.css']
+  if (typeof appearanceCssPath !== 'string' || !existsSync(join(installedUi, appearanceCssPath)))
+    throw new Error('Packed Appearance font stylesheet export is missing')
+  const fontSettingsTypes = readFileSync(
+    join(installedUi, 'dist/components/composites/appearance-editor/font-settings-group.d.ts'),
+    'utf8'
+  )
+  if (fontSettingsTypes.includes('.css'))
+    throw new Error('Packed Appearance font declarations reference an unshipped CSS module')
+  console.log(
+    JSON.stringify({
+      result: 'packed Appearance CSS export and declaration boundary passed',
+      cssExport: appearanceCssPath,
+    })
+  )
   for (const name of ['chart.js', 'solid-chartjs', 'embla-carousel', 'embla-carousel-solid'])
     if (existsSync(join(consumer, 'node_modules', name)))
       throw new Error(`Unused optional peer installed: ${name}`)
@@ -122,6 +156,12 @@ try {
       join(consumer, name),
       replaceImports(readFileSync(join(uiRoot, 'tests/fixtures', fixture), 'utf8'))
     )
+  writeFileSync(
+    join(consumer, 'controls.tsx'),
+    replaceFontControlsImports(
+      readFileSync(join(uiRoot, 'tests/fixtures/appearance-font-controls.tsx'), 'utf8')
+    )
+  )
   const serverBuild = await build({
     root: consumer,
     configFile: false,
@@ -195,11 +235,15 @@ try {
     join(consumer, 'style.css'),
     // Native SSR evidence lives beside this browser entry. Automatic discovery
     // would also scan that generated bundle and emit its unused variant classes.
-    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@import '@adea-ai/ui/appearance-font-settings.css';\n@source './main.tsx';\n@source './node_modules/@adea-ai/ui/src/components/composites/appearance-editor';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,dropdown-menu,popover,switch,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'destructive-style.css'),
     "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@source './destructive.tsx';\n@source './node_modules/@adea-ai/ui/src/components/ui/{alert,badge,button,tooltip}';\n@source './node_modules/@adea-ai/ui/src/components/composites/list-row';\n@source './node_modules/@adea-ai/ui/src/components/theme/theme-picker.tsx';\n@source './node_modules/@adea-ai/ui/src/lib/{variants,overlay,themes}.ts';\n"
+  )
+  writeFileSync(
+    join(consumer, 'controls-style.css'),
+    "@import 'tailwindcss' source(none);\n@import '@adea-ai/ui/theme.css';\n@import '@adea-ai/ui/base.css';\n@import '@adea-ai/ui/appearance-font-settings.css';\n@source './controls.tsx';\n@source './node_modules/@adea-ai/ui/src/components/ui/{button,input}';\n@source './node_modules/@adea-ai/ui/src/lib/{form-field,variants}.ts';\n"
   )
   writeFileSync(
     join(consumer, 'modal-style.css'),
@@ -213,17 +257,18 @@ try {
       '',
     ].join('\n')
   )
-  for (const condition of ['compiled', 'solid']) {
+  for (const condition of ['compiled', 'solid'] as const) {
+    const appearanceArgs = [
+      'test',
+      '--config=playwright.components.config.ts',
+      'component-appearance-editor.spec.ts',
+      'component-destructive-action.spec.ts',
+      '--output',
+      `test-results/packed-appearance-${condition}`,
+    ]
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
-      [
-        'test',
-        '--config=playwright.components.config.ts',
-        'component-appearance-editor.spec.ts',
-        'component-destructive-action.spec.ts',
-        '--output',
-        `test-results/packed-appearance-${condition}`,
-      ],
+      appearanceArgs,
       join(root, 'apps/storybook'),
       {
         ADEA_APPEARANCE_PACKED_ROOT: consumer,
@@ -231,6 +276,18 @@ try {
         ADEA_DESTRUCTIVE_PACKED_ROOT: consumer,
         ADEA_DESTRUCTIVE_PACKED_CONDITION: condition,
       }
+    )
+    await run(
+      join(root, 'apps/storybook/node_modules/.bin/playwright'),
+      [
+        'test',
+        '--config=playwright.components.config.ts',
+        'component-appearance-font-controls.spec.ts',
+        '--output',
+        `test-results/packed-appearance-controls-${condition}`,
+      ],
+      join(root, 'apps/storybook'),
+      { ADEA_APPEARANCE_PACKED_ROOT: consumer, ADEA_APPEARANCE_PACKED_CONDITION: condition }
     )
     await run(
       join(root, 'apps/storybook/node_modules/.bin/playwright'),
@@ -268,6 +325,7 @@ try {
       serverCondition: 'Solid source SSR -> native Node',
       browserEngines: ['chromium', 'webkit'],
       checks: 132,
+      fontControlBrowserCases: 4,
       dialogCloseAnchorChecks: 4,
       kobalteOverlayRoleCases: 24,
       destructiveActionBrowserCases: 4,

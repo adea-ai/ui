@@ -38,6 +38,22 @@ describe('appearance editor font settings', () => {
     })
   })
 
+  test('projects the System defaults and canonical sizes onto the root', () => {
+    const { root, attributes, properties } = mockRoot()
+    applyAppearanceFontSettings(root, DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS)
+
+    expect(attributes.has('data-font-settings')).toBe(true)
+    expect(attributes.has('data-ui-font')).toBe(false)
+    expect(attributes.has('data-content-font')).toBe(false)
+    expect(attributes.has('data-code-font')).toBe(false)
+    expect(properties.get('--font-ui')).toBe('var(--font-family-system)')
+    expect(properties.get('--font-content')).toBe('var(--font-family-system)')
+    expect(properties.get('--font-code')).toBe('var(--font-family-system-mono)')
+    expect(properties.get('--font-ui-size')).toBe('14px')
+    expect(properties.get('--font-content-size')).toBe('14px')
+    expect(properties.get('--font-code-size')).toBe('12px')
+  })
+
   test('uses the existing font catalogue and migrates the old family to UI only', () => {
     const migrated = normalizeAppearanceEditorFontSettings(undefined, 'geist')
 
@@ -96,15 +112,54 @@ describe('appearance editor font settings', () => {
 
     expect(result.recoveredAxes).toEqual([])
     expect(attributes.has('data-font')).toBe(false)
+    expect(attributes.has('data-font-settings')).toBe(true)
     expect(attributes.get('data-ui-font')).toBe('geist-mono')
     expect(attributes.get('data-content-font')).toBe('geist')
     expect(attributes.get('data-code-font')).toBe('jetbrains-mono')
+    expect(properties.get('--font-ui')).toBe('var(--font-family-geist-mono)')
+    expect(properties.get('--font-content')).toBe('var(--font-family-geist)')
+    expect(properties.get('--font-code')).toBe('var(--font-family-jetbrains-mono)')
+    expect(properties.get('--ui-tracking')).toBe('-0.03em')
+    expect(properties.get('--ui-word-spacing')).toBe('-1.5px')
     expect(properties.get('--font-ui-size')).toBe('18px')
     expect(properties.get('--font-content-size')).toBe('16px')
     expect(properties.get('--font-code-size')).toBe('11px')
     expect(properties.get('--font-ui-scale')).toBe(String(18 / 14))
     expect(properties.get('--font-content-scale')).toBe(String(16 / 14))
     expect(properties.get('--font-code-scale')).toBe(String(11 / 12))
+  })
+
+  test('resolves every supported family id through the shared font catalogue', () => {
+    for (const option of fontOptions) {
+      const { root, properties } = mockRoot()
+      applyAppearanceFontSettings(root, {
+        ui: { family: option.id, size: 14 },
+        content: { family: option.id, size: 14 },
+        code: { family: option.id, size: 12 },
+      })
+
+      expect(properties.get('--font-ui')).toBe(`var(${option.familyVariables.ui})`)
+      expect(properties.get('--font-content')).toBe(`var(${option.familyVariables.content})`)
+      expect(properties.get('--font-code')).toBe(`var(${option.familyVariables.code})`)
+      expect(properties.get('--ui-tracking')).toBe(option.uiTracking)
+      expect(properties.get('--ui-word-spacing')).toBe(option.uiWordSpacing)
+    }
+  })
+
+  test('Code selections keep each displayed catalogue family name', () => {
+    for (const option of fontOptions.filter((candidate) => candidate.id !== 'system')) {
+      const { root, properties } = mockRoot()
+      applyAppearanceFontSettings(root, {
+        ui: { family: 'system', size: 14 },
+        content: { family: 'system', size: 14 },
+        code: { family: option.id, size: 12 },
+      })
+
+      expect(option.label.trim()).not.toBe('')
+      expect(option.familyVariables.code).toBe(option.familyVariables.ui)
+      expect(option.familyVariables.code).toBe(option.familyVariables.content)
+      expect(properties.get('--font-code')).toBe(`var(${option.familyVariables.code})`)
+    }
   })
 
   test('bootstrap applies the same defaults, migration, whitelist and size bounds', () => {
@@ -131,28 +186,125 @@ describe('appearance editor font settings', () => {
       'localStorage',
       'document',
       fontSettingsBootstrapScript('appearance')
-    ) as (storage: Storage, document: unknown) => void
+    ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
 
     attributes.set('data-font', 'space-grotesk')
-    run(storage as Storage, document)
+    run(storage, document)
 
     expect(attributes.has('data-font')).toBe(false)
+    expect(attributes.has('data-font-settings')).toBe(true)
     expect(attributes.get('data-ui-font')).toBe('geist')
     expect(attributes.has('data-content-font')).toBe(false)
     expect(attributes.get('data-code-font')).toBe('jetbrains-mono')
+    expect(properties.get('--font-ui')).toBe('var(--font-family-geist)')
+    expect(properties.get('--font-content')).toBe('var(--font-family-system)')
+    expect(properties.get('--font-code')).toBe('var(--font-family-jetbrains-mono)')
+    expect(properties.get('--ui-tracking')).toBe('normal')
+    expect(properties.get('--ui-word-spacing')).toBe('normal')
     expect(properties.get('--font-ui-size')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX) + 'px')
-    expect(properties.get('--font-content-size')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN) + 'px')
+    expect(properties.get('--font-content-size')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN) + 'px'
+    )
     expect(properties.get('--font-code-size')).toBe('12px')
     expect(properties.get('--font-ui-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX / 14))
-    expect(properties.get('--font-content-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14))
+    expect(properties.get('--font-content-scale')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14)
+    )
     expect(properties.get('--font-code-scale')).toBe('1')
     expect(properties.get('--font-ui-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MAX / 14))
-    expect(properties.get('--font-content-scale')).toBe(String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14))
+    expect(properties.get('--font-content-scale')).toBe(
+      String(APPEARANCE_EDITOR_FONT_SIZE_MIN / 14)
+    )
     expect(properties.get('--font-code-scale')).toBe('1')
   })
 
+  test('versioned bootstrap applies System defaults when preferences are missing or unsupported', () => {
+    const unsupported = JSON.stringify({
+      version: 1,
+      font: 'geist',
+      fonts: {
+        ui: { family: 'geist', size: 18 },
+        content: { family: 'space-grotesk', size: 16 },
+        code: { family: 'jetbrains-mono', size: 12 },
+      },
+    })
+
+    for (const storedValue of [null, unsupported]) {
+      const { attributes, properties } = mockRoot()
+      const document = {
+        documentElement: {
+          setAttribute: (name: string, value: string) => attributes.set(name, value),
+          removeAttribute: (name: string) => attributes.delete(name),
+          style: { setProperty: (name: string, value: string) => properties.set(name, value) },
+        },
+      }
+      const run = new Function(
+        'localStorage',
+        'document',
+        fontSettingsBootstrapScript('appearance', 2)
+      ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
+
+      run({ getItem: () => storedValue }, document)
+
+      expect(attributes.has('data-font-settings')).toBe(true)
+      expect(attributes.has('data-ui-font')).toBe(false)
+      expect(attributes.has('data-content-font')).toBe(false)
+      expect(attributes.has('data-code-font')).toBe(false)
+      expect(properties.get('--font-ui')).toBe('var(--font-family-system)')
+      expect(properties.get('--font-content')).toBe('var(--font-family-system)')
+      expect(properties.get('--font-code')).toBe('var(--font-family-system-mono)')
+      expect(properties.get('--font-ui-size')).toBe('14px')
+      expect(properties.get('--font-content-size')).toBe('14px')
+      expect(properties.get('--font-code-size')).toBe('12px')
+    }
+  })
+
+  test('versioned bootstrap projects a matching persisted record before paint', () => {
+    const { attributes, properties } = mockRoot()
+    const document = {
+      documentElement: {
+        setAttribute: (name: string, value: string) => attributes.set(name, value),
+        removeAttribute: (name: string) => attributes.delete(name),
+        style: { setProperty: (name: string, value: string) => properties.set(name, value) },
+      },
+    }
+    const storage = {
+      getItem: () =>
+        JSON.stringify({
+          version: 2,
+          font: 'geist',
+          fonts: {
+            ui: { family: 'geist', size: 18 },
+            code: { family: 'space-grotesk', size: 12 },
+          },
+        }),
+    }
+    const run = new Function(
+      'localStorage',
+      'document',
+      fontSettingsBootstrapScript('appearance', 2)
+    ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
+
+    run(storage, document)
+
+    expect(attributes.get('data-ui-font')).toBe('geist')
+    expect(attributes.has('data-content-font')).toBe(false)
+    expect(attributes.get('data-code-font')).toBe('space-grotesk')
+    expect(properties.get('--font-ui')).toBe('var(--font-family-geist)')
+    expect(properties.get('--font-content')).toBe('var(--font-family-system)')
+    expect(properties.get('--font-code')).toBe('var(--font-family-space-grotesk)')
+    expect(properties.get('--font-ui-size')).toBe('18px')
+    expect(properties.get('--font-content-size')).toBe('14px')
+    expect(properties.get('--font-code-size')).toBe('12px')
+  })
+
   test('bootstrap leaves a malformed or inaccessible preference on System defaults', () => {
-    for (const getItem of [() => '{not-json', () => { throw new Error('blocked') }]) {
+    for (const getItem of [
+      () => '{not-json',
+      () => {
+        throw new Error('blocked')
+      },
+    ]) {
       const { attributes, properties } = mockRoot()
       const document = {
         documentElement: {
@@ -165,15 +317,21 @@ describe('appearance editor font settings', () => {
         'localStorage',
         'document',
         fontSettingsBootstrapScript('appearance')
-      ) as (storage: Storage, document: unknown) => void
+      ) as (storage: Pick<Storage, 'getItem'>, document: unknown) => void
 
       attributes.set('data-font', 'space-grotesk')
-      run({ getItem } as Storage, document)
+      run({ getItem }, document)
 
       expect(attributes.has('data-font')).toBe(false)
+      expect(attributes.has('data-font-settings')).toBe(true)
       expect(attributes.has('data-ui-font')).toBe(false)
       expect(attributes.has('data-content-font')).toBe(false)
       expect(attributes.has('data-code-font')).toBe(false)
+      expect(properties.get('--font-ui')).toBe('var(--font-family-system)')
+      expect(properties.get('--font-content')).toBe('var(--font-family-system)')
+      expect(properties.get('--font-code')).toBe('var(--font-family-system-mono)')
+      expect(properties.get('--ui-tracking')).toBe('normal')
+      expect(properties.get('--ui-word-spacing')).toBe('normal')
       expect(properties.get('--font-ui-size')).toBe('14px')
       expect(properties.get('--font-content-size')).toBe('14px')
       expect(properties.get('--font-code-size')).toBe('12px')

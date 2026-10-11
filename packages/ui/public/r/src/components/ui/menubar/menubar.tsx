@@ -123,7 +123,7 @@ export function MenubarItem(
       {local.shortcut ? (
         <span
           aria-hidden="true"
-          class="text-muted-foreground ms-auto font-mono text-2xs tracking-widest"
+          class="text-muted-foreground ms-auto font-code text-code tracking-widest"
         >
           {local.shortcut}
         </span>
