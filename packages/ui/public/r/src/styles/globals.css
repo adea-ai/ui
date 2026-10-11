@@ -5,10 +5,13 @@
  * @shadcn/lint discover, so it must stay the file that imports Tailwind.
  *
  *   @import '@adea-ai/ui/globals.css';
+ *   @import '@adea-ai/ui/appearance-font-settings.css'; <- optional role preferences
  *   @import '@adea-ai/ui/fonts.css';   <- optional, self-hosted typefaces
  *
  * A consumer that already imports Tailwind itself should import `theme.css`
- * and `base.css` directly instead, and must not import this file.
+ * and `base.css` directly instead, and must not import this file. The font role
+ * stylesheet stays opt-in so applications that use only the base theme keep
+ * the existing CSS footprint.
  *
  * Tokens live in `theme.css` only. This file must never duplicate them.
  */

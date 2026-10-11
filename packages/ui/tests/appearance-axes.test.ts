@@ -21,7 +21,7 @@ import {
   withAccent,
 } from '#lib/themes'
 import { densityTokens, fontOptions } from '../src/lib/tokens'
-import { THEME_CSS, valueOf } from './helpers/theme-css'
+import { APPEARANCE_FONT_CSS, THEME_CSS, valueOf } from './helpers/theme-css'
 
 const BASE_CSS = readFileSync(join(import.meta.dir, '../src/styles/base.css'), 'utf8')
 
@@ -278,42 +278,43 @@ describe('the appearance editor adapter', () => {
 })
 
 describe('the font axes reach the screen', () => {
-  test('System families and the requested sizes are the root defaults', () => {
-    expect(THEME_CSS).toContain('--font-ui: var(--font-family-system)')
-    expect(THEME_CSS).toContain('--font-content: var(--font-family-system)')
-    expect(THEME_CSS).toContain('--font-code: var(--font-family-system-mono)')
-    expect(THEME_CSS).toContain('--font-ui-size: 14px')
-    expect(THEME_CSS).toContain('--font-content-size: 14px')
-    expect(THEME_CSS).toContain('--font-code-size: 12px')
+  test('System family and UI-scaled role defaults are activated by the marker', () => {
+    expect(APPEARANCE_FONT_CSS).toContain(':root[data-font-settings]')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-ui: var(--font-family-system)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-content: var(--font-family-system)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-code: var(--font-family-system-mono)')
   })
 
-  test('every non-System catalog id has an independent selector for each role', () => {
-    for (const option of fontOptions.filter((candidate) => candidate.id !== 'system')) {
-      expect(THEME_CSS).toContain("[data-ui-font='" + option.id + "']")
-      expect(THEME_CSS).toContain("[data-content-font='" + option.id + "']")
-      expect(THEME_CSS).toContain("[data-code-font='" + option.id + "']")
+  test('every catalog family resolves to a published family variable for all text roles', () => {
+    for (const option of fontOptions) {
+      for (const variable of Object.values(option.familyVariables)) {
+        expect(variable).toMatch(/^--font-family-/)
+        expect(THEME_CSS).toContain(variable + ':')
+      }
     }
   })
 
   test('legacy data-font remains a UI-only compatibility alias', () => {
-    expect(THEME_CSS).toContain("[data-font='space-grotesk']")
+    expect(THEME_CSS).toContain("[data-font='system']")
     expect(THEME_CSS).toContain("[data-font='geist']")
     expect(THEME_CSS).not.toMatch(/\[data-font=[^\]]+\][^{]*\{[^}]*--font-content:/)
-    expect(THEME_CSS).toContain('--font-sans: var(--font-ui)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-sans: var(--font-ui)')
   })
 
   test('content and code expose their own selected size tokens', () => {
-    expect(THEME_CSS).toContain('--font-ui-scale: 1')
-    expect(THEME_CSS).toContain('--font-content-scale: 1')
-    expect(THEME_CSS).toContain('--font-code-scale: 1')
-    expect(THEME_CSS).toContain('--text-content: calc(0.875rem * var(--font-content-scale))')
-    expect(THEME_CSS).toContain('--text-code: calc(0.75rem * var(--font-code-scale))')
-    expect(THEME_CSS).toContain('--font-mono: var(--font-code)')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-ui-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-content-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-code-scale: 1')
+    expect(APPEARANCE_FONT_CSS).toContain(
+      '--text-content: calc(0.875rem * var(--font-content-scale))'
+    )
+    expect(APPEARANCE_FONT_CSS).toContain('--text-code: calc(0.75rem * var(--font-code-scale))')
+    expect(APPEARANCE_FONT_CSS).toContain('--font-mono: var(--font-code)')
   })
 
   test('the body and semantic code elements retain rem-relative enlargement', () => {
     expect(BASE_CSS).toContain('font-size: var(--text-sm);')
-    expect(BASE_CSS).toContain('font-size: var(--text-code);')
+    expect(APPEARANCE_FONT_CSS).toContain('font-size: var(--text-code);')
   })
 })
 

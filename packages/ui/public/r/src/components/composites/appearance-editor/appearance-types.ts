@@ -1,4 +1,5 @@
 import type { AccentPreset, AdeaTheme, AdeaThemeRecord } from '@adea-ai/themes'
+import type { AppearanceEditorFontSettings } from '../../../lib/appearance-font-settings'
 
 export type AppearanceDraft = Readonly<{
   mode: 'system' | 'light' | 'dark'
@@ -13,6 +14,12 @@ export type AppearanceDraft = Readonly<{
   terminalThemeId?: string
   /** Theme default, a canonical preset id, or the host's custom accent draft. */
   accent: string
+  /**
+   * The UI, content and code typeface axes. Optional for compatibility with
+   * hosts upgrading from the earlier appearance contract; omitted means the
+   * shared System defaults.
+   */
+  fonts?: AppearanceEditorFontSettings
   surface: 'theme' | 'frosted' | 'opaque'
   reduceTransparency: boolean
 }>
@@ -45,6 +52,8 @@ export type AppearanceEditorProps = {
   surfaceCapability: { frosted: boolean; reason?: string; themeDefaultDescription?: string }
   /** Undefined means theme import is unavailable, never a working-looking action. */
   onManageThemes?: () => void
+  /** Mount nested font menus inside the containing overlay when one exists. */
+  menuPortalMount?: HTMLElement
   class?: string
 }
 

@@ -52,6 +52,8 @@ export type AppearanceEditorProps = {
   surfaceCapability: { frosted: boolean; reason?: string; themeDefaultDescription?: string }
   /** Undefined means theme import is unavailable, never a working-looking action. */
   onManageThemes?: () => void
+  /** Mount nested font menus inside the containing overlay when one exists. */
+  menuPortalMount?: HTMLElement
   class?: string
 }
 

@@ -4,15 +4,14 @@
  * a desktop app must not fetch a font at runtime, or the first paint after a cold
  * start shows a fallback face and then reflows.
  *
- *   Space Grotesk   the interface default, and the face the visual language was
- *                   drawn against
+ *   Space Grotesk   a self-hosted proportional family
  *   JetBrains Mono  code, terminals, ids, paths
  *   Geist           an alternative interface face; cortana already ships it
  *   Geist Mono      its monospace counterpart
  *
- * The family is a *selection*, not a constant: `theme.css` exposes a `data-font`
- * axis, so a user can pick a face the way they pick an accent, and the system
- * default (`system`) is always available for someone who wants their OS's own.
+ * These families feed the shared UI, content and code axes. Their stable ids are
+ * projected by `@adea-ai/ui/lib/appearance-font-settings`; System is the default
+ * and needs no font asset.
  *
  * Consumers import this after the theme:
  *

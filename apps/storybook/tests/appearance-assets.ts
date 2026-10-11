@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { createServer, type Server } from 'node:http'
+import { mkdtemp, writeFile, rm, unlink } from 'node:fs/promises'
+import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -14,6 +16,9 @@ const root = packedRoot ?? sourceRoot
 const browserEntry = packedRoot
   ? resolve(root, 'main.tsx')
   : resolve(root, 'tests/fixtures/appearance-editor.tsx')
+const fontControlsBrowserEntry = packedRoot
+  ? resolve(root, 'controls.tsx')
+  : resolve(root, 'tests/fixtures/appearance-font-controls.tsx')
 const serverEntry = packedRoot
   ? resolve(root, 'server.tsx')
   : resolve(root, 'tests/fixtures/appearance-editor-ssr.tsx')
@@ -69,21 +74,150 @@ function inspectPackedBundle(
   console.log(JSON.stringify({ packedAppearanceMeasurement: measurement }))
   // The host fixture explicitly imports canonical theme records and color adapters.
   // Record the combined host/editor cost; UI never imports a palette engine.
-  // Baselines: compiled 63,599 and Solid 64,126 gzip JS bytes; 50,059 raw CSS with all nested primitives/shared helpers.
-  // New composition budgets have modest independent headroom, without widening core gates.
+  // Previous composition baseline: 63,599 compiled / 64,126 Solid gzip JS bytes
+  // and 50,059 raw CSS. The three-axis font editor adds its family/size controls
+  // and the consumer's content/code role utilities; keep this fixture scoped to
+  // those roles rather than scanning every heading variant in Typography.
+  // Current measurements: compiled 77,064 gzip JS / Solid 77,642 gzip JS,
+  // with 53,218 raw CSS bytes for both. The 52 KiB CSS cap leaves 30 bytes of
+  // headroom; the 76 KiB gzip JS cap leaves 182 bytes in the Solid condition.
   // Re-baselined 64 → 76 KiB (2026-09) for the `cn` swap: measured 72,832 gzip —
   // the config-extended merge runtime ships cn's compiler and default tables.
   if (measurement.gzipJsBytes > 76 * 1024)
     throw new Error('Packed appearance host/editor exceeds 76 KiB gzip JS budget')
-  if (measurement.cssBytes > 50 * 1024)
-    throw new Error('Packed appearance host/editor exceeds measured 50 KiB raw CSS budget')
+  if (measurement.cssBytes > 52 * 1024)
+    throw new Error('Packed appearance host/editor exceeds measured 52 KiB raw CSS budget')
+}
+
+function inspectPackedFontControlsBundle(
+  chunks: Awaited<ReturnType<typeof outputsFor>>,
+  script: string,
+  css: string
+) {
+  const js = chunks.filter((chunk) => chunk.type === 'chunk')
+  if (js.length !== 1) throw new Error('Packed font controls must emit exactly one JS chunk')
+  const modules = js.flatMap((chunk) =>
+    Object.entries(chunk.modules)
+      .filter(([, data]) => data.renderedLength > 0)
+      .map(([id]) => id)
+  )
+  const ui = modules.filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+  const expected = browserCondition === 'compiled' ? '/dist/' : '/src/'
+  if (!ui.length || !ui.every((id) => id.includes(expected)))
+    throw new Error('Packed font-controls export conditions mixed or missing')
+  if (
+    !ui.some((id) => id.includes('/components/ui/button/')) ||
+    !ui.some((id) => id.includes('/components/ui/input/'))
+  )
+    throw new Error('Packed font-controls fixture did not consume both shared controls')
+  const unrelated = ui.filter((id) =>
+    /\/components\/(?:composites\/appearance-editor|theme|conversation)|\/lib\/themes|xterm|codemirror/.test(
+      id
+    )
+  )
+  if (unrelated.length) throw new Error(`Unrelated font-controls modules: ${unrelated.join(', ')}`)
+  const roots = new Set(
+    modules
+      .filter((id) => id.includes('/node_modules/solid-js/'))
+      .map((id) =>
+        id.slice(0, id.indexOf('/node_modules/solid-js/') + '/node_modules/solid-js'.length)
+      )
+  )
+  if (roots.size !== 1) throw new Error(`Expected one Solid runtime, got ${roots.size}`)
+  if (chunks.some((chunk) => /\.woff2?$/.test(chunk.fileName)))
+    throw new Error('Font-controls renderer retained font assets')
+  console.log(
+    JSON.stringify({
+      packedAppearanceFontControlsMeasurement: {
+        condition: browserCondition,
+        jsBytes: Buffer.byteLength(script),
+        cssBytes: Buffer.byteLength(css),
+        solidRuntimes: roots.size,
+      },
+    })
+  )
 }
 async function outputsFor(result: Awaited<ReturnType<typeof build>>) {
   return (Array.isArray(result) ? result : [result]).flatMap((output) =>
     'output' in output ? output.output : []
   )
 }
-export async function buildAppearanceBrowser() {
+
+export async function startAppearanceFontAssetServer() {
+  const entry = resolve(root, `.appearance-font-assets-${process.pid}.ts`)
+  const stylesheet = packedRoot
+    ? '@adea-ai/ui/fonts.css'
+    : resolve(sourceRoot, 'src/styles/fonts.css')
+  await writeFile(entry, `import ${JSON.stringify(stylesheet)}\n`)
+
+  let css = ''
+  const assets = new Map<string, Buffer>()
+  try {
+    const result = await build({
+      root,
+      configFile: false,
+      logLevel: 'error',
+      build: {
+        write: false,
+        assetsInlineLimit: 0,
+        rollupOptions: { input: entry },
+      },
+    })
+    for (const output of await outputsFor(result)) {
+      if (output.type !== 'asset') continue
+      if (output.fileName.endsWith('.css')) css += String(output.source)
+      else if (/\.woff2?$/.test(output.fileName)) {
+        assets.set(`/${output.fileName}`, Buffer.from(output.source))
+      }
+    }
+  } finally {
+    await unlink(entry)
+  }
+  if (!css || assets.size === 0) throw new Error('Font stylesheet did not emit local font assets')
+
+  const server: Server = createServer((request, response) => {
+    const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname
+    if (path === '/') {
+      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      response.end(
+        '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/font-assets.css"></head><body></body></html>'
+      )
+      return
+    }
+    if (path === '/font-assets.css') {
+      response.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' })
+      response.end(css)
+      return
+    }
+    const asset = assets.get(path)
+    if (asset) {
+      response.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'font/woff2',
+        'Cache-Control': 'no-store',
+      })
+      response.end(asset)
+      return
+    }
+    response.writeHead(404)
+    response.end('Not found')
+  })
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once('error', rejectListen)
+    server.listen(0, '127.0.0.1', resolveListen)
+  })
+  const address = server.address() as AddressInfo | null
+  if (!address || typeof address === 'string') throw new Error('Font asset server did not bind')
+  return {
+    url: `http://127.0.0.1:${address.port}/`,
+    close: () =>
+      new Promise<void>((resolveClose, rejectClose) => {
+        server.close((error) => (error ? rejectClose(error) : resolveClose()))
+      }),
+  }
+}
+
+async function buildBrowserEntry(entry: string, name: string) {
   const result = await build({
     root,
     configFile: false,
@@ -114,10 +248,10 @@ export async function buildAppearanceBrowser() {
       minify: packedRoot ? 'esbuild' : false,
       target: 'esnext',
       lib: {
-        entry: browserEntry,
+        entry,
         formats: ['iife'],
-        name: 'AppearanceFixture',
-        cssFileName: 'appearance-fixture',
+        name,
+        cssFileName: name.toLowerCase(),
       },
     },
   })
@@ -131,8 +265,22 @@ export async function buildAppearanceBrowser() {
       chunk.type === 'asset' && chunk.fileName.endsWith('.css') ? [String(chunk.source)] : []
     )
     .join('\n')
-  if (packedRoot) inspectPackedBundle(chunks, script, css)
-  return { script, css }
+  return { chunks, script, css }
+}
+
+export async function buildAppearanceBrowser() {
+  const { chunks, ...result } = await buildBrowserEntry(browserEntry, 'AppearanceFixture')
+  if (packedRoot) inspectPackedBundle(chunks, result.script, result.css)
+  return result
+}
+
+export async function buildAppearanceFontControlsBrowser() {
+  const { chunks, ...result } = await buildBrowserEntry(
+    fontControlsBrowserEntry,
+    'AppearanceFontControls'
+  )
+  if (packedRoot) inspectPackedFontControlsBundle(chunks, result.script, result.css)
+  return result
 }
 /** Required Solid source SSR pipeline; compiled browser output is not treated as server code. */
 export async function renderAppearanceServer() {
