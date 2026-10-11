@@ -653,6 +653,13 @@ void textarea
         .filter((chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'))
         .map((chunk) => (chunk.type === 'asset' ? String(chunk.source) : ''))
         .join('\n')
+      if (
+        pilot === 'atomic' &&
+        /(?:^|[;{])\s*--(?:font-content|font-code|text-content(?:--line-height)?|text-code(?:--line-height)?):/.test(
+          css
+        )
+      )
+        throw new Error('Packed atomic emitted unused global content/code role variables')
       const editorBytes = renderedModules
         .filter(({ id }) =>
           /\/conversation\/atomic\/chat-composer\.|\/conversation\/paste-token-editor\.|\/conversation\/paste-tokens\./.test(
