@@ -1,10 +1,78 @@
 import { Polymorphic, type PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { ComponentProps, JSX, ValidComponent } from 'solid-js'
-import { Show, createMemo, createSignal, splitProps } from 'solid-js'
+import { Show, createEffect, createMemo, createSignal, onCleanup, splitProps } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { tooltipTip } from '#lib/overlay'
 import { cn } from '#lib/utils'
 import { SideRailContext, createSideRailValue } from './side-rail-context'
+
+type SideRailTipPosition = { top: number; left: number; height: number }
+
+/** Compose Solid's direct and data-tuple event handler forms. */
+function invokeEventHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
+}
+
+function createSideRailTip(
+  row: () => HTMLElement | undefined,
+  collapsed: () => boolean,
+  expanded: () => boolean
+) {
+  const [tip, setTip] = createSignal<SideRailTipPosition | null>(null)
+  const [focusSuppressed, setFocusSuppressed] = createSignal(false)
+  const hide = () => setTip(null)
+  const show = (source: 'pointer' | 'focus') => {
+    if (source === 'pointer') setFocusSuppressed(false)
+    if (focusSuppressed()) return
+    const element = row()
+    if (
+      !element ||
+      !collapsed() ||
+      expanded() ||
+      element.getAttribute('aria-expanded') === 'true'
+    ) {
+      return
+    }
+    const rect = element.getBoundingClientRect()
+    setTip({ top: rect.top, left: rect.right + 8, height: rect.height })
+  }
+
+  // The tip is decorative, but Escape should still dismiss it. Keep this
+  // listener only for the row whose tip is currently visible, and let the same
+  // key continue to dialogs and menus above it.
+  createEffect(() => {
+    if ((!tip() && !expanded()) || typeof document === 'undefined') return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        setFocusSuppressed(true)
+        hide()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    onCleanup(() => document.removeEventListener('keydown', onKeyDown, true))
+  })
+
+  return {
+    tip,
+    show,
+    hide,
+    clearFocusSuppression: () => setFocusSuppressed(false),
+  }
+}
+
+function isExpanded(value: unknown) {
+  return value === true || value === 'true'
+}
+
+function hasPopup(value: unknown) {
+  return value !== undefined && value !== false && value !== 'false'
+}
 
 /**
  * SideRail.
@@ -234,22 +302,65 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
     'shortcut',
     'keyshortcuts',
     'children',
+    'onPointerEnter',
+    'onPointerLeave',
+    'onPointerDown',
+    'onClick',
+    'onKeyDown',
+    'onFocus',
+    'onBlur',
   ])
 
   const [row, setRow] = createSignal<HTMLElement>()
-  const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
-
   const collapsed = () =>
     row()?.closest('[data-collapsed]')?.getAttribute('data-collapsed') === 'true'
+  const expanded = () => isExpanded((rest as Record<string, unknown>)['aria-expanded'])
+  const { tip, show: showTip, hide: hideTip, clearFocusSuppression } = createSideRailTip(
+    row,
+    collapsed,
+    expanded
+  )
+  createEffect(() => {
+    if (expanded()) hideTip()
+  })
 
-  const showTip = () => {
-    const element = row()
-    if (!element || !collapsed()) return
-    const rect = element.getBoundingClientRect()
-    setTip({ top: rect.top, left: rect.right + 8, height: rect.height })
+  const onPointerEnter = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerEnter, event)
+    showTip('pointer')
   }
-
-  const hideTip = () => setTip(null)
+  const onPointerLeave = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerLeave, event)
+    hideTip()
+  }
+  const onPointerDown = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerDown, event)
+    if (event.isPrimary && event.button === 0) hideTip()
+  }
+  const onClick = (event: MouseEvent) => {
+    invokeEventHandler(local.onClick, event)
+    hideTip()
+  }
+  const onKeyDown = (event: KeyboardEvent) => {
+    invokeEventHandler(local.onKeyDown, event)
+    if (
+      event.key === 'Escape' ||
+      event.key === 'Enter' ||
+      event.key === ' ' ||
+      (hasPopup((rest as Record<string, unknown>)['aria-haspopup']) &&
+        ['ArrowDown', 'ArrowRight'].includes(event.key))
+    ) {
+      hideTip()
+    }
+  }
+  const onFocus = (event: FocusEvent) => {
+    invokeEventHandler(local.onFocus, event)
+    showTip('focus')
+  }
+  const onBlur = (event: FocusEvent) => {
+    invokeEventHandler(local.onBlur, event)
+    clearFocusSuppression()
+    hideTip()
+  }
 
   return (
     <>
@@ -265,10 +376,13 @@ export function SideRailItem<T extends ValidComponent = 'a'>(props: SideRailItem
           local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,
           local.class
         )}
-        onPointerEnter={showTip}
-        onPointerLeave={hideTip}
-        onFocus={showTip}
-        onBlur={hideTip}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+        onPointerDown={onPointerDown}
+        onClick={onClick}
+        onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         {...(rest as Record<string, unknown>)}
       >
         <span class="flex size-5 shrink-0 items-center justify-center [&_svg]:size-5">
@@ -357,18 +471,68 @@ export function SideRailButton(
     active?: boolean
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'label', 'shortcut', 'children', 'active'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'label',
+    'shortcut',
+    'children',
+    'active',
+    'onPointerEnter',
+    'onPointerLeave',
+    'onPointerDown',
+    'onClick',
+    'onKeyDown',
+    'onFocus',
+    'onBlur',
+  ])
   const [row, setRow] = createSignal<HTMLElement>()
-  const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
-
   const collapsed = () =>
     row()?.closest('[data-collapsed]')?.getAttribute('data-collapsed') === 'true'
+  const expanded = () => isExpanded(rest['aria-expanded'])
+  const { tip, show: showTip, hide: hideTip, clearFocusSuppression } = createSideRailTip(
+    row,
+    collapsed,
+    expanded
+  )
+  createEffect(() => {
+    if (expanded()) hideTip()
+  })
 
-  const showTip = () => {
-    const element = row()
-    if (!element || !collapsed()) return
-    const rect = element.getBoundingClientRect()
-    setTip({ top: rect.top, left: rect.right + 8, height: rect.height })
+  const onPointerEnter = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerEnter, event)
+    showTip('pointer')
+  }
+  const onPointerLeave = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerLeave, event)
+    hideTip()
+  }
+  const onPointerDown = (event: PointerEvent) => {
+    invokeEventHandler(local.onPointerDown, event)
+    if (event.isPrimary && event.button === 0) hideTip()
+  }
+  const onClick = (event: MouseEvent) => {
+    invokeEventHandler(local.onClick, event)
+    hideTip()
+  }
+  const onKeyDown = (event: KeyboardEvent) => {
+    invokeEventHandler(local.onKeyDown, event)
+    if (
+      event.key === 'Escape' ||
+      event.key === 'Enter' ||
+      event.key === ' ' ||
+      (hasPopup(rest['aria-haspopup']) && ['ArrowDown', 'ArrowRight'].includes(event.key))
+    ) {
+      hideTip()
+    }
+  }
+  const onFocus = (event: FocusEvent) => {
+    invokeEventHandler(local.onFocus, event)
+    showTip('focus')
+  }
+  const onBlur = (event: FocusEvent) => {
+    invokeEventHandler(local.onBlur, event)
+    clearFocusSuppression()
+    hideTip()
   }
 
   return (
@@ -378,10 +542,13 @@ export function SideRailButton(
         ref={setRow}
         aria-label={local.label}
         data-active={local.active ? 'true' : undefined}
-        onPointerEnter={showTip}
-        onPointerLeave={() => setTip(null)}
-        onFocus={showTip}
-        onBlur={() => setTip(null)}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+        onPointerDown={onPointerDown}
+        onClick={onClick}
+        onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         class={cn(
           sideRailItemClass,
           local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,

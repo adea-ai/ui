@@ -189,6 +189,45 @@ test.describe('the shell', () => {
     await expect(flyout).toContainText('⌘1')
   })
 
+  test('collapsed rail tips compose consumer handlers, dismiss on Escape, and yield to menus', async ({
+    page,
+  }) => {
+    await openStory(page, 'layout-side-rail--tooltip-interactions', 'adea-dark')
+
+    const home = page.getByRole('button', { name: 'Home' })
+    const menuTrigger = page.getByRole('button', { name: 'Account and settings' })
+    const flyout = page.locator('[data-slot="side-rail-tip"]')
+    const counts = page.getByTestId('rail-event-counts')
+
+    await home.hover()
+    await expect(flyout).toBeVisible()
+    await expect(counts).toContainText('Pointer entries: 1')
+
+    await home.focus()
+    await expect(counts).toContainText('focus entries: 1')
+    await page.keyboard.press('Escape')
+    await expect(flyout).toHaveCount(0)
+
+    await menuTrigger.hover()
+    await expect(flyout).toBeVisible()
+    await expect(counts).toContainText('Pointer entries: 2')
+    await menuTrigger.click()
+    await expect(counts).toContainText('focus entries: 2')
+    await expect(page.getByRole('menuitem', { name: 'Open settings' })).toBeVisible()
+    await expect(flyout).toHaveCount(0)
+
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('menuitem', { name: 'Open settings' })).toHaveCount(0)
+    await expect(menuTrigger).toBeFocused()
+    await expect(counts).toContainText('focus entries: 3')
+    await expect(flyout).toHaveCount(0)
+
+    await page.mouse.move(500, 300)
+    await menuTrigger.hover()
+    await expect(flyout).toBeVisible()
+    await expect(counts).toContainText('focus entries: 3')
+  })
+
   test('the app shell fills the viewport without scrolling the document', async ({ page }) => {
     await openStory(page, 'layout-app-shell--full-shell', 'adea-dark')
 

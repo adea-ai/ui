@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
+import { createSignal } from 'solid-js'
 import {
   Box,
   Files,
@@ -11,6 +12,12 @@ import {
   Users,
 } from 'lucide-solid'
 import { Badge } from '../../ui/badge/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../ui/dropdown-menu/dropdown-menu'
 import {
   SideRail,
   SideRailButton,
@@ -273,4 +280,58 @@ export const WithControls: Story = {
       </SideRail>
     </div>
   ),
+}
+
+/** Consumer handlers compose with the collapsed tooltip on both row forms. */
+export const TooltipInteractions: Story = {
+  render: () => {
+    const [pointerEntries, setPointerEntries] = createSignal(0)
+    const [focusEntries, setFocusEntries] = createSignal(0)
+    const recordPointer = (_data: number, _event: PointerEvent) =>
+      setPointerEntries((count) => count + 1)
+    const recordPointerDirect = (event: PointerEvent) => recordPointer(0, event)
+    const recordFocus = (_data: number, _event: FocusEvent) =>
+      setFocusEntries((count) => count + 1)
+
+    return (
+      <div class="h-screen bg-background">
+        <SideRail collapsed>
+          <SideRailHeader>
+            <span class="flex size-6 items-center justify-center rounded-md bg-primary text-2xs font-semibold text-primary-foreground">
+              A
+            </span>
+          </SideRailHeader>
+          <SideRailContent>
+            <SideRailItem
+              as="button"
+              type="button"
+              label="Home"
+              data-testid="rail-home"
+              onPointerEnter={[recordPointer, 0]}
+              onFocus={[recordFocus, 0]}
+            >
+              <Home />
+            </SideRailItem>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger
+                as={SideRailButton}
+                label="Account and settings"
+                data-testid="rail-menu-trigger"
+                onPointerEnter={recordPointerDirect}
+                onFocus={[recordFocus, 0]}
+              >
+                <Settings />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent hideArrow>
+                <DropdownMenuItem>Open settings</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SideRailContent>
+        </SideRail>
+        <p role="status" data-testid="rail-event-counts">
+          Pointer entries: {pointerEntries()}; focus entries: {focusEntries()}
+        </p>
+      </div>
+    )
+  },
 }

@@ -876,3 +876,15 @@ UI runtime, renderer, or pane-editing dependencies. The existing `/model` entry
 re-exports the same functions and types for compatibility. Use `/model` for
 split, close, move, resize, and undo operations; use the component entry when
 rendering the layout.
+### Tooltip keyboard dismissal
+
+A tooltip is explanatory content rather than an interactive overlay. An accepted
+Escape close of a keyboard-focused tooltip releases its layer immediately, so an enclosing modal can handle
+the same Escape instead of being blocked by the tooltip's exit animation.
+`TooltipContent.onEscapeKeyDown` runs once before close and can prevent the
+close; controlled parents can also reject it. Ordinary pointer dismissal keeps
+the shared exit animation.
+
+Collapsed `SideRail` tips are decorative: they compose row event callbacks,
+dismiss on Escape and activation, and close when their trigger opens a menu.
+Escape continues to the active menu or enclosing dialog.
