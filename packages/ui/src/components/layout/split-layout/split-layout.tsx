@@ -1,8 +1,9 @@
-import Resizable from '@corvu/resizable'
 import {
   For,
   createMemo,
+  createComponent,
   createComputed,
+  createEffect,
   createUniqueId,
   createSignal,
   onCleanup,
@@ -19,12 +20,13 @@ export type { PaneDropIntent } from './drop'
 const PANE_DRAG_TYPE = 'application/x-adea-pane-move'
 import {
   listLeaves,
-  MIN_SPLIT_RATIO,
-  MAX_SPLIT_RATIO,
   type SplitLayoutBranch,
   type SplitLayoutLeaf,
   type SplitLayoutState,
 } from './model'
+
+type ResizeController = (typeof import('./resize-controller'))['default']
+type ResizeControllerState = ResizeController | false
 
 export type SplitLayoutProps<L extends SplitLayoutLeaf> = {
   state: SplitLayoutState<L>
@@ -61,6 +63,7 @@ function rectStyle(rect: LayoutRect): JSX.CSSProperties {
 export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L>) {
   let root: HTMLDivElement | undefined
   let pendingFrame: number | undefined
+  let disposed = false
   const refs = new Map<string, HTMLElement>()
   const domIds = new Map<string, string>()
   const prefix = createUniqueId()
@@ -82,11 +85,27 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
   const leaves = createMemo(() => listLeaves(props.state.center))
   const leafMap = createMemo(() => new Map(leaves().map((leaf) => [leaf.id, leaf])))
   const frames = createMemo(() => computeLayoutFrames(props.state.center))
-  const branches = createMemo(() =>
-    Array.from(frames().values()).flatMap((frame) =>
-      frame.node.kind === 'split' ? [frame.node] : []
+  const branches = createMemo(() => {
+    const splits: SplitLayoutBranch<L>[] = []
+    for (const frame of frames().values()) if (frame.node.kind === 'split') splits.push(frame.node)
+    return splits
+  })
+  const [resizeController, setResizeController] = createSignal<ResizeControllerState>()
+  createEffect(() => {
+    if (branches().length === 0 || resizeController() !== undefined) return
+    setResizeController(false)
+    void import('./resize-controller').then(
+      ({ default: Controller }) => {
+        if (!disposed) setResizeController(() => Controller)
+      },
+      (error: unknown) => {
+        if (!disposed)
+          setResizeController(() => () => {
+            throw error
+          })
+      }
     )
-  )
+  })
   createComputed(() => {
     const current = drag()
     if (current && (!props.onMove || !leafMap().has(current.id))) clearDrag()
@@ -154,6 +173,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
     )
   )
   onCleanup(() => {
+    disposed = true
     if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame)
     clearDrag()
     refs.clear()
@@ -297,58 +317,21 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
       <span class="sr-only" role="status">
         {dropLabel()}
       </span>
-      <For each={branches().map((branch) => branch.id)}>
+      <For
+        each={resizeController() ? branches().map((branch) => branch.id) : []}
+      >
         {(id) => {
+          const Controller = resizeController() as ResizeController
           const initial = branchMap().get(id)!
           const branch: Accessor<SplitLayoutBranch<L>> = () => branchMap().get(id) ?? initial
-          return (
-            <Resizable
-              orientation={branch().direction === 'row' ? 'horizontal' : 'vertical'}
-              sizes={[branch().ratio, 1 - branch().ratio]}
-              keyboardDelta={0.05}
-              onSizesChange={(sizes) => {
-                // Corvu also reports panel registration/unregistration while
-                // mounting or disposing a controller. Those incomplete or
-                // hidden-host sizes are not user resize intent.
-                if (!root?.isConnected || root.getClientRects().length === 0) return
-                if (
-                  sizes.length !== 2 ||
-                  sizes.some((size) => !Number.isFinite(size)) ||
-                  Math.abs(sizes[0]! + sizes[1]! - 1) > 0.000001
-                )
-                  return
-                if (sizes[0] !== undefined && Math.abs(sizes[0] - branch().ratio) > 0.000001)
-                  props.onResize(id, sizes[0])
-              }}
-              style={rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 })}
-              class="pointer-events-none absolute flex min-h-0 min-w-0 data-[orientation=vertical]:flex-col"
-            >
-              <Resizable.Panel
-                minSize={MIN_SPLIT_RATIO}
-                maxSize={MAX_SPLIT_RATIO}
-                aria-hidden="true"
-              />
-              <Resizable.Handle
-                aria-label={
-                  props.labelForSeparator?.(branch()) ??
-                  (branch().direction === 'row' ? 'Resize pane columns' : 'Resize pane rows')
-                }
-                aria-orientation={branch().direction === 'row' ? 'vertical' : 'horizontal'}
-                aria-controls={listLeaves(branch())
-                  .map((leaf) => domId(leaf.id))
-                  .join(' ')}
-                aria-valuemin={10}
-                aria-valuemax={90}
-                aria-valuenow={Math.round(branch().ratio * 100)}
-                class="pointer-events-auto relative w-px shrink-0 bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
-              />
-              <Resizable.Panel
-                minSize={MIN_SPLIT_RATIO}
-                maxSize={MAX_SPLIT_RATIO}
-                aria-hidden="true"
-              />
-            </Resizable>
-          )
+          return createComponent(Controller, {
+            branch,
+            rect: () => rectStyle(frames().get(id)?.rect ?? { x: 0, y: 0, width: 0, height: 0 }),
+            domId,
+            root: () => root,
+            labelForSeparator: props.labelForSeparator,
+            onResize: props.onResize,
+          })
         }}
       </For>
     </div>
