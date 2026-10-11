@@ -92,6 +92,78 @@ test('DropdownMenu stays nonmodal and keyboard navigation remains usable', async
   await expect(page.getByLabel('Menu selection')).toHaveText('Second action')
 })
 
+test('DropdownMenu uses its orientation-specific opening key under a locked scroll root', async ({
+  page,
+}) => {
+  const scrollArea = page.getByTestId('vertical-dropdown-scroll-area')
+  const trigger = page.getByRole('button', { name: 'Open vertical menu', exact: true })
+  await page.locator('html').evaluate((element) => {
+    element.style.setProperty('overflow', 'hidden', 'important')
+  })
+  await scrollArea.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await trigger.scrollIntoViewIfNeeded()
+  await trigger.focus()
+  await scrollArea.evaluate((element) => {
+    const observer = new MutationObserver((records) => {
+      const count = Number(document.body.dataset['overflowMutationCount'] ?? '0')
+      document.body.dataset['overflowMutationCount'] = String(count + records.length)
+    })
+    observer.observe(element, { attributes: true, attributeFilter: ['style'] })
+  })
+
+  const captureScrollState = () =>
+    page.evaluate(() => {
+      const area = document.querySelector<HTMLElement>(
+        '[data-testid="vertical-dropdown-scroll-area"]'
+      )
+      const root = document.scrollingElement as HTMLElement | null
+      if (!area || !root) throw new Error('Missing scroll-lock regression nodes')
+      const declarations = (element: HTMLElement) =>
+        ['overflow', 'overflow-x', 'overflow-y'].map((property) => [
+          property,
+          element.style.getPropertyValue(property),
+          element.style.getPropertyPriority(property),
+        ])
+      return {
+        areaScrollTop: area.scrollTop,
+        areaScrollLeft: area.scrollLeft,
+        areaComputedOverflow: [
+          getComputedStyle(area).overflow,
+          getComputedStyle(area).overflowX,
+          getComputedStyle(area).overflowY,
+        ],
+        areaOverflow: declarations(area),
+        rootScrollTop: root.scrollTop,
+        rootScrollLeft: root.scrollLeft,
+        rootComputedOverflow: [
+          getComputedStyle(root).overflow,
+          getComputedStyle(root).overflowX,
+          getComputedStyle(root).overflowY,
+        ],
+        rootOverflow: declarations(root),
+      }
+    })
+  const before = await captureScrollState()
+  expect(before.areaScrollTop).toBeGreaterThan(0)
+
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(page.locator('body')).not.toHaveAttribute('data-overflow-mutation-count')
+
+  await page.keyboard.press('ArrowRight')
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'Vertical first action' })).toBeFocused()
+  await expect
+    .poll(async () => Number(await page.locator('body').getAttribute('data-overflow-mutation-count')))
+    .toBeGreaterThanOrEqual(2)
+  expect(await captureScrollState()).toEqual(before)
+  await page.keyboard.press('Escape')
+  await expect(trigger).toBeFocused()
+})
+
 test('disabled menu text stays legible and selected shortcuts follow their row in Nord', async ({
   page,
 }) => {

@@ -5,9 +5,11 @@
   "description": "",
   "dependencies": [
     "@adea-ai/themes@^0.9.5",
+    "@kobalte/core@^0.13.14",
     "lucide-solid@^1.48.0"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/appearance-editor",
     "@adea-ai/ui/button",
     "@adea-ai/ui/radio-group",
     "@adea-ai/ui/toggle-group",

@@ -204,10 +204,7 @@ function readSelection(storageKey: string): ThemeSelection {
 }
 
 /** Keep the deprecated single-font view synchronized with the UI axis. */
-function mergeThemeSelection(
-  base: ThemeSelection,
-  patch: Partial<ThemeSelection>
-): ThemeSelection {
+function mergeThemeSelection(base: ThemeSelection, patch: Partial<ThemeSelection>): ThemeSelection {
   const merged = { ...base, ...patch }
   let fonts: AppearanceEditorFontSettings
 
