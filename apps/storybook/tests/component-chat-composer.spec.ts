@@ -49,6 +49,399 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
+async function dispatchPlainPaste(page: import('@playwright/test').Page, text: string) {
+  return page.getByRole('textbox', { name: 'Paste-token message' }).evaluate((element, value) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', value)
+    const event = new ClipboardEvent('paste', {
+      bubbles: true,
+      cancelable: true,
+      clipboardData,
+    })
+    element.dispatchEvent(event)
+    return { prevented: event.defaultPrevented, clipboardText: clipboardData.getData('text/plain') }
+  }, text)
+}
+
+async function enablePasteTokens(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: 'Enable paste-token editor' }).click()
+  return page.getByRole('textbox', { name: 'Paste-token message' })
+}
+
+test('large text paste is one atomic text and block update with standalone placement and cleaned content', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await field.fill('prefixsuffix')
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(6, 6)
+  })
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+  await dispatchPlainPaste(page, 'one\ntwo\nthree\n\n')
+
+  const marker = '[ Paste #1 · 3 lines ]'
+  await expect(field).toHaveValue(`prefix\n${marker}\nsuffix`)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('1')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return element.selectionStart
+    })
+  ).toBe(`prefix\n${marker}\n`.length)
+  await expect(page.locator('[data-slot="paste-token-mirror"]')).toHaveAttribute(
+    'aria-hidden',
+    'true'
+  )
+  await expect(page.locator('[data-paste-seq="1"]')).toContainText(marker)
+  await expect(page.getByRole('textbox', { name: 'Paste-token message' })).toHaveCount(1)
+})
+
+test('ordinary input prunes removed blocks in the same controlled transaction', async ({ page }) => {
+  const field = await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'one\ntwo\nthree')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('1')
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+
+  await field.fill('A normal edit removes the token.')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
+})
+
+test('raw Cmd/Ctrl+Shift+V leaves native plain text untouched and consumes only the next paste', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  const raw = 'one\ntwo\nthree\n\n'
+  const keyPrevented = await field.evaluate((element) =>
+    element.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'v',
+        ctrlKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    )
+  )
+  expect(keyPrevented).toBe(true)
+  const pasteResult = await dispatchPlainPaste(page, raw)
+  expect(pasteResult.prevented).toBe(false)
+  await field.evaluate((element, value) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    const start = element.selectionStart
+    const end = element.selectionEnd
+    element.value = element.value.slice(0, start) + value + element.value.slice(end)
+    element.setSelectionRange(start + value.length, start + value.length)
+    element.dispatchEvent(new Event('input', { bubbles: true }))
+  }, raw)
+  await expect(field).toHaveValue(raw)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+
+  const nextPaste = await dispatchPlainPaste(page, 'four\nfive\nsix')
+  expect(nextPaste.prevented).toBe(true)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('1')
+})
+
+test('short paste stays native while trailing blank lines use the controlled caret fallback', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await field.fill('prefixsuffix')
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(6, 6)
+  })
+  const native = await dispatchPlainPaste(page, 'short text')
+  expect(native.prevented).toBe(false)
+
+  const trimmed = await dispatchPlainPaste(page, 'short\ntext\n\n')
+  expect(trimmed.prevented).toBe(true)
+  await expect(field).toHaveValue('prefixshort\ntextsuffix')
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return element.selectionStart
+    })
+  ).toBe('prefixshort\ntext'.length)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+})
+
+test('submit snapshots the token draft, action, and referenced block before the host changes live state', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await page.getByRole('button', { name: 'Recover delivery' }).click()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  const submittedText = await field.inputValue()
+  await page.getByRole('button', { name: 'Send message', exact: true }).click()
+
+  await expect(page.getByLabel('Submitted action')).toHaveText('send')
+  await expect(page.getByLabel('Submitted text')).toHaveText(submittedText)
+  await expect(page.getByLabel('Submitted blocks')).toHaveText(
+    JSON.stringify([
+      {
+        id: 'fixture-1',
+        seq: 1,
+        lines: 3,
+        content: 'first\nsecond\nthird',
+      },
+    ])
+  )
+  await expect(field).toHaveValue('Host draft changed after submit')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+})
+
+test('backspace removes a paste token as one unit and arrow navigation skips its interior', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await field.focus()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  const token = '[ Paste #1 · 3 lines ]'
+  await field.press('ArrowLeft')
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return element.selectionStart
+    })
+  ).toBe(0)
+  await field.press('ArrowRight')
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return element.selectionStart
+    })
+  ).toBe(token.length)
+  await page.evaluate(() => {
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        document.documentElement.setAttribute(
+          'data-key-probe',
+          JSON.stringify({ key: event.key, prevented: event.defaultPrevented })
+        )
+      },
+      { once: true }
+    )
+  })
+  await field.press('ArrowLeft')
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  const nativeKey = JSON.parse((await page.locator('html').getAttribute('data-key-probe'))!) as {
+    key: string
+    prevented: boolean
+  }
+  expect(nativeKey).toEqual({ key: 'ArrowLeft', prevented: true })
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return element.selectionStart
+    })
+  ).toBe(0)
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(element.value.length, element.value.length)
+  })
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+  await field.press('Backspace')
+  await expect(field).toHaveValue('')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
+})
+
+test('selection snaps to token edges and mouse click selects before double-click expands', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await field.focus()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  const token = '[ Paste #1 · 3 lines ]'
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(2, element.value.length - 2)
+    element.dispatchEvent(new Event('select', { bubbles: true }))
+  })
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return [element.selectionStart, element.selectionEnd]
+    })
+  ).toEqual([0, token.length])
+
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(5, 5)
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+  })
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      return [element.selectionStart, element.selectionEnd]
+    })
+  ).toEqual([0, token.length])
+
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(5, 5)
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }))
+  })
+  await expect(field).toHaveValue('first\nsecond\nthird')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+})
+
+test('copy and cut expand multiple complete tokens in document order', async ({ page }) => {
+  const field = await enablePasteTokens(page)
+  await field.focus()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  await dispatchPlainPaste(page, 'four\nfive\nsix')
+  const secondToken = '[ Paste #2 · 3 lines ]'
+  await expect(field).toHaveValue(`[ Paste #1 · 3 lines ]\n${secondToken}`)
+  await expect(page.getByLabel('Paste blocks')).toHaveText('2')
+  const expected = 'first\nsecond\nthird\nfour\nfive\nsix'
+
+  const copied = await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(0, element.value.length)
+    const clipboardData = new DataTransfer()
+    const event = new ClipboardEvent('copy', { bubbles: true, cancelable: true, clipboardData })
+    element.dispatchEvent(event)
+    return { prevented: event.defaultPrevented, text: clipboardData.getData('text/plain') }
+  })
+  expect(copied).toEqual({ prevented: true, text: expected })
+
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+  const cut = await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(0, element.value.length)
+    const clipboardData = new DataTransfer()
+    const event = new ClipboardEvent('cut', { bubbles: true, cancelable: true, clipboardData })
+    element.dispatchEvent(event)
+    return { prevented: event.defaultPrevented, text: clipboardData.getData('text/plain') }
+  })
+  expect(cut).toEqual({ prevented: true, text: expected })
+  await expect(field).toHaveValue('')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
+})
+
+test('copy and cut expand fully selected tokens while a partial selection stays literal', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  const fullCopy = await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(0, element.value.length)
+    const clipboardData = new DataTransfer()
+    const event = new ClipboardEvent('copy', { bubbles: true, cancelable: true, clipboardData })
+    element.dispatchEvent(event)
+    return { prevented: event.defaultPrevented, text: clipboardData.getData('text/plain') }
+  })
+  expect(fullCopy).toEqual({ prevented: true, text: 'first\nsecond\nthird' })
+
+  const partialCopy = await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(2, 10)
+    const clipboardData = new DataTransfer()
+    const event = new ClipboardEvent('copy', { bubbles: true, cancelable: true, clipboardData })
+    element.dispatchEvent(event)
+    return event.defaultPrevented
+  })
+  expect(partialCopy).toBe(false)
+
+  const changes = Number(await page.getByLabel('Draft changes').textContent())
+  const cutText = await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(0, element.value.length)
+    const clipboardData = new DataTransfer()
+    const event = new ClipboardEvent('cut', { bubbles: true, cancelable: true, clipboardData })
+    element.dispatchEvent(event)
+    return { prevented: event.defaultPrevented, text: clipboardData.getData('text/plain') }
+  })
+  expect(cutText).toEqual({ prevented: true, text: 'first\nsecond\nthird' })
+  await expect(field).toHaveValue('')
+  await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  await expect(page.getByLabel('Draft changes')).toHaveText(String(changes + 1))
+})
+
+test('hover and caret previews associate the current token without intercepting input', async ({
+  page,
+}) => {
+  const field = await enablePasteTokens(page)
+  await dispatchPlainPaste(page, 'first\nsecond\nthird\nfourth')
+  const token = page.locator('[data-paste-seq="1"]')
+  const box = (await token.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(110)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await page.mouse.move(box.x + box.width / 2 + 1, box.y + box.height / 2)
+  await page.waitForTimeout(220)
+  await expect(page.getByRole('tooltip')).toContainText('first\nsecond\nthird')
+  const panelId = await page.getByRole('tooltip').getAttribute('id')
+  await expect(field).toHaveAttribute('aria-describedby', panelId!)
+  await page.mouse.move(box.x + box.width + 20, box.y + box.height / 2)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+    element.setSelectionRange(4, 4)
+    element.dispatchEvent(new Event('select', { bubbles: true }))
+  })
+  await expect(page.getByRole('tooltip')).toContainText('first\nsecond\nthird')
+  await expect(field).toHaveAttribute('aria-describedby', /.+/)
+  await field.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(field).not.toHaveAttribute('aria-describedby', /.+/)
+})
+
+test('stale previews close when the hovered token or draft changes', async ({ page }) => {
+  const field = await enablePasteTokens(page)
+  await field.focus()
+  await dispatchPlainPaste(page, 'first\nsecond\nthird')
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  await dispatchPlainPaste(page, 'four\nfive\nsix')
+  const first = (await page.locator('[data-paste-seq="1"]').boundingBox())!
+  const second = (await page.locator('[data-paste-seq="2"]').boundingBox())!
+  await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2)
+  await expect(page.getByRole('tooltip')).toContainText('first\nsecond\nthird')
+  await page.mouse.move(second.x + second.width / 2, second.y + second.height / 2)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByRole('tooltip')).toContainText('four\nfive\nsix')
+  await field.fill('Replaced draft')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(field).not.toHaveAttribute('aria-describedby', /.+/)
+})
+
+test.describe('touch paste-token editing', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
+
+  test('touch previews stay closed and one tap expands the token', async ({ page }) => {
+    const field = await enablePasteTokens(page)
+    await field.focus()
+    await dispatchPlainPaste(page, 'first\nsecond\nthird')
+    const token = page.locator('[data-paste-seq="1"]')
+    const box = (await token.boundingBox())!
+    await field.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw new Error('Expected textarea')
+      element.setSelectionRange(4, 4)
+      element.dispatchEvent(new Event('select', { bubbles: true }))
+    })
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.waitForTimeout(350)
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await expect(field).toHaveValue('first\nsecond\nthird')
+    await expect(page.getByLabel('Paste blocks')).toHaveText('0')
+  })
+})
+
 test('collapse retains the host draft, unmounts input and shelf, and restores focused input', async ({
   page,
 }) => {
