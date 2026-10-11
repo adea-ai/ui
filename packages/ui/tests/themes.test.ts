@@ -9,6 +9,7 @@ import {
   shadcnDestructiveProjection,
   themes as catalogue,
 } from '@adea-ai/themes'
+import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
 import {
   accentVariables,
   builtinThemes,
@@ -20,6 +21,9 @@ import {
   validateThemeRegistry,
 } from '../src/lib/themes'
 import { THEME_CSS, valueOf } from './helpers/theme-css'
+
+const cssName = (role: string): string =>
+  `--${role.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
 
 /**
  * The registry's gate.
@@ -48,6 +52,31 @@ describe('theme registry', () => {
       expect(Object.keys(variables).length, `${theme.id} sets too few roles`).toBeGreaterThan(60)
       for (const [name, value] of Object.entries(variables)) {
         expect(value, `${theme.id} leaves ${name} empty`).toBeTruthy()
+      }
+    }
+  })
+
+  test('the UI forwards package-owned shadcn role projections', () => {
+    const byId = new Map(catalogue.map((theme) => [theme.id, theme]))
+    const uiOwnedDestructiveRoles = new Set([
+      'destructive',
+      'destructiveForeground',
+      'destructiveAction',
+      'destructiveActionForeground',
+    ])
+
+    for (const theme of builtinThemes) {
+      const source = byId.get(theme.id)
+      expect(source, `${theme.id} has no catalogue source`).toBeDefined()
+      if (!source) continue
+
+      const projected = shadcnVariables(source)
+      const applied = themeCssVariables(theme)
+      for (const [role, value] of Object.entries(theme.colors)) {
+        if (uiOwnedDestructiveRoles.has(role)) continue
+        const name = cssName(role)
+        expect(projected[name], `${theme.id} is missing package projection ${name}`).toBe(value)
+        expect(applied[name], `${theme.id} changed package projection ${name}`).toBe(value)
       }
     }
   })

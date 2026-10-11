@@ -200,15 +200,15 @@ they were typed:
 | `@adea-ai/ui` → `Board`                                         | 22.3 kB    | nothing                               |
 | `@adea-ai/ui/components/composites/list-row` → `ListRowControl` | 21.7 kB    | nothing — the row without its tooltip |
 | `@adea-ai/ui` → `DiffBlock`                                     | 22.9 kB    | lucide icons                          |
-| `@adea-ai/ui` → `CodeBlock`                                     | 25.6 kB    | lucide icons                          |
-| `@adea-ai/ui` → `MessageRow`                                    | 26.7 kB    | nothing                               |
+| `@adea-ai/ui` → `CodeBlock`                                     | 25.9 kB    | lucide icons                          |
+| `@adea-ai/ui` → `MessageRow`                                    | 26.8 kB    | nothing                               |
 | `@adea-ai/ui` → `CalendarSurface`                               | 29.6 kB    | corvu calendar                        |
-| `@adea-ai/ui` → `ModalDialog`                                   | 49.6 kB    | Kobalte dialog, the shared tooltip    |
+| `@adea-ai/ui` → `ModalDialog`                                   | 50.3 kB    | Kobalte dialog, the shared tooltip    |
 | `@adea-ai/ui/components/ui/carousel` → `Carousel`               | 34.2 kB    | embla                                 |
-| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 41.2 kB    | Kobalte tooltip                       |
-| `@adea-ai/ui` → `NavigationMenu`                                | 56.5 kB    | Kobalte navigation menu               |
+| `@adea-ai/ui/components/composites/list-row` → `ListRow`        | 41.8 kB    | Kobalte tooltip                       |
+| `@adea-ai/ui` → `NavigationMenu`                                | 56.6 kB    | Kobalte navigation menu               |
 | `@adea-ai/ui/components/ui/chart` → `LineChart`                 | 89.2 kB    | chart.js, the line controller only    |
-| _root plus chart and carousel entries_                          | _360.7 kB_ | — and `Button` is 6.1% of it          |
+| _root plus chart and carousel entries_                          | _366.5 kB_ | — and `Button` is 6.0% of it          |
 
 The chart splits from itself, which is why chart.js was chosen: `LineChart` is
 10.5 kB smaller than importing all seven chart types together (89.2 kB against 99.7 kB), because the
