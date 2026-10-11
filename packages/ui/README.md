@@ -825,3 +825,10 @@ own their preference provider and storage. Pass `mode` and `onModeChange`; the
 control owns roving keyboard focus, pressed state and explanatory tooltips. It
 does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
 existing provider-bound API.
+
+A tooltip is explanatory content rather than an interactive overlay. An accepted
+Escape close of a keyboard-focused tooltip releases its layer immediately, so an enclosing modal can handle
+the same Escape instead of being blocked by the tooltip's exit animation.
+`TooltipContent.onEscapeKeyDown` runs once before close and can prevent the
+close; controlled parents can also reject it. Ordinary pointer dismissal keeps
+the shared exit animation.
