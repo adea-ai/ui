@@ -11,6 +11,11 @@
   "registryDependencies": [],
   "files": [
     {
+      "path": "src/lib/form-field.ts",
+      "type": "registry:lib",
+      "target": "lib/form-field.ts"
+    },
+    {
       "path": "src/lib/keyed-rows.ts",
       "type": "registry:lib",
       "target": "lib/keyed-rows.ts"

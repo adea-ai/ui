@@ -1,6 +1,7 @@
 import { ChevronDownIcon } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { createEffect, For, onMount, Show, splitProps } from 'solid-js'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 export type NativeSelectProps = ComponentProps<'select'> & {
@@ -59,7 +60,26 @@ export type NativeSelectOption = Readonly<{
 }>
 
 export function NativeSelect(props: NativeSelectProps) {
-  const [local, rest] = splitProps(props, ['class', 'children', 'defaultValue', 'options'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'children',
+    'defaultValue',
+    'options',
+    'id',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('control', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
   let select: HTMLSelectElement | undefined
 
   // Set selection after native options exist; setting select.value before its
@@ -81,6 +101,12 @@ export function NativeSelect(props: NativeSelectProps) {
           select = element
         }}
         data-slot="native-select"
+        id={field?.id ?? local.id}
+        aria-label={local['aria-label']}
+        aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+        aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+        aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+        aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
         class={cn(
           'h-control-md min-w-0 appearance-none rounded-md border border-input bg-transparent px-control-md pr-9 text-sm',
           'transition-[color,box-shadow,border-color] ease-out outline-none',

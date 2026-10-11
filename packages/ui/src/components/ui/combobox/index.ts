@@ -8,3 +8,4 @@ export {
   ComboboxSection,
   ComboboxTrigger,
 } from './combobox'
+export { ValueCombobox, type ValueComboboxProps } from './value-combobox'

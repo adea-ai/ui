@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -15,12 +16,35 @@ import { cn } from '../../../lib/utils'
  * without a new token, which is what keeps it aligned with Button and Select.
  */
 export function Input(props: ComponentProps<'input'>) {
-  const [local, rest] = splitProps(props, ['class', 'type'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'type',
+    'id',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('control', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
 
   return (
     <input
       data-slot="input"
       type={local.type ?? 'text'}
+      id={field?.id ?? local.id}
+      aria-label={local['aria-label']}
+      aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+      aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+      aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+      aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
       class={cn(
         'h-control-md w-full min-w-0 rounded-md border border-input bg-transparent px-control-md py-1 text-sm',
         'transition-[color,box-shadow,border-color] ease-out outline-none',

@@ -433,6 +433,11 @@
           "path": "src/components/ui/combobox/index.ts",
           "type": "registry:ui",
           "target": "components/ui/combobox/index.ts"
+        },
+        {
+          "path": "src/components/ui/combobox/value-combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combobox/value-combobox.tsx"
         }
       ]
     },
@@ -660,6 +665,8 @@
         "@kobalte/core@^0.13.14"
       ],
       "registryDependencies": [
+        "@adea-ai/ui/input",
+        "@adea-ai/ui/label",
         "lib"
       ],
       "files": [
@@ -672,6 +679,11 @@
           "path": "src/components/ui/field/index.ts",
           "type": "registry:ui",
           "target": "components/ui/field/index.ts"
+        },
+        {
+          "path": "src/components/ui/field/number-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/field/number-field.tsx"
         }
       ]
     },
@@ -728,6 +740,7 @@
       "description": "",
       "dependencies": [],
       "registryDependencies": [
+        "@adea-ai/ui/tooltip",
         "lib"
       ],
       "files": [
@@ -740,6 +753,11 @@
           "path": "src/components/ui/input-group/input-group.tsx",
           "type": "registry:ui",
           "target": "components/ui/input-group/input-group.tsx"
+        },
+        {
+          "path": "src/components/ui/input-group/secret-input-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-group/secret-input-group.tsx"
         }
       ]
     },
@@ -2070,6 +2088,11 @@
       ],
       "registryDependencies": [],
       "files": [
+        {
+          "path": "src/lib/form-field.ts",
+          "type": "registry:lib",
+          "target": "lib/form-field.ts"
+        },
         {
           "path": "src/lib/keyed-rows.ts",
           "type": "registry:lib",

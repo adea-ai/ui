@@ -1,5 +1,6 @@
 export {
   Field,
+  FormField,
   FieldDescription,
   FieldError,
   FieldInput,
@@ -8,4 +9,7 @@ export {
   FieldSeparator,
   FieldSet,
   FieldTextArea,
+  type FormFieldProps,
 } from './field'
+export { NumberField } from './number-field'
+export type { NumberFieldProps } from './number-field'

@@ -3,6 +3,7 @@ import { Check, ChevronDown, X } from 'lucide-solid'
 import type { ComponentProps } from 'solid-js'
 import { Show, splitProps } from 'solid-js'
 import { menuContentPadding, menuItem, popoverArrow } from '../../../lib/overlay'
+import { useFormFieldControl } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -43,10 +44,32 @@ export function ComboboxControl(props: ComponentProps<typeof KobalteCombobox.Con
 }
 
 export function ComboboxInput(props: ComponentProps<typeof KobalteCombobox.Input>) {
-  const [local, rest] = splitProps(props, ['class'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'id',
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-invalid',
+    'aria-errormessage',
+  ])
+  const field = useFormFieldControl('control', {
+    id: local.id,
+    'aria-label': local['aria-label'],
+    'aria-labelledby': local['aria-labelledby'],
+    'aria-describedby': local['aria-describedby'],
+    'aria-invalid': local['aria-invalid'],
+    'aria-errormessage': local['aria-errormessage'],
+  })
 
   return (
     <KobalteCombobox.Input
+      id={field?.id ?? local.id}
+      aria-label={local['aria-label']}
+      aria-labelledby={field?.['aria-labelledby'] ?? local['aria-labelledby']}
+      aria-describedby={field?.['aria-describedby'] ?? local['aria-describedby']}
+      aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
+      aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
       class={cn(
         'h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground',
         'disabled:cursor-not-allowed',
