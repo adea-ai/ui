@@ -14,6 +14,7 @@
     "@adea-ai/ui/kbd",
     "@adea-ai/ui/spinner",
     "@adea-ai/ui/textarea",
+    "@adea-ai/ui/tooltip",
     "lib"
   ],
   "files": [
@@ -56,6 +57,11 @@
       "path": "src/components/conversation/message-row.tsx",
       "type": "registry:ui",
       "target": "components/conversation/message-row.tsx"
+    },
+    {
+      "path": "src/components/conversation/paste-token-editor.tsx",
+      "type": "registry:ui",
+      "target": "components/conversation/paste-token-editor.tsx"
     },
     {
       "path": "src/components/conversation/paste-tokens.ts",

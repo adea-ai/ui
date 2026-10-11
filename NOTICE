@@ -182,6 +182,36 @@ refused. React, Lexical, browser clipboard/File handling, localStorage side-tabl
 recovery, backend message reconciliation, uploads, textarea editing, previews,
 chips, undo/history and submit/persistence authority are not included. This
 selected model is not rich editing, complete Chat, or application adoption.
+
+## Controlled paste-token editor translated from KiroCrew (issue #532)
+
+`packages/ui/src/components/conversation/paste-token-editor.tsx` and the
+`ChatComposer` opt-in contract substantially translate selected text-editing
+behavior from `website/src/components/ChatInput.tsx`,
+`website/src/components/PasteHighlightLayer.tsx`,
+`website/src/components/PasteHoverLayer.tsx`, and
+`website/src/components/PastePreviewTooltip.tsx`, pinned at KiroCrew revision
+`283e136c0f902e965a535a7c9548c57c7504fed0`.
+
+    Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    This product includes software developed at Amazon.com, Inc.
+    (https://www.amazon.com/). Licensed under the Apache License, Version 2.0.
+
+Retained: plain-text thresholded paste, trailing-blank cleanup, raw-paste
+bypass, standalone and quote-prefix placement, atomic token deletion and
+navigation, selection snapping, expansion, pruning and expanded copy/cut. The
+Solid mirror and Kobalte tooltip retain the aria-hidden highlight, dwell and
+caret previews, touch suppression, dismissal and `aria-describedby` association.
+`ChatComposer` emits a single controlled `{ text, blocks }` transaction and
+submits a captured text/action/block snapshot; hosts supply IDs, state and
+delivery. Browser cases translate the applicable text-input expectations in
+`website/src/test/ChatInputCoverage.test.tsx`,
+`website/src/test/ChatInput.paste.test.tsx`, and
+`website/src/test/PasteHoverLayer.test.tsx`. Upload, image/file clipboard,
+optimizer, React/Lexical/Framer runtime, persistence, undo/history, and
+application transport or restoration behavior are not copied. This is the
+selected editor unit, not a claim of full Chat or product adoption.
+
 ## Appearance editor translated from Zeron
 
 The System/Light/Dark miniature composition, palette bands, theme selectors,

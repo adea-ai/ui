@@ -75,36 +75,52 @@ render(Pilot, document.getElementById('app')!);
 `
 const composedFixture = `
 import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { ChatComposer } from '@adea-ai/ui/components/conversation';
 import './style.css';
 function Pilot() {
  const [draft,setDraft]=createSignal('');
+ const [blocks,setBlocks]=createSignal([]);
+ const [transactions,setTransactions]=createSignal(0);
+ const [tokenMode,setTokenMode]=createSignal(false);
  const [collapsed,setCollapsed]=createSignal(false);
  const [fail,setFail]=createSignal(true);
  const [sent,setSent]=createSignal(0);
  const [busy,setBusy]=createSignal(false);
  const [mode,setMode]=createSignal('steer');
  const [last,setLast]=createSignal('none');
+ const [submittedBlocks,setSubmittedBlocks]=createSignal('[]');
  const [references,setReferences]=createSignal(false);
  const [delayed,setDelayed]=createSignal(false);
+ let blockId=0;
  let finish;
+ const submit=input=>{setLast(input.action);setSubmittedBlocks(JSON.stringify(input.blocks??[]));if(delayed()) return new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('');setBlocks([])};
  return <main class="p-4">
   <h1>Composed input pilot</h1>
-  <ChatComposer value={draft()} onValueChange={setDraft}
+  <Show when={tokenMode()} fallback={<ChatComposer value={draft()} onValueChange={setDraft}
    sendableActions={references()?{send:true,queue:true,steer:false}:undefined}
    collapse={{value:collapsed(),onChange:setCollapsed}}
    busy={busy()?{mode:mode(),onModeChange:setMode}:undefined}
-   context={<button type="button">Model context</button>}
-   onSubmit={input=>{setLast(input.action);if(delayed()) return new Promise(resolve=>{finish=resolve});if(fail()) throw new Error('Refusal');setSent(sent()+1);setDraft('')}}/>
+   context={<button type="button">Model context</button>} onSubmit={submit}/> }>
+   <ChatComposer value={draft()} pasteTokens={{blocks:blocks(),createBlockId:()=>\`packed-\${++blockId}\`,
+    onChange:next=>{setDraft(next.text);setBlocks(next.blocks);setTransactions(transactions()+1)}}}
+    sendableActions={references()?{send:true,queue:true,steer:false}:undefined}
+    collapse={{value:collapsed(),onChange:setCollapsed}}
+    busy={busy()?{mode:mode(),onModeChange:setMode}:undefined}
+    context={<button type="button">Model context</button>} onSubmit={submit}/>
+  </Show>
   <div class="mt-64 flex gap-2">
    <button type="button" onClick={()=>setFail(false)}>Recover delivery</button>
    <button type="button" onClick={()=>setBusy(true)}>Run busy</button>
    <button type="button" onClick={()=>setReferences(true)}>Stage references</button>
    <button type="button" onClick={()=>{setBusy(false);setDelayed(true)}}>Delay delivery</button>
    <button type="button" onClick={()=>finish?.()}>Finish delivery</button>
+   <button type="button" onClick={()=>setTokenMode(true)}>Enable paste-token mode</button>
   </div>
   <output aria-label="Submitted action">{last()}</output>
+  <output aria-label="Submitted blocks">{submittedBlocks()}</output>
+  <output aria-label="Token transactions">{transactions()}</output>
+  <output aria-label="Token blocks">{blocks().length}</output>
   <output aria-label="Sent">{sent()}</output>
  </main>;
 }
@@ -147,6 +163,8 @@ try {
     'Plain transcript follow translated from KiroCrew',
     'Busy composer action translated from KiroCrew',
     'Composed input and reading collapse translated from KiroCrew',
+    'Paste-token model translated from KiroCrew (issue #532)',
+    'Controlled paste-token editor translated from KiroCrew (issue #532)',
   ]) {
     if (!notice.includes(heading)) throw new Error(`Packed NOTICE lost ${heading}`)
   }
@@ -188,9 +206,9 @@ try {
   writeFileSync(join(consumer, 'server-fixture.mjs'), serverChunk.code)
   writeFileSync(
     join(consumer, 'render.mjs'),
-    "import { renderComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderComposer(false),renderComposer(true)]));"
+    "import { renderComposer, renderTokenComposer } from './server-fixture.mjs'; process.stdout.write(JSON.stringify([renderComposer(false),renderComposer(true),renderTokenComposer()]));"
   )
-  const [expanded, collapsed] = JSON.parse(
+  const [expanded, collapsed, tokenized] = JSON.parse(
     execFileSync('node', [join(consumer, 'render.mjs')], {
       cwd: consumer,
       encoding: 'utf8',
@@ -203,13 +221,17 @@ try {
     collapsed?.includes('data-slot="composer-input"') ||
     collapsed?.includes('data-slot="composer-context"') ||
     !collapsed?.includes('Show the message input') ||
-    !collapsed.includes('A server-side draft')
+    !collapsed.includes('A server-side draft') ||
+    !tokenized?.includes('Paste-token server draft') ||
+    !tokenized.includes('data-slot="paste-token-mirror"') ||
+    !tokenized.includes('aria-hidden="true"') ||
+    !tokenized.includes('[ Paste #1 · 3 lines ]')
   )
-    throw new Error('Packed native Node SSR lost expanded/collapsed composition')
+    throw new Error('Packed native Node SSR lost plain or token-editor composition')
   results.push({
     pilot: 'composed',
     condition: 'solid-ssr-native-node',
-    checks: ['expanded-input-context', 'collapsed-draft-preview'],
+    checks: ['expanded-input-context', 'collapsed-draft-preview', 'token-editor-mirror'],
     retainedModules: serverModules,
   })
   for (const pilot of ['conversation', 'busy', 'composed'] as const) {
@@ -239,6 +261,7 @@ try {
                 ...(pilot === 'composed'
                   ? [
                       'components/conversation/chat-composer.tsx',
+                      'components/conversation/paste-token-editor.tsx',
                       'components/ui/spinner/spinner.tsx',
                     ]
                   : []),
@@ -427,6 +450,52 @@ try {
             await field.press('Enter')
             await expect(page.getByLabel('Sent')).toHaveText('4')
             await expect(page.getByLabel('Submitted action')).toHaveText('queue')
+            await page.getByRole('button', { name: 'Enable paste-token mode' }).click()
+            const firstPastePrevented = await field.evaluate((element) => {
+              const clipboardData = new DataTransfer()
+              clipboardData.setData('text/plain', 'red\ngreen\nblue')
+              const event = new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData,
+              })
+              element.dispatchEvent(event)
+              return event.defaultPrevented
+            })
+            if (!firstPastePrevented) throw new Error('Packed token paste was not collapsed')
+            await expect(field).toHaveValue('[ Paste #1 · 3 lines ]')
+            await expect(page.getByLabel('Token transactions')).toHaveText('1')
+            await expect(page.getByLabel('Token blocks')).toHaveText('1')
+            const token = page.locator('[data-paste-seq="1"]')
+            const tokenBox = (await token.boundingBox())!
+            await page.mouse.move(tokenBox.x + tokenBox.width / 2, tokenBox.y + tokenBox.height / 2)
+            await expect(page.getByRole('tooltip')).toContainText('red\ngreen\nblue')
+            await expect(field).toHaveAttribute('aria-describedby', /.+/)
+            await page.keyboard.press('Escape')
+            await field.fill('Ordinary text prunes the token')
+            await expect(page.getByLabel('Token transactions')).toHaveText('2')
+            await expect(page.getByLabel('Token blocks')).toHaveText('0')
+            const secondPastePrevented = await field.evaluate((element) => {
+              const clipboardData = new DataTransfer()
+              clipboardData.setData('text/plain', 'red\ngreen\nblue')
+              const event = new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData,
+              })
+              element.dispatchEvent(event)
+              return event.defaultPrevented
+            })
+            if (!secondPastePrevented)
+              throw new Error('Packed token paste after pruning was not collapsed')
+            await expect(page.getByLabel('Token transactions')).toHaveText('3')
+            await expect(page.getByLabel('Token blocks')).toHaveText('1')
+            await field.press('Enter')
+            await expect(page.getByLabel('Sent')).toHaveText('5')
+            await expect(page.getByLabel('Submitted blocks')).toHaveText(
+              JSON.stringify([{ id: 'packed-2', seq: 1, lines: 3, content: 'red\ngreen\nblue' }])
+            )
+            await expect(page.getByLabel('Token blocks')).toHaveText('0')
             await page.getByRole('button', { name: 'Delay delivery' }).click()
             await field.fill('Pending delivery')
             await field.press('Enter')
@@ -456,6 +525,9 @@ try {
                 'reference-only-queue',
                 'reference-only-steer-refusal',
                 'host-action-mask-with-text',
+                'token-editor-paired-edit-prune',
+                'token-preview-accessibility',
+                'token-submit-block-snapshot',
                 'pending-delivery-style',
                 'native-ime-default',
                 'tailwind-style',

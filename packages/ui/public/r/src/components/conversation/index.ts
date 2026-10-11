@@ -1,4 +1,10 @@
-export { ChatComposer, type ChatComposerProps, type ChatComposerControl } from './chat-composer'
+export {
+  ChatComposer,
+  type ChatComposerProps,
+  type ChatComposerControl,
+  type ChatComposerPasteTokens,
+} from './chat-composer'
+export type { PasteTokenDraft } from './paste-token-editor'
 export { BusySendButton, type BusySendMode, type BusySendButtonProps } from './busy-send-button'
 export {
   ConversationAvatar,

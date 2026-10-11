@@ -3,6 +3,7 @@ import { createSignal } from 'solid-js'
 import { Button } from '../ui/button/button'
 import { ChatComposer } from './chat-composer'
 import type { BusySendMode } from './busy-send-button'
+import type { PasteBlock } from './paste-tokens'
 
 const meta = {
   title: 'Conversation/Composed input',
@@ -82,3 +83,32 @@ export const ApprovalFocus: Story = {
     />
   ),
 }
+
+function Tokenized() {
+  const [draft, setDraft] = createSignal('')
+  const [blocks, setBlocks] = createSignal<PasteBlock[]>([])
+  const [submitted, setSubmitted] = createSignal('No submission yet')
+  let nextId = 0
+  return (
+    <div class="flex flex-col gap-2">
+      <ChatComposer
+        value={draft()}
+        pasteTokens={{
+          blocks: blocks(),
+          createBlockId: () => `story-${++nextId}`,
+          onChange: ({ text, blocks: nextBlocks }) => {
+            setDraft(text)
+            setBlocks(nextBlocks)
+          },
+        }}
+        onSubmit={({ text, action, blocks: submittedBlocks }) => {
+          setSubmitted(`${action}: ${text} (${submittedBlocks.length} retained paste blocks)`)
+        }}
+      />
+      <p role="status" class="text-muted-foreground text-xs">
+        Paste three or more lines to create one atomic marker. {submitted()}
+      </p>
+    </div>
+  )
+}
+export const AtomicPasteTokens: Story = { render: () => <Tokenized /> }

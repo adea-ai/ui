@@ -16,6 +16,8 @@ import {
 import { Spinner } from '../ui/spinner/spinner'
 import { BusySendButton, type BusySendButtonProps, type BusySendMode } from './busy-send-button'
 import { createComposerImeGuard } from './ime-guard'
+import { PasteTokenEditor, type PasteTokenDraft } from './paste-token-editor'
+import { pruneBlocks, type PasteBlock } from './paste-tokens'
 
 export type ChatComposerControl = {
   /** Focus this instance; false when it is unavailable or collapsed. */
@@ -23,11 +25,8 @@ export type ChatComposerControl = {
   /** A typing intent, unlike merely navigating to a conversation. */
   expandAndFocus: () => boolean
 }
-export type ChatComposerProps = {
+type ChatComposerSharedProps = {
   value: string
-  onValueChange: (value: string) => void
-  /** The host owns attachments and delivery; text/action are captured at the gesture. */
-  onSubmit: (input: { text: string; action: 'send' | BusySendMode }) => void | Promise<void>
   /** Host scope fence; changes discard local feedback, not the host draft. */
   resetKey?: unknown
   disabled?: boolean
@@ -57,6 +56,38 @@ export type ChatComposerProps = {
   approvalFocus?: boolean
 }
 
+export type ChatComposerPasteTokens = {
+  /** Current host-owned backing blocks, paired with `value`. */
+  blocks: readonly PasteBlock[]
+  /** Synchronous host identity allocation; the UI owns no persistent identity. */
+  createBlockId: () => string
+  /** One synchronous update for the complete text and surviving blocks. */
+  onChange: (draft: PasteTokenDraft) => void
+}
+
+/**
+ * Plain callers keep the original text callback. Token callers opt into one
+ * atomic text/blocks transaction; separate text and block callbacks are not
+ * accepted in that mode.
+ */
+export type ChatComposerProps = ChatComposerSharedProps &
+  (
+    | {
+        pasteTokens?: never
+        onValueChange: (value: string) => void
+        onSubmit: (input: { text: string; action: 'send' | BusySendMode }) => void | Promise<void>
+      }
+    | {
+        pasteTokens: ChatComposerPasteTokens
+        onValueChange?: never
+        onSubmit: (input: {
+          text: string
+          action: 'send' | BusySendMode
+          blocks: PasteBlock[]
+        }) => void | Promise<void>
+      }
+  )
+
 /**
  * Kiro's composer assembly: context/options, adjacent band, approval/notices,
  * staged content, input/action groups and a context shelf. Reading collapse
@@ -82,6 +113,7 @@ export function ChatComposer(props: ChatComposerProps) {
     | undefined
   let generation = 0
   let active = true
+  let composing = false
   const collapsed = () => props.collapse?.value === true
   const unavailable = () => props.disabled || props.readOnly || !!props.blockedReason
   const cancelFocus = () => {
@@ -138,6 +170,7 @@ export function ChatComposer(props: ChatComposerProps) {
       () => {
         generation += 1
         selection = undefined
+        composing = false
         cancelFocus()
         focusTarget = undefined
         setPending(false)
@@ -163,10 +196,19 @@ export function ChatComposer(props: ChatComposerProps) {
     if (!canSend(selected)) return
     const started = generation
     const input = { text: props.value, action: selected }
+    const tokenInput = props.pasteTokens
+      ? {
+          ...input,
+          blocks: pruneBlocks(props.value, [...props.pasteTokens.blocks]).map((block) => ({
+            ...block,
+          })),
+        }
+      : undefined
     setPending(true)
     setError(null)
     try {
-      await props.onSubmit(input)
+      if (props.pasteTokens && tokenInput) await props.onSubmit(tokenInput)
+      else if (!props.pasteTokens) await props.onSubmit(input)
     } catch {
       if (active && started === generation)
         setError('Message not sent. Check your draft and retry when the connection recovers.')
@@ -181,6 +223,34 @@ export function ChatComposer(props: ChatComposerProps) {
         .find((line) => line.trim().length > 0)
         ?.trim() ?? ''
     return first.length > 120 ? `${first.slice(0, 120)}…` : first
+  }
+  const handleInputKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && error()) {
+      setError(null)
+      return
+    }
+    if (event.key !== 'Enter' || event.shiftKey || event.defaultPrevented) return
+    if (ime.claimEnter(event)) {
+      const selected =
+        props.busy && (event.metaKey || event.ctrlKey)
+          ? props.busy.mode === 'steer'
+            ? 'queue'
+            : 'steer'
+          : action()
+      void submit(selected)
+    }
+  }
+  const handleCompositionStart = () => {
+    composing = true
+    ime.onCompositionStart()
+  }
+  const handleCompositionEnd = () => {
+    composing = false
+    ime.onCompositionEnd()
+  }
+  const handleBlur = () => {
+    composing = false
+    ime.onBlur()
   }
   return (
     <div data-slot="chat-composer" class="mx-auto flex w-full max-w-4xl flex-col px-4 pb-1">
@@ -256,43 +326,64 @@ export function ChatComposer(props: ChatComposerProps) {
             <Show when={props.attachments}>
               <div data-slot="composer-staged-content">{props.attachments}</div>
             </Show>
-            <textarea
-              ref={(element) => {
-                field = element
-                onCleanup(() => {
-                  if (field === element) field = undefined
-                })
-              }}
-              data-slot="composer-input"
-              aria-label={props.inputLabel ?? 'Message'}
-              class="field-sizing-content text-foreground placeholder:text-muted-foreground min-h-11 max-h-36 w-full resize-none border-0 bg-transparent px-4 py-3 text-sm outline-none disabled:opacity-50"
-              value={props.value}
-              onInput={(event) => props.onValueChange(event.currentTarget.value)}
-              disabled={props.disabled}
-              readOnly={props.readOnly || pending()}
-              placeholder={props.placeholder ?? 'Write a message…'}
-              rows={1}
-              onCompositionStart={ime.onCompositionStart}
-              onCompositionEnd={ime.onCompositionEnd}
-              onFocus={ime.onFocus}
-              onBlur={ime.onBlur}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape' && error()) {
-                  setError(null)
-                  return
-                }
-                if (event.key !== 'Enter' || event.shiftKey || event.defaultPrevented) return
-                if (ime.claimEnter(event)) {
-                  const selected =
-                    props.busy && (event.metaKey || event.ctrlKey)
-                      ? props.busy.mode === 'steer'
-                        ? 'queue'
-                        : 'steer'
-                      : action()
-                  void submit(selected)
-                }
-              }}
-            />
+            <Show
+              when={props.pasteTokens}
+              fallback={
+                <textarea
+                  ref={(element) => {
+                    field = element
+                    onCleanup(() => {
+                      if (field === element) field = undefined
+                    })
+                  }}
+                  data-slot="composer-input"
+                  aria-label={props.inputLabel ?? 'Message'}
+                  class="field-sizing-content text-foreground placeholder:text-muted-foreground min-h-11 max-h-36 w-full resize-none border-0 bg-transparent px-4 py-3 text-sm outline-none disabled:opacity-50"
+                  value={props.value}
+                  onInput={(event) => {
+                    if (props.pasteTokens) {
+                      const text = event.currentTarget.value
+                      props.pasteTokens.onChange({
+                        text,
+                        blocks: pruneBlocks(text, [...props.pasteTokens.blocks]),
+                      })
+                    } else props.onValueChange(event.currentTarget.value)
+                  }}
+                  disabled={props.disabled}
+                  readOnly={props.readOnly || pending()}
+                  placeholder={props.placeholder ?? 'Write a message…'}
+                  rows={1}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  onFocus={ime.onFocus}
+                  onBlur={handleBlur}
+                  onKeyDown={handleInputKeyDown}
+                />
+              }
+            >
+              {(tokens) => (
+                <PasteTokenEditor
+                  ref={(element) => {
+                    field = element
+                  }}
+                  value={props.value}
+                  resetKey={props.resetKey}
+                  blocks={tokens().blocks}
+                  createBlockId={tokens().createBlockId}
+                  onChange={tokens().onChange}
+                  inputLabel={props.inputLabel ?? 'Message'}
+                  placeholder={props.placeholder ?? 'Write a message…'}
+                  disabled={props.disabled}
+                  readOnly={props.readOnly || pending()}
+                  composing={() => composing}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  onFocus={ime.onFocus}
+                  onBlur={handleBlur}
+                  onKeyDown={handleInputKeyDown}
+                />
+              )}
+            </Show>
             <div
               data-slot="composer-action-row"
               class="flex items-center justify-between gap-2 px-2.5 pb-2 pt-0.5"
