@@ -74,6 +74,11 @@ for (const closeMethod of ['Close button', 'Escape']) {
   })
 }
 
+test('the default account trigger keeps its shared tooltip', async ({ page }) => {
+  await page.getByRole('button', { name: 'User settings' }).focus()
+  await expect(page.getByRole('tooltip')).toHaveText('User settings')
+})
+
 test('an unmounted menu clears its pending after-close action', async ({ page }) => {
   await page.getByRole('button', { name: 'Unmount test menu' }).click()
   await page.getByRole('menuitem', { name: 'Remove menu' }).click()
@@ -106,5 +111,40 @@ test('a rail menu can open beside its trigger with its bottom aligned', async ({
     })
     .toBeLessThan(8)
   await page.keyboard.press('Escape')
+  await expect(opener).toBeFocused()
+})
+
+test('a custom rail trigger keeps its tooltip, keyboard behavior, and deferred opener', async ({
+  page,
+}) => {
+  const opener = page.getByRole('button', { name: 'Rail settings', exact: true })
+  await opener.focus()
+  await expect(page.locator('[data-slot="side-rail-tip"]')).toHaveText('Rail settings')
+  await expect(page.getByLabel('Custom trigger callbacks')).toHaveText('focus')
+  await expect(opener).toHaveAttribute('aria-expanded', 'false')
+  await page.keyboard.press('Enter')
+
+  const menu = page.getByRole('menu')
+  const updates = page.getByRole('menuitem', { name: 'Updates' })
+  await expect(menu).toBeVisible()
+  await expect(updates).toBeFocused()
+  await expect(opener).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+
+  const trigger = await opener.boundingBox()
+  const panel = await menu.boundingBox()
+  expect(
+    trigger && panel ? Math.abs(panel.x - trigger.x - trigger.width - 4) : Infinity
+  ).toBeLessThan(1)
+  await page.keyboard.press('Enter')
+
+  await expect(page.getByLabel('Custom selection lifecycle')).toHaveText(
+    'after-close:true:true:true:true'
+  )
+  await expect(opener).toHaveAttribute('aria-expanded', 'false')
+  const dialog = page.getByRole('dialog', { name: 'Version & updates' })
+  await expect(dialog).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
   await expect(opener).toBeFocused()
 })

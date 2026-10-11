@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
+import { UserRound } from 'lucide-solid'
 import { Badge } from '../../ui/badge/badge'
+import { SideRail, SideRailButton, SideRailFooter } from '../../layout/side-rail/side-rail'
 import { AccountMenu, type AccountMenuItem } from './account-menu'
 
 /**
@@ -101,6 +103,32 @@ export const CustomItems: Story = {
         { id: 'about', label: 'About' },
       ]}
     />
+  ),
+}
+
+/** A host rail can provide its own trigger and collapsed-state tooltip. */
+export const CustomRailTrigger: Story = {
+  render: () => (
+    <div class="h-64">
+      <SideRail collapsed aria-label="Workspace navigation" class="h-64">
+        <SideRailFooter>
+          <AccountMenu
+            label="User settings"
+            placement="right-end"
+            gutter={4}
+            hideArrow
+            authenticated={false}
+            showSession={false}
+            items={standardItems}
+            renderTrigger={(triggerProps) => (
+              <SideRailButton {...triggerProps} label={triggerProps.label}>
+                <UserRound aria-hidden="true" />
+              </SideRailButton>
+            )}
+          />
+        </SideRailFooter>
+      </SideRail>
+    </div>
   ),
 }
 

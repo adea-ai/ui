@@ -100,6 +100,22 @@ const coreSamples: PackedSample[] = [
     source: 'composites/account-menu',
   },
   {
+    name: 'account-menu-custom-trigger',
+    imports:
+      "import { AccountMenu } from '@adea-ai/ui/components/composites/account-menu'; import { SideRail, SideRailButton, SideRailFooter } from '@adea-ai/ui/components/layout/side-rail'; import { UserRound } from 'lucide-solid'",
+    jsx: '<SideRail collapsed aria-label="Workspace navigation"><SideRailFooter><AccountMenu label="User settings" placement="right-end" gutter={4} hideArrow authenticated={false} showSession={false} items={[{ id: "settings", label: "Settings" }]} renderTrigger={(triggerProps) => <SideRailButton {...triggerProps} label={triggerProps.label}><UserRound aria-hidden="true" /></SideRailButton>} /></SideRailFooter></SideRail>',
+    sources: [
+      'components/composites/account-menu/account-menu.tsx',
+      'components/layout/side-rail/side-rail.tsx',
+      'components/ui/button/button.tsx',
+      'components/ui/dropdown-menu/dropdown-menu.tsx',
+      'components/ui/tooltip/tooltip.tsx',
+      'lib/overlay.ts',
+      'lib/utils.ts',
+      'lib/variants.ts',
+    ],
+  },
+  {
     name: 'help-center',
     imports: "import { HelpCenter } from '@adea-ai/ui/components/composites/help-center'",
     jsx: '<HelpCenter appName="Adea" shortcuts={[{ label: "Settings", keys: ["⌘", ","] }]} links={[{ label: "Project", url: "https://github.com/adea-ai/adea" }]} />',

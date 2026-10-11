@@ -10,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-solid'
 import type { ComponentProps, JSX } from 'solid-js'
-import { For, Show, createSignal, onCleanup, splitProps } from 'solid-js'
+import { For, Show, createSignal, mergeProps, onCleanup, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button, type ButtonProps } from '../../ui/button/button'
 import {
@@ -54,6 +54,12 @@ export type AccountMenuItem = {
   onSelectAfterClose?: (trigger: HTMLButtonElement | undefined) => void
 }
 
+/** Native trigger props passed to a host-owned trigger renderer. */
+export type AccountMenuTriggerProps = ComponentProps<'button'> & {
+  /** Accessible label for the account-menu trigger. */
+  label: string
+}
+
 export type AccountMenuProps = {
   class?: string
   /** Anchor a rail menu beside its trigger, or keep the default upward placement. */
@@ -76,6 +82,11 @@ export type AccountMenuProps = {
   busy?: boolean
   /** The name shown on the trigger's accessible label. */
   label?: string
+  /**
+   * Render the trigger with a host-owned control. Forward the supplied props to
+   * the actual button; the host trigger owns any tooltip in this mode.
+   */
+  renderTrigger?: (props: AccountMenuTriggerProps) => JSX.Element
   onSignIn?: () => void
   onSignOut?: () => void
   /** Fires on hover or focus of the trigger — a chance to prefetch. */
@@ -104,6 +115,7 @@ export function AccountMenu(props: AccountMenuProps) {
     'showSession',
     'busy',
     'label',
+    'renderTrigger',
     'onSignIn',
     'onSignOut',
     'onIntent',
@@ -127,6 +139,35 @@ export function AccountMenu(props: AccountMenuProps) {
   const visible = () =>
     local.items.filter((item) => !item.platform || item.platform === (local.platform ?? 'desktop'))
 
+  const triggerLabel = () => local.label ?? 'Account and settings'
+
+  const CustomTrigger = (props: ComponentProps<'button'>) => {
+    const [triggerProps, triggerRest] = splitProps(props, ['ref', 'onFocus', 'onPointerEnter'])
+
+    const customTriggerProps = mergeProps(triggerRest, {
+      ref: (element: HTMLButtonElement) => {
+        trigger = element
+        if (typeof triggerProps.ref === 'function') triggerProps.ref(element)
+      },
+      onFocus: (event: FocusEvent & { currentTarget: HTMLButtonElement }) => {
+        invokeEventHandler(triggerProps.onFocus, event)
+        local.onIntent?.()
+      },
+      onPointerEnter: (event: PointerEvent & { currentTarget: HTMLButtonElement }) => {
+        invokeEventHandler(triggerProps.onPointerEnter, event)
+        local.onIntent?.()
+      },
+      get class() {
+        return cn(triggerRest.class, local.class)
+      },
+      get label() {
+        return triggerLabel()
+      },
+    })
+
+    return local.renderTrigger?.(customTriggerProps)
+  }
+
   return (
     <Tooltip open={tooltipOpen()} onOpenChange={(open) => setTooltipOpen(open && !menuOpen())}>
       <DropdownMenu
@@ -138,20 +179,33 @@ export function AccountMenu(props: AccountMenuProps) {
           if (open) setTooltipOpen(false)
         }}
       >
-        <TooltipTrigger
-          as={AccountMenuButton}
-          ref={(element: HTMLButtonElement) => (trigger = element)}
-          variant="ghost"
-          size={local.size ?? 'icon-md'}
-          class={cn('text-muted-foreground', local.class)}
-          aria-label={local.label ?? 'Account and settings'}
-          onFocus={() => local.onIntent?.()}
-          onPointerEnter={() => local.onIntent?.()}
-          {...rest}
-        >
-          <UserRound aria-hidden="true" />
-        </TooltipTrigger>
-        <TooltipContent placement="top">{local.label ?? 'Account and settings'}</TooltipContent>
+        {local.renderTrigger ? (
+          <DropdownMenuTrigger
+            as={CustomTrigger}
+            type="button"
+            aria-label={triggerLabel()}
+            {...rest}
+          >
+            <UserRound aria-hidden="true" />
+          </DropdownMenuTrigger>
+        ) : (
+          <>
+            <TooltipTrigger
+              as={AccountMenuButton}
+              ref={(element: HTMLButtonElement) => (trigger = element)}
+              variant="ghost"
+              size={local.size ?? 'icon-md'}
+              class={cn('text-muted-foreground', local.class)}
+              aria-label={triggerLabel()}
+              onFocus={() => local.onIntent?.()}
+              onPointerEnter={() => local.onIntent?.()}
+              {...rest}
+            >
+              <UserRound aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent placement="top">{triggerLabel()}</TooltipContent>
+          </>
+        )}
         <DropdownMenuContent
           hideArrow={local.hideArrow}
           class="min-w-56 max-h-(--kb-popper-available-height) overflow-x-hidden overflow-y-auto"
@@ -266,4 +320,14 @@ function AccountMenuButton(props: ComponentProps<typeof Button>) {
 function renderFallbackIcon(id: string): JSX.Element {
   const Icon = FALLBACK_ICONS[id]
   return Icon ? <Icon aria-hidden="true" /> : null
+}
+
+function invokeEventHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
 }

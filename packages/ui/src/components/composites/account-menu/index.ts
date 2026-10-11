@@ -3,4 +3,5 @@ export {
   createAppMenuItems,
   type AccountMenuItem,
   type AccountMenuProps,
+  type AccountMenuTriggerProps,
 } from './account-menu'

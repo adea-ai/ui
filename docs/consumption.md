@@ -402,6 +402,16 @@ takes the presentation plus the behaviour that is easy to get wrong.
 | `scene-settings`                          | **stays in adea**                            | Agent Sim's 3D scene settings are domain, not design                                       |
 | `virtual-*`                               | **stays in adea**                            | the virtual-room transport is domain                                                       |
 
+`AccountMenu` keeps its shared Button and tooltip trigger by default. A host with
+its own shared control, such as the workspace rail's `SideRailButton`, can provide
+`renderTrigger`; the renderer receives the native button props, the accessible
+`label`, and the actual trigger ref and keyboard handlers. Forward those props to
+the rendered button. The host control owns its tooltip in this mode, while
+`AccountMenu` keeps menu item filtering, selection, dismissal and deferred
+after-close focus orchestration. `placement`, `gutter` and `hideArrow` configure
+the menu surface without moving caller-owned items or session actions into the
+shared component.
+
 ### Returning focus from a controlled dialog
 
 `ModalDialog` captures the focused element before it opens and restores focus

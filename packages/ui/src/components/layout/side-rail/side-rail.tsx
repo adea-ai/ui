@@ -343,7 +343,18 @@ export function SideRailButton(
     active?: boolean
   }
 ) {
-  const [local, rest] = splitProps(props, ['class', 'label', 'shortcut', 'children', 'active'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'label',
+    'shortcut',
+    'children',
+    'active',
+    'ref',
+    'onPointerEnter',
+    'onPointerLeave',
+    'onFocus',
+    'onBlur',
+  ])
   const [row, setRow] = createSignal<HTMLElement>()
   const [tip, setTip] = createSignal<{ top: number; left: number; height: number } | null>(null)
 
@@ -361,13 +372,28 @@ export function SideRailButton(
     <>
       <button
         type="button"
-        ref={setRow}
+        ref={(element) => {
+          setRow(element)
+          if (typeof local.ref === 'function') local.ref(element)
+        }}
         aria-label={local.label}
         data-active={local.active ? 'true' : undefined}
-        onPointerEnter={showTip}
-        onPointerLeave={() => setTip(null)}
-        onFocus={showTip}
-        onBlur={() => setTip(null)}
+        onPointerEnter={(event) => {
+          showTip()
+          invokeRailButtonHandler(local.onPointerEnter, event)
+        }}
+        onPointerLeave={(event) => {
+          setTip(null)
+          invokeRailButtonHandler(local.onPointerLeave, event)
+        }}
+        onFocus={(event) => {
+          showTip()
+          invokeRailButtonHandler(local.onFocus, event)
+        }}
+        onBlur={(event) => {
+          setTip(null)
+          invokeRailButtonHandler(local.onBlur, event)
+        }}
         class={cn(
           sideRailItemClass,
           local.active ? sideRailItemStateClass.active : sideRailItemStateClass.idle,
@@ -415,4 +441,14 @@ export function SideRailButton(
       </Show>
     </>
   )
+}
+
+function invokeRailButtonHandler(handler: unknown, event: Event) {
+  if (Array.isArray(handler)) {
+    const [callback, data] = handler as [(data: unknown, event: Event) => void, unknown]
+    callback(data, event)
+  } else if (typeof handler === 'function') {
+    const callback = handler as (event: Event) => void
+    callback(event)
+  }
 }
