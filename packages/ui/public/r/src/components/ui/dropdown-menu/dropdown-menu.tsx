@@ -16,10 +16,10 @@ import { cn } from '../../../lib/utils'
 /**
  * DropdownMenu.
  *
- * A list of actions on a trigger. This is the right home for "what can I do
- * with this thing": rename, duplicate, export, delete. It is not a Select
- * (which holds a *value* the user is choosing) and not a Popover (which holds
- * arbitrary content).
+ * A list of actions on a trigger, with radio groups for persistent choices
+ * that fit naturally in a compact menu. Use Select for form inputs whose
+ * selected value needs the field-style control, and Popover for arbitrary
+ * content.
  *
  * Kobalte supplies the full menu contract — arrow keys, typeahead, the roving
  * highlight, Escape to close and return focus — which is exactly what a
@@ -42,13 +42,15 @@ export function DropdownMenuPortal(props: ComponentProps<typeof KobalteDropdownM
 
 export type DropdownMenuContentProps = ComponentProps<typeof KobalteDropdownMenu.Content> & {
   hideArrow?: boolean
+  /** Mount under an owner element such as a modal, keeping the menu in its accessible subtree. */
+  portalMount?: HTMLElement
 }
 
 export function DropdownMenuContent(props: DropdownMenuContentProps) {
-  const [local, rest] = splitProps(props, ['class', 'hideArrow', 'children'])
+  const [local, rest] = splitProps(props, ['class', 'hideArrow', 'children', 'portalMount'])
 
   return (
-    <KobalteDropdownMenu.Portal>
+    <KobalteDropdownMenu.Portal mount={local.portalMount}>
       <KobalteDropdownMenu.Content
         class={cn(
           overlaySurface,

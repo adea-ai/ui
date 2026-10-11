@@ -208,7 +208,7 @@ export function AppearanceEditor(props: AppearanceEditorProps) {
   )
 }
 
-/** Modal anchoring/dismissal and nested-listbox behavior come from Kobalte.
+/** Modal anchoring/dismissal and nested-menu behavior come from Kobalte.
  * Its measured available height also bounds scrolling, keeping footer actions
  * reachable when a narrow popup begins below its trigger. */
 export function AppearancePopover(props: AppearancePopoverProps) {
