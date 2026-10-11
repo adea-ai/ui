@@ -274,10 +274,11 @@ host contributions in `context`.
 
 This is an unshipped release proposal for UI issue #21, dependent on the
 packing/IME/follow/busy PRs #16/#18/#19/#20. It is not full donor Chat,
-canonical runtime restoration or application adoption. The donor's paste-token
-editor, sent-prompt undo/history, manual resize, upload/skill/voice/optimizer and
-stop/resume operations are not claimed by these ports. They require their own
-mapped reusable behavior or application composition as the owning issues specify.
+canonical runtime restoration or application adoption. The separately scoped,
+opt-in paste-token editor for issue #532 is documented below. Sent-prompt
+undo/history, manual resize, upload/skill/voice/optimizer and stop/resume
+operations are not claimed by these ports. They require their own mapped reusable
+behavior or application composition as the owning issues specify.
 
 The composed-input packed fixture checks collapse/draft retention, shelf unmount,
 focus restoration, failed-delivery recovery, controlled busy mode, its alternate
@@ -286,7 +287,7 @@ both engines, including reference-only queue eligibility/steer refusal and the
 pending-delivery state with its explicitly scanned spinner CSS. Its measured gzip JS baseline is 53,344/53,435 bytes with a 54 KiB cap
 and 42,366 raw CSS bytes under the shared 42 KiB cap. The three browser fixtures total 100
 check groups, with the native Node SSR expanded/collapsed checks reported separately, retain one Solid runtime/JS chunk each, and exclude unrelated units.
-All four selected Kiro NOTICE sections and the license must survive the tarball.
+All six selected Kiro NOTICE sections and the license must survive the tarball.
 Native CSS content sizing replaces live-field measurement on the two verified
 engines, both of which support it; legacy-engine fallback is not claimed.
 
@@ -294,12 +295,15 @@ The release gate `bun run check:packed-conversation` installs the actual tarball
 with optional engines absent, checks compiled and Solid browser conditions in
 Chromium and WebKit, and compiles installed Solid source for native Node SSR.
 The expanded server output includes the input and context; collapsed output
-keeps the draft preview while omitting both. Browser cases check opaque menu
-surfaces, control sizing, streaming follow, IME ownership, draft recovery,
-collapse/focus, busy actions and pending spinner styling.
+keeps the draft preview while omitting both, and token-mode SSR retains its
+highlight mirror and token text. Browser cases check opaque menu surfaces,
+control sizing, streaming follow, IME ownership, draft recovery, collapse/focus,
+busy actions, pending spinner styling, atomic token paste/pruning, accessible
+previews and the referenced-block submit snapshot.
 
 External CSS discovery includes the exact component files used by the fixture,
-Button's `src/lib/variants.ts`, and menu compositions' `src/lib/overlay.ts`.
+Button's `src/lib/variants.ts`, the token editor and Tooltip source, and menu
+compositions' `src/lib/overlay.ts`.
 `node_modules` is excluded from automatic Tailwind scanning; importing a
 stylesheet alone does not discover these shared class strings. Stories are
 excluded from discovery. Complete measured raw CSS is 37,060 bytes for plain
@@ -327,8 +331,39 @@ libraries are absent. Automation uses headless disposable browser contexts.
 threshold and marker constants. Hosts provide stable, bounded ASCII block IDs and own
 draft state, persistence, message reconciliation and editor behavior. The model
 does not read storage or the clipboard, upload files, edit a textarea, or
-provide undo/history, previews or chips. Its selected source and Apache-2.0
-attribution are recorded in the issue #532 entry in `NOTICE`.
+provide undo/history, previews or chips. The opt-in editor below composes this
+pure model with a controlled textarea. The selected source and Apache-2.0
+attribution are recorded in the issue #532 entries in `NOTICE`.
+
+### Controlled paste-token composer (issue #532 selected editor)
+
+`ChatComposer` keeps its original plain-text contract when `pasteTokens` is
+absent. Opting in supplies host-owned `blocks`, a synchronous `createBlockId()`
+and one `onChange({ text, blocks })` callback. Paste, native typing and pruning
+report the complete draft together. Submit receives one snapshot containing
+`text`, the selected `action` and cloned referenced `blocks` before delivery
+starts. The library owns no paste identity, history, storage, transport or undo
+state.
+
+The selected editor collapses text-only pastes at the existing three-line or
+200-character thresholds, supports raw Cmd/Ctrl+Shift+V for the next paste,
+preserves standalone and Markdown quote-prefix placement, and keeps token
+deletion, navigation and selection atomic. Double-click or touch expands a
+token. Copy and cut expand fully selected tokens in order while partial
+selections remain native. An `aria-hidden` mirror highlights tokens behind the
+single labeled textarea. Hover and caret previews wait 300 ms, show up to 12
+lines with a remainder count, close when their text/block/scope becomes stale,
+and stay suppressed on touch devices. The preview uses the existing tooltip
+portal and provides a live `aria-describedby` relationship without intercepting
+textarea input.
+
+Only `ClipboardEvent.clipboardData` text is read. Clipboard permissions,
+images/files, uploads, rich editors, persistence, sent-prompt history and
+application adoption remain with the host. The added `AtomicPasteTokens` story
+shows the controlled contract; the component browser suite and packed
+conversation gate exercise Chromium and WebKit without raising the existing
+bundle or CSS caps. Donor source/test provenance is in the issue #532 editor
+entry in `NOTICE`.
 
 ### Controlled appearance editor
 

@@ -1,15 +1,19 @@
-import { createSignal } from 'solid-js'
+import { Show, createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import {
   ChatComposer,
   type ChatComposerControl,
 } from '../../src/components/conversation/chat-composer'
+import { AtomicChatComposer } from '../../src/components/conversation/atomic'
 import '../../src/styles/globals.css'
 import type { BusySendMode } from '../../src/components/conversation/busy-send-button'
+import { type PasteBlock } from '../../src/components/conversation/paste-tokens'
 
 function Fixture() {
   const [draft, setDraft] = createSignal('')
+  const [blocks, setBlocks] = createSignal<PasteBlock[]>([])
   const [changes, setChanges] = createSignal(0)
+  const [tokenMode, setTokenMode] = createSignal(false)
   const [collapsed, setCollapsed] = createSignal(false)
   const [fail, setFail] = createSignal(true)
   const [sent, setSent] = createSignal(0)
@@ -21,43 +25,84 @@ function Fixture() {
   const [scope, setScope] = createSignal(0)
   const [waitDelivery, setWaitDelivery] = createSignal(false)
   const [lastAction, setLastAction] = createSignal('none')
+  const [submittedText, setSubmittedText] = createSignal('')
+  const [submittedBlocks, setSubmittedBlocks] = createSignal('[]')
+  let blockId = 0
   let rejectDelivery: ((reason: Error) => void) | undefined
   let control: ChatComposerControl | undefined
+  const recordSubmit = (input: {
+    text: string
+    action: 'send' | BusySendMode
+    blocks?: PasteBlock[]
+  }) => {
+    setLastAction(input.action)
+    setSubmittedText(input.text)
+    setSubmittedBlocks(JSON.stringify(input.blocks ?? []))
+    if (waitDelivery())
+      return new Promise<void>((_resolve, reject) => {
+        rejectDelivery = reject
+      })
+    if (fail()) throw new Error('Fixture refused')
+    setSent(sent() + 1)
+    if (tokenMode()) {
+      // The host may replace its live draft immediately after receiving the
+      // immutable submit snapshot. The captured output below must not change.
+      setDraft('Host draft changed after submit')
+      setBlocks([])
+    } else setDraft('')
+  }
   return (
     <main>
       <h1>Composed input</h1>
-      <ChatComposer
-        value={draft()}
-        onValueChange={(value) => {
-          setDraft(value)
-          setChanges(changes() + 1)
-        }}
-        sendableActions={references() ? { send: true, queue: true, steer: false } : undefined}
-        resetKey={scope()}
-        approvalFocus={approvalFocus()}
-        approval={approvalFocus() ? <p role="status">Review the pending operation</p> : undefined}
-        blockedReason={blocked() ? 'Reconnect before delivery' : undefined}
-        busy={busy() ? { mode: mode(), onModeChange: setMode } : undefined}
-        onSubmit={(input) => {
-          setLastAction(input.action)
-          if (waitDelivery())
-            return new Promise<void>((_resolve, reject) => {
-              rejectDelivery = reject
-            })
-          if (fail()) throw new Error('Fixture refused')
-          setSent(sent() + 1)
-          setDraft('')
-        }}
-        collapse={{ value: collapsed(), onChange: setCollapsed }}
-        controlRef={(value) => {
-          control = value
-        }}
-        knowledge={<p>Knowledge context</p>}
-        followUps={<button type="button">Follow-up option</button>}
-        band={<p>Adjacent composer tip</p>}
-        attachments={<p>Staged file: notes.md</p>}
-        context={<button type="button">Model context</button>}
-      />
+      <Show
+        when={tokenMode()}
+        fallback={
+          <ChatComposer
+            value={draft()}
+            onValueChange={(value) => {
+              setDraft(value)
+              setChanges(changes() + 1)
+            }}
+            sendableActions={references() ? { send: true, queue: true, steer: false } : undefined}
+            resetKey={scope()}
+            approvalFocus={approvalFocus()}
+            approval={
+              approvalFocus() ? <p role="status">Review the pending operation</p> : undefined
+            }
+            blockedReason={blocked() ? 'Reconnect before delivery' : undefined}
+            busy={busy() ? { mode: mode(), onModeChange: setMode } : undefined}
+            onSubmit={recordSubmit}
+            collapse={{ value: collapsed(), onChange: setCollapsed }}
+            controlRef={(value) => {
+              control = value
+            }}
+            knowledge={<p>Knowledge context</p>}
+            followUps={<button type="button">Follow-up option</button>}
+            band={<p>Adjacent composer tip</p>}
+            attachments={<p>Staged file: notes.md</p>}
+            context={<button type="button">Model context</button>}
+          />
+        }
+      >
+        <AtomicChatComposer
+          value={draft()}
+          pasteTokens={{
+            blocks: blocks(),
+            createBlockId: () => `fixture-${++blockId}`,
+            onChange: (next) => {
+              setDraft(next.text)
+              setBlocks(next.blocks)
+              setChanges(changes() + 1)
+            },
+          }}
+          sendableActions={references() ? { send: true, queue: true, steer: false } : undefined}
+          resetKey={scope()}
+          busy={busy() ? { mode: mode(), onModeChange: setMode } : undefined}
+          onSubmit={recordSubmit}
+          inputLabel="Paste-token message"
+          context={<button type="button">Model context</button>}
+        />
+      </Show>
       <div class="mt-64 flex gap-2">
         <button type="button" onClick={() => setFail(false)}>
           Recover delivery
@@ -67,6 +112,9 @@ function Fixture() {
         </button>
       </div>
       <div class="flex flex-wrap gap-2">
+        <button type="button" onClick={() => setTokenMode(true)}>
+          Enable paste-token editor
+        </button>
         <button type="button" onClick={() => setReferences(true)}>
           Stage references
         </button>
@@ -93,6 +141,7 @@ function Fixture() {
           onClick={() => {
             setScope(scope() + 1)
             setDraft('New scope draft')
+            setBlocks([])
           }}
         >
           Change scope
@@ -102,11 +151,14 @@ function Fixture() {
         </button>
       </div>
       <output aria-label="Submitted action">{lastAction()}</output>
+      <output aria-label="Submitted text">{submittedText()}</output>
+      <output aria-label="Submitted blocks">{submittedBlocks()}</output>
       <label>
         Other conversation
         <textarea aria-label="Other conversation" />
       </label>
       <output aria-label="Draft changes">{changes()}</output>
+      <output aria-label="Paste blocks">{blocks().length}</output>
       <output aria-label="Sent">{sent()}</output>
     </main>
   )
