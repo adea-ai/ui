@@ -18,6 +18,11 @@
   ],
   "files": [
     {
+      "path": "src/components/composites/appearance-editor/accent-swatch-groups.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/accent-swatch-groups.tsx"
+    },
+    {
       "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
       "type": "registry:ui",
       "target": "components/composites/appearance-editor/appearance-choices.tsx"
@@ -36,6 +41,11 @@
       "path": "src/components/composites/appearance-editor/appearance-types.ts",
       "type": "registry:ui",
       "target": "components/composites/appearance-editor/appearance-types.ts"
+    },
+    {
+      "path": "src/components/composites/appearance-editor/font-settings-group.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/font-settings-group.tsx"
     },
     {
       "path": "src/components/composites/appearance-editor/index.ts",
