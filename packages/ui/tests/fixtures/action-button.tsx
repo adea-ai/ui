@@ -1,8 +1,9 @@
-import { createSignal, Show } from 'solid-js'
+import { createSignal, onCleanup, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import { MoreHorizontal, Plus } from 'lucide-solid'
 import { ActionButton } from '../../src/components/composites/action-button/action-button'
 import { Button } from '../../src/components/ui/button/button'
+import { ModalDialog } from '../../src/components/ui/modal-dialog/modal-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,23 @@ window.removeEventListener = ((
 }) as typeof window.removeEventListener
 
 function Fixture() {
+  const [tooltipPlacement, setTooltipPlacement] = createSignal<'top' | 'right' | 'bottom' | 'left'>(
+    'bottom'
+  )
+  const [nestedTooltipModalOpen, setNestedTooltipModalOpen] = createSignal(false)
+  const [persistentTooltipOpen, setPersistentTooltipOpen] = createSignal(false)
+  const [persistentCloseRequests, setPersistentCloseRequests] = createSignal(0)
+  let consumeNextEscape = false
+  const consumeEscape = (event: KeyboardEvent) => {
+    if (consumeNextEscape && event.key === 'Escape') {
+      consumeNextEscape = false
+      event.preventDefault()
+    }
+  }
+  document.addEventListener('keydown', consumeEscape, true)
+  onCleanup(() => document.removeEventListener('keydown', consumeEscape, true))
+  const [tooltipModalOpen, setTooltipModalOpen] = createSignal(false)
+  const [preventedEscapes, setPreventedEscapes] = createSignal(0)
   const [busy, setBusy] = createSignal(true)
   const [statusOpen, setStatusOpen] = createSignal(false)
   const [activations, setActivations] = createSignal(0)
@@ -104,6 +122,75 @@ function Fixture() {
   return (
     <main>
       <h1 class="visually-hidden">Action button test page</h1>
+      <section
+        class="flex min-h-64 items-center justify-center"
+        aria-label="Directional tooltip example"
+      >
+        <ActionButton
+          aria-label="Directional action"
+          tooltip="Directional help"
+          tooltipSide={tooltipPlacement()}
+        >
+          Directional action
+        </ActionButton>
+      </section>
+      <Button onClick={() => setTooltipPlacement('top')}>Tooltip to top</Button>
+      <Button onClick={() => setTooltipPlacement('right')}>Tooltip to right</Button>
+      <Button onClick={() => setTooltipPlacement('bottom')}>Tooltip to bottom</Button>
+      <Button onClick={() => setTooltipPlacement('left')}>Tooltip to left</Button>
+      <Button onClick={() => setTooltipModalOpen(true)}>Open tooltip modal</Button>
+      <ModalDialog
+        open={tooltipModalOpen()}
+        onClose={() => setTooltipModalOpen(false)}
+        title="Tooltip modal"
+      >
+        <ActionButton tooltip="Modal action help" aria-label="Modal action">
+          Action
+        </ActionButton>
+        <Tooltip>
+          <TooltipTrigger as={Button} aria-label="Prevent tooltip Escape">
+            Prevent Escape
+          </TooltipTrigger>
+          <TooltipContent
+            onEscapeKeyDown={(event) => {
+              setPreventedEscapes((count) => count + 1)
+              event.preventDefault()
+            }}
+          >
+            Prevented Escape help
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip
+          open={persistentTooltipOpen()}
+          onOpenChange={(open) => {
+            if (open) setPersistentTooltipOpen(true)
+            else setPersistentCloseRequests((count) => count + 1)
+          }}
+        >
+          <TooltipTrigger as={Button} aria-label="Persistent parent tooltip">
+            Persistent help
+          </TooltipTrigger>
+          <TooltipContent>Persistent parent help</TooltipContent>
+        </Tooltip>
+        <Button onClick={() => setNestedTooltipModalOpen(true)}>Open nested tooltip modal</Button>
+        <Button
+          onClick={() => {
+            consumeNextEscape = true
+          }}
+        >
+          Consume next Escape
+        </Button>
+        <output aria-label="Persistent close requests">{persistentCloseRequests()}</output>
+        <ModalDialog
+          open={nestedTooltipModalOpen()}
+          onClose={() => setNestedTooltipModalOpen(false)}
+          title="Nested tooltip modal"
+        >
+          <Button>Nested action</Button>
+        </ModalDialog>
+        <Button onClick={() => setTooltipModalOpen(false)}>Finish tooltip modal</Button>
+        <output aria-label="Prevented Escape calls">{preventedEscapes()}</output>
+      </ModalDialog>
       <section
         aria-label="Comfortable touch target examples"
         class="flex max-w-full flex-wrap gap-2"

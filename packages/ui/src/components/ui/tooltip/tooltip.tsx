@@ -1,6 +1,7 @@
 import { Tooltip as KobalteTooltip, useTooltipContext } from '@kobalte/core/tooltip'
 import type { ComponentProps } from 'solid-js'
 import {
+  Show,
   createContext,
   createEffect,
   createSignal,
@@ -56,6 +57,9 @@ type TooltipInteraction = {
   markPointerCloseIntent: () => void
   clearPointerCloseIntent: () => void
   markCloseIntent: () => void
+  isEscapeClosing: () => boolean
+  registerEscapeHandler: (handler: (event: KeyboardEvent) => void) => () => void
+  wasEscapeHandled: (event: KeyboardEvent) => boolean
 }
 
 const TooltipInteractionContext = createContext<TooltipInteraction>()
@@ -169,7 +173,10 @@ export function Tooltip(props: TooltipRootProps) {
   const [trigger, setTrigger] = createSignal<HTMLElement>()
   let closeIntent = false
   let ignoreDuplicateClose = false
-  let onOpenChange: (next: boolean, source?: 'handoff') => void
+  let onOpenChange: (next: boolean, source?: 'handoff' | 'escape') => void
+  const [escapeClosing, setEscapeClosing] = createSignal(false)
+  const escapeHandlers = new Set<(event: KeyboardEvent) => void>()
+  const handledEscapes = new WeakSet<KeyboardEvent>()
   let pointerCloseIntentUntil = 0
   let pointerCloseIntentTimeout: ReturnType<typeof setTimeout> | undefined
   const clearPointerCloseIntent = () => {
@@ -226,6 +233,14 @@ export function Tooltip(props: TooltipRootProps) {
     markPointerCloseIntent,
     clearPointerCloseIntent,
     markCloseIntent,
+    isEscapeClosing: escapeClosing,
+    registerEscapeHandler: (handler) => {
+      escapeHandlers.add(handler)
+      return () => {
+        escapeHandlers.delete(handler)
+      }
+    },
+    wasEscapeHandled: (event) => handledEscapes.has(event),
   }
   registerTooltipInteraction(interaction)
   onCleanup(() => {
@@ -233,9 +248,13 @@ export function Tooltip(props: TooltipRootProps) {
     ignoreDuplicateClose = false
   })
   if (isOpen()) setTooltipInteractionOpen(interaction, true)
-  createEffect(() => setTooltipInteractionOpen(interaction, isOpen()))
+  createEffect(() => {
+    const open = isOpen()
+    if (open) setEscapeClosing(false)
+    setTooltipInteractionOpen(interaction, open)
+  })
   onOpenChange = (next: boolean, source) => {
-    if (!next && source !== 'handoff' && ignoreDuplicateClose) return
+    if (!next && source !== 'handoff' && source !== 'escape' && ignoreDuplicateClose) return
 
     if (next) {
       clearPendingTooltipOpen(id)
@@ -277,12 +296,28 @@ export function Tooltip(props: TooltipRootProps) {
   // Kobalte dismisses on Escape only when its content owns the top-most
   // layer, and a handoff keeps the previous tooltip's content mounted while
   // it exits — swallowing the key for the tooltip that just took over.
-  // Listening on document (capture) closes this tooltip first; the layer's
-  // own handler still runs for anything stacked above it.
+  // Capture handles a keyboard-focused tip only. Background and pointer-only
+  // tips retain Kobalte's topmost-layer dismissal. The focused tip forwards its
+  // public callback once and releases accepted closes before modal bubbling.
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape') return
+    if (event.key !== 'Escape' || event.defaultPrevented || !interaction.isTriggerFocused()) return
+    handledEscapes.add(event)
+    for (const handler of escapeHandlers) handler(event)
+    if (event.defaultPrevented) return
     markCloseIntent()
-    onOpenChange(false)
+    // Release the noninteractive tip's layer synchronously. Its exit animation
+    // must not shield the enclosing dialog from this same Escape event.
+    setEscapeClosing(true)
+    ignoreDuplicateClose = true
+    queueMicrotask(() => {
+      ignoreDuplicateClose = false
+    })
+    onOpenChange(false, 'escape')
+    // A controlled parent may reject the close. Do not retain an Escape-only
+    // exit override for a later, unrelated parent-driven dismissal.
+    queueMicrotask(() => {
+      if (isOpen()) setEscapeClosing(false)
+    })
   }
   createEffect(() => {
     if (isServer || !isOpen()) return
@@ -361,46 +396,54 @@ export function TooltipContent(props: TooltipContentProps) {
     'onPointerDownOutside',
   ])
   const context = useTooltipContext()
+  const releaseEscapeHandler = interaction?.registerEscapeHandler((event) => {
+    invokeEventHandler(local.onEscapeKeyDown, event)
+  })
+  onCleanup(() => releaseEscapeHandler?.())
 
   // Kobalte keeps force-mounted and exiting content present after close. Hide
   // that retained tooltip from assistive technology until it opens again.
   return (
     <KobalteTooltip.Portal>
-      <KobalteTooltip.Content
-        /* The slot is what base.css's pointer-transparency rule keys on; every
+      <Show when={context.isOpen() || !interaction?.isEscapeClosing()}>
+        <KobalteTooltip.Content
+          /* The slot is what base.css's pointer-transparency rule keys on; every
            tip carries it, so no consumer has to remember to pass it. */
-        data-slot="tooltip-content"
-        class={cn(
-          tooltipTip,
-          // The max width is a token, not a fixed measure: it has to fall
-          // behind the viewport at large root font sizes or the tip — which
-          // Kobalte can shift but never shrink — forces a horizontal scroll.
-          'z-(--z-tooltip) w-fit max-w-(--tooltip-max-width) px-2 py-1',
-          'origin-(--kb-tooltip-content-transform-origin) text-balance',
-          'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
-          'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          'data-expanded:duration-150 data-closed:duration-100',
-          local.class
-        )}
-        // A tooltip is never interactive: the content is plain text, and the
-        // placement draws the tip below its action — where a hit-testing tip
-        // would hold the next control hostage, open or departing. Kobalte
-        // inlines pointer-events auto, so this is forced after its merge; the
-        // pointer belongs to the control underneath.
-        style={{ 'pointer-events': 'none' }}
-        aria-hidden={context.isOpen() ? local['aria-hidden'] : true}
-        onEscapeKeyDown={(event) => {
-          invokeEventHandler(local.onEscapeKeyDown, event)
-          if (!event.defaultPrevented) interaction?.markCloseIntent()
-        }}
-        onPointerDownOutside={(event) => {
-          invokeEventHandler(local.onPointerDownOutside, event)
-          if (!event.defaultPrevented) interaction?.markCloseIntent()
-        }}
-        {...rest}
-      >
-        {local.children}
-      </KobalteTooltip.Content>
+          data-slot="tooltip-content"
+          class={cn(
+            tooltipTip,
+            // The max width is a token, not a fixed measure: it has to fall
+            // behind the viewport at large root font sizes or the tip — which
+            // Kobalte can shift but never shrink — forces a horizontal scroll.
+            'z-(--z-tooltip) w-fit max-w-(--tooltip-max-width) px-2 py-1',
+            'origin-(--kb-tooltip-content-transform-origin) text-balance',
+            'data-expanded:animate-in data-expanded:fade-in-0 data-expanded:zoom-in-95',
+            'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+            'data-expanded:duration-150 data-closed:duration-100',
+            local.class
+          )}
+          // A tooltip is never interactive: the content is plain text, and the
+          // placement draws the tip below its action — where a hit-testing tip
+          // would hold the next control hostage, open or departing. Kobalte
+          // inlines pointer-events auto, so this is forced after its merge; the
+          // pointer belongs to the control underneath.
+          style={{ 'pointer-events': 'none' }}
+          aria-hidden={context.isOpen() ? local['aria-hidden'] : true}
+          onEscapeKeyDown={(event) => {
+            if (event.defaultPrevented) return
+            if (!interaction?.wasEscapeHandled(event))
+              invokeEventHandler(local.onEscapeKeyDown, event)
+            if (!event.defaultPrevented) interaction?.markCloseIntent()
+          }}
+          onPointerDownOutside={(event) => {
+            invokeEventHandler(local.onPointerDownOutside, event)
+            if (!event.defaultPrevented) interaction?.markCloseIntent()
+          }}
+          {...rest}
+        >
+          {local.children}
+        </KobalteTooltip.Content>
+      </Show>
     </KobalteTooltip.Portal>
   )
 }
