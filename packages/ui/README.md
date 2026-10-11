@@ -825,3 +825,10 @@ own their preference provider and storage. Pass `mode` and `onModeChange`; the
 control owns roving keyboard focus, pressed state and explanatory tooltips. It
 does not require or mount the shared `ThemeProvider`. `ThemeToggle` retains its
 existing provider-bound API.
+
+Compact keyboard hints use `ShortcutKeys` from `@adea-ai/ui/components/ui/kbd`.
+It draws one cap per glyph and hides the decorative chord from assistive
+technology. The host control supplies its accessible name and parseable
+`aria-keyshortcuts`. For multi-character key names or keyboard instructions in
+prose, compose `Kbd` and `KbdGroup`; their default size is unchanged, and `size="sm"`
+provides the shared compact cap and group spacing.
