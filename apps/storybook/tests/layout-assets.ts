@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -138,20 +138,24 @@ export async function renderLayoutServer() {
     build: { write: false, minify: false, ssr: serverEntry },
   })
   const chunks = (await outputsFor(result)).filter((chunk) => chunk.type === 'chunk')
-  if (chunks.length !== 1) throw new Error('Expected one server fixture chunk')
-  const chunk = chunks[0]
-  if (!chunk) throw new Error('Missing server fixture')
-  if (packedRoot) {
-    const ui = Object.keys(chunk.modules).filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
-    if (!ui.length || ui.some((id) => !id.includes('/src/')))
-      throw new Error('Packed SSR did not select Solid source')
-  }
+  const entry = chunks.find((chunk) => chunk.isEntry)
+  if (!entry) throw new Error('Missing server fixture entry chunk')
+  const ui = chunks
+    .flatMap((chunk) => Object.keys(chunk.modules))
+    .filter((id) => id.includes('/node_modules/@adea-ai/ui/'))
+  if (packedRoot && (!ui.length || ui.some((id) => !id.includes('/src/'))))
+    throw new Error('Packed SSR did not select Solid source')
   const directory = await mkdtemp(resolve(tmpdir(), 'adea-packed-layout-ssr-'))
   try {
-    await writeFile(resolve(directory, 'fixture.mjs'), chunk.code)
+    await writeFile(resolve(directory, 'package.json'), JSON.stringify({ type: 'module' }))
+    for (const chunk of chunks) {
+      const path = resolve(directory, chunk.fileName)
+      await mkdir(dirname(path), { recursive: true })
+      await writeFile(path, chunk.code)
+    }
     await writeFile(
       resolve(directory, 'render.mjs'),
-      "import { renderLayout } from './fixture.mjs'; process.stdout.write(renderLayout());"
+      `import { renderLayout } from './${entry.fileName}'; process.stdout.write(renderLayout());`
     )
     return execFileSync(process.execPath, [resolve(directory, 'render.mjs')], { encoding: 'utf8' })
   } finally {

@@ -47,7 +47,37 @@ export type SplitPaneInput<L extends SplitLayoutLeaf = SplitLayoutLeaf> = Readon
 export function listLeaves<L extends SplitLayoutLeaf>(node: SplitLayoutNode<L>): readonly L[] {
   return node.kind === 'leaf'
     ? [node]
-    : [...listLeaves(node.children[0]), ...listLeaves(node.children[1])]
+    : listLeaves(node.children[0]).concat(listLeaves(node.children[1]))
+}
+
+/** Shared reactive accessibility props for the live handle and loading placeholder. */
+export function separatorAccessibilityProps<L extends SplitLayoutLeaf>(
+  branch: () => SplitLayoutBranch<L>,
+  domId: (id: string) => string,
+  labelForSeparator?: (branch: SplitLayoutBranch<L>) => string | undefined
+) {
+  return {
+    get 'aria-label'() {
+      const current = branch()
+      return (
+        labelForSeparator?.(current) ??
+        (current.direction === 'row' ? 'Resize pane columns' : 'Resize pane rows')
+      )
+    },
+    get 'aria-orientation'() {
+      return branch().direction === 'row' ? 'vertical' : 'horizontal'
+    },
+    get 'aria-controls'() {
+      return listLeaves(branch())
+        .map((leaf) => domId(leaf.id))
+        .join(' ')
+    },
+    'aria-valuemin': Math.round(MIN_SPLIT_RATIO * 100),
+    'aria-valuemax': Math.round(MAX_SPLIT_RATIO * 100),
+    get 'aria-valuenow'() {
+      return Math.round(branch().ratio * 100)
+    },
+  }
 }
 
 export function countLeaves<L extends SplitLayoutLeaf>(node: SplitLayoutNode<L>): number {
@@ -152,8 +182,8 @@ export function createLayoutState<L extends SplitLayoutLeaf>(
   center: SplitLayoutNode<L>
 ): SplitLayoutState<L> {
   assertLayoutTree(center)
-  const first = listLeaves(center)[0]
-  if (!first) throw new Error('invalid_state: layout requires a leaf')
+  let first = center
+  while (first.kind === 'split') first = first.children[0]
   return { center, focusedLeafId: first.id, closed: [] }
 }
 
@@ -197,8 +227,9 @@ export function closePane<L extends SplitLayoutLeaf>(
     if (center.kind !== 'leaf') throw new Error('invalid_state: placeholder must be a leaf')
     assertLayoutTree(center)
   }
-  const leaves = listLeaves(center)
-  const fallback = leaves[Math.min(closedIndex, leaves.length - 1)] ?? leaves[0]
+  const fallback = removed
+    ? (readingOrder[closedIndex + 1] ?? readingOrder[closedIndex - 1])
+    : (center as L)
   if (!fallback) throw new Error('invalid_state: layout requires a leaf')
   return {
     center,

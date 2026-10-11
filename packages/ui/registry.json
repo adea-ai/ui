@@ -1683,7 +1683,8 @@
       ],
       "registryDependencies": [
         "@adea-ai/ui/button",
-        "lib"
+        "lib",
+        "theme"
       ],
       "files": [
         {
@@ -1705,6 +1706,21 @@
           "path": "src/components/layout/split-layout/model.ts",
           "type": "registry:ui",
           "target": "components/layout/split-layout/model.ts"
+        },
+        {
+          "path": "src/components/layout/split-layout/resize-controller-core.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/resize-controller-core.tsx"
+        },
+        {
+          "path": "src/components/layout/split-layout/resize-controller-retry.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/resize-controller-retry.tsx"
+        },
+        {
+          "path": "src/components/layout/split-layout/resize-controller.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/split-layout/resize-controller.tsx"
         },
         {
           "path": "src/components/layout/split-layout/split-layout.tsx",

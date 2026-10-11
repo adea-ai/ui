@@ -491,6 +491,178 @@
   }
 }
 
+/* SplitLayout's controller and pane surfaces are stable public structure. Keep
+   their repeated Tailwind utility lists in the shared stylesheet so the shipped
+   component source stays small while package and registry consumers share the
+   same geometry and interaction states. */
+[data-slot='split-layout'] > [data-corvu-resizable-root] {
+  pointer-events: none;
+  position: absolute;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+
+  &[data-orientation='vertical'] {
+    flex-direction: column;
+  }
+}
+
+/* Scope Corvu's documented handle marker to SplitLayout's own controller so
+   nested consumer Resizable instances keep their own appearance. */
+[data-slot='split-layout'] > [data-corvu-resizable-root] > [data-corvu-resizable-handle] {
+  pointer-events: auto;
+  position: relative;
+  width: 1px;
+  flex-shrink: 0;
+  background-color: var(--border);
+
+  &::after {
+    position: absolute;
+    top: 0;
+    right: -0.25rem;
+    bottom: 0;
+    left: -0.25rem;
+    width: 0.75rem;
+    content: '';
+  }
+
+  &:focus-visible {
+    background-color: var(--primary);
+    outline: none;
+  }
+
+  &:hover {
+    background-color: var(--primary);
+  }
+
+  &[data-orientation='vertical'] {
+    width: 100%;
+    height: 1px;
+
+    &::after {
+      top: -0.25rem;
+      right: 0;
+      bottom: -0.25rem;
+      left: 0;
+      width: 100%;
+      height: 0.75rem;
+    }
+  }
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region'] {
+  position: absolute;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region'][data-focused] {
+  border-color: var(--primary);
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region']:focus-visible {
+  outline: 2px solid var(--ring);
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region'] > header {
+  display: flex;
+  min-width: 0;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--surface);
+  padding-inline: 0.5rem;
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region'] > header > [data-pane-drag-handle] {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+[data-slot='split-layout']
+  > [data-pane-id][role='region']
+  > header
+  > [data-pane-drag-handle]
+  > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-slot='split-layout'] > [data-pane-id][role='region'] > header + div {
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+[data-drop-direction][data-drop-placement] > div[aria-hidden='true'] {
+  pointer-events: none;
+  position: absolute;
+  border: 2px solid var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+:where([data-drop-direction='row'][data-drop-placement='before']) > div[aria-hidden='true'] {
+  inset-block: 0;
+  left: 0;
+  width: 50%;
+}
+
+:where([data-drop-direction='row'][data-drop-placement='after']) > div[aria-hidden='true'] {
+  inset-block: 0;
+  right: 0;
+  width: 50%;
+}
+
+:where([data-drop-direction='column'][data-drop-placement='before']) > div[aria-hidden='true'] {
+  inset-inline: 0;
+  top: 0;
+  height: 50%;
+}
+
+:where([data-drop-direction='column'][data-drop-placement='after']) > div[aria-hidden='true'] {
+  inset-inline: 0;
+  bottom: 0;
+  height: 50%;
+}
+
+[data-slot='split-layout'] > [role='separator'][aria-disabled='true'][tabindex='-1'] {
+  pointer-events: none;
+  position: absolute;
+  background-color: var(--border);
+}
+
+[data-slot='split-layout']
+  > [role='separator'][aria-disabled='true'][tabindex='-1'][data-direction='row'] {
+  width: 1px;
+  height: var(--split-layout-separator-length);
+  transform: translateX(-50%);
+}
+
+[data-slot='split-layout']
+  > [role='separator'][aria-disabled='true'][tabindex='-1'][data-direction='column'] {
+  width: var(--split-layout-separator-length);
+  height: 1px;
+  transform: translateY(-50%);
+}
+
 /* --- Base layer ---------------------------------------------------------- */
 @layer base {
   *,

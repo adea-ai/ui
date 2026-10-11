@@ -10,7 +10,11 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { designTokens } from '../src/lib/tokens'
-import { publicRegistryDir, registryItems } from '../scripts/registry-core'
+import {
+  componentUsesBaseStyleSlots,
+  publicRegistryDir,
+  registryItems,
+} from '../scripts/registry-core'
 import { validateRegistry } from '../scripts/validate-registry'
 
 /**
@@ -239,6 +243,7 @@ describe('registry', () => {
 
   test('every style item ships the whole token set', () => {
     const theme = registryItems.find((item) => item.name === 'theme')
+    const splitLayout = registryItems.find((item) => item.name === 'split-layout')
 
     expect(theme?.files.map((file) => file.path).toSorted()).toEqual([
       'src/styles/base.css',
@@ -246,6 +251,33 @@ describe('registry', () => {
       'src/styles/globals.css',
       'src/styles/theme.css',
     ])
+    expect(splitLayout?.registryDependencies).toContain('theme')
+    expect(
+      JSON.parse(readFileSync(resolve(import.meta.dir, '../package.json'), 'utf8')).exports[
+        './base.css'
+      ]
+    ).toBe('./src/styles/base.css')
+  })
+
+  test('derives shared style dependencies from matching source slots and base selectors', () => {
+    expect(
+      componentUsesBaseStyleSlots(
+        '<section data-slot="custom-pane"></section>',
+        "[data-slot='custom-pane'] { display: flex; }"
+      )
+    ).toBe(true)
+    expect(
+      componentUsesBaseStyleSlots(
+        '<section data-slot="custom-pane"></section>',
+        "[data-slot='another-pane'] { display: flex; }"
+      )
+    ).toBe(false)
+    expect(
+      componentUsesBaseStyleSlots(
+        '<section data-slot={slotName}></section>',
+        "[data-slot='custom-pane'] { display: flex; }"
+      )
+    ).toBe(false)
   })
 })
 

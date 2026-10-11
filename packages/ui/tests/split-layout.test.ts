@@ -10,6 +10,7 @@ import {
   normalizeLayout,
   focusPane,
   resizeSplit,
+  separatorAccessibilityProps,
   splitPane,
   swapPanes,
   undoClosePane,
@@ -55,6 +56,48 @@ const build = (
       }
 
 describe('strict binary shared layout', () => {
+  test('separator accessibility props stay live with branch orientation and pane identity', () => {
+    let branch: import('../src/components/layout/split-layout/model').SplitLayoutBranch<
+      ReturnType<typeof leaf>
+    > = {
+      kind: 'split',
+      id: 'split-columns',
+      direction: 'row',
+      ratio: 0.55,
+      children: [leaf('left'), leaf('right')],
+    }
+    const props = separatorAccessibilityProps(
+      () => branch,
+      (id) => `pane-${id}`
+    )
+
+    expect(props['aria-label']).toBe('Resize pane columns')
+    expect(props['aria-orientation']).toBe('vertical')
+    expect(props['aria-controls']).toBe('pane-left pane-right')
+    expect(props['aria-valuemin']).toBe(10)
+    expect(props['aria-valuemax']).toBe(90)
+    expect(props['aria-valuenow']).toBe(55)
+
+    branch = {
+      ...branch,
+      id: 'split-rows',
+      direction: 'column',
+      ratio: 0.63,
+      children: [leaf('top'), leaf('bottom')],
+    }
+    expect(props['aria-label']).toBe('Resize pane rows')
+    expect(props['aria-orientation']).toBe('horizontal')
+    expect(props['aria-controls']).toBe('pane-top pane-bottom')
+    expect(props['aria-valuenow']).toBe(63)
+
+    const labelled = separatorAccessibilityProps(
+      () => branch,
+      (id) => `pane-${id}`,
+      (current) => `Adjust ${current.id}`
+    )
+    expect(labelled['aria-label']).toBe('Adjust split-rows')
+  })
+
   test('splits before or after the target in deterministic reading order', () => {
     const initial = createLayoutState(leaf('terminal-1'))
     const right = splitPane(initial, 'terminal-1', {
@@ -141,6 +184,7 @@ describe('strict binary shared layout', () => {
       splitId: 'nested-split',
     })
     const closed = closePane(withThree, 'three', () => leaf('placeholder'))
+    expect(closed.focusedLeafId).toBe('two')
     const resized = resizeSplit(closed, 'split', 0.7)
     expect(resized.closed).toHaveLength(0)
     expect(undoClosePane(resized)).toBe(resized)

@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'no
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { verifyPackedLayoutLazyController } from './check-packed-layout-lazy-controller'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-renderer-'))
@@ -111,9 +112,28 @@ try {
     join(consumer, 'node_modules/@adea-ai/ui/dist/components/layout/split-layout/split-layout.js'),
     'utf8'
   )
-  for (const dependency of ['solid-js', 'solid-js/web', '@corvu/resizable'])
+  const resizeController = readFileSync(
+    join(
+      consumer,
+      'node_modules/@adea-ai/ui/dist/components/layout/split-layout/resize-controller.js'
+    ),
+    'utf8'
+  )
+  for (const dependency of ['solid-js', 'solid-js/web'])
     if (!renderer.includes(`from "${dependency}"`) && !renderer.includes(`from '${dependency}'`))
       throw new Error(`Compiled renderer did not externalize ${dependency}`)
+  if (
+    !renderer.includes('import("./resize-controller.js")') &&
+    !renderer.includes("import('./resize-controller.js')")
+  )
+    throw new Error('Compiled renderer did not defer its resize controller module')
+  if (renderer.includes('@corvu/resizable'))
+    throw new Error('Compiled renderer eagerly imported @corvu/resizable')
+  if (
+    !resizeController.includes('from "@corvu/resizable"') &&
+    !resizeController.includes("from '@corvu/resizable'")
+  )
+    throw new Error('Packed resize controller did not externalize @corvu/resizable')
   const license = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/LICENSE'), 'utf8')
   const notice = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/NOTICE'), 'utf8')
   for (const text of [
@@ -125,6 +145,8 @@ try {
   ])
     if (!notice.includes(text)) throw new Error(`Packed NOTICE lost ${text}`)
   if (!license.includes('Apache License')) throw new Error('Packed Apache LICENSE missing')
+  for (const condition of ['compiled', 'solid'] as const)
+    await verifyPackedLayoutLazyController(consumer, condition)
   for (const [name, fixture] of [
     ['main.tsx', 'split-layout.tsx'],
     ['server.tsx', 'split-layout-ssr.tsx'],

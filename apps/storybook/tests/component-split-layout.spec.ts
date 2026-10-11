@@ -23,6 +23,13 @@ async function act(page: import('@playwright/test').Page, detail: string) {
     (value) => window.dispatchEvent(new CustomEvent('layout-fixture', { detail: value })),
     detail
   )
+  await page.waitForFunction(() => {
+    const expected = [...document.querySelectorAll('[data-slot="split-layout"]')].reduce(
+      (count, layout) => count + Math.max(0, layout.querySelectorAll('[data-pane-id]').length - 1),
+      0
+    )
+    return document.querySelectorAll('[data-corvu-resizable-handle]').length === expected
+  })
 }
 test('host header content, pane Tab stops and separator names remain independent', async ({
   page,
@@ -136,6 +143,109 @@ test('physical separator orientation, controls and constrained keyboard resizing
   await column.focus()
   await column.press('ArrowDown')
   await expect(column).toHaveAttribute('aria-valuenow', '55')
+})
+test('mounted resize controllers follow replaced callbacks and separator labels', async ({
+  page,
+}) => {
+  await act(page, 'split')
+  const separator = page.locator('[data-corvu-resizable-handle]').first()
+  await expect(separator).toHaveAttribute('aria-label', 'Initial pane divider')
+  await act(page, 'replace-resize-callbacks')
+  await expect(
+    page.getByRole('separator', { name: 'Updated pane divider', exact: true })
+  ).toHaveCount(1)
+  await separator.focus()
+  await separator.press('ArrowRight')
+  await expect(page.getByLabel('Initial resize calls', { exact: true })).toHaveText('0')
+  await expect(page.getByLabel('Replacement resize calls', { exact: true })).toHaveText('1')
+  await expect(separator).toHaveAttribute('aria-valuenow', '55')
+})
+test('base stylesheet preserves pane and separator computed geometry', async ({ page }) => {
+  await act(page, 'split')
+  await act(page, 'nested')
+
+  const paneGeometry = await page
+    .getByRole('region', { name: 'Pane a', exact: true })
+    .evaluate((el) => {
+      const style = getComputedStyle(el)
+      const header = el.querySelector(':scope > header')!
+      const headerStyle = getComputedStyle(header)
+      const drag = header.querySelector('[data-pane-drag-handle]')!
+      const dragStyle = getComputedStyle(drag)
+      const labelStyle = getComputedStyle(drag.querySelector('span')!)
+      const contentStyle = getComputedStyle(header.nextElementSibling!)
+      const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+      return {
+        position: style.position,
+        display: style.display,
+        minHeight: style.minHeight,
+        minWidth: style.minWidth,
+        overflow: style.overflow,
+        borderWidth: style.borderTopWidth,
+        headerDisplay: headerStyle.display,
+        headerGapInRootRem: Number.parseFloat(headerStyle.columnGap) / rootFontSize,
+        dragOverflow: dragStyle.overflow,
+        labelTextOverflow: labelStyle.textOverflow,
+        contentFlex: contentStyle.flex,
+        contentOverflow: contentStyle.overflow,
+      }
+    })
+  expect(paneGeometry).toEqual({
+    position: 'absolute',
+    display: 'flex',
+    minHeight: '0px',
+    minWidth: '0px',
+    overflow: 'hidden',
+    borderWidth: '1px',
+    headerDisplay: 'flex',
+    headerGapInRootRem: 0.5,
+    dragOverflow: 'hidden',
+    labelTextOverflow: 'ellipsis',
+    contentFlex: '1 1 0%',
+    contentOverflow: 'auto',
+  })
+
+  const columns = await page
+    .getByRole('separator', { name: 'Resize pane columns' })
+    .evaluate((el) => {
+      const style = getComputedStyle(el)
+      const hitArea = getComputedStyle(el, '::after')
+      const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+      return {
+        orientation: el.getAttribute('data-orientation'),
+        width: style.width,
+        pointerEvents: style.pointerEvents,
+        hitAreaPosition: hitArea.position,
+        hitAreaWidthInRootRem: Number.parseFloat(hitArea.width) / rootFontSize,
+      }
+    })
+  expect(columns).toEqual({
+    orientation: 'horizontal',
+    width: '1px',
+    pointerEvents: 'auto',
+    hitAreaPosition: 'absolute',
+    hitAreaWidthInRootRem: 0.75,
+  })
+
+  const rows = await page.getByRole('separator', { name: 'Resize pane rows' }).evaluate((el) => {
+    const style = getComputedStyle(el)
+    const hitArea = getComputedStyle(el, '::after')
+    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+    return {
+      orientation: el.getAttribute('data-orientation'),
+      height: style.height,
+      pointerEvents: style.pointerEvents,
+      hitAreaPosition: hitArea.position,
+      hitAreaHeightInRootRem: Number.parseFloat(hitArea.height) / rootFontSize,
+    }
+  })
+  expect(rows).toEqual({
+    orientation: 'vertical',
+    height: '1px',
+    pointerEvents: 'auto',
+    hitAreaPosition: 'absolute',
+    hitAreaHeightInRootRem: 0.75,
+  })
 })
 test('keyboard closing focuses the host-selected survivor and removes only the closed owner', async ({
   page,
@@ -350,12 +460,25 @@ test('fractional pane geometry survives CSP that blocks inline style attributes'
   expect(violations).toEqual([])
 })
 
-test('required Solid source pipeline renders nested panes in native Node without browser globals', async () => {
+test('required Solid source pipeline renders root and subpath split panes in native Node', async () => {
   const markup = await renderLayoutServer()
   expect(markup).toContain('aria-label="Server panes"')
-  expect(markup.match(/role="region"/g)).toHaveLength(2)
+  expect(markup).toContain('aria-label="Subpath server panes"')
+  expect(markup.match(/role="group"/g)).toHaveLength(2)
+  expect(markup.match(/role="region"/g)).toHaveLength(4)
+  expect(markup.match(/role="separator"/g)).toHaveLength(2)
   expect(markup).toContain('aria-orientation="vertical"')
+  expect(markup).toContain('aria-orientation="horizontal"')
   expect(markup).toContain('aria-valuenow="50"')
+  const separators = markup.match(/<[^>]*role="separator"[^>]*>/g) ?? []
+  expect(separators).toHaveLength(2)
+  expect(
+    separators.every(
+      (separator) =>
+        separator.includes('aria-disabled="true"') &&
+        separator.toLowerCase().includes('tabindex="-1"')
+    )
+  ).toBe(true)
 })
 
 for (const width of [320, 1440])
@@ -463,6 +586,18 @@ for (const cancel of ['dragend', 'close'] as const)
         target.getAttribute('data-drop-placement') !== 'after'
       )
         throw new Error('Missing edge-specific drop feedback')
+      const overlay = target.querySelector(':scope > div[aria-hidden="true"]')
+      if (!overlay) throw new Error('Missing drop feedback overlay')
+      const feedback = getComputedStyle(overlay)
+      const feedbackBox = overlay.getBoundingClientRect()
+      if (
+        feedback.position !== 'absolute' ||
+        feedback.borderTopWidth !== '2px' ||
+        feedback.backgroundColor === 'rgba(0, 0, 0, 0)' ||
+        Math.abs(feedbackBox.right - box.right) > 2 ||
+        Math.abs(feedbackBox.height - box.height) > 2
+      )
+        throw new Error('Drop overlay lost its edge geometry or theme treatment')
       if (reason === 'dragend')
         source.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer }))
       else (root.querySelector('[aria-label="Close Pane a"]') as HTMLButtonElement).click()

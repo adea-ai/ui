@@ -50,6 +50,7 @@ import { fileURLToPath } from 'node:url'
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = join(PACKAGE_ROOT, 'src')
+const BASE_STYLES = readFileSync(join(SRC, 'styles/base.css'), 'utf8')
 /**
  * Where components live.
  *
@@ -101,6 +102,18 @@ const packageJson = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 
   name: string
   version: string
   dependencies: Record<string, string>
+}
+
+/** True when a component's static slots are styled by selectors in the shared base stylesheet. */
+export function componentUsesBaseStyleSlots(componentSource: string, baseStyles: string): boolean {
+  const styledSlots = new Set(
+    [...baseStyles.matchAll(/\[\s*data-slot\s*=\s*(['"])([^'"]+)\1\s*\]/g)]
+      .map((match) => match[2])
+      .filter((slot): slot is string => slot !== undefined)
+  )
+  for (const match of componentSource.matchAll(/\bdata-slot\s*=\s*(['"])([^'"]+)\1/g))
+    if (match[2] && styledSlots.has(match[2])) return true
+  return false
 }
 
 type RegistryItemType = 'registry:ui' | 'registry:lib' | 'registry:style'
@@ -188,9 +201,11 @@ function analyseImports(files: string[], dir: string) {
   const npm = new Set<string>()
   const crossFolder = new Set<string>()
   const internal = new Set<string>()
+  const sources: string[] = []
 
   for (const file of files) {
     const source = readFileSync(file, 'utf8')
+    sources.push(source)
     for (const match of source.matchAll(IMPORT_RE)) {
       const specifier = match[1] ?? ''
 
@@ -222,7 +237,7 @@ function analyseImports(files: string[], dir: string) {
     }
   }
 
-  return { npm, crossFolder, internal }
+  return { npm, crossFolder, internal, componentSource: sources.join('\n') }
 }
 
 function titleCase(slug: string): string {
@@ -253,7 +268,7 @@ function buildItems() {
 
   const items: RegistryItem[] = folders.map((folder) => {
     const files = componentFiles(folder.dir)
-    const { npm, crossFolder, internal } = analyseImports(files, folder.dir)
+    const { npm, crossFolder, internal, componentSource } = analyseImports(files, folder.dir)
 
     // A cross-folder import is reported by *folder identity*, not by picking a
     // directory name out of the path. The previous version searched for `ui` and
@@ -290,6 +305,11 @@ function buildItems() {
     // Anything reaching for `#lib/*` needs the `lib` item, or the copied file is
     // dead on arrival.
     if (internal.size > 0) registryDependencies.push(LIB_ITEM_NAME)
+
+    // Components whose public slot selectors live in base.css need the shared
+    // stylesheet item when copied into a consumer project.
+    if (componentUsesBaseStyleSlots(componentSource, BASE_STYLES))
+      registryDependencies.push('theme')
 
     return {
       name: folder.slug,

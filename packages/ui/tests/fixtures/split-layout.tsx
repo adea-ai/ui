@@ -13,6 +13,8 @@ import {
   type SplitLayoutLeaf,
 } from '../../src/components/layout/split-layout/model'
 import '../../src/styles/globals.css'
+const initialSeparatorLabel = () => 'Initial pane divider'
+const replacementSeparatorLabel = () => 'Updated pane divider'
 function Fixture() {
   const [state, setState] = createSignal(createLayoutState({ kind: 'leaf', id: 'a' }))
   const [mounts, setMounts] = createSignal(0)
@@ -20,6 +22,9 @@ function Fixture() {
   const [visible, setVisible] = createSignal(true)
   const [hidden, setHidden] = createSignal(false)
   const [moves, setMoves] = createSignal(0)
+  const [replacementResizeActive, setReplacementResizeActive] = createSignal(false)
+  const [initialResizeCalls, setInitialResizeCalls] = createSignal(0)
+  const [replacementResizeCalls, setReplacementResizeCalls] = createSignal(0)
   const [hostPresentation, setHostPresentation] = createSignal(false)
   const [hostState, setHostState] = createSignal(
     splitPane(createLayoutState({ kind: 'leaf', id: 'host-a' }), 'host-a', {
@@ -30,6 +35,16 @@ function Fixture() {
     })
   )
   let nextMove = 0
+  const applyResize = (id: string, ratio: number) =>
+    setState((current) => resizeSplit(current, id, ratio))
+  const initialResize = (id: string, ratio: number) => {
+    setInitialResizeCalls((count) => count + 1)
+    applyResize(id, ratio)
+  }
+  const replacementResize = (id: string, ratio: number) => {
+    setReplacementResizeCalls((count) => count + 1)
+    applyResize(id, ratio)
+  }
   const act = (event: Event) => {
     const detail = (event as CustomEvent<string>).detail
     if (detail === 'split')
@@ -79,6 +94,7 @@ function Fixture() {
     if (detail === 'hidden-mount') setVisible(true)
     if (detail === 'host-presentation') setHostPresentation(true)
     if (detail === 'resize') setState((s) => resizeSplit(s, 'ab', 0.7))
+    if (detail === 'replace-resize-callbacks') setReplacementResizeActive(true)
   }
   window.addEventListener('layout-fixture', act)
   onCleanup(() => window.removeEventListener('layout-fixture', act))
@@ -93,6 +109,8 @@ function Fixture() {
       <output aria-label="Mounts">{mounts()}</output>
       <output aria-label="Unmounts">{unmounts()}</output>
       <output aria-label="Moves">{moves()}</output>
+      <output aria-label="Initial resize calls">{initialResizeCalls()}</output>
+      <output aria-label="Replacement resize calls">{replacementResizeCalls()}</output>
       <button
         type="button"
         aria-label="Move focused pane before previous pane"
@@ -139,7 +157,10 @@ function Fixture() {
               </Show>
             )}
             onFocus={(id) => setState((s) => focusPane(s, id))}
-            onResize={(id, ratio) => setState((s) => resizeSplit(s, id, ratio))}
+            onResize={replacementResizeActive() ? replacementResize : initialResize}
+            labelForSeparator={
+              replacementResizeActive() ? replacementSeparatorLabel : initialSeparatorLabel
+            }
             onMove={(id, target, intent) => {
               setMoves((count) => count + 1)
               setState((s) =>
