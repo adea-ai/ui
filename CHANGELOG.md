@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.123.1](https://github.com/adea-ai/ui/compare/v0.123.0...v0.123.1) (2026-10-11)
+
+
+### Performance
+
+* **split-layout:** defer resize controller until a split is mounted ([#381](https://github.com/adea-ai/ui/issues/381)) ([d3138de](https://github.com/adea-ai/ui/commit/d3138dec75d42632693b511e8a5a68833e9e4c77))
+
 ## [0.123.0](https://github.com/adea-ai/ui/compare/v0.122.3...v0.123.0) (2026-10-11)
 
 
