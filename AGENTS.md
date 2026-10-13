@@ -96,7 +96,8 @@ bun run verify:changed       # only the checks your branch's changes reach (see 
 with `origin/main` (`--base=<ref>` to change it; `--plan` to print without running)
 and runs only what that diff reaches: the registry rebuild plus the same
 `registry.json`/`public/r` drift check CI fails on, the component shard collection
-check (list only, no browser), a turbo-cached typecheck of the changed workspaces,
+check (list only, no browser), the published-exports gate (a library build, run only when
+a `lib/` module, `vite.config.ts` or the `exports` map changed), a turbo-cached typecheck of the changed workspaces,
 the unit tests that import a changed module (a whole suite only for widely read
 files such as `lib/utils.ts`, `lib/tokens.ts` and `theme.css`), and format and lint
 on the changed files. It never drives a browser or builds Storybook, and it prints
