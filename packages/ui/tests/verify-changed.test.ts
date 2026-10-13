@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   affectsComponentShards,
+  affectsLibExports,
   affectsRegistry,
   importersGraph,
   isGraphSource,
@@ -74,6 +75,30 @@ describe('component shard selection', () => {
       'packages/ui/src/components/ui/tooltip/tooltip.tsx',
     ]) {
       expect(affectsComponentShards(path), path).toBe(false)
+    }
+  })
+})
+
+describe('published exports selection', () => {
+  test('selects lib modules, the build config, the exports map and the gate', () => {
+    for (const path of [
+      'packages/ui/src/lib/accent-roles.ts',
+      'packages/ui/vite.config.ts',
+      'packages/ui/package.json',
+      'packages/ui/scripts/package-exports.ts',
+      'packages/ui/scripts/check-lib-exports.ts',
+    ]) {
+      expect(affectsLibExports(path), path).toBe(true)
+    }
+  })
+
+  test('ignores lib tests, components and styles', () => {
+    for (const path of [
+      'packages/ui/src/lib/keyed-rows.test.ts',
+      'packages/ui/src/components/ui/button/button.tsx',
+      'packages/ui/src/styles/theme.css',
+    ]) {
+      expect(affectsLibExports(path), path).toBe(false)
     }
   })
 })
@@ -294,6 +319,7 @@ describe('the plan', () => {
     expect(plan).toEqual({
       registry: [],
       componentShards: [],
+      libExports: [],
       typecheck: { workspaces: [], uncovered: [] },
       tests: [],
       format: ['README.md', 'docs/conventions.md'],

@@ -3,21 +3,26 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
+import { libraryEntries, publishedModules, type ExportsMap } from './scripts/package-exports'
 
-const componentEntries = readdirSync(resolve(import.meta.dirname, 'src/components'), {
-  recursive: true,
-})
-  .map(String)
-  .filter((file) => file.endsWith('/index.ts'))
-const entries = Object.fromEntries([
-  ['index', resolve(import.meta.dirname, 'src/index.ts')],
-  ['lint', resolve(import.meta.dirname, 'src/lint/index.ts')],
-  ['lib/download', resolve(import.meta.dirname, 'src/lib/download.ts')],
-  ...componentEntries.map((file) => [
-    `components/${file.slice(0, -'.ts'.length)}`,
-    resolve(import.meta.dirname, 'src/components', file),
-  ]),
-])
+const packageRoot = import.meta.dirname
+const manifest: { exports: ExportsMap } = JSON.parse(
+  readFileSync(resolve(packageRoot, 'package.json'), 'utf8')
+)
+// One entry per module the `exports` map publishes (components, lib modules and the
+// explicit subpaths), so a published module is never tree-shaken down to the exports
+// other modules happen to import. See scripts/package-exports.ts.
+const entries = {
+  index: resolve(packageRoot, 'src/index.ts'),
+  lint: resolve(packageRoot, 'src/lint/index.ts'),
+  ...libraryEntries(
+    publishedModules(
+      manifest.exports,
+      readdirSync(resolve(packageRoot, 'src'), { recursive: true }).map(String)
+    ),
+    packageRoot
+  ),
+}
 const sourceRoot = resolve(import.meta.dirname, 'src')
 
 function isComponentCssImport(id: string, importer?: string): boolean {

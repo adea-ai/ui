@@ -8,7 +8,8 @@
  * check runs only when that set reaches it — see `verify-changed-plan.ts` for the
  * mapping. It deliberately includes the two gates only CI used to run, the
  * registry rebuild-and-diff and the component shard collection check, and
- * deliberately excludes anything that drives a browser or builds the workshop.
+ * the published-exports gate (it builds the library, so it runs only when a lib
+ * module or the entry derivation changed), and deliberately excludes anything that drives a browser or builds the workshop.
  *
  * `--plan` prints what would run and exits without running it. Every check runs
  * even after one fails, so one invocation reports every problem; the exit code is
@@ -188,6 +189,18 @@ if (plan.componentShards.length > 0) {
   )
 } else {
   skip('component shards', 'no component spec or Playwright config changed')
+}
+
+// --- published exports: build, then compare runtime exports with the types ---
+if (plan.libExports.length > 0) {
+  const built = run(['bun', 'run', '--cwd', 'packages/ui', 'build'])
+  record(
+    'lib exports',
+    built && run(['bun', 'run', '--cwd', 'packages/ui', 'check:lib-exports']),
+    `built, then compared for ${few(plan.libExports)}`
+  )
+} else {
+  skip('lib exports', 'no lib module, library entry or exports map changed')
 }
 
 // --- typecheck: turbo-cached, the changed workspaces and their dependents ----

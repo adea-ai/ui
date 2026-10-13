@@ -50,6 +50,7 @@ export const TEST_ROOTS: readonly TestRoot[] = [
       'packages/ui/src/styles/appearance-font-settings.css',
       'packages/ui/bunfig.toml',
       'packages/ui/package.json',
+      'packages/ui/vite.config.ts',
       'packages/ui/tests/fixtures/',
       'bunfig.toml',
     ],
@@ -88,6 +89,20 @@ export function affectsComponentShards(path: string): boolean {
     /^apps\/storybook\/tests\/[^/]+\.spec\.ts$/.test(path) ||
     /^apps\/storybook\/playwright[^/]*\.config\.ts$/.test(path) ||
     path === 'apps/storybook/scripts/check-component-shards.mjs'
+  )
+}
+
+/**
+ * Inputs of the published-exports gate: a lib module's exports, the library
+ * entries derived from the `exports` map, and the gate's own scripts. The gate
+ * reads `dist/`, so it needs a library build.
+ */
+export function affectsLibExports(path: string): boolean {
+  return (
+    (/^packages\/ui\/src\/lib\/[^/]+\.ts$/.test(path) && !/\.(test|stories)\./.test(path)) ||
+    path === 'packages/ui/vite.config.ts' ||
+    path === 'packages/ui/package.json' ||
+    /^packages\/ui\/scripts\/(package-exports|module-exports|check-lib-exports)\.ts$/.test(path)
   )
 }
 
@@ -281,6 +296,8 @@ export type Plan = {
   registry: string[]
   /** Changed paths that are component shard inputs. */
   componentShards: string[]
+  /** Changed paths that can change which exports a published lib module has. */
+  libExports: string[]
   typecheck: { workspaces: string[] | 'all'; uncovered: string[] }
   tests: TestSelection[]
   /** Existing changed files to format-check; oxfmt applies its own ignores. */
@@ -310,6 +327,7 @@ export function planChecks(
   return {
     registry: unique.filter(affectsRegistry),
     componentShards: unique.filter(affectsComponentShards),
+    libExports: unique.filter(affectsLibExports),
     typecheck: typecheckTargets(unique, options.workspaces),
     tests: selectTests(unique, options.sources, options.roots),
     format: present,
