@@ -57,6 +57,7 @@ import {
   type ContrastFinding,
 } from '@adea-ai/themes'
 import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
+import { oklchToHex, parseColor } from '@adea-ai/themes/oklch'
 import { isThemeAccentId } from './theme-accents'
 
 export { isThemeAccentId } from './theme-accents'
@@ -179,10 +180,24 @@ export type ThemeVariant = {
   /** The categorical series, in order. */
   chart: readonly string[]
   provenance: ThemeProvenance
+  /**
+   * Custom properties written verbatim over {@link themeCssVariables}, last.
+   *
+   * For a variant a host built from data it does not control the derivation of —
+   * an imported theme whose painted colours must stay exactly what the user
+   * imported. The catalogue's own variants never carry it, so the derived roles
+   * stay the only source of truth for them.
+   */
+  tokens?: Readonly<Record<string, string>>
 }
 
-/** Builds the design system's view of one catalogue entry. */
-function toVariant(theme: AdeaThemeRecord): ThemeVariant {
+/**
+ * The shadcn-vocabulary roles of one catalogue entry.
+ *
+ * The expensive half of a variant: `shadcnVariables` projects the whole palette
+ * (about 4 ms a theme), which is why {@link lazyVariant} defers it.
+ */
+function colorsOf(theme: AdeaThemeRecord): ThemeColors {
   const projected = shadcnVariables(theme)
   const token = (name: string): string => {
     const value = projected[`--${name}`]
@@ -190,7 +205,7 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
     return value
   }
   const destructiveAction = shadcnDestructiveProjection(theme)
-  const colors: ThemeColors = {
+  return {
     background: token('background'),
     foreground: token('foreground'),
     card: token('card'),
@@ -231,8 +246,62 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
     sidebarBorder: token('sidebar-border'),
     sidebarMutedForeground: token('sidebar-muted-foreground'),
   }
-  const syntax = syntaxRoles(theme)
+}
 
+// The embedded terminal uses the theme's own canvas rather than a palette of its
+// own. The ANSI colours came from the palette that produced the canvas, so they
+// were chosen against it; a terminal on a different background would be the one
+// surface in the application not lit by the active theme.
+function terminalOf(theme: AdeaThemeRecord): ThemeTerminalPalette {
+  return {
+    background: theme.colors.background,
+    foreground: theme.colors.foreground,
+    cursor: theme.cursor,
+    selection: theme.selection,
+    ...theme.ansi,
+  }
+}
+
+function editorOf(theme: AdeaThemeRecord): ThemeEditorPalette {
+  const syntax = syntaxRoles(theme)
+  return {
+    keyword: syntax.keyword,
+    string: syntax.string,
+    number: syntax.number,
+    comment: syntax.comment,
+    function: syntax.function,
+    variable: syntax.variable,
+    type: syntax.type,
+    tag: syntax.tag,
+    attribute: syntax.attribute,
+    operator: syntax.operator,
+    heading: syntax.heading,
+    link: syntax.link,
+    diffAdd: syntax.diffAdd,
+    diffDelete: syntax.diffDelete,
+    diffHunk: syntax.diffHunk,
+    searchMatch: syntax.searchMatch,
+  }
+}
+
+function provenanceOf(theme: AdeaThemeRecord): ThemeProvenance {
+  return {
+    source: theme.provenance.project,
+    url: theme.provenance.url,
+    license: theme.provenance.license,
+  }
+}
+
+/**
+ * The design system's view of one catalogue record, built in full and at once.
+ *
+ * For a host that holds a record the catalogue does not — an imported theme, a
+ * reconstruction from stored data — and wants a variant it can hand to
+ * `ThemeProvider`'s `themes`. It throws for a record the shadcn projection cannot
+ * map, here and now, rather than on first paint. The catalogue itself goes through
+ * {@link lazyVariant} instead.
+ */
+export function variantFromRecord(theme: AdeaThemeRecord): ThemeVariant {
   return {
     id: theme.id,
     family: theme.family,
@@ -240,43 +309,60 @@ function toVariant(theme: AdeaThemeRecord): ThemeVariant {
     label: theme.label,
     appearance: theme.appearance,
     description: theme.description,
-    colors,
-    terminal: {
-      // The embedded terminal uses the theme's own canvas rather than a palette of its
-      // own. The ANSI colours came from the palette that produced the canvas, so they
-      // were chosen against it; a terminal on a different background would be the one
-      // surface in the application not lit by the active theme.
-      background: theme.colors.background,
-      foreground: theme.colors.foreground,
-      cursor: theme.cursor,
-      selection: theme.selection,
-      ...theme.ansi,
-    },
-    editor: {
-      keyword: syntax.keyword,
-      string: syntax.string,
-      number: syntax.number,
-      comment: syntax.comment,
-      function: syntax.function,
-      variable: syntax.variable,
-      type: syntax.type,
-      tag: syntax.tag,
-      attribute: syntax.attribute,
-      operator: syntax.operator,
-      heading: syntax.heading,
-      link: syntax.link,
-      diffAdd: syntax.diffAdd,
-      diffDelete: syntax.diffDelete,
-      diffHunk: syntax.diffHunk,
-      searchMatch: syntax.searchMatch,
-    },
+    colors: colorsOf(theme),
+    terminal: terminalOf(theme),
+    editor: editorOf(theme),
     chart: chartSeries(theme),
-    provenance: {
-      source: theme.provenance.project,
-      url: theme.provenance.url,
-      license: theme.provenance.license,
-    },
+    provenance: provenanceOf(theme),
   }
+}
+
+/** Runs `build` on first call and returns that value from then on. A throw is not cached. */
+function once<T>(build: () => T): () => T {
+  let built = false
+  let value: T
+  return () => {
+    if (!built) {
+      value = build()
+      built = true
+    }
+    return value
+  }
+}
+
+const lazy = <T>(build: () => T): PropertyDescriptor => ({
+  get: once(build),
+  enumerable: true,
+})
+
+/**
+ * {@link variantFromRecord} with the four derived palettes built on first read.
+ *
+ * Evaluating this module used to project all 34 catalogue themes up front, about
+ * 155 ms before a single one was needed, on the hydration path of every consumer.
+ * A page paints one variant, and a picker's labels and appearance are plain
+ * fields, so only a variant whose `colors`, `terminal`, `editor` or `chart` is read
+ * pays for them, once. The properties stay enumerable data-shaped accessors, so
+ * spreading, `Object.entries` and JSON see the same object they always did.
+ */
+function lazyVariant(theme: AdeaThemeRecord): ThemeVariant {
+  return Object.defineProperties(
+    {
+      id: theme.id,
+      family: theme.family,
+      familyLabel: theme.familyLabel,
+      label: theme.label,
+      appearance: theme.appearance,
+      description: theme.description,
+      provenance: provenanceOf(theme),
+    },
+    {
+      colors: lazy(() => colorsOf(theme)),
+      terminal: lazy(() => terminalOf(theme)),
+      editor: lazy(() => editorOf(theme)),
+      chart: lazy(() => chartSeries(theme)),
+    }
+  ) as ThemeVariant
 }
 
 /**
@@ -290,11 +376,43 @@ export function primarySubtleFor(theme: Pick<ThemeVariant, 'id' | 'appearance'>)
 }
 
 /** The catalogue, in catalogue order. */
-export const builtinThemes: readonly ThemeVariant[] = Object.freeze(catalogue.map(toVariant))
+export const builtinThemes: readonly ThemeVariant[] = Object.freeze(catalogue.map(lazyVariant))
 
 export function themeById(id: string): ThemeVariant | undefined {
   if (!hasTheme(id)) return undefined
   return builtinThemes.find((theme) => theme.id === id)
+}
+
+/**
+ * The variant a stored id means, or the default of the same appearance.
+ *
+ * An id the registry does not hold — an imported theme that was deleted, a
+ * catalogue entry that was renamed — must still paint *something of the appearance
+ * being shown*. Falling back to whichever variant happens to be first in the
+ * registry painted a dark palette under a light `color-scheme` for a light id, so
+ * the fallback is the appearance's own default, then any variant of that
+ * appearance, then the registry's first entry only when it holds nothing else.
+ *
+ * `registry` is the builtin catalogue plus whatever extras the host supplies; the
+ * stored id is never rewritten, only resolved, so a host that keeps an unknown id
+ * keeps resolving it if the theme comes back.
+ *
+ * The fallback order is translated from Zeron's `ThemeRegistry::resolve` (MIT,
+ * Copyright (c) 2026 Wing); see NOTICE.
+ */
+export function resolveVariant(
+  registry: readonly ThemeVariant[],
+  id: string,
+  appearance: ThemeAppearance
+): ThemeVariant {
+  const found = registry.find((variant) => variant.id === id)
+  if (found) return found
+  const defaultId = appearance === 'dark' ? defaultDarkThemeId : defaultLightThemeId
+  return (
+    registry.find((variant) => variant.id === defaultId) ??
+    registry.find((variant) => variant.appearance === appearance) ??
+    registry[0]!
+  )
 }
 
 /** The variants of one appearance, which is what a picker for that mode shows. */
@@ -482,7 +600,7 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
   const c = theme.colors
   const t = theme.terminal
   const e = theme.editor
-  return {
+  const derived = {
     '--background': c.background,
     '--foreground': c.foreground,
     '--card': c.card,
@@ -587,6 +705,29 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
     '--chart-5': theme.chart[4] ?? c.destructive,
     '--chart-6': theme.chart[5] ?? c.mutedForeground,
   }
+  return theme.tokens ? { ...derived, ...theme.tokens } : derived
+}
+
+/**
+ * Token values with every `oklch()` colour written as `#rrggbb`.
+ *
+ * For a host whose stylesheet, tests or native shell speak hex: the catalogue's
+ * roles are `oklch()` strings, and this is the one conversion, gamut-mapped by the
+ * catalogue's own `oklchToHex`. A value that is already hex, carries alpha
+ * (`rgba()`), or is not a plain colour (`color-mix()`, `var()`) is left byte for
+ * byte, because converting would either lose the alpha or be a guess. Suitable as
+ * `ThemeProvider`'s `transformTokens`.
+ */
+export function tokensAsHex(tokens: Readonly<Record<string, string>>): Record<string, string> {
+  const converted: Record<string, string> = {}
+  for (const [name, value] of Object.entries(tokens)) {
+    const trimmed = value.trim()
+    // `parseOklch` discards alpha, so a translucent oklch() stays as written.
+    const opaque = trimmed.startsWith('oklch(') && !trimmed.includes('/')
+    const parsed = opaque ? parseColor(trimmed) : undefined
+    converted[name] = parsed ? oklchToHex(parsed) : value
+  }
+  return converted
 }
 
 /* ---------------------------------------------------------------------------

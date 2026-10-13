@@ -300,6 +300,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## Theme resolution fallback translated from Zeron
+
+`resolveVariant` in `packages/ui/src/lib/themes.ts` translates the fallback order
+of Zeron's `ThemeRegistry::resolve` (https://github.com/zeronsh/zeron), as Adea's
+accepted port of it in `packages/ui/src/components/appearance.ts` expresses it:
+an id the registry does not hold resolves to the default variant of the same
+appearance, then to any variant of that appearance, and never to a variant of the
+other one. The provider's use of it, which leaves the stored id untouched, is the
+Adea behaviour that port retains.
+
+    Copyright (c) 2026 Wing
+    Licensed under the MIT License.
+
+Zeron's MIT notice, reproduced in full under "Appearance editor translated from
+Zeron" above, applies to the translated portion. The ThemeProvider's preview,
+persistence and document-application seams are written against Adea's provider
+contract and introduce no further upstream source.
+
 ## Strict binary layout extracted from the accepted Adea donor port
 
 `packages/ui/src/components/layout/split-layout/model.ts` is extracted from

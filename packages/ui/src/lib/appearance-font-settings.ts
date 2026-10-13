@@ -181,7 +181,7 @@ export function normalizeAppearanceEditorFontSettings(
  * stylesheet and survives CSS import reordering.
  */
 export function applyAppearanceFontSettings(
-  root: HTMLElement,
+  root: Pick<HTMLElement, 'removeAttribute' | 'setAttribute' | 'style'>,
   value: unknown
 ): NormalizedAppearanceEditorFontSettings {
   const normalized = normalizeAppearanceEditorFontSettings(value)
