@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.127.0](https://github.com/adea-ai/ui/compare/v0.126.0...v0.127.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** versioned boot script and preference store ([#389](https://github.com/adea-ai/ui/issues/389)) ([d6be724](https://github.com/adea-ai/ui/commit/d6be724d640773be2a18dd62e824de0ad41b764d))
+
 ## [0.126.0](https://github.com/adea-ai/ui/compare/v0.125.0...v0.126.0) (2026-10-13)
 
 
