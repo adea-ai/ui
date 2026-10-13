@@ -4,7 +4,9 @@ import {
   type AppearanceEditorFontSettings,
 } from '../../lib/appearance-font-settings'
 import type { AccentPreset } from '@adea-ai/themes'
+import { normalizeCustomAccent, type AccentRoles } from '../../lib/accent-roles'
 import {
+  accentRolesForSelection,
   defaultDarkThemeId,
   defaultLightThemeId,
   resolveVariant,
@@ -41,8 +43,12 @@ export type ThemeSelection = {
   darkThemeId: string
   /**
    * An `accentPresets` id, a theme accent id from `themeAccents()` (`ansi-blue`…),
-   * or `theme` for the variant's own primary. A theme accent the current pair does
-   * not offer falls back to the variant's own primary.
+   * `theme` for the variant's own primary, or a custom colour as `#rrggbb`. A theme
+   * accent the current pair does not offer falls back to the variant's own primary.
+   *
+   * A custom colour is stored lower case and is raised to the contrast floor when it
+   * is painted, never when it is stored: the selection keeps what the user chose.
+   * Anything else that is not an id is dropped at paint, not rejected here.
    */
   accent: string
   /** UI-family alias for consumers of the original single-font preference. */
@@ -129,6 +135,14 @@ export type ThemeContextValue = {
   preview: (draft: Partial<ThemeSelection> | undefined) => void
   /** True while a {@link ThemeContextValue.preview} draft is on the document. */
   previewing: () => boolean
+  /**
+   * The roles `accent` paints over `variantId` (default: the variant in use), held
+   * to the provider's `accentContrastFloor`, for an element-scoped override with
+   * `paintAccentRoles` — a workspace that carries its own colour. `undefined` for
+   * `null`, for `theme`, for an id that resolves to nothing, and for a variant the
+   * registry does not hold: each means "keep the inherited accent".
+   */
+  accentRolesFor: (accent: string | null, variantId?: string) => AccentRoles | undefined
 }
 
 /** A selection with the `undefined` keys of a patch left out. */
@@ -158,7 +172,13 @@ export function mergeThemeSelection(
     fonts = normalizeAppearanceEditorFontSettings(merged.fonts, merged.font).settings
   }
 
-  return { ...merged, fonts, font: fonts.ui.family }
+  return {
+    ...merged,
+    // One spelling for a custom colour, so equal choices compare and store equal.
+    accent: normalizeCustomAccent(merged.accent) ?? merged.accent,
+    fonts,
+    font: fonts.ui.family,
+  }
 }
 
 /**
@@ -222,4 +242,33 @@ export function mergeRegistry(
   extra: readonly ThemeVariant[] | undefined
 ): readonly ThemeVariant[] {
   return extra && extra.length > 0 ? [...builtin, ...extra] : builtin
+}
+
+/**
+ * The roles an accent paints over a variant, for {@link ThemeContextValue.accentRolesFor}.
+ *
+ * Resolved against the committed selection's theme pair, so an `ansi-*` accent means
+ * the same colour here as it does on `<html>`.
+ */
+export function accentRolesForState(
+  accent: string | null,
+  variantId: string | undefined,
+  state: {
+    selection: ThemeSelection
+    variant: ThemeVariant
+    registry: readonly ThemeVariant[]
+    accentContrastFloor?: number
+  }
+): AccentRoles | undefined {
+  if (accent === null) return undefined
+  const variant =
+    variantId === undefined
+      ? state.variant
+      : state.registry.find((candidate) => candidate.id === variantId)
+  if (!variant) return undefined
+  return accentRolesForSelection(accent, variant.appearance, state.selection, {
+    background: variant.colors.background,
+    floor: state.accentContrastFloor,
+    variantId: variant.id,
+  })
 }

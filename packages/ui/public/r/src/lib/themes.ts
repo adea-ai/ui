@@ -36,7 +36,6 @@
 import {
   ACCENTS,
   accentForeground,
-  accentRoles,
   chartSeries,
   getAccent,
   getTheme,
@@ -58,6 +57,7 @@ import {
 } from '@adea-ai/themes'
 import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
 import { oklchToHex, parseColor } from '@adea-ai/themes/oklch'
+import { accentOverrideVariables, resolveAccentRoles, type AccentRoles } from './accent-roles'
 import { isThemeAccentId } from './theme-accents'
 
 export { isThemeAccentId } from './theme-accents'
@@ -566,26 +566,51 @@ export function accentVariables(
   pair: { lightThemeId: string; darkThemeId: string } = {
     lightThemeId: defaultLightThemeId,
     darkThemeId: defaultDarkThemeId,
-  }
+  },
+  options: AccentVariableOptions = {}
 ): Record<string, string> | undefined {
-  if (accentId === 'theme') return undefined
-  const { light, dark } = recordPair(pair.lightThemeId, pair.darkThemeId)
-  const preset = resolveAccentPreset(accentId, light, dark)
-  if (!preset) return undefined
+  const roles = accentRolesForSelection(accentId, appearance, pair, options)
+  return roles ? accentOverrideVariables(roles) : undefined
+}
 
-  // `--primary-subtle` is deliberately not here. It is a `color-mix()` over
-  // `var(--primary)`, so the theme's own declaration (`themeCssVariables`, or the
-  // default block in `theme.css`) already follows the accent; and its strength is the
-  // *theme's*, measured by `primarySubtleAlpha` to hold body text at 4.5:1 for every
-  // accent the theme offers. Writing one here would replace that measured strength
-  // with whatever this function was given, which is how an accent used to undo it.
-  const roles = accentRoles(preset, appearance)
-  return {
-    '--primary': roles.primary,
-    '--primary-foreground': roles.primaryForeground,
-    '--primary-hover': roles.primaryHover,
-    '--ring': roles.ring,
-  }
+/** What an accent is held to when it is resolved against a surface. */
+export type AccentVariableOptions = {
+  /** The surface the accent must read on: the variant's `colors.background`. */
+  background?: string
+  /**
+   * The contrast floor against `background`. Absent, a preset is painted verbatim
+   * and only a custom `#rrggbb` is held to the default floor.
+   */
+  floor?: number
+  /** The variant the accent is applied to, so the tint takes its measured strength. */
+  variantId?: string
+}
+
+/**
+ * An accent selection resolved to the full {@link AccentRoles}, against a theme
+ * pair. {@link accentVariables} is the document half of this; an element-scoped
+ * paint (`paintAccentRoles`) wants all of it, including the tint.
+ */
+export function accentRolesForSelection(
+  accentId: string,
+  appearance: ThemeAppearance,
+  pair: { lightThemeId: string; darkThemeId: string } = {
+    lightThemeId: defaultLightThemeId,
+    darkThemeId: defaultDarkThemeId,
+  },
+  options: AccentVariableOptions = {}
+): AccentRoles | undefined {
+  if (accentId === 'theme') return undefined
+  const record = options.variantId ? getTheme(options.variantId) : undefined
+  return resolveAccentRoles(accentId, {
+    target: record ?? appearance,
+    background: options.background,
+    floor: options.floor,
+    // Only an `ansi-*` id needs the pair's offering, and measuring it is not free.
+    themeAccents: isThemeAccentId(accentId)
+      ? themeAccentsFor(pair.lightThemeId, pair.darkThemeId)
+      : undefined,
+  })
 }
 
 /**

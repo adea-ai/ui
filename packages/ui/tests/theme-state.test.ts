@@ -3,10 +3,12 @@ import {
   builtinThemes,
   defaultDarkThemeId,
   defaultLightThemeId,
+  themeAccentsFor,
   themeById,
   variantFromRecord,
 } from '../src/lib/themes'
 import {
+  accentRolesForState,
   defaultThemeSelection,
   initialThemeSelection,
   mergeRegistry,
@@ -191,5 +193,64 @@ describe('resolution', () => {
   test('no extras is the catalogue itself, so a plain array stays a plain array', () => {
     expect(mergeRegistry(builtinThemes, undefined)).toBe(builtinThemes)
     expect(mergeRegistry(builtinThemes, [])).toBe(builtinThemes)
+  })
+})
+
+describe('a custom accent in the selection', () => {
+  test('is stored in one spelling, whichever way it arrives', () => {
+    expect(mergeThemeSelection(defaultThemeSelection, { accent: '#0B57D0' }).accent).toBe('#0b57d0')
+    expect(initialThemeSelection({ accent: '#ABCDEF' }, undefined).accent).toBe('#abcdef')
+    expect(initialThemeSelection(undefined, { accent: '#ABCDEF' }).accent).toBe('#abcdef')
+  })
+
+  test('anything that is not a custom colour is stored as given', () => {
+    for (const accent of ['violet', 'theme', 'ansi-blue', '#abc', 'Not-An-Accent']) {
+      expect(mergeThemeSelection(defaultThemeSelection, { accent }).accent).toBe(accent)
+    }
+  })
+
+  test('leaves the stored shape of a consumer that never uses one untouched', () => {
+    const merged = mergeThemeSelection(defaultThemeSelection, { appearance: 'dark' })
+    expect(Object.keys(merged).toSorted()).toEqual(Object.keys(defaultThemeSelection).toSorted())
+  })
+})
+
+const state = (patch: Partial<ThemeSelection> = {}, floor?: number) => {
+  const selection = select({ appearance: 'dark', ...patch })
+  return {
+    selection,
+    variant: themeById('adea-dark')!,
+    registry: builtinThemes,
+    accentContrastFloor: floor,
+  }
+}
+
+describe('accentRolesForState', () => {
+  test('null, theme and unresolvable accents override nothing', () => {
+    expect(accentRolesForState(null, undefined, state())).toBeUndefined()
+    expect(accentRolesForState('theme', undefined, state())).toBeUndefined()
+    expect(accentRolesForState('chartreuse', undefined, state())).toBeUndefined()
+    expect(accentRolesForState('#abc', undefined, state())).toBeUndefined()
+  })
+
+  test('defaults to the variant in use and takes the appearance of the variant it is asked for', () => {
+    const own = accentRolesForState('violet', undefined, state())!
+    expect(own).toEqual(accentRolesForState('violet', 'adea-dark', state())!)
+    const light = accentRolesForState('violet', 'adea-light', state())!
+    expect(light.primary).not.toBe(own.primary)
+  })
+
+  test('a variant the registry does not hold overrides nothing', () => {
+    expect(accentRolesForState('violet', 'gone', state())).toBeUndefined()
+  })
+
+  test('resolves a theme accent against the selection pair, and a custom colour against the floor', () => {
+    const offered = themeAccentsFor(defaultLightThemeId, defaultDarkThemeId)[0]!
+    expect(accentRolesForState(offered.id, undefined, state())).toBeDefined()
+    expect(accentRolesForState('ansi-not-a-slot', undefined, state())).toBeUndefined()
+
+    const lenient = accentRolesForState('#7a9cff', undefined, state())!
+    const strict = accentRolesForState('#7a9cff', undefined, state({}, 12))!
+    expect(strict.primary).not.toBe(lenient.primary)
   })
 })

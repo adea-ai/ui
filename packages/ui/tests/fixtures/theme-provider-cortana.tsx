@@ -22,6 +22,9 @@ function Probe() {
       <button type="button" onClick={() => setSelection({ darkThemeId: 'nord' })}>
         Pick nord
       </button>
+      <button type="button" onClick={() => setSelection({ accent: 'violet' })}>
+        Pick violet
+      </button>
     </div>
   )
 }

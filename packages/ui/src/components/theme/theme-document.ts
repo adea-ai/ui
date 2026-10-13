@@ -8,6 +8,7 @@ import {
   type ThemeAppearance,
   type ThemeVariant,
 } from '#lib/themes'
+import { isCustomAccent } from '#lib/accent-roles'
 import { resolvedDensity, type ThemeSelection } from './theme-state'
 
 /**
@@ -35,6 +36,12 @@ export type ThemeDocumentOptions = {
    * must return the full map; a name it drops is not written.
    */
   transformTokens?: (tokens: Record<string, string>) => Record<string, string>
+  /**
+   * The contrast an accent is held to against the variant's background. Absent, a
+   * preset is painted verbatim (the catalogue measured it for its own themes) and
+   * only a custom `#rrggbb` is held to the default floor of 3:1.
+   */
+  accentContrastFloor?: number
 }
 
 /**
@@ -53,7 +60,11 @@ export function themeDocumentTokens(
   options: ThemeDocumentOptions = {}
 ): { tokens: Record<string, string>; accented: boolean } {
   const properties = { ...themeCssVariables(state.variant) }
-  const accent = accentVariables(state.selection.accent, state.appearance, state.selection)
+  const accent = accentVariables(state.selection.accent, state.appearance, state.selection, {
+    background: state.variant.colors.background,
+    floor: options.accentContrastFloor,
+    variantId: state.variant.id,
+  })
   if (accent) Object.assign(properties, accent)
   return {
     tokens: options.transformTokens ? options.transformTokens(properties) : properties,
@@ -92,8 +103,13 @@ export function applyThemeToRoot(
   root.dataset['appearance'] = state.appearance
   root.style.colorScheme = state.appearance
 
+  // A custom colour has no stylesheet block to select, and its value is the
+  // attribute's worst possible content, so it is reported as `custom`.
   if (!accented) root.removeAttribute('data-accent')
-  else root.dataset['accent'] = state.selection.accent
+  else
+    root.dataset['accent'] = isCustomAccent(state.selection.accent)
+      ? 'custom'
+      : state.selection.accent
 
   applyAppearanceFontSettings(
     root,

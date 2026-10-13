@@ -17,6 +17,7 @@ import {
   type ThemePersistence,
 } from './theme-persistence'
 import {
+  accentRolesForState,
   initialThemeSelection,
   mergeRegistry,
   mergeThemeSelection,
@@ -111,6 +112,15 @@ export type ThemeProviderProps = {
    * element to `<head>` for two frames on every change.
    */
   disableTransitionOnChange?: boolean
+  /**
+   * The contrast ratio an accent is held to against the variant's background,
+   * repaired to the nearest passing colour when it falls short. Absent, presets
+   * are painted verbatim — the catalogue measured them for its own themes — and
+   * only a custom `#rrggbb` is held to 3:1. A host that adds themes the catalogue
+   * never measured passes 3 to hold the presets to it as well; for the catalogue's
+   * own themes the floor changes no preset.
+   */
+  accentContrastFloor?: number
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
@@ -123,6 +133,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     'themes',
     'transformTokens',
     'disableTransitionOnChange',
+    'accentContrastFloor',
   ])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
   const persistence = local.persistence ?? localStoragePersistence(storageKey)
@@ -184,7 +195,10 @@ export function ThemeProvider(props: ThemeProviderProps) {
       appearance: shown().appearance,
       variant: shown().variant,
     }
-    const options = { transformTokens: local.transformTokens }
+    const options = {
+      transformTokens: local.transformTokens,
+      accentContrastFloor: local.accentContrastFloor,
+    }
     const apply = () => {
       written = applyThemeToRoot(document.documentElement, state, options, written)
     }
@@ -212,6 +226,13 @@ export function ThemeProvider(props: ThemeProviderProps) {
       setDraft(next ? { ...next } : undefined)
     },
     previewing: () => draft() !== undefined,
+    accentRolesFor: (accent, variantId) =>
+      accentRolesForState(accent, variantId, {
+        selection: selection(),
+        variant: variant(),
+        registry: registry(),
+        accentContrastFloor: local.accentContrastFloor,
+      }),
     setSelection(patch) {
       const next = mergeThemeSelection(selection(), patch)
       setSelectionState(next)

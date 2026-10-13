@@ -163,6 +163,36 @@ test.describe('Cortana profile: a consumer that adopts no new prop sees no chang
     expect(await stored(page, 'cortana.appearance')).toBe(seeded)
   })
 
+  test('a preset accent is painted verbatim, with the original attributes and bytes', async ({
+    page,
+  }) => {
+    await open(page, cortana)
+    const subtleBefore = await rootProperty(page, '--primary-subtle')
+    const primaryBefore = await rootProperty(page, '--primary')
+    await page.getByRole('button', { name: 'Pick violet' }).click()
+    await expect(html(page)).toHaveAttribute('data-accent', 'violet')
+
+    expect(await rootProperty(page, '--primary')).not.toBe(primaryBefore)
+    for (const name of ['--primary-foreground', '--primary-hover', '--ring']) {
+      expect(await rootProperty(page, name)).toMatch(/^oklch\(/)
+    }
+    // The tint is the theme's own, measured for it; an accent never rewrites it.
+    expect(await rootProperty(page, '--primary-subtle')).toBe(subtleBefore)
+    expect(await html(page).evaluate((root) => root.getAttributeNames().toSorted())).toEqual([
+      'class',
+      'data-accent',
+      'data-appearance',
+      'data-font-settings',
+      'data-theme',
+      'data-ui-font',
+      'lang',
+      'style',
+    ])
+    expect(await stored(page, 'cortana.appearance')).toBe(
+      '{"appearance":"dark","lightThemeId":"adea-light","darkThemeId":"adea-dark","accent":"violet","font":"geist","fonts":{"ui":{"family":"geist","size":14},"content":{"family":"system","size":14},"code":{"family":"system","size":12}},"density":"comfortable"}'
+    )
+  })
+
   test('`themes` is a plain array of the whole catalogue', async ({ page }) => {
     await open(page, cortana)
     await expect(page.getByTestId('themes-is-array')).toHaveText('true')
@@ -327,6 +357,82 @@ test.describe('superset profile: persistence, extra themes, preview', () => {
         )
       )
       .toBe(false)
+  })
+
+  test('a custom colour is painted as roles, named `custom`, raised to the floor, and stored as chosen', async ({
+    page,
+  }) => {
+    await open(page, superset, { fixture: { stored: { mode: 'light' } } })
+    await page.getByRole('button', { name: 'Custom blue' }).click()
+    await expect(html(page)).toHaveAttribute('data-accent', 'custom')
+    expect(await rootProperty(page, '--primary')).toMatch(/^oklch\(/)
+    expect(await writes(page)).toEqual([
+      {
+        version: 2,
+        mode: 'light',
+        lightThemeId: 'adea-light',
+        darkThemeId: 'adea-dark',
+        accent: '#0b57d0',
+      },
+    ])
+
+    // Too pale to read on a light surface: the roles are repaired, the choice is not.
+    await page.getByRole('button', { name: 'Custom pale' }).click()
+    const pale = await rootProperty(page, '--primary')
+    const requested = await page.evaluate(() => {
+      const probe = document.createElement('i')
+      probe.style.color = '#f4f4f4'
+      document.body.append(probe)
+      return getComputedStyle(probe).color
+    })
+    expect(pale).not.toBe(requested)
+    expect(await writes(page)).toHaveLength(2)
+    expect((await writes(page))![1]).toMatchObject({ accent: '#f4f4f4' })
+  })
+
+  test('accentContrastFloor repairs a preset the catalogue measured, and only when asked', async ({
+    page,
+  }) => {
+    const primaryWith = async (accentFloor?: number) => {
+      // A page per run: a second `setContent` would leave the first run's <html> behind.
+      const run = await page.context().newPage()
+      await open(run, superset, {
+        fixture: { stored: { mode: 'dark', accent: 'violet' }, accentFloor },
+      })
+      await expect(html(run)).toHaveAttribute('data-accent', 'violet')
+      const primary = await rootProperty(run, '--primary')
+      await run.close()
+      return primary
+    }
+
+    const verbatim = await primaryWith()
+    expect(verbatim).toMatch(/^oklch\(/)
+    expect(await primaryWith(3)).toBe(verbatim)
+    expect(await primaryWith(12)).not.toBe(verbatim)
+  })
+
+  test('accentRolesFor paints one element, tint included, without touching the document', async ({
+    page,
+  }) => {
+    await open(page, superset, { fixture: { stored: { mode: 'dark', accent: 'violet' } } })
+    await expect(page.getByTestId('unknown-roles')).toHaveText('true')
+
+    const scoped = page.getByTestId('scoped')
+    const read = (name: string) =>
+      scoped.evaluate(
+        (element, property) => getComputedStyle(element).getPropertyValue(property).trim(),
+        name
+      )
+    const own = await scoped.evaluate((element) => element.style.getPropertyValue('--primary'))
+    expect(own).toMatch(/^oklch\(/)
+    expect(own).not.toBe(await rootProperty(page, '--primary'))
+
+    // `--primary-subtle` is a var() resolved where it is declared: the element's
+    // tint must be a mix over the element's primary, not the document's.
+    const tint = await read('--primary-subtle')
+    expect(tint).toContain(own)
+    expect(tint).not.toContain(await rootProperty(page, '--primary'))
+    expect(await rootProperty(page, '--primary-subtle')).not.toContain(own)
   })
 
   test('a persistence that throws on read starts from the defaults', async ({ page }) => {

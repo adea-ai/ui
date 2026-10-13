@@ -146,6 +146,81 @@ describe('applyThemeToRoot', () => {
   })
 })
 
+const written = (root: ReturnType<typeof fakeRoot>) =>
+  ['--primary', '--primary-foreground', '--primary-hover', '--ring', '--primary-subtle'].map(
+    (name) => root.properties.get(name)
+  )
+
+describe('accent override on the document', () => {
+  test('writes --primary, --primary-foreground, --primary-hover and --ring, and leaves the theme tint', () => {
+    const root = fakeRoot()
+    applyThemeToRoot(root.root, stateOf({ accent: 'violet' }), { accentContrastFloor: 3 })
+    const variant = themeCssVariables(themeById('adea-dark')!)
+    const roles = accentVariables('violet', 'dark', defaultThemeSelection)!
+    const [primary, foreground, hover, ring, subtle] = written(root)
+    expect({ primary, foreground, hover, ring }).toEqual({
+      primary: roles['--primary'],
+      foreground: roles['--primary-foreground'],
+      hover: roles['--primary-hover'],
+      ring: roles['--ring'],
+    })
+    // The tint is the theme's measured one, never the accent's.
+    expect(subtle).toBe(variant['--primary-subtle'])
+  })
+
+  test('the floor is the identity for a preset, so the same properties are written', () => {
+    const plain = fakeRoot()
+    const gated = fakeRoot()
+    applyThemeToRoot(plain.root, stateOf({ accent: 'violet' }))
+    applyThemeToRoot(gated.root, stateOf({ accent: 'violet' }), { accentContrastFloor: 3 })
+    expect(Object.fromEntries(gated.properties)).toEqual(Object.fromEntries(plain.properties))
+  })
+
+  test('a stricter floor repairs a preset on this variant', () => {
+    const plain = fakeRoot()
+    const strict = fakeRoot()
+    applyThemeToRoot(plain.root, stateOf({ accent: 'violet' }))
+    applyThemeToRoot(strict.root, stateOf({ accent: 'violet' }), { accentContrastFloor: 12 })
+    expect(strict.properties.get('--primary')).not.toBe(plain.properties.get('--primary'))
+    expect(strict.attributes.get('data-accent')).toBe('violet')
+  })
+
+  test('a custom colour paints its roles, is reported as `custom`, and is gated without a floor', () => {
+    const root = fakeRoot()
+    applyThemeToRoot(root.root, stateOf({ accent: '#0B57D0' }, 'adea-light', 'light'))
+    expect(root.attributes.get('data-accent')).toBe('custom')
+    const expected = accentVariables('#0b57d0', 'light', defaultThemeSelection, {
+      background: themeById('adea-light')!.colors.background,
+    })!
+    for (const [name, value] of Object.entries(expected)) {
+      expect(root.properties.get(name)).toBe(value)
+    }
+
+    // Too pale for a white-ish surface: raised, not painted as chosen.
+    const pale = fakeRoot()
+    applyThemeToRoot(pale.root, stateOf({ accent: '#f0f0f0' }, 'adea-light', 'light'))
+    expect(pale.properties.get('--primary')).not.toBe(
+      accentVariables('#f0f0f0', 'light', defaultThemeSelection)!['--primary']
+    )
+  })
+
+  test('returning to `theme` or to another preset leaves no custom colour behind', () => {
+    const root = fakeRoot()
+    let previous = applyThemeToRoot(root.root, stateOf({ accent: '#0b57d0' }))
+    previous = applyThemeToRoot(root.root, stateOf({ accent: 'theme' }), {}, previous)
+    expect(root.attributes.has('data-accent')).toBe(false)
+    expect(root.properties.get('--primary')).toBe(
+      themeCssVariables(themeById('adea-dark')!)['--primary']
+    )
+  })
+
+  test('an invalid hex is not an accent, however it is spelled', () => {
+    for (const accent of ['#abc', '#0b57d0ff', '0b57d0', '#zzzzzz']) {
+      expect(themeDocumentTokens(stateOf({ accent })).accented).toBe(false)
+    }
+  })
+})
+
 describe('themeDocumentTokens', () => {
   test('is the variant roles verbatim when nothing else applies', () => {
     const { tokens, accented } = themeDocumentTokens(stateOf())

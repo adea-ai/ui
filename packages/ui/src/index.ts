@@ -118,6 +118,14 @@ export * from './components/composites/workspace-mark'
 /* --- Library ------------------------------------------------------------- */
 export { cn } from './lib/utils'
 export {
+  isCustomAccent,
+  normalizeCustomAccent,
+  paintAccentRoles,
+  resolveAccentRoles,
+  type AccentRoles,
+  type AccentTarget,
+} from './lib/accent-roles'
+export {
   controlInteractive,
   controlSize,
   controlSizeIcon,

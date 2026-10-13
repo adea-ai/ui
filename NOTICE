@@ -318,6 +318,24 @@ Zeron" above, applies to the translated portion. The ThemeProvider's preview,
 persistence and document-application seams are written against Adea's provider
 contract and introduce no further upstream source.
 
+## Accent roles and colour helpers translated from Zeron
+
+`packages/ui/src/lib/accent-roles.ts` translates Zeron's `Color` helpers and
+`AccentRoles` derivation (https://github.com/zeronsh/zeron), as Adea's accepted
+port of them in `packages/ui/src/components/appearance.ts` expresses it: the hex
+parser and serialiser, the alpha-compositing contrast measure, the contrast
+repair that raises a colour to a floor, the 3:1 interaction
+gate applied to a custom accent, and the per-element paint of an accent's roles.
+The colour engine, the preset values and the role derivation they feed remain
+`@adea-ai/themes`'; the `#rrggbb` selection grammar and the use of the gate in the
+provider are Adea behaviour that port retains.
+
+    Copyright (c) 2026 Wing
+    Licensed under the MIT License.
+
+Zeron's MIT notice, reproduced in full under "Appearance editor translated from
+Zeron" above, applies to the translated portion.
+
 ## Strict binary layout extracted from the accepted Adea donor port
 
 `packages/ui/src/components/layout/split-layout/model.ts` is extracted from

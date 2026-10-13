@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js'
+import { createEffect, createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { getTheme } from '@adea-ai/themes'
 import {
@@ -8,6 +8,7 @@ import {
   type ThemePersistence,
   type ThemeSelection,
 } from '../../src/components/theme'
+import { paintAccentRoles } from '../../src/lib/accent-roles'
 import { tokensAsHex, variantFromRecord, type ThemeVariant } from '../../src/lib/themes'
 import '../../src/styles/globals.css'
 
@@ -19,6 +20,8 @@ import '../../src/styles/globals.css'
  *   - `themes`: a reactive set of extra variants, one carrying verbatim `tokens`.
  *   - `preview` / `previewing`, `allThemes`, `useOptionalTheme`.
  *   - `transformTokens` and `disableTransitionOnChange`.
+ *   - `accentContrastFloor`, a custom `#rrggbb` accent, and `accentRolesFor` painted
+ *     onto one element with `paintAccentRoles`.
  *
  * The page configures it through `window.themeFixture` before the script runs.
  */
@@ -27,6 +30,7 @@ type FixtureConfig = {
   initial?: Partial<ThemeSelection>
   hex?: boolean
   transitions?: boolean
+  accentFloor?: number
   withCustom?: boolean
   throwOnWrite?: boolean
   throwOnRead?: boolean
@@ -98,6 +102,24 @@ function Controls(props: { removeCustom: () => void }) {
       <button type="button" onClick={props.removeCustom}>
         Remove custom
       </button>
+      <button type="button" onClick={() => theme.setSelection({ accent: '#0B57D0' })}>
+        Custom blue
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ accent: '#f4f4f4' })}>
+        Custom pale
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ accent: 'violet' })}>
+        Violet
+      </button>
+      <output data-testid="unknown-roles">
+        {String(theme.accentRolesFor('chartreuse') === undefined)}
+      </output>
+      <div
+        data-testid="scoped"
+        ref={(element) =>
+          createEffect(() => paintAccentRoles(element, theme.accentRolesFor('green', 'adea-light')))
+        }
+      />
     </div>
   )
 }
@@ -115,6 +137,7 @@ function Fixture() {
         themes={custom}
         transformTokens={config.hex ? tokensAsHex : undefined}
         disableTransitionOnChange={config.transitions}
+        accentContrastFloor={config.accentFloor}
       >
         <Controls removeCustom={() => setCustom([])} />
       </ThemeProvider>
