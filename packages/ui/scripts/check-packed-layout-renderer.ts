@@ -158,11 +158,8 @@ try {
     ),
     'utf8'
   )
-  if (
-    !resizeController.includes('from "@corvu/resizable"') &&
-    !resizeController.includes("from '@corvu/resizable'")
-  )
-    throw new Error('Packed resize controller did not externalize @corvu/resizable')
+  if (resizeController.includes('@corvu/'))
+    throw new Error('Packed resize controller must not depend on a panel-group library')
   const license = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/LICENSE'), 'utf8')
   const notice = readFileSync(join(consumer, 'node_modules/@adea-ai/ui/dist/NOTICE'), 'utf8')
   for (const text of [

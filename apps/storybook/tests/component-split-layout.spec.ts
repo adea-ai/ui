@@ -28,7 +28,7 @@ async function act(page: import('@playwright/test').Page, detail: string) {
       (count, layout) => count + Math.max(0, layout.querySelectorAll('[data-pane-id]').length - 1),
       0
     )
-    return document.querySelectorAll('[data-corvu-resizable-handle]').length === expected
+    return document.querySelectorAll('[data-split-layout-handle]').length === expected
   })
 }
 test('host header content, pane Tab stops and separator names remain independent', async ({
@@ -149,7 +149,7 @@ test('mounted resize controllers follow replaced callbacks and separator labels'
 }) => {
   await act(page, 'watch-resize-callbacks')
   await act(page, 'split')
-  const separator = page.locator('[data-corvu-resizable-handle]').first()
+  const separator = page.locator('[data-split-layout-handle]').first()
   await expect(separator).toHaveAttribute('aria-label', 'Initial pane divider')
   await act(page, 'replace-resize-callbacks')
   await expect(
