@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.125.0](https://github.com/adea-ai/ui/compare/v0.124.0...v0.125.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** accent roles with contrast floor and custom colours ([#385](https://github.com/adea-ai/ui/issues/385)) ([558d0b3](https://github.com/adea-ai/ui/commit/558d0b37a1ea2c117659b59fdfb3a24f23892ce1))
+
 ## [0.124.0](https://github.com/adea-ai/ui/compare/v0.123.1...v0.124.0) (2026-10-13)
 
 
