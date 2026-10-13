@@ -2,7 +2,9 @@ import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
+import { ACCENTS, accentRoles } from '@adea-ai/themes'
 import { expect, test, type Page } from '@playwright/test'
+import { themeById, themeCssVariables } from '../../../packages/ui/src/lib/themes'
 
 type Bundle = { script: string; css: string }
 
@@ -696,6 +698,125 @@ test.describe('superset profile: surface, terminal pin, stylesheet palette, font
     expect(await rootProperty(page, '--background')).toBe('')
     await page.getByRole('button', { name: 'Unpin terminal' }).click()
     await expect.poll(() => rootProperty(page, '--terminal-background')).toBe('')
+  })
+
+  test('theme-variants.css paints a catalogue theme and its accent from attributes alone, before any script', async ({
+    page,
+  }) => {
+    await page.setContent('<!doctype html><html lang="en"><head></head><body></body></html>')
+    await page.addStyleTag({ content: superset.css })
+    const computed = (name: string) =>
+      page.evaluate(
+        (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
+        name
+      )
+    const attributes = (themeId: string, dark: boolean, accentId?: string) =>
+      page.evaluate(
+        (next) => {
+          const root = document.documentElement
+          root.className = next.dark ? 'dark' : ''
+          root.setAttribute('data-theme', next.themeId)
+          if (next.accentId) root.setAttribute('data-accent', next.accentId)
+          else root.removeAttribute('data-accent')
+        },
+        { themeId, dark, accentId }
+      )
+    const nord = themeCssVariables(themeById('nord')!)
+    const nordLight = themeCssVariables(themeById('nord-light')!)
+
+    await attributes('nord', true)
+    for (const name of [
+      '--background',
+      '--card',
+      '--primary',
+      '--terminal-ansi-red',
+      '--editor-keyword',
+    ]) {
+      expect(await computed(name), name).toBe(nord[name])
+    }
+
+    // The default pair's colours are theme.css's; the sheet adds the ramps it lacks.
+    await attributes('adea-dark', true)
+    expect(await computed('--terminal-background')).toMatch(/^oklch\(/)
+    expect(await computed('--editor-keyword')).toMatch(/^oklch\(/)
+
+    // The case the end of the sheet exists for: a light theme with a preset accent.
+    await attributes('nord-light', false)
+    expect(await computed('--primary')).toBe(nordLight['--primary'])
+    await attributes('nord-light', false, 'blue')
+    const blue = await computed('--primary')
+    expect(blue).not.toBe(nordLight['--primary'])
+    expect(blue).toBe(
+      accentRoles(
+        ACCENTS.find((preset) => preset.id === 'blue')!,
+        'light'
+      ).primary
+    )
+    expect(await computed('--card')).toBe(nordLight['--card'])
+  })
+
+  test("palette 'stylesheet' with the sheet loaded paints what 'inline' writes", async ({
+    page,
+  }) => {
+    const names = [
+      '--background',
+      '--card',
+      '--primary',
+      '--border',
+      '--terminal-ansi-red',
+      '--chart-3',
+    ]
+    const painted = async (palette: 'inline' | 'stylesheet') => {
+      const target = await page.context().newPage()
+      await open(target, superset, {
+        fixture: { palette, stored: { mode: 'dark', darkThemeId: 'dracula' } },
+      })
+      await expect(html(target)).toHaveAttribute('data-theme', 'dracula')
+      const values = await target.evaluate(
+        (list) =>
+          list.map((name) =>
+            getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+          ),
+        names
+      )
+      const inline = await target.evaluate(
+        (list) => list.map((name) => document.documentElement.style.getPropertyValue(name)),
+        names
+      )
+      await target.close()
+      return { values, inline }
+    }
+    const sheet = await painted('stylesheet')
+    const inline = await painted('inline')
+    expect(sheet.values).toEqual(inline.values)
+    expect(sheet.values.every((value) => value !== '')).toBe(true)
+    expect(sheet.inline).toEqual(names.map(() => ''))
+    expect(inline.inline.every((value) => value !== '')).toBe(true)
+  })
+
+  test('editorRoles floor writes the editor ramp as hex over the sheet; absent, the sheet alone paints it', async ({
+    page,
+  }) => {
+    const nordDark = { mode: 'dark', darkThemeId: 'nord' }
+    await open(page, superset, { fixture: { palette: 'stylesheet', stored: nordDark } })
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord')
+    expect(await rootProperty(page, '--editor-keyword')).toBe('')
+    expect(await rootProperty(page, '--editor-comment')).toBe('')
+
+    const held = await page.context().newPage()
+    await open(held, superset, {
+      fixture: { palette: 'stylesheet', editorRoles: 'floor', stored: nordDark },
+    })
+    await expect(html(held)).toHaveAttribute('data-theme', 'nord')
+    const floor = themeCssVariables(themeById('nord')!, { editor: 'floor' })
+    for (const name of ['--editor-keyword', '--editor-comment', '--editor-diff-delete']) {
+      expect(await rootProperty(held, name), name).toBe(floor[name])
+      expect(floor[name]).toMatch(/^#[0-9a-f]{6}$/)
+    }
+    // Nothing else of the catalogue palette is written inline.
+    expect(await rootProperty(held, '--background')).toBe('')
+    expect(await rootProperty(held, '--terminal-background')).toBe('')
+    await held.close()
   })
 
   test('fontZoom steps the three sizes with the chords, persists, and leaves handled events alone', async ({

@@ -2600,7 +2600,7 @@
       "name": "theme",
       "type": "registry:style",
       "title": "Adea theme",
-      "description": "The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.",
+      "description": "The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack, plus the pre-paint stylesheet that carries every catalogue theme.",
       "dependencies": [
         "@fontsource-variable/geist@^5.3.0",
         "@fontsource-variable/geist-mono@^5.3.0",
@@ -2619,6 +2619,11 @@
           "path": "src/styles/theme.css",
           "type": "registry:style",
           "target": "styles/theme.css"
+        },
+        {
+          "path": "src/styles/theme-variants.css",
+          "type": "registry:style",
+          "target": "styles/theme-variants.css"
         },
         {
           "path": "src/styles/base.css",

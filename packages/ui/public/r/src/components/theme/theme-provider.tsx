@@ -5,6 +5,7 @@ import { REDUCED_TRANSPARENCY_QUERY, resolveSurfaceState } from '../../lib/theme
 import {
   builtinThemes,
   themeAccentsFor,
+  type EditorRolesMode,
   type ThemeAppearance,
   type ThemeVariant,
 } from '../../lib/themes'
@@ -38,6 +39,7 @@ export {
   type VersionedPersistenceOptions,
 } from './theme-persistence'
 export type { ThemeSurface } from '../../lib/theme-surface'
+export type { EditorRolesMode } from '../../lib/themes'
 export { inlineScriptLiteral, themeScript, type ThemeScriptOptions } from './theme-script'
 export {
   defaultThemeSelection,
@@ -160,6 +162,19 @@ export type ThemeProviderProps = {
    */
   palette?: 'inline' | 'stylesheet'
   /**
+   * The projection behind the `--editor-*` ramp. `syntax` (the default) is the
+   * catalogue's quiet syntax roles, a comment among them deliberately below
+   * body-text contrast. `floor` holds all sixteen roles to 4.5:1 on the canvas, as
+   * hex, for a host that renders code as content (a diff, a file view) rather than
+   * as decoration.
+   *
+   * Applies to catalogue variants; a host's own `themes` keep their `editor` and
+   * their `tokens`. With `palette="stylesheet"` it is the one palette property a
+   * catalogue variant still writes inline, because `theme-variants.css` is generated
+   * for `syntax`. Absent, nothing changes.
+   */
+  editorRoles?: EditorRolesMode
+  /**
    * Bind the platform zoom chords (Cmd or Ctrl with `=`, `+`, `-`, `0`) to the three
    * text sizes instead of the browser's page zoom: stepping them together is zoom
    * inside the persisted type system. Off by default: it adds a capturing `keydown`
@@ -189,6 +204,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     'accentContrastFloor',
     'surface',
     'palette',
+    'editorRoles',
     'fontZoom',
   ])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
@@ -288,6 +304,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
       transformTokens: local.transformTokens,
       accentContrastFloor: local.accentContrastFloor,
       palette: local.palette,
+      editorRoles: local.editorRoles,
     }
     const apply = () => {
       written = applyThemeToRoot(document.documentElement, state, options, written)

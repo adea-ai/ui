@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   ACCENT_SUBTLE_ALPHA,
   ACCENTS,
+  editorRolesHex,
   getTheme,
   parseColor,
   primarySubtleAlpha,
@@ -14,11 +15,15 @@ import {
   accentVariables,
   builtinThemes,
   contrastRatio,
+  editorPaletteFor,
+  floorEditorPalette,
+  isCatalogueVariant,
   themeById,
   themeCssVariables,
   themeFamilies,
   themesForAppearance,
   validateThemeRegistry,
+  variantFromRecord,
 } from '../src/lib/themes'
 import { THEME_CSS, valueOf } from './helpers/theme-css'
 
@@ -264,5 +269,104 @@ describe('the primary tint', () => {
         `${theme.id}: an accent preset needs a lighter tint than the theme writes`
       ).toBe(primarySubtleAlpha(record))
     }
+  })
+})
+
+const editorEntries = (tokens: Record<string, string>) =>
+  Object.entries(tokens).filter(([name]) => name.startsWith('--editor-'))
+
+const unreachable = (): never => {
+  throw new Error('cannot encode editor.number above 4.5:1 contrast')
+}
+
+describe('editor roles: syntax and floor', () => {
+  const EDITOR_KEYS = [
+    'keyword',
+    'string',
+    'number',
+    'comment',
+    'function',
+    'variable',
+    'type',
+    'tag',
+    'attribute',
+    'operator',
+    'heading',
+    'link',
+    'diffAdd',
+    'diffDelete',
+    'diffHunk',
+    'searchMatch',
+  ] as const
+
+  test('absent options, an empty object and `syntax` are the output that has always been written', () => {
+    for (const theme of builtinThemes) {
+      const baseline = themeCssVariables(theme)
+      expect(themeCssVariables(theme, {}), theme.id).toEqual(baseline)
+      expect(themeCssVariables(theme, { editor: 'syntax' }), theme.id).toEqual(baseline)
+      expect(themeCssVariables(theme, { editor: undefined }), theme.id).toEqual(baseline)
+      expect(baseline['--editor-keyword'], theme.id).toBe(theme.editor.keyword)
+    }
+  })
+
+  test('floor is editorRolesHex, for all 34 catalogue themes', () => {
+    expect(builtinThemes).toHaveLength(34)
+    for (const theme of builtinThemes) {
+      const expected = editorRolesHex(getTheme(theme.id)!)
+      const palette = editorPaletteFor(theme, 'floor')
+      expect(Object.keys(palette).toSorted(), theme.id).toEqual([...EDITOR_KEYS].toSorted())
+      for (const key of EDITOR_KEYS) expect(palette[key], `${theme.id}.${key}`).toBe(expected[key])
+    }
+  })
+
+  test('floor changes only the editor ramp, and every role clears 4.5:1 on the canvas', () => {
+    for (const theme of builtinThemes) {
+      const plain = themeCssVariables(theme)
+      const held = themeCssVariables(theme, { editor: 'floor' })
+      expect(Object.keys(held), theme.id).toEqual(Object.keys(plain))
+      for (const [name, value] of Object.entries(plain)) {
+        if (!name.startsWith('--editor-')) expect(held[name], `${theme.id} ${name}`).toBe(value)
+      }
+      for (const [name, value] of editorEntries(held)) {
+        expect(
+          contrastRatio(parseColor(value)!, parseColor(theme.colors.background)!),
+          `${theme.id} ${name}`
+        ).toBeGreaterThanOrEqual(4.5 - 1e-9)
+      }
+    }
+  })
+
+  test('the two projections differ somewhere, or the option would prove nothing', () => {
+    const differing = builtinThemes.filter((theme) =>
+      editorEntries(themeCssVariables(theme)).some(
+        ([name, value]) => themeCssVariables(theme, { editor: 'floor' })[name] !== value
+      )
+    )
+    expect(differing.length).toBeGreaterThan(0)
+  })
+
+  test('floor is memoised per theme', () => {
+    const theme = themeById('nord')!
+    expect(editorPaletteFor(theme, 'floor')).toBe(editorPaletteFor(theme, 'floor'))
+  })
+
+  test('a variant the catalogue does not hold keeps its own editor roles under floor', () => {
+    const copy = {
+      ...variantFromRecord(getTheme('nord')!),
+      editor: { ...themeById('nord')!.editor, keyword: 'red' },
+    }
+    expect(editorPaletteFor(copy, 'floor')).toBe(copy.editor)
+    expect(themeCssVariables(copy, { editor: 'floor' })['--editor-keyword']).toBe('red')
+  })
+
+  test('a palette that cannot reach the floor falls back instead of failing', () => {
+    const fallback = themeById('nord')!.editor
+    expect(floorEditorPalette(getTheme('nord')!, fallback, unreachable)).toBe(fallback)
+  })
+
+  test('isCatalogueVariant is identity, not id', () => {
+    expect(isCatalogueVariant(themeById('nord')!)).toBe(true)
+    expect(isCatalogueVariant({ ...themeById('nord')! })).toBe(false)
+    expect(isCatalogueVariant(variantFromRecord(getTheme('nord')!))).toBe(false)
   })
 })

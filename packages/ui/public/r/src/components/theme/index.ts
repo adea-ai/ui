@@ -17,6 +17,7 @@ export {
   themeScript,
   useOptionalTheme,
   useTheme,
+  type EditorRolesMode,
   type ThemeContextValue,
   type ThemeDensity,
   type ThemePersistence,

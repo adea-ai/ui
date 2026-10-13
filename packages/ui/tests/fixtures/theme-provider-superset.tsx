@@ -11,6 +11,7 @@ import {
 import { paintAccentRoles } from '../../src/lib/accent-roles'
 import { tokensAsHex, variantFromRecord, type ThemeVariant } from '../../src/lib/themes'
 import '../../src/styles/globals.css'
+import '../../src/styles/theme-variants.css'
 
 /**
  * The provider's newer surface, driven the way adea drives it.
@@ -23,7 +24,9 @@ import '../../src/styles/globals.css'
  *   - `accentContrastFloor`, a custom `#rrggbb` accent, and `accentRolesFor` painted
  *     onto one element with `paintAccentRoles`.
  *   - the surface axis (`surface`, with and without the native-translucency
- *     capability), a pinned terminal palette, `palette="stylesheet"` and `fontZoom`.
+ *     capability), a pinned terminal palette, `palette="stylesheet"` (with the
+ *     generated `theme-variants.css` loaded after `globals.css`, as a host loads it),
+ *     `editorRoles` and `fontZoom`.
  *
  * The page configures it through `window.themeFixture` before the script runs.
  */
@@ -39,6 +42,7 @@ type FixtureConfig = {
   /** The `surface` prop: on, or on with the host's capability. */
   surface?: boolean | { nativeTranslucency: boolean }
   palette?: 'inline' | 'stylesheet'
+  editorRoles?: 'syntax' | 'floor'
   fontZoom?: boolean
   /** Record the whole selection on write, not the five original fields. */
   recordSelection?: boolean
@@ -188,6 +192,7 @@ function Fixture() {
         accentContrastFloor={config.accentFloor}
         surface={config.surface}
         palette={config.palette}
+        editorRoles={config.editorRoles}
         fontZoom={config.fontZoom}
       >
         <Controls removeCustom={() => setCustom([])} />

@@ -1,5 +1,6 @@
 /**
- * Generates the two default themes' declarations in `src/styles/theme.css`.
+ * Generates the two default themes' declarations in `src/styles/theme.css`, and the
+ * rest of the catalogue as `src/styles/theme-variants.css`.
  *
  * ## Why this file exists
  *
@@ -38,10 +39,16 @@
  * automatically instead of needing to be regenerated. `--chrome-alpha` is not a
  * colour and stays in `theme.css`.
  *
+ * ## The other thirty-two themes
+ *
+ * `theme-variants.css` is the same idea for the rest of the catalogue, and is derived
+ * from the `theme.css` this script has just produced (see `theme-variants-css.ts` for
+ * why it needs to read it). Both files are written, and both are checked.
+ *
  * Usage:
  *
- *   bun run theme:build    # rewrite the two blocks in src/styles/theme.css
- *   bun run theme:check    # fail if they are stale
+ *   bun run theme:build    # rewrite theme.css's generated regions and theme-variants.css
+ *   bun run theme:check    # fail if either is stale
  */
 
 import { readFile, writeFile } from 'node:fs/promises'
@@ -63,9 +70,11 @@ import {
   themeCssVariables,
   type ThemeVariant,
 } from '../src/lib/themes'
+import { themeVariantsCss } from './theme-variants-css'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const THEME_CSS = join(ROOT, 'src', 'styles', 'theme.css')
+const THEME_VARIANTS_CSS = join(ROOT, 'src', 'styles', 'theme-variants.css')
 
 const check = process.argv.includes('--check')
 
@@ -390,8 +399,19 @@ function replaceRegion(css: string, scope: 'root' | 'dark', body: string): strin
   return `${css.slice(0, openIndex)}${open}\n${body}\n${close}\n${css.slice(closeIndex)}`
 }
 
+/** A file's text, or `undefined` before it has ever been generated. */
+async function readIfPresent(path: string): Promise<string | undefined> {
+  try {
+    return await readFile(path, 'utf8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw error
+  }
+}
+
 async function main(): Promise<void> {
   const original = await readFile(THEME_CSS, 'utf8')
+  const originalVariants = await readIfPresent(THEME_VARIANTS_CSS)
   const light = themeById('adea-light')
   const dark = themeById('adea-dark')
   if (!light || !dark) throw new Error('the catalogue is missing a default theme')
@@ -400,18 +420,26 @@ async function main(): Promise<void> {
     replaceRegion(replaceRegion(original, 'root', generate(light)), 'dark', generate(dark)),
     accentBlocks()
   )
+  const generatedVariants = themeVariantsCss(generated)
 
   if (check) {
-    if (generated !== original) {
-      console.error('theme.css is stale. Run: bun run theme:build')
+    const stale = [
+      ...(generated === original ? [] : ['theme.css']),
+      ...(generatedVariants === originalVariants ? [] : ['theme-variants.css']),
+    ]
+    if (stale.length > 0) {
+      console.error(
+        `${stale.join(' and ')} ${stale.length === 1 ? 'is' : 'are'} stale. Run: bun run theme:build`
+      )
       process.exit(1)
     }
-    console.log('theme.css matches the catalogue')
+    console.log('theme.css and theme-variants.css match the catalogue')
     return
   }
 
   await writeFile(THEME_CSS, generated, 'utf8')
-  console.log('theme.css regenerated from the catalogue')
+  await writeFile(THEME_VARIANTS_CSS, generatedVariants, 'utf8')
+  console.log('theme.css and theme-variants.css regenerated from the catalogue')
 }
 
 await main()

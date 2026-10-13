@@ -37,6 +37,7 @@ import {
   ACCENTS,
   accentForeground,
   chartSeries,
+  editorRolesHex,
   getAccent,
   getTheme,
   hasTheme,
@@ -614,17 +615,115 @@ export function accentRolesForSelection(
 }
 
 /**
+ * Which projection fills the `--editor-*` ramp.
+ *
+ *   - `syntax` (the default) is the catalogue's quiet syntax roles, as `ThemeVariant.editor`
+ *     holds them: a comment may sit below body-text contrast, because in a code view
+ *     it is meant to recede.
+ *   - `floor` holds every editor role to 4.5:1 on the canvas (`editorRolesHex`), for a
+ *     host that renders code as content rather than as decoration. It is hex, where
+ *     `syntax` is `oklch()`.
+ */
+export type EditorRolesMode = 'syntax' | 'floor'
+
+/** Options for {@link themeCssVariables}. */
+export type ThemeCssVariableOptions = {
+  /** The `--editor-*` projection. Default `syntax`: absent, the output is unchanged. */
+  editor?: EditorRolesMode
+}
+
+/**
+ * True for the catalogue's own variant, not a host's copy that merely shares its id.
+ *
+ * Identity rather than id, because a host's imported theme may reuse a catalogue id
+ * with different colours, and projecting the catalogue's record for it would paint
+ * the wrong palette.
+ */
+export function isCatalogueVariant(variant: ThemeVariant): boolean {
+  return themeById(variant.id) === variant
+}
+
+/**
+ * The editor palette held to 4.5:1, or `fallback` for a record that cannot reach it.
+ *
+ * Some palettes (an imported one, most often) cannot be repaired to the floor from
+ * their own ramp within the catalogue's lightness budget, and `editorRolesHex` says
+ * so by throwing. A palette that paints nothing is worse than one that paints its
+ * quiet roles, so the throw is the cue to fall back rather than to fail. `project` is
+ * a parameter so that path can be exercised: no catalogue theme takes it.
+ */
+export function floorEditorPalette(
+  record: AdeaTheme,
+  fallback: ThemeEditorPalette,
+  project: (theme: AdeaTheme) => Record<keyof ThemeEditorPalette, string> = editorRolesHex
+): ThemeEditorPalette {
+  try {
+    const roles = project(record)
+    return {
+      keyword: roles.keyword,
+      string: roles.string,
+      number: roles.number,
+      comment: roles.comment,
+      function: roles.function,
+      variable: roles.variable,
+      type: roles.type,
+      tag: roles.tag,
+      attribute: roles.attribute,
+      operator: roles.operator,
+      heading: roles.heading,
+      link: roles.link,
+      diffAdd: roles.diffAdd,
+      diffDelete: roles.diffDelete,
+      diffHunk: roles.diffHunk,
+      searchMatch: roles.searchMatch,
+    }
+  } catch {
+    return fallback
+  }
+}
+
+const floorEditorCache = new Map<string, ThemeEditorPalette>()
+
+/**
+ * The editor palette a variant paints under a projection.
+ *
+ * `floor` applies to the catalogue's own variants, whose record the catalogue holds.
+ * A variant it does not hold (a host's imported theme) has no record to project and
+ * keeps its own `editor`; such a theme normally carries its roles in `tokens`, which
+ * win over either projection anyway. Computed once per theme: the repair is a search.
+ */
+export function editorPaletteFor(
+  theme: ThemeVariant,
+  mode: EditorRolesMode = 'syntax'
+): ThemeEditorPalette {
+  if (mode !== 'floor' || !isCatalogueVariant(theme)) return theme.editor
+  const cached = floorEditorCache.get(theme.id)
+  if (cached) return cached
+  const record = getTheme(theme.id)
+  const palette = record ? floorEditorPalette(record, theme.editor) : theme.editor
+  floorEditorCache.set(theme.id, palette)
+  return palette
+}
+
+/**
  * The roles a variant sets, as CSS custom properties.
  *
  * The one place that knows the mapping from a theme's roles to this system's variable
  * names. A provider applies this; nothing else repeats it. The `--terminal-*` and
  * `--editor-*` ramps are presentations of the catalogue's ANSI and syntax data rather
  * than separate roles, which is why they are built here and not in the catalogue.
+ *
+ * `options.editor` picks the `--editor-*` projection ({@link EditorRolesMode}).
+ * Absent it, the result is what it has always been; the generated `theme-variants.css`
+ * and the design-system artifact are built without it.
  */
-export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
+export function themeCssVariables(
+  theme: ThemeVariant,
+  options: ThemeCssVariableOptions = {}
+): Record<string, string> {
   const c = theme.colors
   const t = theme.terminal
-  const e = theme.editor
+  const e = editorPaletteFor(theme, options.editor)
   const derived = {
     '--background': c.background,
     '--foreground': c.foreground,
