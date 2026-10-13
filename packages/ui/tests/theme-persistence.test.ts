@@ -85,6 +85,37 @@ describe('localStoragePersistence.read', () => {
     }
   })
 
+  test('the surface, terminal pin and reduce-transparency flag are read back when usable', () => {
+    withStorage({
+      [KEY]: JSON.stringify({
+        surface: 'translucent',
+        terminalThemeId: 'dracula',
+        reduceTransparency: false,
+      }),
+    })
+    expect(localStoragePersistence(KEY).read()).toMatchObject({
+      surface: 'translucent',
+      terminalThemeId: 'dracula',
+      reduceTransparency: false,
+    })
+  })
+
+  test('an unusable value for one of them is left absent, never defaulted', () => {
+    withStorage({
+      [KEY]: JSON.stringify({ surface: 'glass', terminalThemeId: '  ', reduceTransparency: 'yes' }),
+    })
+    const read = localStoragePersistence(KEY).read()!
+    expect(read.surface).toBeUndefined()
+    expect(read.terminalThemeId).toBeUndefined()
+    expect(read.reduceTransparency).toBeUndefined()
+    expect(JSON.stringify(read)).not.toMatch(/surface|terminal|reduceTransparency/)
+  })
+
+  test('a terminal id the catalogue does not hold is kept as stored', () => {
+    withStorage({ [KEY]: JSON.stringify({ terminalThemeId: 'custom-gone' }) })
+    expect(localStoragePersistence(KEY).read()).toMatchObject({ terminalThemeId: 'custom-gone' })
+  })
+
   test('corrupt JSON and non-object JSON are the defaults, not an error', () => {
     withStorage({ [KEY]: '{"appearance":"da' })
     expect(localStoragePersistence(KEY).read()).toEqual(defaultThemeSelection)
@@ -131,6 +162,38 @@ describe('localStoragePersistence.write', () => {
     expect(backing.get(KEY)).toBe(
       '{"appearance":"dark","lightThemeId":"adea-light","darkThemeId":"nord","accent":"theme","font":"geist","fonts":{"ui":{"family":"geist","size":14},"content":{"family":"system","size":14},"code":{"family":"system","size":12}},"density":"comfortable"}'
     )
+  })
+
+  test('the newer axes are stored when set and the bytes are unchanged when they are not', () => {
+    const backing = withStorage()
+    const persistence = localStoragePersistence(KEY)
+    const plain = mergeThemeSelection(defaultThemeSelection, { appearance: 'dark' })
+    persistence.write(plain)
+    const before = backing.get(KEY)!
+    expect(before).not.toMatch(/surface|terminal|reduceTransparency/)
+
+    persistence.write(
+      mergeThemeSelection(plain, {
+        surface: 'frosted',
+        terminalThemeId: 'dracula',
+        reduceTransparency: true,
+      })
+    )
+    expect(JSON.parse(backing.get(KEY)!)).toMatchObject({
+      surface: 'frosted',
+      terminalThemeId: 'dracula',
+      reduceTransparency: true,
+    })
+
+    // Clearing the field returns the document to the bytes it had before it existed.
+    persistence.write(
+      mergeThemeSelection(JSON.parse(backing.get(KEY)!), {
+        surface: undefined,
+        terminalThemeId: undefined,
+        reduceTransparency: undefined,
+      })
+    )
+    expect(backing.get(KEY)).toBe(before)
   })
 
   test('a blocked store drops the write without throwing', () => {

@@ -4,11 +4,14 @@ import {
 } from '#lib/appearance-font-settings'
 import {
   accentVariables,
+  terminalCssVariables,
+  themeById,
   themeCssVariables,
   type ThemeAppearance,
   type ThemeVariant,
 } from '#lib/themes'
 import { isCustomAccent } from '#lib/accent-roles'
+import { surfaceAlpha, type SurfaceState } from '#lib/theme-surface'
 import { resolvedDensity, type ThemeSelection } from './theme-state'
 
 /**
@@ -27,6 +30,16 @@ export type ThemeDocumentState = {
   selection: ThemeSelection
   appearance: ThemeAppearance
   variant: ThemeVariant
+  /**
+   * The variant whose terminal palette is pinned over the interface variant's.
+   * Absent, the terminal follows the interface theme.
+   */
+  terminalVariant?: ThemeVariant
+  /**
+   * The resolved surface axis. Absent, the axis is off: no attribute and no
+   * `--surface-alpha` is written, and any this writer wrote before is removed.
+   */
+  surface?: SurfaceState
 }
 
 export type ThemeDocumentOptions = {
@@ -42,11 +55,29 @@ export type ThemeDocumentOptions = {
    * only a custom `#rrggbb` is held to the default floor of 3:1.
    */
   accentContrastFloor?: number
+  /**
+   * Where a catalogue variant's palette comes from. `inline` (the default) writes
+   * every role onto the root. `stylesheet` writes none for a catalogue variant,
+   * because the host loads a stylesheet that carries a `[data-theme]` block for it;
+   * a variant the catalogue does not hold (a host's imported theme) is still written
+   * inline, since no stylesheet can know it. The accent, the terminal pin, the
+   * surface alpha and the fonts are written the same in both.
+   *
+   * Switching from an imported variant back to a catalogue one removes what the
+   * imported one wrote, so nothing inline outlives it to beat the stylesheet.
+   */
+  palette?: 'inline' | 'stylesheet'
+}
+
+/** True for the catalogue's own variant, not a host's copy that merely shares its id. */
+function isCatalogueVariant(variant: ThemeVariant): boolean {
+  return themeById(variant.id) === variant
 }
 
 /**
  * The custom properties a state paints: the variant's roles, with the accent
- * selection laid over them, then `transformTokens`.
+ * selection laid over them, the pinned terminal palette over that, the surface
+ * alpha, then `transformTokens`.
  *
  * The accent is applied *here* rather than left to the `[data-accent]` blocks in
  * `theme.css`, because the properties are written inline and an inline declaration
@@ -59,13 +90,20 @@ export function themeDocumentTokens(
   state: ThemeDocumentState,
   options: ThemeDocumentOptions = {}
 ): { tokens: Record<string, string>; accented: boolean } {
-  const properties = { ...themeCssVariables(state.variant) }
+  const fromStylesheet = options.palette === 'stylesheet' && isCatalogueVariant(state.variant)
+  const properties = fromStylesheet ? {} : { ...themeCssVariables(state.variant) }
   const accent = accentVariables(state.selection.accent, state.appearance, state.selection, {
     background: state.variant.colors.background,
     floor: options.accentContrastFloor,
     variantId: state.variant.id,
   })
   if (accent) Object.assign(properties, accent)
+  // Written after the variant and the accent, so it wins over the interface
+  // variant's own terminal ramp (and over the stylesheet's, which it outranks as an
+  // inline declaration). Dropping the pin needs no removal of its own: the ramp is
+  // then rewritten by the variant, or swept back to the stylesheet.
+  if (state.terminalVariant) Object.assign(properties, terminalCssVariables(state.terminalVariant))
+  if (state.surface) properties['--surface-alpha'] = surfaceAlpha[state.surface.surface]
   return {
     tokens: options.transformTokens ? options.transformTokens(properties) : properties,
     accented: accent !== undefined,
@@ -110,6 +148,17 @@ export function applyThemeToRoot(
     root.dataset['accent'] = isCustomAccent(state.selection.accent)
       ? 'custom'
       : state.selection.accent
+
+  // The surface axis is opt-in, so its absence removes rather than defaults: a host
+  // that never enables it keeps an `<html>` with neither attribute, and one that
+  // turns it off leaves nothing behind. (`--surface-alpha` is swept with the tokens.)
+  if (state.surface) {
+    root.dataset['surface'] = state.surface.surface
+    root.dataset['reduceTransparency'] = state.surface.reduceTransparencyActive ? 'true' : 'false'
+  } else {
+    root.removeAttribute('data-surface')
+    root.removeAttribute('data-reduce-transparency')
+  }
 
   applyAppearanceFontSettings(
     root,

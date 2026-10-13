@@ -144,6 +144,7 @@ export {
   isThemeAccentId,
   resolveAccentPreset,
   resolveVariant,
+  terminalCssVariables,
   themeAccentsFor,
   themeById,
   themeCssVariables,
@@ -164,6 +165,17 @@ export {
   type ThemeTerminalPalette,
   type ThemeVariant,
 } from './lib/themes'
+export { fontZoomShortcut, stepAppearanceFontSizes, type FontZoomIntent } from './lib/font-zoom'
+export {
+  REDUCED_TRANSPARENCY_QUERY,
+  normalizeSurface,
+  resolveSurface,
+  resolveSurfaceState,
+  surfaceAlpha,
+  themeSurfaces,
+  type SurfaceEnvironment,
+  type SurfaceState,
+} from './lib/theme-surface'
 export { keyedRows, type KeyedRow } from './lib/keyed-rows'
 export { writeClipboardText } from './lib/clipboard'
 export { formatBytes, formatReleaseDate, plainTextFromMarkdown } from './lib/version-notes'

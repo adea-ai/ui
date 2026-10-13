@@ -22,6 +22,8 @@ import '../../src/styles/globals.css'
  *   - `transformTokens` and `disableTransitionOnChange`.
  *   - `accentContrastFloor`, a custom `#rrggbb` accent, and `accentRolesFor` painted
  *     onto one element with `paintAccentRoles`.
+ *   - the surface axis (`surface`, with and without the native-translucency
+ *     capability), a pinned terminal palette, `palette="stylesheet"` and `fontZoom`.
  *
  * The page configures it through `window.themeFixture` before the script runs.
  */
@@ -34,6 +36,12 @@ type FixtureConfig = {
   withCustom?: boolean
   throwOnWrite?: boolean
   throwOnRead?: boolean
+  /** The `surface` prop: on, or on with the host's capability. */
+  surface?: boolean | { nativeTranslucency: boolean }
+  palette?: 'inline' | 'stylesheet'
+  fontZoom?: boolean
+  /** Record the whole selection on write, not the five original fields. */
+  recordSelection?: boolean
 }
 
 type FixtureWindow = Window & {
@@ -58,6 +66,10 @@ const persistence: ThemePersistence = {
   },
   write(next) {
     if (config.throwOnWrite) throw new Error('store exploded on write')
+    if (config.recordSelection) {
+      writes.push(next)
+      return
+    }
     const { appearance, lightThemeId, darkThemeId, accent } = next
     writes.push({ version: 2, mode: appearance, lightThemeId, darkThemeId, accent })
   },
@@ -111,6 +123,42 @@ function Controls(props: { removeCustom: () => void }) {
       <button type="button" onClick={() => theme.setSelection({ accent: 'violet' })}>
         Violet
       </button>
+      <output data-testid="effective-surface">{theme.effectiveSurface()}</output>
+      <output data-testid="reduce-active">{String(theme.reduceTransparencyActive())}</output>
+      <output data-testid="ui-size">{theme.selection().fonts?.ui.size}</output>
+      <output data-testid="code-size">{theme.selection().fonts?.code.size}</output>
+      <button type="button" onClick={() => theme.setSelection({ surface: 'frosted' })}>
+        Frosted
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ surface: 'translucent' })}>
+        Translucent
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ surface: 'opaque' })}>
+        Opaque
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ reduceTransparency: true })}>
+        Reduce on
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ reduceTransparency: false })}>
+        Reduce off
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ terminalThemeId: 'dracula' })}>
+        Pin dracula
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ terminalThemeId: 'theme' })}>
+        Unpin terminal
+      </button>
+      <button type="button" onClick={() => theme.setSelection({ terminalThemeId: 'gone' })}>
+        Pin missing
+      </button>
+      <button type="button" onClick={() => theme.zoomFonts('in')}>
+        Zoom in
+      </button>
+      <button type="button" onClick={() => theme.zoomFonts('reset')}>
+        Zoom reset
+      </button>
+      <div role="dialog" aria-label="Frosted probe" data-testid="dialog-probe" />
+      <div role="dialog" aria-label="Sheet probe" data-variant="inset" data-testid="sheet-probe" />
       <output data-testid="unknown-roles">
         {String(theme.accentRolesFor('chartreuse') === undefined)}
       </output>
@@ -138,6 +186,9 @@ function Fixture() {
         transformTokens={config.hex ? tokensAsHex : undefined}
         disableTransitionOnChange={config.transitions}
         accentContrastFloor={config.accentFloor}
+        surface={config.surface}
+        palette={config.palette}
+        fontZoom={config.fontZoom}
       >
         <Controls removeCustom={() => setCustom([])} />
       </ThemeProvider>

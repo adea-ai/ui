@@ -122,6 +122,23 @@ export const colorTokens: TokenDefinition[] = [
     themed: true,
     description: 'Opacity of the chrome fill behind a blur.',
   },
+  {
+    name: 'surface-alpha',
+    kind: 'number',
+    description:
+      "The opacity a frosted dialog's fill keeps, written by the provider's surface axis. 1 is opaque and never matches the frost rule.",
+  },
+  {
+    name: 'surface-frost',
+    kind: 'number',
+    description: 'The fill opacity `--surface-alpha` takes for the frosted surface: 0.92.',
+  },
+  {
+    name: 'surface-translucent',
+    kind: 'number',
+    description:
+      'The fill opacity `--surface-alpha` takes for the translucent surface: 0.8. A host without native translucency paints frosted instead.',
+  },
 
   // The brand action
   {

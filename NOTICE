@@ -336,6 +336,26 @@ provider are Adea behaviour that port retains.
 Zeron's MIT notice, reproduced in full under "Appearance editor translated from
 Zeron" above, applies to the translated portion.
 
+## Surface policy and font-zoom chords translated from Zeron
+
+`packages/ui/src/lib/theme-surface.ts` and `packages/ui/src/lib/font-zoom.ts`
+are moved from Adea's accepted port of Zeron (https://github.com/zeronsh/zeron),
+`packages/ui/src/components/appearance.ts` and `packages/ui/src/components/font-zoom.ts`,
+so the shared provider and Adea run one implementation. The first carries Zeron's
+`SurfacePreference.resolve` as that port extends it: the translucent capability
+gate (a request the host cannot render paints the tokenized frosted surface) and
+the reduced-transparency policy (the operating system's setting or the user's own
+forces the opaque surface), plus the opacity each surface paints. The second maps
+the platform zoom chords (Cmd or Ctrl with `=`, `+`, `-`, `0`) onto the three text
+sizes. The frost rule and `--surface-*` tokens in `packages/ui/src/styles/theme.css`
+are Adea's, written for that port, and introduce no further upstream source.
+
+    Copyright (c) 2026 Wing
+    Licensed under the MIT License.
+
+Both files retain that header. Zeron's MIT notice, reproduced in full under
+"Appearance editor translated from Zeron" above, applies to the translated portion.
+
 ## Strict binary layout extracted from the accepted Adea donor port
 
 `packages/ui/src/components/layout/split-layout/model.ts` is extracted from
