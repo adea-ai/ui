@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.124.0](https://github.com/adea-ai/ui/compare/v0.123.1...v0.124.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** provider persistence seam, extra themes, preview ([#383](https://github.com/adea-ai/ui/issues/383)) ([2da69e6](https://github.com/adea-ai/ui/commit/2da69e600db4a81d31136dbd3c3883ba964b46ac))
+
 ## [0.123.1](https://github.com/adea-ai/ui/compare/v0.123.0...v0.123.1) (2026-10-11)
 
 
