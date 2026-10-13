@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.2](https://github.com/adea-ai/ui/compare/v0.130.1...v0.130.2) (2026-10-13)
+
+
+### Bug Fixes
+
+* **layout:** resize pane and sidebar dividers without the panel-group library ([#408](https://github.com/adea-ai/ui/issues/408)) ([8b9bae4](https://github.com/adea-ai/ui/commit/8b9bae4a3d3348ea216bd4ea007a16095e717f11))
+
 ## [0.130.1](https://github.com/adea-ai/ui/compare/v0.130.0...v0.130.1) (2026-10-13)
 
 
