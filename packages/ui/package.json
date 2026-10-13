@@ -74,6 +74,12 @@
     "./fonts.css": "./src/styles/fonts.css",
     "./registry.json": "./registry.json",
     "./package.json": "./package.json",
+    "./components/theme/script": {
+      "types": "./dist/components/theme/script.d.ts",
+      "solid": "./src/components/theme/script.ts",
+      "development": "./src/components/theme/script.ts",
+      "import": "./dist/components/theme/script.js"
+    },
     "./components/theme/lazy": {
       "types": "./dist/components/theme/lazy.d.ts",
       "solid": "./src/components/theme/lazy.ts",
