@@ -1,35 +1,39 @@
 import type { JSX } from 'solid-js'
-import {
-  createContext,
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-  splitProps,
-  useContext,
-} from 'solid-js'
-import { accentPresets } from '#lib/tokens'
+import { createEffect, createMemo, createSignal, onCleanup, splitProps } from 'solid-js'
 import { safeScriptStringLiteral } from '#lib/safe-script'
+import { fontSettingsBootstrapScript } from '#lib/appearance-font-settings'
 import {
-  applyAppearanceFontSettings,
-  DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
-  fontSettingsBootstrapScript,
-  normalizeAppearanceEditorFontSettings,
-  type AppearanceEditorFontSettings,
-} from '#lib/appearance-font-settings'
-import type { AccentPreset } from '@adea-ai/themes'
-import {
-  accentVariables,
   builtinThemes,
-  defaultDarkThemeId,
-  defaultLightThemeId,
-  isThemeAccentId,
   themeAccentsFor,
-  themeById,
-  themeCssVariables,
   type ThemeAppearance,
   type ThemeVariant,
 } from '#lib/themes'
+import { themeContext } from './theme-context'
+import { applyThemeToRoot, applyWithoutTransitions } from './theme-document'
+import {
+  localStoragePersistence,
+  readPersisted,
+  writePersisted,
+  type ThemePersistence,
+} from './theme-persistence'
+import {
+  initialThemeSelection,
+  mergeRegistry,
+  mergeThemeSelection,
+  resolveThemeState,
+  type ThemeContextValue,
+  type ThemeSelection,
+} from './theme-state'
+
+export { useOptionalTheme, useTheme } from './theme-context'
+export { localStoragePersistence, type ThemePersistence } from './theme-persistence'
+export {
+  defaultThemeSelection,
+  resolvedDensity,
+  type ThemeContextValue,
+  type ThemeDensity,
+  type ThemeSelection,
+} from './theme-state'
 
 /**
  * ThemeProvider.
@@ -39,19 +43,17 @@ import {
  *
  * ## What a preference is
  *
- * Four independent choices, and keeping them independent is the point:
+ * Four independent choices (`ThemeSelection`), and keeping them independent is the
+ * point: appearance, a theme per appearance, an accent and fonts. They compose: a
+ * user who wants Nord with a violet accent and the system font should not need
+ * someone to author that combination.
  *
- *   - **appearance** — light, dark, or follow the system.
- *   - **a theme per appearance** — so a user can run Catppuccin Mocha by night and
- *     Solarized Light by day without re-choosing when the system flips.
- *   - **an accent** — adea's six presets, or one of the accents the selected theme
- *     pair carries itself (`ansi-blue`…), which re-colour the interactive roles on
- *     top of whichever theme is active.
- *   - **fonts** — separate family and size choices for UI, content and code.
+ * ## Where the rules live
  *
- * Four axes rather than one list of presets, because they compose: a user who wants
- * Nord with a violet accent and the system font should not need someone to author
- * that combination.
+ * This component is wiring. What a selection merges to and resolves to is
+ * `theme-state.ts`; what lands on `<html>` is `theme-document.ts`; where the
+ * preference is kept is `theme-persistence.ts`. Each is plain code a test can call,
+ * which is the reason none of it is inlined here.
  *
  * ## Why the variants are applied as inline properties
  *
@@ -62,167 +64,6 @@ import {
  * stylesheet. `theme.css` keeps the default theme's values so the first paint is
  * correct before any script runs.
  */
-export type ThemeSelection = {
-  /** `system` follows `prefers-color-scheme` and updates when it changes. */
-  appearance: ThemeAppearance | 'system'
-  /** The variant to use when the resolved appearance is light. */
-  lightThemeId: string
-  /** The variant to use when the resolved appearance is dark. */
-  darkThemeId: string
-  /**
-   * An `accentPresets` id, a theme accent id from `themeAccents()` (`ansi-blue`…),
-   * or `theme` for the variant's own primary. A theme accent the current pair does
-   * not offer falls back to the variant's own primary.
-   */
-  accent: string
-  /** UI-family alias for consumers of the original single-font preference. */
-  font: string
-  /** UI, content and code font settings. Omitted legacy records are migrated from `font`. */
-  fonts?: AppearanceEditorFontSettings
-  /**
-   * `comfortable` is the system's default geometry; `compact` moves the control
-   * ladder down one rung.
-   *
-   * Optional, and defaulted on read, so a preference stored before density existed
-   * keeps working and `ThemeSelection` stays assignable without it.
-   */
-  density?: ThemeDensity
-}
-
-export const defaultThemeSelection: ThemeSelection = {
-  appearance: 'system',
-  lightThemeId: defaultLightThemeId,
-  darkThemeId: defaultDarkThemeId,
-  accent: 'theme',
-  font: 'system',
-  fonts: DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS,
-  density: 'comfortable',
-}
-
-/**
- * The two density rungs.
- *
- * `comfortable` is the geometry in `theme.css`, so it is the absence of an
- * attribute rather than a value: a document that ships no `data-density` at all
- * renders correctly, which is what keeps this additive.
- */
-export type ThemeDensity = 'comfortable' | 'compact'
-
-/**
- * A stored selection's density, defaulted.
- *
- * The stored value is read through here rather than trusted, because a preference
- * written before density existed has no `density` key and a hand-edited store may
- * hold anything.
- */
-export function resolvedDensity(selection: ThemeSelection): ThemeDensity {
-  return selection.density === 'compact' ? 'compact' : 'comfortable'
-}
-
-export type ThemeContextValue = {
-  /** The preference as stored. */
-  selection: () => ThemeSelection
-  /** What the preference resolves to right now, after `system`. */
-  resolvedAppearance: () => ThemeAppearance
-  /** The variant in use. */
-  variant: () => ThemeVariant
-  /** Update part of the preference. */
-  setSelection: (patch: Partial<ThemeSelection>) => void
-  /** The catalogue, so a picker does not import it separately. */
-  themes: readonly ThemeVariant[]
-  /**
-   * The accents the selected light/dark pair carries, offered beside the presets.
-   * Follows the selection: a different theme pair may offer different slots.
-   */
-  themeAccents: () => readonly AccentPreset[]
-}
-
-const ThemeContext = createContext<ThemeContextValue>()
-
-export function useTheme(): ThemeContextValue {
-  const value = useContext(ThemeContext)
-  if (!value) throw new Error('useTheme must be called inside a <ThemeProvider>.')
-  return value
-}
-
-/**
- * The preference store, or nothing.
- *
- * Only ever called inside a `try`: where storage is blocked — a sandboxed iframe, a
- * privacy mode, a denied site-data permission — merely *reading* the `localStorage`
- * global throws ("Access is denied", `SecurityError`), so even the `typeof` guard
- * has to sit inside the `try` rather than in front of it. Without a store the
- * preference lives only in the provider's signal for the session.
- */
-function preferenceStore(): Storage | undefined {
-  return typeof localStorage === 'undefined' ? undefined : localStorage
-}
-
-/** The stored preference, validated against the catalogue. */
-function readSelection(storageKey: string): ThemeSelection {
-  try {
-    const raw = preferenceStore()?.getItem(storageKey)
-    if (!raw) return defaultThemeSelection
-    const parsed = JSON.parse(raw) as Partial<ThemeSelection>
-    const fonts = normalizeAppearanceEditorFontSettings(parsed.fonts, parsed.font).settings
-    return {
-      appearance:
-        parsed.appearance === 'light' ||
-        parsed.appearance === 'dark' ||
-        parsed.appearance === 'system'
-          ? parsed.appearance
-          : defaultThemeSelection.appearance,
-      // An unknown id would leave the document with no theme at all, so a stale
-      // preference from an older catalogue falls back rather than applying nothing.
-      lightThemeId:
-        themeById(parsed.lightThemeId ?? '')?.appearance === 'light'
-          ? (parsed.lightThemeId as string)
-          : defaultLightThemeId,
-      darkThemeId:
-        themeById(parsed.darkThemeId ?? '')?.appearance === 'dark'
-          ? (parsed.darkThemeId as string)
-          : defaultDarkThemeId,
-      // A theme accent is kept whenever it names a slot, even one the stored pair
-      // cannot offer: the id is role-shaped so it survives a theme switch, and an
-      // unoffered slot already resolves to the theme's own primary when applied.
-      accent:
-        typeof parsed.accent === 'string' &&
-        (accentPresets.some((preset) => preset.id === parsed.accent) ||
-          isThemeAccentId(parsed.accent))
-          ? parsed.accent
-          : defaultThemeSelection.accent,
-      font: fonts.ui.family,
-      fonts,
-      // Every axis has to be read back here, or it is lost twice: the effect below
-      // removes the `data-density` that `themeScript` set for the first paint, and
-      // the next `setSelection` rewrites the store without it.
-      density: resolvedDensity(parsed as ThemeSelection),
-    }
-  } catch {
-    return defaultThemeSelection
-  }
-}
-
-/** Keep the deprecated single-font view synchronized with the UI axis. */
-function mergeThemeSelection(base: ThemeSelection, patch: Partial<ThemeSelection>): ThemeSelection {
-  const merged = { ...base, ...patch }
-  let fonts: AppearanceEditorFontSettings
-
-  if (patch.fonts !== undefined) {
-    fonts = normalizeAppearanceEditorFontSettings(patch.fonts).settings
-  } else if (patch.font !== undefined) {
-    const currentFonts = normalizeAppearanceEditorFontSettings(base.fonts, base.font).settings
-    fonts = normalizeAppearanceEditorFontSettings({
-      ...currentFonts,
-      ui: { ...currentFonts.ui, family: patch.font },
-    }).settings
-  } else {
-    fonts = normalizeAppearanceEditorFontSettings(merged.fonts, merged.font).settings
-  }
-
-  return { ...merged, fonts, font: fonts.ui.family }
-}
-
 export type ThemeProviderProps = {
   children?: JSX.Element
   /** Where the preference is persisted. Distinct per application. */
@@ -242,14 +83,60 @@ export type ThemeProviderProps = {
    * seeds from `initial`, and persists every `setSelection`.
    */
   selection?: Partial<ThemeSelection>
+  /**
+   * Where the preference is kept, in place of `localStorage` under `storageKey`.
+   *
+   * Read once when the provider is created, so changing the prop later does not
+   * move the store. `storageKey` is ignored when this is given.
+   */
+  persistence?: ThemePersistence
+  /**
+   * Variants the host adds to the built-in catalogue — themes a user imported.
+   *
+   * A function is read inside the provider's reactive scope, so one that reads a
+   * signal keeps the picker and the document current when the set changes. A
+   * stored id that names no variant, built in or added, paints the default of its
+   * appearance and stays in the selection untouched.
+   */
+  themes?: readonly ThemeVariant[] | (() => readonly ThemeVariant[])
+  /**
+   * Rewrites the custom properties of each pass before they are written to
+   * `<html>`: the variant's roles with the accent over them. `tokensAsHex` from
+   * `lib/themes` is the one the system ships.
+   */
+  transformTokens?: (tokens: Record<string, string>) => Record<string, string>
+  /**
+   * Switch CSS transitions off for the frame that carries a change, so a theme
+   * switch cannot animate the whole page. Off by default: it adds a `<style>`
+   * element to `<head>` for two frames on every change.
+   */
+  disableTransitionOnChange?: boolean
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
-  const [local] = splitProps(props, ['children', 'storageKey', 'initial', 'selection'])
+  const [local] = splitProps(props, [
+    'children',
+    'storageKey',
+    'initial',
+    'selection',
+    'persistence',
+    'themes',
+    'transformTokens',
+    'disableTransitionOnChange',
+  ])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
+  const persistence = local.persistence ?? localStoragePersistence(storageKey)
+
+  // Read before the first resolution and before the store is, so a persistence whose
+  // answer depends on the extras (an id it only accepts if the theme exists) sees
+  // them.
+  const extraThemes = createMemo(() =>
+    typeof local.themes === 'function' ? local.themes() : (local.themes ?? [])
+  )
+  const registry = createMemo(() => mergeRegistry(builtinThemes, extraThemes()))
 
   const [selection, setSelectionState] = createSignal<ThemeSelection>(
-    mergeThemeSelection(readSelection(storageKey()), local.initial ?? {})
+    initialThemeSelection(readPersisted(persistence), local.initial)
   )
 
   // The controlled half of the contract. A patch from the owner replaces the
@@ -272,60 +159,43 @@ export function ThemeProvider(props: ThemeProviderProps) {
     onCleanup(() => query.removeEventListener('change', onChange))
   }
 
-  const resolvedAppearance = createMemo<ThemeAppearance>(() => {
-    const preference = selection().appearance
-    if (preference === 'system') return systemAppearance()
-    return preference
-  })
+  // What the stored preference resolves to. `selection()`, `variant()` and
+  // `resolvedAppearance()` answer from this and never from a preview, so a picker
+  // that previews a draft still reads back what is committed.
+  const committed = createMemo(() => resolveThemeState(selection(), systemAppearance(), registry()))
+  const resolvedAppearance = createMemo<ThemeAppearance>(() => committed().appearance)
+  const variant = createMemo<ThemeVariant>(() => committed().variant)
 
-  const variant = createMemo<ThemeVariant>(() => {
-    const id = resolvedAppearance() === 'dark' ? selection().darkThemeId : selection().lightThemeId
-    return themeById(id) ?? builtinThemes[0]!
+  const [draft, setDraft] = createSignal<Partial<ThemeSelection> | undefined>()
+  const shownSelection = createMemo(() => {
+    const preview = draft()
+    return preview ? mergeThemeSelection(selection(), preview) : selection()
   })
+  const shown = createMemo(() =>
+    draft() ? resolveThemeState(shownSelection(), systemAppearance(), registry()) : committed()
+  )
 
+  let written: ReadonlySet<string> | undefined
+  let restoreTransitions: (() => void) | undefined
   createEffect(() => {
     if (typeof document === 'undefined') return
-    const root = document.documentElement
-    const active = variant()
-
-    // The variant's roles, as properties. `--primary` and `--ring` are written here
-    // too, and an accent selection is layered over them below.
-    //
-    // The accent is applied *here* rather than left to the `[data-accent]` blocks in
-    // `theme.css`, because this loop writes inline custom properties and an inline
-    // declaration outranks every stylesheet selector however specific it is. The
-    // blocks still exist and are still correct — they are what styles the window
-    // before this runs — but they cannot win from here, so leaving the accent to
-    // them meant the attribute was set, the rules were present, and nothing
-    // changed on screen.
-    const properties = { ...themeCssVariables(active) }
-    const accent = accentVariables(selection().accent, resolvedAppearance(), selection())
-    if (accent) Object.assign(properties, accent)
-
-    for (const [name, value] of Object.entries(properties)) {
-      root.style.setProperty(name, value)
+    const state = {
+      selection: shownSelection(),
+      appearance: shown().appearance,
+      variant: shown().variant,
     }
-
-    root.classList.toggle('dark', resolvedAppearance() === 'dark')
-    root.dataset['theme'] = active.id
-    root.dataset['appearance'] = resolvedAppearance()
-    root.style.colorScheme = resolvedAppearance()
-
-    if (!accent) root.removeAttribute('data-accent')
-    else root.dataset['accent'] = selection().accent
-
-    applyAppearanceFontSettings(
-      root,
-      normalizeAppearanceEditorFontSettings(selection().fonts, selection().font).settings
-    )
-
-    // Density is a pure token shift, so unlike the colour axes there is nothing to
-    // compute: the attribute selects a block in `theme.css`. It is applied here for
-    // the same reason as the others — this is the one place that knows what the
-    // current selection is, and it is the only writer of these attributes.
-    if (resolvedDensity(selection()) === 'comfortable') root.removeAttribute('data-density')
-    else root.dataset['density'] = resolvedDensity(selection())
+    const options = { transformTokens: local.transformTokens }
+    const apply = () => {
+      written = applyThemeToRoot(document.documentElement, state, options, written)
+    }
+    if (local.disableTransitionOnChange) {
+      restoreTransitions?.()
+      restoreTransitions = applyWithoutTransitions(document, apply)
+    } else {
+      apply()
+    }
   })
+  onCleanup(() => restoreTransitions?.())
 
   const themeAccents = createMemo(() =>
     themeAccentsFor(selection().lightThemeId, selection().darkThemeId)
@@ -337,19 +207,22 @@ export function ThemeProvider(props: ThemeProviderProps) {
     variant,
     themes: builtinThemes,
     themeAccents,
+    allThemes: registry,
+    preview(next) {
+      setDraft(next ? { ...next } : undefined)
+    },
+    previewing: () => draft() !== undefined,
     setSelection(patch) {
       const next = mergeThemeSelection(selection(), patch)
       setSelectionState(next)
-      try {
-        preferenceStore()?.setItem(storageKey(), JSON.stringify(next))
-      } catch {
-        // A full, blocked or unavailable store must not break the switch: the
-        // preference simply does not survive the reload.
-      }
+      // The committed selection is now what should be showing.
+      setDraft(undefined)
+      writePersisted(persistence, next)
     },
   }
 
-  return <ThemeContext.Provider value={value}>{local.children}</ThemeContext.Provider>
+  const Context = themeContext()
+  return <Context.Provider value={value}>{local.children}</Context.Provider>
 }
 
 /**
