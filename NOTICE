@@ -356,6 +356,26 @@ are Adea's, written for that port, and introduce no further upstream source.
 Both files retain that header. Zeron's MIT notice, reproduced in full under
 "Appearance editor translated from Zeron" above, applies to the translated portion.
 
+## Preference store recovery translated from Zeron
+
+`packages/ui/src/lib/preference-store.ts` is moved from Adea's accepted port of
+Zeron (https://github.com/zeronsh/zeron), `packages/ui/src/components/appearance.ts`,
+so the shared provider and Adea run one implementation. It carries the recovery
+behaviour of that port: an unreadable or unsupported stored document is quarantined
+byte for byte into a recovery envelope at read time, before any write can touch the
+main key; the legacy single-key value is read only while the main key is absent and
+is never deleted; and blocked storage reads as nothing stored. The envelope shape is
+unchanged. The no-flash boot script in `packages/ui/src/components/theme/theme-script.ts`
+is rewritten from that port's `appearanceThemeScript` to read the same document, and
+introduces no further upstream source.
+
+    Copyright (c) 2026 Wing
+    Licensed under the MIT License.
+
+`preference-store.ts` retains that header. Zeron's MIT notice, reproduced in full
+under "Appearance editor translated from Zeron" above, applies to the translated
+portion.
+
 ## Strict binary layout extracted from the accepted Adea donor port
 
 `packages/ui/src/components/layout/split-layout/model.ts` is extracted from

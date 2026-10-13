@@ -59,6 +59,11 @@
       "target": "components/theming/theme-provider.tsx"
     },
     {
+      "path": "src/components/theme/theme-script.ts",
+      "type": "registry:ui",
+      "target": "components/theming/theme-script.ts"
+    },
+    {
       "path": "src/components/theme/theme-state.ts",
       "type": "registry:ui",
       "target": "components/theming/theme-state.ts"

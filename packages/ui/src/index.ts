@@ -176,6 +176,20 @@ export {
   type SurfaceEnvironment,
   type SurfaceState,
 } from './lib/theme-surface'
+export {
+  defaultPreferenceStorage,
+  quarantineRecord,
+  readLegacyValue,
+  readVersionedRecord,
+  recoveryEnvelope,
+  recoveryKeyFor,
+  writeVersionedRecord,
+  type PreferenceStorage,
+  type RecoveryEnvelope,
+  type RecoveryReason,
+  type VersionedRead,
+  type VersionedRecordSchema,
+} from './lib/preference-store'
 export { keyedRows, type KeyedRow } from './lib/keyed-rows'
 export { writeClipboardText } from './lib/clipboard'
 export { formatBytes, formatReleaseDate, plainTextFromMarkdown } from './lib/version-notes'
