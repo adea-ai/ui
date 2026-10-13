@@ -3,6 +3,7 @@ import { createSignal } from 'solid-js'
 import { Bell, Database, Settings, ShieldCheck, UserRound } from 'lucide-solid'
 import { expect, within } from 'storybook/test'
 import { Button } from '../../ui/button/button'
+import { EmptyDescription } from '../../ui/empty/empty'
 import { Input } from '../../ui/input/input'
 import { Switch } from '../../ui/switch/switch'
 import { TabsContent } from '../../ui/tabs/tabs'
@@ -115,6 +116,19 @@ export const ContentBody: Story = {
       </SettingsSection>
     </SettingsPage>
   ),
+}
+
+/** An empty or loading line placed directly in a rows section keeps the row padding. */
+export const EmptyRows: Story = {
+  render: () => (
+    <SettingsSection title="Cloud connections" description="Accounts cloud agents can use.">
+      <EmptyDescription role="status">No cloud connections yet.</EmptyDescription>
+    </SettingsSection>
+  ),
+  play: async ({ canvasElement }) => {
+    const empty = within(canvasElement).getByRole('status')
+    await expect(getComputedStyle(empty).paddingLeft).toBe('16px')
+  },
 }
 
 /** SettingsRow names an otherwise bare shared control and describes it. */

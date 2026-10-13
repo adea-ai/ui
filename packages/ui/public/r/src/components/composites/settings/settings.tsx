@@ -61,7 +61,7 @@ export function SettingsSection(
         class={cn(
           local.bodyLayout === 'content'
             ? 'flex flex-col gap-4'
-            : 'divide-y divide-border rounded-xl border border-border'
+            : 'divide-y divide-border rounded-xl border border-border [&>[data-slot=empty-description]]:p-4'
         )}
       >
         {local.children}
