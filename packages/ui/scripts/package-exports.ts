@@ -41,6 +41,14 @@ function isPublishableSource(file: string): boolean {
   return SOURCE_FILE.test(file) && !REVIEW_SURFACE.test(file) && !file.endsWith('.d.ts')
 }
 
+/**
+ * Node's subpath-pattern grammar: a key holds at most one `*`, and every `*` in a
+ * target is replaced by the matched text. Splitting and joining replaces all of
+ * them without the first-occurrence-only behaviour of `String.replace`.
+ */
+const fill = (pattern: string, captured: string) => pattern.split('*').join(captured)
+const wildcards = (pattern: string) => pattern.split('*').length - 1
+
 const stripDot = (path: string) => path.replace(/^\.\//, '')
 
 /**
@@ -78,6 +86,8 @@ export function publishedModules(
       continue
     }
     if (!source) throw new Error(`Wildcard export ${specifier} has no solid source condition`)
+    if (wildcards(specifier) !== 1 || wildcards(source) !== 1)
+      throw new Error(`Wildcard export ${specifier} must hold exactly one * in its key and source`)
     // Match the source pattern, then substitute the captured segment into the others.
     const sourcePattern = stripDot(source).replace(/^src\//, '')
     const [prefix, suffix] = sourcePattern.split('*') as [string, string]
@@ -85,15 +95,10 @@ export function publishedModules(
       if (!file.startsWith(prefix) || !file.endsWith(suffix)) continue
       const captured = file.slice(prefix.length, file.length - suffix.length)
       if (captured === '' || (!suffix.includes('/') && captured.includes('/'))) continue
-      const concrete = specifier.replace('*', captured)
+      const concrete = fill(specifier, captured)
       if (blocked.has(concrete)) continue
       modules.push(
-        describe(
-          concrete,
-          types.replaceAll('*', captured),
-          runtime.replaceAll('*', captured),
-          source.replaceAll('*', captured)
-        )
+        describe(concrete, fill(types, captured), fill(runtime, captured), fill(source, captured))
       )
     }
   }

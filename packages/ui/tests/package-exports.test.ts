@@ -89,6 +89,33 @@ test('publishedModules expands wildcards against source files and honours null b
   ])
 })
 
+test('every * in a target is replaced, and a key or source with several is refused', () => {
+  const modules = publishedModules(
+    {
+      './lib/*': {
+        types: './dist/lib/*/*.d.ts',
+        solid: './src/lib/*.ts',
+        import: './dist/lib/*/*.js',
+      },
+    },
+    ['lib/a.ts']
+  )
+  expect(modules).toEqual([
+    {
+      specifier: './lib/a',
+      types: 'dist/lib/a/a.d.ts',
+      runtime: 'dist/lib/a/a.js',
+      source: 'src/lib/a.ts',
+      entry: 'lib/a/a',
+    },
+  ])
+  const target = { types: './dist/*.d.ts', solid: './src/*.ts', import: './dist/*.js' }
+  expect(() => publishedModules({ './a/*/*': target }, ['a.ts'])).toThrow('exactly one *')
+  expect(() =>
+    publishedModules({ './a/*': { ...target, solid: './src/*/*.ts' } }, ['a.ts'])
+  ).toThrow('exactly one *')
+})
+
 test('a wildcard export without a source condition cannot be expanded', () => {
   expect(() =>
     publishedModules({ './lib/*': { types: './dist/lib/*.d.ts', import: './dist/lib/*.js' } }, [])
