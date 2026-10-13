@@ -11,6 +11,11 @@
   "registryDependencies": [],
   "files": [
     {
+      "path": "src/lib/accent-roles.ts",
+      "type": "registry:lib",
+      "target": "lib/accent-roles.ts"
+    },
+    {
       "path": "src/lib/appearance-font-settings.ts",
       "type": "registry:lib",
       "target": "lib/appearance-font-settings.ts"

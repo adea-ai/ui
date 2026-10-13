@@ -76,6 +76,15 @@ describe('localStoragePersistence.read', () => {
     expect(localStoragePersistence(KEY).read()).toMatchObject({ accent: 'ansi-blue' })
   })
 
+  test('a custom #rrggbb accent is kept, lower case; other colour spellings are defaulted', () => {
+    withStorage({ [KEY]: JSON.stringify({ accent: '#0B57D0' }) })
+    expect(localStoragePersistence(KEY).read()).toMatchObject({ accent: '#0b57d0' })
+    for (const accent of ['#0b57d0ff', '#abc', 'rgb(1,2,3)', 7, null]) {
+      withStorage({ [KEY]: JSON.stringify({ accent }) })
+      expect(localStoragePersistence(KEY).read()).toMatchObject({ accent: 'theme' })
+    }
+  })
+
   test('corrupt JSON and non-object JSON are the defaults, not an error', () => {
     withStorage({ [KEY]: '{"appearance":"da' })
     expect(localStoragePersistence(KEY).read()).toEqual(defaultThemeSelection)

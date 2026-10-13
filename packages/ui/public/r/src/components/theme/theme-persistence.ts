@@ -1,3 +1,4 @@
+import { normalizeCustomAccent } from '../../lib/accent-roles'
 import { accentPresets } from '../../lib/tokens'
 import { normalizeAppearanceEditorFontSettings } from '../../lib/appearance-font-settings'
 import { defaultDarkThemeId, defaultLightThemeId, isThemeAccentId, themeById } from '../../lib/themes'
@@ -67,13 +68,15 @@ function readSelection(storageKey: string): ThemeSelection {
           : defaultDarkThemeId,
       // A theme accent is kept whenever it names a slot, even one the stored pair
       // cannot offer: the id is role-shaped so it survives a theme switch, and an
-      // unoffered slot already resolves to the theme's own primary when applied.
+      // unoffered slot already resolves to the theme's own primary when applied. A
+      // custom `#rrggbb` is kept in its one stored spelling; its readability is
+      // settled when it is painted, not when it is read.
       accent:
         typeof parsed.accent === 'string' &&
         (accentPresets.some((preset) => preset.id === parsed.accent) ||
           isThemeAccentId(parsed.accent))
           ? parsed.accent
-          : defaultThemeSelection.accent,
+          : (normalizeCustomAccent(parsed.accent) ?? defaultThemeSelection.accent),
       font: fonts.ui.family,
       fonts,
       // Every axis has to be read back here, or it is lost twice: the provider's
