@@ -3,6 +3,14 @@ import { accentPresets } from '../../lib/tokens'
 import { normalizeAppearanceEditorFontSettings } from '../../lib/appearance-font-settings'
 import { defaultDarkThemeId, defaultLightThemeId, isThemeAccentId, themeById } from '../../lib/themes'
 import { normalizeSurface } from '../../lib/theme-surface'
+import {
+  defaultPreferenceStorage,
+  readLegacyValue,
+  readVersionedRecord,
+  recoveryKeyFor,
+  writeVersionedRecord,
+  type PreferenceStorage,
+} from '../../lib/preference-store'
 import { defaultThemeSelection, resolvedDensity, type ThemeSelection } from './theme-state'
 
 /**
@@ -151,5 +159,152 @@ export function writePersisted(persistence: ThemePersistence, next: ThemeSelecti
   } catch {
     // Same contract as a full or blocked `localStorage`: the choice holds for the
     // session and does not survive the reload.
+  }
+}
+
+/**
+ * Where a host's versioned preference document lives. One schema describes the
+ * document to both halves of the system: {@link createVersionedPersistence} reads and
+ * writes it, and `themeScript(options)` reads it before first paint, so the two
+ * cannot disagree about a key or a version.
+ */
+export type ThemeStorageSchema = {
+  /** The storage key of the document. */
+  key: string
+  /**
+   * The only top-level `version` read. Absent, the document is unversioned. A record
+   * of any other version is quarantined (see `recoveryKey`), not interpreted.
+   */
+  version?: number
+  /**
+   * The document field that holds the appearance preference (`system`, `light`,
+   * `dark`). Read by `themeScript`; the persistence leaves field names to the codec.
+   * Default `appearance`.
+   */
+  appearanceField?: 'appearance' | 'mode'
+  /**
+   * An older single-value key (`light` | `dark` | `system`) read only while `key` is
+   * absent, and never deleted. The persistence hands it to the codec's `fromLegacy`.
+   */
+  legacyAppearanceKey?: string
+  /**
+   * The stored library of imported themes, for `themeScript` only: an imported
+   * theme's id and verbatim tokens, so the first paint can use the right variant. The
+   * persistence neither reads nor writes it.
+   */
+  libraryKey?: string
+  /** Where an unreadable document is kept. Default `${key}.recovery`. */
+  recoveryKey?: string
+}
+
+/**
+ * How a host's document maps to and from the shared {@link ThemeSelection}.
+ *
+ * The codec is the product schema: it decides which fields a document has, how an
+ * unknown value is corrected, and what a fresh install looks like. The engine decides
+ * everything about *storage*: what is quarantined, when the legacy key is read, and
+ * that nothing is written until `setSelection` asks.
+ */
+export type VersionedCodec<Doc> = {
+  /**
+   * A readable record (the right JSON shape and version) as a selection patch. Fields
+   * it leaves `undefined` fall back to the provider's defaults. It may keep an id the
+   * catalogue lacks; the provider resolves it, it does not rewrite it.
+   */
+  decode(record: Readonly<Record<string, unknown>>): Partial<ThemeSelection>
+  /**
+   * The legacy key's value (never `null`) as a selection patch, or `undefined` for a
+   * value it does not recognise. Called only when the main key is absent.
+   */
+  fromLegacy?(value: string): Partial<ThemeSelection> | undefined
+  /**
+   * What a store with nothing readable answers: a fresh install, an unreadable
+   * document, a blocked store. Absent, the provider's own defaults apply.
+   */
+  defaults?(): Partial<ThemeSelection> | undefined
+  /**
+   * The document to store for a selection. `previous` is the record last read or
+   * written, so a codec can carry a field the selection does not model.
+   */
+  encode(next: ThemeSelection, previous?: Readonly<Record<string, unknown>>): Doc
+}
+
+/** Seams for the storage and the clock; both default to the real ones. */
+export type VersionedPersistenceOptions = {
+  /** The store, or nothing. Called per access; default is `localStorage` (blocked-safe). */
+  storage?: () => PreferenceStorage | undefined
+  /** The clock for the recovery envelope's `capturedAt`. */
+  now?: () => Date
+}
+
+/**
+ * A {@link ThemePersistence} over a versioned document and a host codec.
+ *
+ * `read` follows the engine's rules (`lib/preference-store.ts`): the main key first;
+ * an unreadable or unsupported document is quarantined byte for byte into the
+ * recovery key and the codec's `defaults` answer; the legacy key only when the main
+ * key is absent. It never writes the main key, so the first write is a user's
+ * decision. `write` stores `codec.encode(next, previous)` as JSON and swallows a
+ * failure.
+ *
+ * Neither method throws. The stored bytes are exactly what the codec encodes, so a
+ * host keeps its keys, field names and bytes by keeping its codec.
+ */
+export function createVersionedPersistence<Doc>(
+  schema: ThemeStorageSchema,
+  codec: VersionedCodec<Doc>,
+  options: VersionedPersistenceOptions = {}
+): ThemePersistence {
+  const storageOf = options.storage ?? defaultPreferenceStorage
+  const recordSchema = {
+    key: schema.key,
+    version: schema.version,
+    recoveryKey: recoveryKeyFor(schema),
+  }
+  let previous: Readonly<Record<string, unknown>> | undefined
+
+  const fallback = () => {
+    try {
+      return codec.defaults?.()
+    } catch {
+      return undefined
+    }
+  }
+
+  return {
+    read() {
+      const storage = storageOf()
+      if (!storage) return fallback()
+      try {
+        const found = readVersionedRecord(storage, recordSchema, options.now)
+        if (found.status === 'record') {
+          previous = found.record
+          return codec.decode(found.record)
+        }
+        if (found.status === 'absent' && schema.legacyAppearanceKey && codec.fromLegacy) {
+          const legacy = readLegacyValue(storage, schema.legacyAppearanceKey)
+          const migrated = legacy === null ? undefined : codec.fromLegacy(legacy)
+          if (migrated) return migrated
+        }
+      } catch {
+        // A codec that throws on a record it cannot read is an unreadable store.
+      }
+      return fallback()
+    },
+    write(next) {
+      const storage = storageOf()
+      if (!storage) return
+      try {
+        const document = codec.encode(next, previous)
+        if (writeVersionedRecord(storage, schema.key, document)) {
+          previous =
+            typeof document === 'object' && document !== null
+              ? (document as Readonly<Record<string, unknown>>)
+              : undefined
+        }
+      } catch {
+        // An encoder that throws loses the preference, not the switch.
+      }
+    },
   }
 }

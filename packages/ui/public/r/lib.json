@@ -61,6 +61,11 @@
       "target": "lib/overlay.ts"
     },
     {
+      "path": "src/lib/preference-store.ts",
+      "type": "registry:lib",
+      "target": "lib/preference-store.ts"
+    },
+    {
       "path": "src/lib/safe-script.ts",
       "type": "registry:lib",
       "target": "lib/safe-script.ts"

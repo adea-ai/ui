@@ -1,7 +1,5 @@
 import type { JSX } from 'solid-js'
 import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js'
-import { safeScriptStringLiteral } from '../../lib/safe-script'
-import { fontSettingsBootstrapScript } from '../../lib/appearance-font-settings'
 import { fontZoomShortcut, type FontZoomIntent } from '../../lib/font-zoom'
 import { REDUCED_TRANSPARENCY_QUERY, resolveSurfaceState } from '../../lib/theme-surface'
 import {
@@ -31,8 +29,16 @@ import {
 } from './theme-state'
 
 export { useOptionalTheme, useTheme } from './theme-context'
-export { localStoragePersistence, type ThemePersistence } from './theme-persistence'
+export {
+  createVersionedPersistence,
+  localStoragePersistence,
+  type ThemePersistence,
+  type ThemeStorageSchema,
+  type VersionedCodec,
+  type VersionedPersistenceOptions,
+} from './theme-persistence'
 export type { ThemeSurface } from '../../lib/theme-surface'
+export { inlineScriptLiteral, themeScript, type ThemeScriptOptions } from './theme-script'
 export {
   defaultThemeSelection,
   resolvedDensity,
@@ -349,50 +355,4 @@ export function ThemeProvider(props: ThemeProviderProps) {
 
   const Context = themeContext()
   return <Context.Provider value={value}>{local.children}</Context.Provider>
-}
-
-/**
- * A string as a JavaScript literal that is also safe inside an inline `<script>`.
- *
- * `JSON.stringify` produces a correct JavaScript literal, and it is **not** safe
- * here: it leaves `<` and `>` alone, so a value containing `</script>` ends the tag
- * early and everything after it is parsed as HTML. That is the classic inline-script
- * injection, and it is a real one even though the value is a developer-supplied prop
- * rather than user input — a prop can come from configuration, and a key that happens
- * to contain a closing tag should not be able to execute.
- *
- * The escape is also correct JavaScript: `\u003c` is `<` to the parser, so the value
- * is byte-identical at runtime and inert to the HTML tokenizer. `\u2028` and `\u2029`
- * are escaped for the neighbouring reason — they are legal inside a JSON string and
- * were, before ES2019, line terminators to a JavaScript parser.
- *
- * CodeQL flags the unescaped form as `js/bad-code-sanitization`, which is how this
- * was found; `tests/theme-script.test.ts` pins it so it cannot come back.
- */
-export function inlineScriptLiteral(value: string): string {
-  return safeScriptStringLiteral(value)
-}
-
-/**
- * The no-flash script.
- *
- * Rendered inline in `<head>` before any stylesheet that matters. Without it a dark
- * preference paints the light theme first and then swaps, which is the flash every
- * themed application has to solve and the one thing a provider cannot do from
- * inside the body.
- *
- * Deliberately tiny and dependency-free: it reads the stored preference, resolves
- * `system`, and sets the class. It does not apply the variant's roles — the default
- * theme in `theme.css` covers the first paint, and the provider writes the rest on
- * mount.
- *
- * The script reads two values out of `localStorage` and writes them to `dataset`,
- * which is a *property* assignment rather than code: a stored accent or font id can
- * set an attribute and cannot execute. The one value that reaches the source as text
- * is `storageKey`, and it goes through {@link inlineScriptLiteral} for the reason
- * documented there.
- */
-export function themeScript(storageKey = 'adea-appearance'): string {
-  const script = `(function(){try{var s=localStorage.getItem(${inlineScriptLiteral(storageKey)});var p=s?JSON.parse(s):{};var a=p.appearance||'system';var d=a==='dark'||(a==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';if(p.accent&&p.accent!=='theme')r.dataset.accent=p.accent;if(p.density==='compact')r.dataset.density='compact';}catch(e){}})();`
-  return `${script}${fontSettingsBootstrapScript(storageKey)}`
 }

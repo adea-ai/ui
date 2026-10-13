@@ -9,6 +9,7 @@ export {
 } from './theme-picker'
 export {
   ThemeProvider,
+  createVersionedPersistence,
   defaultThemeSelection,
   inlineScriptLiteral,
   localStoragePersistence,
@@ -20,8 +21,12 @@ export {
   type ThemeDensity,
   type ThemePersistence,
   type ThemeProviderProps,
+  type ThemeScriptOptions,
   type ThemeSelection,
+  type ThemeStorageSchema,
   type ThemeSurface,
+  type VersionedCodec,
+  type VersionedPersistenceOptions,
 } from './theme-provider'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { ThemeModeToggle, type ThemeModeToggleProps } from './theme-mode-toggle'

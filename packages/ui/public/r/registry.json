@@ -2558,6 +2558,11 @@
           "target": "components/theming/theme-provider.tsx"
         },
         {
+          "path": "src/components/theme/theme-script.ts",
+          "type": "registry:ui",
+          "target": "components/theming/theme-script.ts"
+        },
+        {
           "path": "src/components/theme/theme-state.ts",
           "type": "registry:ui",
           "target": "components/theming/theme-state.ts"
@@ -2693,6 +2698,11 @@
           "path": "src/lib/overlay.ts",
           "type": "registry:lib",
           "target": "lib/overlay.ts"
+        },
+        {
+          "path": "src/lib/preference-store.ts",
+          "type": "registry:lib",
+          "target": "lib/preference-store.ts"
         },
         {
           "path": "src/lib/safe-script.ts",
