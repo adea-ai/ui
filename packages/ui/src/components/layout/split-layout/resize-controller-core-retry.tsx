@@ -100,7 +100,7 @@ export default function SplitLayoutResizeController<L extends SplitLayoutLeaf>(
         onPointerUp={(event) => stopDrag(event.currentTarget, event)}
         onPointerCancel={(event) => stopDrag(event.currentTarget, event)}
         onLostPointerCapture={(event) => stopDrag(event.currentTarget, event)}
-        class="pointer-events-auto absolute shrink-0 bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
+        class="pointer-events-auto absolute shrink-0 cursor-pointer bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
       />
     </div>
   )

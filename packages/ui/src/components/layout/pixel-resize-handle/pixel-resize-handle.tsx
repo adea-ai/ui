@@ -99,7 +99,7 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
         data-dragging={drag() ? '' : undefined}
         style={{ left: `${isRight() ? maximum() - value() : value()}px` }}
         class={cn(
-          'group/resize bg-border pointer-events-auto absolute inset-y-0 flex w-px items-center justify-center',
+          'group/resize bg-border pointer-events-auto absolute inset-y-0 flex w-px cursor-pointer items-center justify-center',
           /* Widen the hit target without moving the visual line: 24px on the
              drag axis meets WCAG 2.5.8's minimum target. */
           'after:absolute after:inset-y-0 after:-inset-x-3 after:w-6',
