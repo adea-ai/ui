@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.128.4](https://github.com/adea-ai/ui/compare/v0.128.3...v0.128.4) (2026-10-13)
+
+
+### Maintenance
+
+* **theme:** export variantFromRecord and accents without the catalogue ([#399](https://github.com/adea-ai/ui/issues/399)) ([f02a9c0](https://github.com/adea-ai/ui/commit/f02a9c0de9b31de36026f921648cec09b9c44e75))
+
 ## [0.128.3](https://github.com/adea-ai/ui/compare/v0.128.2...v0.128.3) (2026-10-13)
 
 
