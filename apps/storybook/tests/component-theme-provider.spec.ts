@@ -863,3 +863,74 @@ test.describe('superset profile: surface, terminal pin, stylesheet palette, font
     await expect(page.getByTestId('ui-size')).toHaveText('14')
   })
 })
+
+test.describe('lazy provider: the catalogue loads when a theme beyond the default pair needs it', () => {
+  let lazy: Bundle
+  test.beforeAll(async () => {
+    lazy = await bundle('tests/fixtures/theme-provider-lazy.tsx', 'LazyProvider')
+  })
+
+  test('the default pair paints from the stylesheet with the catalogue never asked for', async ({
+    page,
+  }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await open(page, lazy)
+    await expect(html(page)).toHaveAttribute('data-theme', 'adea-dark')
+    await expect(page.getByTestId('variant')).toHaveText('adea-dark')
+    await expect(page.getByTestId('ready')).toHaveText('false')
+    await expect(page.getByTestId('all-count')).toHaveText('2')
+    expect(await writes(page)).toEqual([])
+    expect(errors).toEqual([])
+  })
+
+  test('a saved theme beyond it keeps its stylesheet paint, then resolves when the catalogue arrives', async ({
+    page,
+  }) => {
+    await open(page, lazy, {
+      fixture: { stored: { appearance: 'dark', darkThemeId: 'dracula' }, bootTheme: 'dracula' },
+    })
+    await expect(html(page)).toHaveAttribute('data-theme', 'dracula')
+    await expect(page.getByTestId('ready')).toHaveText('true')
+    await expect(page.getByTestId('variant')).toHaveText('dracula')
+    await expect(page.getByTestId('all-count')).toHaveText('34')
+    await expect(html(page)).toHaveAttribute('data-theme', 'dracula')
+    // The sheet paints it; the provider adds no palette of its own over it.
+    expect(await rootProperty(page, '--background')).toBe('')
+    expect(await writes(page)).toEqual([])
+  })
+
+  test('a preview of an unloaded theme shows on arrival and ends without persisting', async ({
+    page,
+  }) => {
+    await open(page, lazy)
+    await page.getByRole('button', { name: 'Preview dracula' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'dracula')
+    await expect(page.getByTestId('variant')).toHaveText('adea-dark')
+    await expect(page.getByTestId('previewing')).toHaveText('true')
+    await page.getByRole('button', { name: 'End preview' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'adea-dark')
+    expect(await writes(page)).toEqual([])
+  })
+
+  test('committing an unloaded theme persists it at once and paints it on arrival', async ({
+    page,
+  }) => {
+    await open(page, lazy)
+    await page.getByRole('button', { name: 'Commit nord' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord')
+    await expect(page.getByTestId('variant')).toHaveText('nord')
+    expect(await writes(page)).toHaveLength(1)
+  })
+
+  test('loadCatalogue can be called ahead of need, by the context or directly', async ({
+    page,
+  }) => {
+    await open(page, lazy)
+    await page.getByRole('button', { name: 'Load directly' }).click()
+    await page.getByRole('button', { name: 'Load catalogue' }).click()
+    await expect(page.getByTestId('ready')).toHaveText('true')
+    await expect(page.getByTestId('all-count')).toHaveText('34')
+    await expect(html(page)).toHaveAttribute('data-theme', 'adea-dark')
+  })
+})

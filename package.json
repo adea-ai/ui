@@ -30,6 +30,7 @@
     "test:a11y": "bun run --cwd apps/storybook test:a11y",
     "check:tree-shaking": "bun run --cwd packages/ui check:tree-shaking",
     "check:lib-exports": "bun run --cwd packages/ui check:lib-exports",
+    "check:theme-startup": "bun run --cwd packages/ui check:theme-startup",
     "check:packed-layout": "bun run --cwd packages/ui check:packed-layout",
     "test:layout": "bun run --cwd apps/storybook test:layout",
     "check:packed-lint": "bun run --cwd packages/ui check:packed-lint",

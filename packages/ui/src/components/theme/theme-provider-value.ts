@@ -1,0 +1,445 @@
+import type { JSX } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js'
+import { fontZoomShortcut, type FontZoomIntent } from '#lib/font-zoom'
+import { REDUCED_TRANSPARENCY_QUERY, resolveSurfaceState } from '#lib/theme-surface'
+import { CatalogueRequired, needsCatalogue, type ThemeEngine } from '#lib/theme-engine'
+import type { EditorRolesMode, ThemeAppearance, ThemeVariant } from '#lib/themes'
+import { applyThemeToRootWith, applyWithoutTransitions } from './theme-document-core'
+import {
+  localStoragePersistence,
+  readPersisted,
+  writePersisted,
+  type ThemePersistence,
+} from './theme-persistence'
+import {
+  accentRolesForStateWith,
+  initialThemeSelection,
+  mergeRegistry,
+  mergeThemeSelection,
+  resolveTerminalVariant,
+  resolveThemeState,
+  zoomedFontSettings,
+  type ThemeContextValue,
+  type ThemeSelection,
+} from './theme-state-core'
+
+/**
+ * ThemeProvider.
+ *
+ * Owns the appearance preference and applies it to the document. One provider near
+ * the root; everything below reads it.
+ *
+ * ## What a preference is
+ *
+ * Four independent choices (`ThemeSelection`), and keeping them independent is the
+ * point: appearance, a theme per appearance, an accent and fonts. They compose: a
+ * user who wants Nord with a violet accent and the system font should not need
+ * someone to author that combination.
+ *
+ * ## Where the rules live
+ *
+ * This component is wiring. What a selection merges to and resolves to is
+ * `theme-state.ts`; what lands on `<html>` is `theme-document.ts`; where the
+ * preference is kept is `theme-persistence.ts`. Each is plain code a test can call,
+ * which is the reason none of it is inlined here.
+ *
+ * ## Why the variants are applied as inline properties
+ *
+ * The catalogue is data, and a theme is applied by writing its roles onto
+ * `<html>` as custom properties. That is what makes an imported palette work
+ * without a hand-written `[data-theme]` block per theme, and it is why a settings
+ * UI can show a preview by reading the same object rather than by loading a
+ * stylesheet. `theme.css` keeps the default theme's values so the first paint is
+ * correct before any script runs.
+ */
+export type ThemeProviderProps = {
+  children?: JSX.Element
+  /** Where the preference is persisted. Distinct per application. */
+  storageKey?: string
+  /** Start from this instead of the stored preference. */
+  initial?: Partial<ThemeSelection>
+  /**
+   * The selection, owned by the caller.
+   *
+   * For a consumer that keeps the state itself — a settings store, or a workshop
+   * whose selection lives in Storybook globals — rather than handing it to this
+   * provider's signal. Each change lands here and the document follows; nothing is
+   * written to the store, because the caller is the one who persists. A picker
+   * below the provider still works, and its change is the caller's to read back.
+   *
+   * Absent, the provider is the whole owner: it reads `storageKey` on mount,
+   * seeds from `initial`, and persists every `setSelection`.
+   */
+  selection?: Partial<ThemeSelection>
+  /**
+   * Where the preference is kept, in place of `localStorage` under `storageKey`.
+   *
+   * Read once when the provider is created, so changing the prop later does not
+   * move the store. `storageKey` is ignored when this is given.
+   */
+  persistence?: ThemePersistence
+  /**
+   * Variants the host adds to the built-in catalogue — themes a user imported.
+   *
+   * A function is read inside the provider's reactive scope, so one that reads a
+   * signal keeps the picker and the document current when the set changes. A
+   * stored id that names no variant, built in or added, paints the default of its
+   * appearance and stays in the selection untouched.
+   */
+  themes?: readonly ThemeVariant[] | (() => readonly ThemeVariant[])
+  /**
+   * Rewrites the custom properties of each pass before they are written to
+   * `<html>`: the variant's roles with the accent over them. `tokensAsHex` from
+   * `lib/themes` is the one the system ships.
+   */
+  transformTokens?: (tokens: Record<string, string>) => Record<string, string>
+  /**
+   * Switch CSS transitions off for the frame that carries a change, so a theme
+   * switch cannot animate the whole page. Off by default: it adds a `<style>`
+   * element to `<head>` for two frames on every change.
+   */
+  disableTransitionOnChange?: boolean
+  /**
+   * The contrast ratio an accent is held to against the variant's background,
+   * repaired to the nearest passing colour when it falls short. Absent, presets
+   * are painted verbatim — the catalogue measured them for its own themes — and
+   * only a custom `#rrggbb` is held to 3:1. A host that adds themes the catalogue
+   * never measured passes 3 to hold the presets to it as well; for the catalogue's
+   * own themes the floor changes no preset.
+   */
+  accentContrastFloor?: number
+  /**
+   * Turns the surface axis on: `selection.surface` and `selection.reduceTransparency`
+   * are resolved against the operating system's Reduce Transparency setting and the
+   * host's capability, and `data-surface`, `data-reduce-transparency` and
+   * `--surface-alpha` are written to `<html>` (the frost rule in `theme.css` reads
+   * them). Off by default: a provider that never opts in writes none of them, adds no
+   * media-query listener, and stores nothing new.
+   *
+   * An object also states the host's capability. `nativeTranslucency` is whether the
+   * window can render the OS's own translucency; without it a `translucent`
+   * preference paints the tokenized `frosted` surface instead of pretending to
+   * vibrancy. A function is read inside the provider's reactive scope, for a
+   * capability that is learned after mount.
+   *
+   * A selection that already carries a `surface` turns the axis on for itself, so a
+   * host that stores the field gets the same document without the prop.
+   */
+  surface?: boolean | { nativeTranslucency?: boolean | (() => boolean) }
+  /**
+   * Where a catalogue variant's palette comes from. `inline` (the default) writes
+   * every role onto `<html>`. `stylesheet` leaves a catalogue variant to the host's
+   * `[data-theme]` stylesheet and writes inline only what no stylesheet can know: a
+   * host's own `themes`, the accent, the pinned terminal palette, the surface alpha
+   * and the fonts. Switching from a host variant back to a catalogue one removes the
+   * properties the host variant wrote.
+   */
+  palette?: 'inline' | 'stylesheet'
+  /**
+   * The projection behind the `--editor-*` ramp. `syntax` (the default) is the
+   * catalogue's quiet syntax roles, a comment among them deliberately below
+   * body-text contrast. `floor` holds all sixteen roles to 4.5:1 on the canvas, as
+   * hex, for a host that renders code as content (a diff, a file view) rather than
+   * as decoration.
+   *
+   * Applies to catalogue variants; a host's own `themes` keep their `editor` and
+   * their `tokens`. With `palette="stylesheet"` it is the one palette property a
+   * catalogue variant still writes inline, because `theme-variants.css` is generated
+   * for `syntax`. Absent, nothing changes.
+   */
+  editorRoles?: EditorRolesMode
+  /**
+   * Bind the platform zoom chords (Cmd or Ctrl with `=`, `+`, `-`, `0`) to the three
+   * text sizes instead of the browser's page zoom: stepping them together is zoom
+   * inside the persisted type system. Off by default: it adds a capturing `keydown`
+   * listener to `window`, and an event already handled elsewhere is left alone.
+   * `zoomFonts` on the context does the same from a menu or a host's own binding.
+   */
+  fontZoom?: boolean
+}
+
+/**
+ * Where the provider's catalogue questions are answered, and whether the whole
+ * catalogue is available yet.
+ *
+ * The eager provider's source is the full catalogue and is always loaded. The lazy
+ * provider's source starts on the default pair that ships with it and swaps to the
+ * full catalogue when {@link ThemeCatalogueSource.load} resolves. Both read the same
+ * way in the provider: `engine()` is reactive, so everything derived from it follows
+ * the swap.
+ */
+export type ThemeCatalogueSource = {
+  /** The engine answering catalogue questions now. Changes once, when loading completes. */
+  engine: () => ThemeEngine
+  /** True when `engine()` is the full catalogue. */
+  loaded: () => boolean
+  /** True when loading failed; the provider then paints what it can without the rest. */
+  failed: () => boolean
+  /** Start loading the full catalogue (idempotent). Resolves when `loaded()` is true. */
+  load: () => Promise<void>
+}
+
+/** The operating system's Reduce Transparency query, where there is a window to ask. */
+function reducedTransparencyMedia(): MediaQueryList | undefined {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(REDUCED_TRANSPARENCY_QUERY)
+    : undefined
+}
+
+/**
+ * Everything the provider is, as a value: the context object, with its effects and
+ * listeners created in the caller's reactive scope.
+ *
+ * Parameterised by where its catalogue comes from: `ThemeProvider`
+ * (`theme-provider.tsx`) and the lazy `ThemeProvider` (`theme-provider-lazy.tsx`) wrap
+ * this with a source. It imports no catalogue code or data, which is what lets the lazy
+ * one keep them out of a consumer's start-up chunk. It is not JSX so that the unit lane,
+ * which has no Solid compiler, can drive it directly.
+ */
+export function createThemeContextValue(
+  props: ThemeProviderProps & { catalogue: ThemeCatalogueSource }
+): ThemeContextValue {
+  const [local] = splitProps(props, [
+    'catalogue',
+    'storageKey',
+    'initial',
+    'selection',
+    'persistence',
+    'themes',
+    'transformTokens',
+    'disableTransitionOnChange',
+    'accentContrastFloor',
+    'surface',
+    'palette',
+    'editorRoles',
+    'fontZoom',
+  ])
+  const storageKey = () => local.storageKey ?? 'adea-appearance'
+  const persistence = local.persistence ?? localStoragePersistence(storageKey)
+
+  // Read before the first resolution and before the store is, so a persistence whose
+  // answer depends on the extras (an id it only accepts if the theme exists) sees
+  // them.
+  const extraThemes = createMemo(() =>
+    typeof local.themes === 'function' ? local.themes() : (local.themes ?? [])
+  )
+  const source = () => local.catalogue
+  const engine = () => source().engine()
+  const registry = createMemo(() => mergeRegistry(engine().builtinThemes, extraThemes()))
+
+  const [selection, setSelectionState] = createSignal<ThemeSelection>(
+    initialThemeSelection(readPersisted(persistence), local.initial)
+  )
+
+  // The controlled half of the contract. A patch from the owner replaces the
+  // matching axes; the stored preference is untouched, since the owner is the one
+  // that persists. Reading `local.selection` — a prop getter, not a destructured
+  // value — is what keeps this subscribed for the provider's lifetime.
+  createEffect(() => {
+    const incoming = local.selection
+    if (incoming) setSelectionState((current) => mergeThemeSelection(current, incoming))
+  })
+
+  const [systemAppearance, setSystemAppearance] = createSignal<ThemeAppearance>('light')
+
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const query = window.matchMedia('(prefers-color-scheme: dark)')
+    setSystemAppearance(query.matches ? 'dark' : 'light')
+    const onChange = (event: MediaQueryListEvent) =>
+      setSystemAppearance(event.matches ? 'dark' : 'light')
+    query.addEventListener('change', onChange)
+    onCleanup(() => query.removeEventListener('change', onChange))
+  }
+
+  // What the stored preference resolves to. `selection()`, `variant()` and
+  // `resolvedAppearance()` answer from this and never from a preview, so a picker
+  // that previews a draft still reads back what is committed.
+  const committed = createMemo(() => resolveThemeState(selection(), systemAppearance(), registry()))
+  const resolvedAppearance = createMemo<ThemeAppearance>(() => committed().appearance)
+  const variant = createMemo<ThemeVariant>(() => committed().variant)
+
+  const [draft, setDraft] = createSignal<Partial<ThemeSelection> | undefined>()
+  const shownSelection = createMemo(() => {
+    const preview = draft()
+    return preview ? mergeThemeSelection(selection(), preview) : selection()
+  })
+  const shown = createMemo(() =>
+    draft() ? resolveThemeState(shownSelection(), systemAppearance(), registry()) : committed()
+  )
+
+  // The surface axis. Off, none of this reads the operating system: the media query
+  // is subscribed only while the axis is on, so a provider that never opts in adds no
+  // listener and no repaint.
+  const surfaceOn = (candidate: ThemeSelection) =>
+    local.surface === true || typeof local.surface === 'object' || candidate.surface !== undefined
+  const nativeTranslucency = () => {
+    const capability = typeof local.surface === 'object' ? local.surface.nativeTranslucency : false
+    return (typeof capability === 'function' ? capability() : capability) === true
+  }
+  const [osReducedTransparency, setOsReducedTransparency] = createSignal(
+    surfaceOn(untrack(shownSelection)) ? (reducedTransparencyMedia()?.matches ?? false) : false
+  )
+  const axisOn = createMemo(() => surfaceOn(shownSelection()))
+  createEffect(() => {
+    const query = axisOn() ? reducedTransparencyMedia() : undefined
+    setOsReducedTransparency(query?.matches ?? false)
+    if (!query) return
+    const onChange = (event: MediaQueryListEvent) => setOsReducedTransparency(event.matches)
+    query.addEventListener('change', onChange)
+    onCleanup(() => query.removeEventListener('change', onChange))
+  })
+  const surfaceStateOf = (candidate: ThemeSelection) =>
+    resolveSurfaceState(candidate.surface, {
+      osReducedTransparency: osReducedTransparency(),
+      userReducedTransparency: candidate.reduceTransparency === true,
+      nativeTranslucency: nativeTranslucency(),
+    })
+  const committedSurface = createMemo(() =>
+    surfaceOn(selection()) ? surfaceStateOf(selection()) : undefined
+  )
+
+  // The catalogue questions the selection asks. A selection that names a catalogue theme
+  // beyond the shipped default pair cannot be answered, painted or previewed until the
+  // whole catalogue has loaded; asking for it is the only side effect.
+  const waitingFor = (candidate: ThemeSelection, appearance: ThemeAppearance) =>
+    !source().loaded() && !source().failed() && needsCatalogue(candidate, appearance)
+  createEffect(() => {
+    if (
+      needsCatalogue(selection(), committed().appearance) ||
+      needsCatalogue(shownSelection(), shown().appearance)
+    )
+      void source().load()
+  })
+
+  let written: ReadonlySet<string> | undefined
+  let restoreTransitions: (() => void) | undefined
+  createEffect(() => {
+    if (typeof document === 'undefined') return
+    const current = engine()
+    const display = shown()
+    // Until the catalogue arrives the document keeps what is already on it — the
+    // stylesheet's theme, set before first paint by `themeScript` — instead of
+    // flashing the default for a theme that is only not loaded yet.
+    if (waitingFor(shownSelection(), display.appearance)) return
+    const state = {
+      selection: shownSelection(),
+      appearance: display.appearance,
+      variant: display.variant,
+      terminalVariant: resolveTerminalVariant(shownSelection().terminalThemeId, registry()),
+      surface: axisOn() ? surfaceStateOf(shownSelection()) : undefined,
+    }
+    const options = {
+      transformTokens: local.transformTokens,
+      accentContrastFloor: local.accentContrastFloor,
+      palette: local.palette,
+      editorRoles: local.editorRoles,
+    }
+    const apply = () => {
+      try {
+        written = applyThemeToRootWith(current, document.documentElement, state, options, written)
+      } catch (error) {
+        // The catalogue failed to load and the selection needs it: leave the document
+        // as it is rather than half-painting it.
+        if (!(error instanceof CatalogueRequired)) throw error
+      }
+    }
+    if (local.disableTransitionOnChange) {
+      restoreTransitions?.()
+      restoreTransitions = applyWithoutTransitions(document, apply)
+    } else {
+      apply()
+    }
+  })
+  onCleanup(() => restoreTransitions?.())
+
+  const themeAccents = createMemo(() => {
+    try {
+      return engine().themeAccentsFor(selection().lightThemeId, selection().darkThemeId)
+    } catch (error) {
+      if (!(error instanceof CatalogueRequired)) throw error
+      return []
+    }
+  })
+
+  const zoomFonts = (intent: FontZoomIntent) =>
+    value.setSelection({ fonts: zoomedFontSettings(selection(), intent) })
+
+  // The platform zoom chords drive the three text sizes, captured like the other
+  // global chords; an event something else already handled never double-steps.
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.defaultPrevented) return
+    const intent = fontZoomShortcut(event)
+    if (!intent) return
+    event.preventDefault()
+    zoomFonts(intent)
+  }
+  createEffect(() => {
+    if (!local.fontZoom || typeof window === 'undefined') return
+    window.addEventListener('keydown', onKeyDown, { capture: true })
+    onCleanup(() => window.removeEventListener('keydown', onKeyDown, { capture: true }))
+  })
+
+  const value: ThemeContextValue = {
+    selection,
+    resolvedAppearance,
+    variant,
+    get themes() {
+      return engine().builtinThemes
+    },
+    themeAccents,
+    allThemes: registry,
+    preview(next) {
+      setDraft(next ? { ...next } : undefined)
+    },
+    previewing: () => draft() !== undefined,
+    accentRolesFor(accent, variantId) {
+      const current = engine()
+      const state = {
+        selection: selection(),
+        variant: variant(),
+        registry: registry(),
+        accentContrastFloor: local.accentContrastFloor,
+      }
+      try {
+        return accentRolesForStateWith(current, accent, variantId, state)
+      } catch (error) {
+        if (!(error instanceof CatalogueRequired)) throw error
+        // Needs the whole catalogue to measure the tint exactly. Ask for it, and answer
+        // meanwhile without the theme's record: the same four colours, the appearance's
+        // own tint strength. Reading `engine()` above re-runs a reactive caller on arrival.
+        void source().load()
+        try {
+          return accentRolesForStateWith(
+            {
+              accentRolesForSelection: (id, appearance, pair, options) =>
+                current.accentRolesForSelection(id, appearance, pair, {
+                  ...options,
+                  variantId: undefined,
+                }),
+            },
+            accent,
+            variantId,
+            state
+          )
+        } catch (inner) {
+          if (!(inner instanceof CatalogueRequired)) throw inner
+          return undefined
+        }
+      }
+    },
+    catalogueReady: () => source().loaded(),
+    loadCatalogue: () => source().load(),
+    effectiveSurface: () => committedSurface()?.surface ?? 'opaque',
+    reduceTransparencyActive: () => committedSurface()?.reduceTransparencyActive ?? false,
+    zoomFonts,
+    setSelection(patch) {
+      const next = mergeThemeSelection(selection(), patch)
+      setSelectionState(next)
+      // The committed selection is now what should be showing.
+      setDraft(undefined)
+      writePersisted(persistence, next)
+    },
+  }
+
+  return value
+}

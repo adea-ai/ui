@@ -44,7 +44,6 @@ import {
   shadcnDestructiveProjection,
   statusForeground,
   tint,
-  primaryHover,
   primarySubtleCss,
   syntaxRoles,
   themes as catalogue,
@@ -57,11 +56,14 @@ import {
   type ContrastFinding,
 } from '@adea-ai/themes'
 import { shadcnVariables } from '@adea-ai/themes/adapters/shadcn'
-import { oklchToHex, parseColor } from '@adea-ai/themes/oklch'
 import { accentOverrideVariables, resolveAccentRoles, type AccentRoles } from './accent-roles'
 import { isThemeAccentId } from './theme-accents'
+import { themeCssVariablesWith } from './theme-css'
+import { defaultDarkThemeId, defaultLightThemeId } from './theme-defaults'
 
 export { isThemeAccentId } from './theme-accents'
+export { terminalCssVariables, tokensAsHex } from './theme-css'
+export { defaultDarkThemeId, defaultLightThemeId, resolveVariant } from './theme-defaults'
 
 export type ThemeAppearance = 'light' | 'dark'
 
@@ -376,44 +378,20 @@ export function primarySubtleFor(theme: Pick<ThemeVariant, 'id' | 'appearance'>)
   return record ? primarySubtleCss(record) : primarySubtleCss(theme.appearance)
 }
 
-/** The catalogue, in catalogue order. */
-export const builtinThemes: readonly ThemeVariant[] = Object.freeze(catalogue.map(lazyVariant))
+/**
+ * The catalogue, in catalogue order.
+ *
+ * The `@__PURE__` marks let a bundler drop the whole table, and with it the catalogue,
+ * from a consumer that imports only this module's catalogue-free helpers
+ * (`tokensAsHex`, `isThemeAccentId`, `resolveVariant`…) and never reads it.
+ */
+export const builtinThemes: readonly ThemeVariant[] = /* @__PURE__ */ Object.freeze(
+  /* @__PURE__ */ catalogue.map(lazyVariant)
+)
 
 export function themeById(id: string): ThemeVariant | undefined {
   if (!hasTheme(id)) return undefined
   return builtinThemes.find((theme) => theme.id === id)
-}
-
-/**
- * The variant a stored id means, or the default of the same appearance.
- *
- * An id the registry does not hold — an imported theme that was deleted, a
- * catalogue entry that was renamed — must still paint *something of the appearance
- * being shown*. Falling back to whichever variant happens to be first in the
- * registry painted a dark palette under a light `color-scheme` for a light id, so
- * the fallback is the appearance's own default, then any variant of that
- * appearance, then the registry's first entry only when it holds nothing else.
- *
- * `registry` is the builtin catalogue plus whatever extras the host supplies; the
- * stored id is never rewritten, only resolved, so a host that keeps an unknown id
- * keeps resolving it if the theme comes back.
- *
- * The fallback order is translated from Zeron's `ThemeRegistry::resolve` (MIT,
- * Copyright (c) 2026 Wing); see NOTICE.
- */
-export function resolveVariant(
-  registry: readonly ThemeVariant[],
-  id: string,
-  appearance: ThemeAppearance
-): ThemeVariant {
-  const found = registry.find((variant) => variant.id === id)
-  if (found) return found
-  const defaultId = appearance === 'dark' ? defaultDarkThemeId : defaultLightThemeId
-  return (
-    registry.find((variant) => variant.id === defaultId) ??
-    registry.find((variant) => variant.appearance === appearance) ??
-    registry[0]!
-  )
 }
 
 /** The variants of one appearance, which is what a picker for that mode shows. */
@@ -708,164 +686,25 @@ export function editorPaletteFor(
 /**
  * The roles a variant sets, as CSS custom properties.
  *
- * The one place that knows the mapping from a theme's roles to this system's variable
- * names. A provider applies this; nothing else repeats it. The `--terminal-*` and
- * `--editor-*` ramps are presentations of the catalogue's ANSI and syntax data rather
- * than separate roles, which is why they are built here and not in the catalogue.
- *
- * `options.editor` picks the `--editor-*` projection ({@link EditorRolesMode}).
- * Absent it, the result is what it has always been; the generated `theme-variants.css`
- * and the design-system artifact are built without it.
+ * The mapping itself is `themeCssVariablesWith` in `theme-css.ts`; this binds it to
+ * the catalogue, which measures a theme's `--primary-subtle` strength
+ * ({@link primarySubtleFor}) and projects its floor editor ramp
+ * ({@link editorPaletteFor}). Absent `options`, the result is what it has always
+ * been; the generated `theme-variants.css` and the design-system artifact are built
+ * without it.
  */
 export function themeCssVariables(
   theme: ThemeVariant,
   options: ThemeCssVariableOptions = {}
 ): Record<string, string> {
-  const c = theme.colors
-  const t = theme.terminal
-  const e = editorPaletteFor(theme, options.editor)
-  const derived = {
-    '--background': c.background,
-    '--foreground': c.foreground,
-    '--card': c.card,
-    '--card-foreground': c.cardForeground,
-    '--popover': c.popover,
-    '--popover-foreground': c.popoverForeground,
-    '--primary': c.primary,
-    '--primary-foreground': c.primaryForeground,
-    /*
-     * The two tokens derived from the primary, and they are here rather than left to
-     * `theme.css` because they must follow `--primary` — which this function writes
-     * for *any* theme in the catalogue, not just the two defaults `theme.css` carries.
-     *
-     * `--primary-hover` is a resolved colour, not a `color-mix()`: a uniform hover
-     * step cannot be expressed as a mix (see `primaryHover`). Left out, a theme switch
-     * would keep the previous theme's hover on the new theme's primary.
-     *
-     * `--primary-subtle` is a mix over `--primary`, so it follows an accent on its
-     * own, but its *strength* is per theme: `primarySubtleCss(record)` lowers the
-     * appearance ceiling only as far as this theme needs for body text to clear 4.5:1
-     * on the tint, over every surface, for every accent it offers. It has to be
-     * written per theme for that reason — the appearance-wide value is not legible on
-     * every palette.
-     */
-    '--primary-hover': primaryHover(c.primary, theme.appearance),
-    '--primary-subtle': primarySubtleFor(theme),
-    '--secondary': c.secondary,
-    '--secondary-foreground': c.secondaryForeground,
-    '--muted': c.muted,
-    '--muted-foreground': c.mutedForeground,
-    '--accent': c.accent,
-    '--accent-foreground': c.accentForeground,
-    '--destructive': c.destructive,
-    '--destructive-foreground': c.destructiveForeground,
-    '--destructive-subtle': c.destructiveSubtle,
-    '--destructive-action': c.destructiveAction,
-    '--destructive-action-foreground': c.destructiveActionForeground,
-    '--success': c.success,
-    '--success-foreground': c.successForeground,
-    '--success-subtle': c.successSubtle,
-    '--warning': c.warning,
-    '--warning-foreground': c.warningForeground,
-    '--warning-subtle': c.warningSubtle,
-    '--info': c.info,
-    '--info-foreground': c.infoForeground,
-    '--info-subtle': c.infoSubtle,
-    '--border': c.border,
-    '--input': c.input,
-    '--ring': c.ring,
-    '--sidebar': c.sidebar,
-    '--sidebar-foreground': c.sidebarForeground,
-    '--sidebar-accent': c.sidebarAccent,
-    '--sidebar-border': c.sidebarBorder,
-    '--sidebar-primary': c.primary,
-    '--sidebar-primary-foreground': c.primaryForeground,
-    '--sidebar-ring': c.ring,
-    '--sidebar-muted-foreground': c.sidebarMutedForeground,
-    '--surface-sunken': c.muted,
-    '--surface-hover': c.accent,
-    '--surface-active': c.border,
-    '--chrome': c.background,
-    '--terminal-background': t.background,
-    '--terminal-foreground': t.foreground,
-    '--terminal-cursor': t.cursor,
-    '--terminal-selection': t.selection,
-    '--terminal-ansi-black': t.black,
-    '--terminal-ansi-red': t.red,
-    '--terminal-ansi-green': t.green,
-    '--terminal-ansi-yellow': t.yellow,
-    '--terminal-ansi-blue': t.blue,
-    '--terminal-ansi-magenta': t.magenta,
-    '--terminal-ansi-cyan': t.cyan,
-    '--terminal-ansi-white': t.white,
-    '--terminal-ansi-bright-black': t.brightBlack,
-    '--terminal-ansi-bright-red': t.brightRed,
-    '--terminal-ansi-bright-green': t.brightGreen,
-    '--terminal-ansi-bright-yellow': t.brightYellow,
-    '--terminal-ansi-bright-blue': t.brightBlue,
-    '--terminal-ansi-bright-magenta': t.brightMagenta,
-    '--terminal-ansi-bright-cyan': t.brightCyan,
-    '--terminal-ansi-bright-white': t.brightWhite,
-    '--editor-keyword': e.keyword,
-    '--editor-string': e.string,
-    '--editor-number': e.number,
-    '--editor-comment': e.comment,
-    '--editor-function': e.function,
-    '--editor-variable': e.variable,
-    '--editor-type': e.type,
-    '--editor-tag': e.tag,
-    '--editor-attribute': e.attribute,
-    '--editor-operator': e.operator,
-    '--editor-heading': e.heading,
-    '--editor-link': e.link,
-    '--editor-diff-add': e.diffAdd,
-    '--editor-diff-delete': e.diffDelete,
-    '--editor-diff-hunk': e.diffHunk,
-    '--editor-search-match': e.searchMatch,
-    '--chart-1': theme.chart[0] ?? c.primary,
-    '--chart-2': theme.chart[1] ?? c.info,
-    '--chart-3': theme.chart[2] ?? c.success,
-    '--chart-4': theme.chart[3] ?? c.warning,
-    '--chart-5': theme.chart[4] ?? c.destructive,
-    '--chart-6': theme.chart[5] ?? c.mutedForeground,
-  }
-  return theme.tokens ? { ...derived, ...theme.tokens } : derived
-}
-
-/**
- * The `--terminal-*` properties of a variant: the palette a terminal paints.
- *
- * What a pinned terminal theme writes over the interface variant's own. Taken from
- * {@link themeCssVariables} rather than rebuilt, so the names, and a custom
- * variant's verbatim `tokens`, can never drift from what the interface variant
- * would have written for the same palette.
- */
-export function terminalCssVariables(theme: ThemeVariant): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(themeCssVariables(theme)).filter(([name]) => name.startsWith('--terminal-'))
+  return themeCssVariablesWith(
+    {
+      primarySubtle: primarySubtleFor,
+      editor: (variant, mode) => editorPaletteFor(variant, mode),
+    },
+    theme,
+    options
   )
-}
-
-/**
- * Token values with every `oklch()` colour written as `#rrggbb`.
- *
- * For a host whose stylesheet, tests or native shell speak hex: the catalogue's
- * roles are `oklch()` strings, and this is the one conversion, gamut-mapped by the
- * catalogue's own `oklchToHex`. A value that is already hex, carries alpha
- * (`rgba()`), or is not a plain colour (`color-mix()`, `var()`) is left byte for
- * byte, because converting would either lose the alpha or be a guess. Suitable as
- * `ThemeProvider`'s `transformTokens`.
- */
-export function tokensAsHex(tokens: Readonly<Record<string, string>>): Record<string, string> {
-  const converted: Record<string, string> = {}
-  for (const [name, value] of Object.entries(tokens)) {
-    const trimmed = value.trim()
-    // `parseOklch` discards alpha, so a translucent oklch() stays as written.
-    const opaque = trimmed.startsWith('oklch(') && !trimmed.includes('/')
-    const parsed = opaque ? parseColor(trimmed) : undefined
-    converted[name] = parsed ? oklchToHex(parsed) : value
-  }
-  return converted
 }
 
 /* ---------------------------------------------------------------------------
@@ -913,9 +752,6 @@ export function validateThemeRegistry(
 
   return [...orphaned, ...validateCatalogue(records).map(toFinding)]
 }
-
-export const defaultLightThemeId = 'adea-light'
-export const defaultDarkThemeId = 'adea-dark'
 
 /** Re-exported so a consumer measuring a colour does not need a second import. */
 export { contrastRatio } from '@adea-ai/themes'

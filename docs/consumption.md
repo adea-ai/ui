@@ -289,6 +289,66 @@ to a catalogue one removes the properties the host theme wrote.
   `defaultAccent` should have its codec store that accent for a fresh install (see
   `defaults()`), so the two agree.
 
+### Keeping the catalogue out of the start-up chunk
+
+`@adea-ai/ui/components/theme` imports the whole catalogue: all 34 themes, with their
+roles and accent tables, are in the module graph of anything that imports it. That is
+right for a host that opens its theme picker on the first screen, and wasted for one
+that shows the default pair and paints a chosen palette from `theme-variants.css`.
+Such a host imports the provider from the lazy subpath instead:
+
+```tsx
+import { ThemeProvider, themeScript, useTheme } from '@adea-ai/ui/components/theme/lazy'
+```
+
+`ThemeProvider` there takes the same props, provides the same context and writes the
+same document as the eager one for everything the default pair covers: the default
+light and dark themes, a host's own `themes`, every accent preset and custom colour,
+the surface axis, fonts and density. Only the other 32 themes wait. The first time the
+selection (or a preview) names one, the provider imports the catalogue in a chunk of
+its own, and until it arrives:
+
+- the document keeps what is on it (`themeScript` set it before first paint, or the
+  stylesheet paints it under `palette="stylesheet"`) and nothing is written over it;
+- `useTheme().variant()` is the default theme of the current appearance, and
+  `useTheme().catalogueReady()` is `false`;
+- a preview of a theme that has not loaded starts the load and shows when it ends.
+
+When the chunk arrives the provider re-resolves the stored theme and paints it. If the
+import fails the provider stays on the default pair, `catalogueReady()` stays `false`
+and a later `loadCatalogue()` retries.
+
+Three members of the context exist for this. `catalogueReady()` and `loadCatalogue()`
+are optional on `ThemeContextValue` (the eager provider omits both, so a component
+written against either provider checks `theme.catalogueReady?.() ?? true`). A picker
+calls `loadCatalogue()` when it mounts: until `catalogueReady()` is `true`,
+`useTheme().themes` and `allThemes()` list only the default pair. `loadThemeCatalogue()`,
+exported from the same subpath, starts the same import without a provider, for a
+host that wants to warm it after first paint.
+
+Set it up as the stylesheet section above does, so the first frame never waits on the
+chunk:
+
+```tsx
+import { ThemeProvider, themeScript } from '@adea-ai/ui/components/theme/lazy'
+
+;<script innerHTML={themeScript(schemaAndDefaults)} />
+;<ThemeProvider palette="stylesheet" persistence={persistence}>
+  <App />
+</ThemeProvider>
+```
+
+Under the default `palette="inline"` the provider has to compute a catalogue theme's
+roles, so every stored theme but the default pair waits for the import and the
+document shows the default meanwhile. Use `stylesheet` with the lazy provider.
+
+`@adea-ai/ui/lib/themes` and `builtinThemes` are unchanged: a plain array of 34
+themes. A host that reads `builtinThemes` pays for the catalogue by importing it; the
+lazy provider reaches it only through a dynamic import. `check:theme-startup` in this repository builds a minimal
+host against both providers and fails if the lazy one pulls the catalogue into its
+start-up closure: the lazy host's start-up chunk is 17.5 kB gzipped against 29.3 kB
+for the eager one.
+
 ### The stylesheet exports
 
 | Export               | What it is                                              | When                                             |

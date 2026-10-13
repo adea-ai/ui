@@ -74,6 +74,12 @@
     "./fonts.css": "./src/styles/fonts.css",
     "./registry.json": "./registry.json",
     "./package.json": "./package.json",
+    "./components/theme/lazy": {
+      "types": "./dist/components/theme/lazy.d.ts",
+      "solid": "./src/components/theme/lazy.ts",
+      "development": "./src/components/theme/lazy.ts",
+      "import": "./dist/components/theme/lazy.js"
+    },
     "./components/layout/split-layout/model": {
       "types": "./dist/components/layout/split-layout/model.d.ts",
       "solid": "./src/components/layout/split-layout/model.ts",
@@ -111,9 +117,11 @@
     "registry:validate": "bun run cn:check && bun scripts/validate-registry.ts",
     "pack:check": "bun scripts/check-pack.ts && bun scripts/check-lib-exports.ts",
     "check:lib-exports": "bun scripts/check-lib-exports.ts",
-    "check:tree-shaking": "bun scripts/check-tree-shaking.ts",
+    "check:tree-shaking": "bun scripts/check-tree-shaking.ts && bun scripts/check-theme-startup.ts",
+    "check:theme-startup": "bun scripts/check-theme-startup.ts",
     "theme:build": "bun scripts/build-default-theme.ts",
     "theme:check": "bun scripts/build-default-theme.ts --check",
+    "theme:defaults": "bun scripts/build-theme-defaults.ts",
     "design-system:build": "bun scripts/design-system/build.ts",
     "check:packed-layout": "node --test scripts/check-packed-layout-process.test.mjs && node scripts/check-packed-layout.mjs && node scripts/check-packed-layout-tree.mjs",
     "check:packed-lint": "node scripts/check-packed-lint.mjs",

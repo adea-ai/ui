@@ -2528,9 +2528,24 @@
           "target": "components/theming/index.ts"
         },
         {
+          "path": "src/components/theme/lazy.ts",
+          "type": "registry:ui",
+          "target": "components/theming/lazy.ts"
+        },
+        {
+          "path": "src/components/theme/theme-catalogue-source.ts",
+          "type": "registry:ui",
+          "target": "components/theming/theme-catalogue-source.ts"
+        },
+        {
           "path": "src/components/theme/theme-context.ts",
           "type": "registry:ui",
           "target": "components/theming/theme-context.ts"
+        },
+        {
+          "path": "src/components/theme/theme-document-core.ts",
+          "type": "registry:ui",
+          "target": "components/theming/theme-document-core.ts"
         },
         {
           "path": "src/components/theme/theme-document.ts",
@@ -2553,6 +2568,21 @@
           "target": "components/theming/theme-picker.tsx"
         },
         {
+          "path": "src/components/theme/theme-provider-core.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-provider-core.tsx"
+        },
+        {
+          "path": "src/components/theme/theme-provider-lazy.tsx",
+          "type": "registry:ui",
+          "target": "components/theming/theme-provider-lazy.tsx"
+        },
+        {
+          "path": "src/components/theme/theme-provider-value.ts",
+          "type": "registry:ui",
+          "target": "components/theming/theme-provider-value.ts"
+        },
+        {
           "path": "src/components/theme/theme-provider.tsx",
           "type": "registry:ui",
           "target": "components/theming/theme-provider.tsx"
@@ -2561,6 +2591,11 @@
           "path": "src/components/theme/theme-script.ts",
           "type": "registry:ui",
           "target": "components/theming/theme-script.ts"
+        },
+        {
+          "path": "src/components/theme/theme-state-core.ts",
+          "type": "registry:ui",
+          "target": "components/theming/theme-state-core.ts"
         },
         {
           "path": "src/components/theme/theme-state.ts",
@@ -2655,6 +2690,11 @@
       "registryDependencies": [],
       "files": [
         {
+          "path": "src/lib/accent-presets.ts",
+          "type": "registry:lib",
+          "target": "lib/accent-presets.ts"
+        },
+        {
           "path": "src/lib/accent-roles.ts",
           "type": "registry:lib",
           "target": "lib/accent-roles.ts"
@@ -2718,6 +2758,36 @@
           "path": "src/lib/theme-accents.ts",
           "type": "registry:lib",
           "target": "lib/theme-accents.ts"
+        },
+        {
+          "path": "src/lib/theme-catalogue.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-catalogue.ts"
+        },
+        {
+          "path": "src/lib/theme-css.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-css.ts"
+        },
+        {
+          "path": "src/lib/theme-defaults.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-defaults.generated.ts"
+        },
+        {
+          "path": "src/lib/theme-defaults.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-defaults.ts"
+        },
+        {
+          "path": "src/lib/theme-engine-light.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-engine-light.ts"
+        },
+        {
+          "path": "src/lib/theme-engine.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-engine.ts"
         },
         {
           "path": "src/lib/theme-surface.ts",
