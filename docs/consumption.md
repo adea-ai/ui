@@ -215,6 +215,13 @@ and its output does not change between releases. It does not apply the variant's
 roles: the default theme in `theme.css` covers the first paint and the provider
 writes the rest at mount.
 
+A host whose HTML is built rather than rendered (a Vite `index.html`, a desktop shell
+whose content security policy allows no inline script) needs the string in Node, at
+build time, and writes it to a file the page loads with `<script src>`. The provider
+entries cannot be imported there, because they load Solid's client runtime. Import
+`themeScript` from `@adea-ai/ui/components/theme/script` instead: the same function,
+in a module that holds nothing else.
+
 For a host with a versioned document, pass the same schema the persistence uses plus
 what to paint:
 
