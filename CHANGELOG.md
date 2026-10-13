@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.0](https://github.com/adea-ai/ui/compare/v0.129.0...v0.130.0) (2026-10-13)
+
+
+### Features
+
+* **textarea:** add a code variant ([#404](https://github.com/adea-ai/ui/issues/404)) ([4c99db4](https://github.com/adea-ai/ui/commit/4c99db44def59a694b25adf3a91a999142ebe4f3))
+
 ## [0.129.0](https://github.com/adea-ai/ui/compare/v0.128.4...v0.129.0) (2026-10-13)
 
 
