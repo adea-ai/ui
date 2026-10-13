@@ -66,8 +66,8 @@ export default function SplitLayoutResizeController<L extends SplitLayoutLeaf>(
         aria-valuenow={Math.round(props.branch().ratio * 100)}
         style={
           horizontal()
-            ? { left: `${props.branch().ratio * 100}%`, top: 0, bottom: 0 }
-            : { top: `${props.branch().ratio * 100}%`, left: 0, right: 0 }
+            ? { left: `${props.branch().ratio * 100}%`, top: 0, bottom: 0, width: '1px' }
+            : { top: `${props.branch().ratio * 100}%`, left: 0, right: 0, height: '1px' }
         }
         onKeyDown={(event) => {
           const forward = horizontal() ? 'ArrowRight' : 'ArrowDown'
@@ -100,7 +100,7 @@ export default function SplitLayoutResizeController<L extends SplitLayoutLeaf>(
         onPointerUp={(event) => stopDrag(event.currentTarget, event)}
         onPointerCancel={(event) => stopDrag(event.currentTarget, event)}
         onLostPointerCapture={(event) => stopDrag(event.currentTarget, event)}
-        class="pointer-events-auto absolute w-px shrink-0 bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
+        class="pointer-events-auto absolute shrink-0 bg-border after:absolute after:inset-y-0 after:-inset-x-1 after:w-3 focus-visible:bg-primary focus-visible:outline-none hover:bg-primary data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:-inset-y-1 data-[orientation=vertical]:after:h-3 data-[orientation=vertical]:after:w-full"
       />
     </div>
   )
