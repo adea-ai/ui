@@ -113,8 +113,20 @@ export function App() {
 the user's choice. Toggling `dark` on `<html>` by hand still works, and gets you the
 two default variants — but no palette beyond them, no accent, no typeface.
 
-If the app is server-rendered, inline [`themeScript`](docs/consumption.md#1-the-package)
-in `<head>` so the first paint is already in the right appearance.
+If the app is server-rendered, inline [`themeScript`](docs/consumption.md#avoiding-the-flash)
+in `<head>` so the first paint is already in the right appearance. For a host with its
+own versioned preference document, `themeScript(options)` and the catalogue stylesheet
+`@adea-ai/ui/theme-variants.css` paint the chosen theme, accent and surface on the
+first frame.
+
+Beyond the four axes the provider is a superset you opt into: a persistence seam and
+`createVersionedPersistence`, imported `themes`, `preview`, accent roles with a
+contrast floor and custom `#rrggbb` colours, a surface and Reduce Transparency axis,
+a pinned terminal palette, font zoom, `palette="stylesheet"` and
+`editorRoles="floor"`. Each is off by default, and absent them the provider stores and
+paints what it always did. The
+[capability table](docs/consumption.md#beyond-the-four-axes) lists every prop and
+selection field.
 
 See [docs/consumption.md](docs/consumption.md) for the registry, the four axes, the
 versioning contract, and how to re-hue the palette.

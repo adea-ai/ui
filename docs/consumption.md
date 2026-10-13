@@ -73,13 +73,13 @@ persistence.
 
 Every axis is a value on the same provider, and each is stored in one preference.
 
-| Axis       | Values                                                                        | Applied as        |
-| ---------- | ----------------------------------------------------------------------------- | ----------------- |
-| Appearance | `light`, `dark`, `system`                                                     | a `dark` class    |
-| Theme      | any of the 27 catalogue ids                                                   | custom properties |
-| Accent     | `theme`, one of six presets, or a theme-carried `ansi-*` accent               | `data-accent`     |
-| Typeface   | Full catalogue in UI, Content and Code (`fonts`); legacy `font` applies to UI | `data-*-font`     |
-| Density    | `comfortable`, `compact`                                                      | `data-density`    |
+| Axis       | Values                                                                              | Applied as        |
+| ---------- | ----------------------------------------------------------------------------------- | ----------------- |
+| Appearance | `light`, `dark`, `system`                                                           | a `dark` class    |
+| Theme      | any of the 34 catalogue ids                                                         | custom properties |
+| Accent     | `theme`, one of six presets, a theme-carried `ansi-*` accent, or a custom `#rrggbb` | `data-accent`     |
+| Typeface   | Full catalogue in UI, Content and Code (`fonts`); legacy `font` applies to UI       | `data-*-font`     |
+| Density    | `comfortable`, `compact`                                                            | `data-density`    |
 
 New font settings keep the full catalogue available in every role, and Code
 uses the exact selected family. `System` uses the platform's monospace face for
@@ -110,6 +110,93 @@ setSelection({ accent: 'amber' })
 `AppearancePanel` is the whole appearance view if you want one, and `ThemeToggle` is
 the light/dark switch on its own.
 
+### Beyond the four axes
+
+Everything in this section is opt-in. A provider given none of these props, over a
+store holding none of these fields, paints and stores exactly what it did before they
+existed: `defaultThemeSelection` deliberately carries none of the newer fields, so a
+consumer's stored bytes do not change.
+
+| Capability               | Where                                                          | Default                               | What it does                                                                                                                                                                                      |
+| ------------------------ | -------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Persistence seam         | `persistence` prop                                             | `localStoragePersistence(storageKey)` | Where the preference is kept. `read()` is synchronous, runs once and must not throw; `write(next)` runs only from `setSelection`, never on mount or from `preview`. `storageKey` is then ignored. |
+| Extra themes             | `themes` prop                                                  | none                                  | Variants a host adds to the catalogue (imported themes), as an array or a function read reactively. The catalogue wins an id collision. A `ThemeVariant.tokens` map is written verbatim.          |
+| Unknown theme id         | `resolveVariant`                                               | same-appearance default               | A stored id no variant holds paints the default of its appearance and stays in the selection untouched.                                                                                           |
+| Preview                  | `preview(draft)` / `previewing()`                              | none                                  | Paints the document from a draft laid over the stored selection without persisting it. `selection()` still answers with what is stored; `preview(undefined)` or `setSelection` ends it.           |
+| Token transform          | `transformTokens` prop                                         | none                                  | Rewrites the inline properties of each pass before they are written. `tokensAsHex` is the one shipped.                                                                                            |
+| Transition suppression   | `disableTransitionOnChange` prop                               | `false`                               | Switches CSS transitions off for the frames that carry a change. Adds a `<style>` element for two frames per change.                                                                              |
+| Accent roles             | `ThemeSelection.accent`                                        | `theme`                               | A preset id, an `ansi-<slot>` theme accent, `theme`, or a custom `#rrggbb`. Writes `--primary`, `--primary-foreground`, `--primary-hover` and `--ring`; never `--primary-subtle`.                 |
+| Accent contrast floor    | `accentContrastFloor` prop                                     | absent                                | Absent, presets are painted verbatim and only a custom colour is held to 3:1. A number holds presets to that ratio too, repairing to the nearest passing colour.                                  |
+| Per-element accent       | `accentRolesFor(accent, variantId?)`                           | none                                  | The roles an accent paints over a variant, gated by the same floor, for `paintAccentRoles` on one element. `undefined` means "keep the inherited accent".                                         |
+| Surface and translucency | `surface` prop; `ThemeSelection.surface`, `reduceTransparency` | off                                   | `opaque`, `frosted` or `translucent`, resolved against the OS Reduce Transparency setting and the host's capability. See below.                                                                   |
+| Terminal pin             | `ThemeSelection.terminalThemeId`                               | follows the interface                 | `theme` or absent follows the interface variant; a variant id pins that theme's `--terminal-*` palette over it, so a light interface can carry a dark terminal.                                   |
+| Font zoom                | `fontZoom` prop; `zoomFonts(intent)`                           | off                                   | Cmd or Ctrl with `=`, `+`, `-`, `0` step the three text sizes together instead of the browser's page zoom. `zoomFonts('in' \| 'out' \| 'reset')` does it from a menu and persists.                |
+| Palette source           | `palette` prop                                                 | `inline`                              | `inline` writes every role onto `<html>` at mount. `stylesheet` leaves a catalogue variant to `theme-variants.css`. See below.                                                                    |
+| Editor roles             | `editorRoles` prop                                             | `syntax`                              | The projection behind the `--editor-*` ramp: `syntax` is the catalogue's quiet roles, `floor` holds all sixteen to 4.5:1 on the canvas.                                                           |
+| Versioned storage        | `createVersionedPersistence(schema, codec)`                    | none                                  | A persistence over a host's own versioned JSON document, with quarantine of unreadable records. See below.                                                                                        |
+| Boot script options      | `themeScript(options)`                                         | string form                           | Paints a versioned document's attributes before first paint. See "Avoiding the flash".                                                                                                            |
+| Optional context         | `useOptionalTheme()`                                           | n/a                                   | The context, or `undefined` outside a provider, for a component that works with or without one.                                                                                                   |
+
+Three details are easy to get wrong:
+
+- **Surface.** The axis is written only when the `surface` prop is on or the selection
+  already carries a `surface`; otherwise a provider adds no `data-surface`, no media
+  query listener and no stored field. The prop takes `true` or
+  `{ nativeTranslucency }` (a boolean or a function, for a capability learned after
+  mount). Without native translucency a `translucent` preference paints the tokenized
+  `frosted` surface. The OS setting or `reduceTransparency` forces `opaque`.
+  `effectiveSurface()` and `reduceTransparencyActive()` report the outcome of the
+  committed selection; the stored value is a preference, never the outcome.
+- **Accent grammar.** A custom colour is stored lower case and raised to the contrast
+  floor when it is painted, never when it is stored. A `#rrggbb` accent is reported as
+  `data-accent="custom"`, because the hex itself is the worst possible attribute
+  content. A theme accent (`ansi-blue`) the current pair does not offer falls back to
+  the variant's own primary.
+- **Editor roles.** `floor` applies to catalogue variants. A host's own `themes` keep
+  their `editor` and `tokens`.
+
+#### Persisting a host's own document
+
+`localStoragePersistence` stores the selection as it is. A host that already has a
+versioned document, a legacy key to migrate from or its own field names describes the
+document once, as a `ThemeStorageSchema`, and supplies a codec for the fields:
+
+```tsx
+import { createVersionedPersistence, type ThemeStorageSchema } from '@adea-ai/ui'
+
+export const appearanceSchema = {
+  key: 'my-app.appearance',
+  version: 2,
+  appearanceField: 'mode',
+  legacyAppearanceKey: 'my-app.theme',
+  libraryKey: 'my-app.themes',
+} satisfies ThemeStorageSchema
+
+const persistence = createVersionedPersistence(appearanceSchema, {
+  decode: (record) => ({ appearance: record.mode as 'light' | 'dark' | 'system' /* … */ }),
+  fromLegacy: (value) => (value === 'dark' ? { appearance: 'dark' } : undefined),
+  defaults: () => ({ accent: 'violet' }),
+  encode: (next, previous) => ({ ...previous, version: 2, mode: next.appearance /* … */ }),
+})
+```
+
+The engine owns storage; the codec owns the product schema:
+
+- A record of the wrong shape or any version other than `schema.version` is
+  quarantined byte for byte into `recoveryKey` (default `${key}.recovery`) at read
+  time, before anything can overwrite it, and `defaults()` answers.
+- `fromLegacy` is called only while the main key is absent, and the legacy key is
+  never deleted.
+- `defaults()` is optional. It answers for a fresh install, an unreadable record or
+  blocked storage, so a host can start from its own accent. Absent, the provider's
+  defaults apply.
+- `encode(next, previous)` receives the record last read or written, so a codec can
+  carry a field the selection does not model. Nothing is written until `setSelection`
+  asks, and neither method throws.
+
+Because the same schema object feeds `themeScript`, the boot script and the provider
+cannot disagree about a key, a version or a field name.
+
 ### Avoiding the flash
 
 A themed app has to know the appearance before its first paint, or it paints once in
@@ -122,20 +209,95 @@ key must match the provider's:
 </head>
 ```
 
-For a host-owned, versioned preference record, run the exported font bootstrap
-with the expected storage version before the theme stylesheets. It applies only
-an exact version match; when the record is absent or unsupported, it projects the
-shared System font defaults before first paint. Hosts using unversioned records
-can omit the version argument.
+The string form serves a provider that stores an unversioned `localStorage[key]`
+document. It sets the `dark` class, `color-scheme`, `data-accent` and `data-density`,
+and its output does not change between releases. It does not apply the variant's
+roles: the default theme in `theme.css` covers the first paint and the provider
+writes the rest at mount.
+
+For a host with a versioned document, pass the same schema the persistence uses plus
+what to paint:
+
+```tsx
+<script
+  innerHTML={themeScript({
+    ...appearanceSchema,
+    defaultAccent: 'violet',
+    surface: true,
+    palette: 'stylesheet',
+  })}
+/>
+```
+
+| Option                                                                                  | What it does                                                                                                                                                                                             |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`, `version`, `appearanceField`, `legacyAppearanceKey`, `libraryKey`, `recoveryKey` | The `ThemeStorageSchema`. A document of any other `version` is not read; the legacy key is read only while the main key is absent.                                                                       |
+| `defaultAccent`                                                                         | The `data-accent` painted when the document has none, an unrecognised one, or the legacy `theme` spelling. Without it those cases paint none.                                                            |
+| `surface`                                                                               | Also resolves `data-surface`, `data-reduce-transparency` and `--surface-alpha`. A `translucent` preference resolves to `frosted` until the provider knows the host. Match the provider's `surface` prop. |
+| `palette`                                                                               | Accepted so one options object can serve both halves. It changes nothing in the script (see below).                                                                                                      |
+| `libraryVersion`                                                                        | The only `version` of the `libraryKey` document read. Default `1`.                                                                                                                                       |
+
+The options form writes `class="dark"`, `color-scheme`, `data-theme`,
+`data-appearance`, `data-accent`, a compact `data-density`, the surface attributes
+when asked, the font settings (guarded to `version`) and, for a theme found in the
+stored library, that theme's own tokens inline. It reads values into `dataset` and
+`style`, which are property assignments, so a stored value can set an attribute and
+cannot execute.
+
+A catalogue theme other than the default pair has no inline tokens in the script, so
+a page that wants its chosen palette on the first frame also loads the catalogue
+stylesheet, after `theme.css` and before the app's own sheets, and mounts the
+provider with `palette="stylesheet"`:
+
+```css
+@import 'tailwindcss';
+@import '@adea-ai/ui/theme.css';
+@import '@adea-ai/ui/theme-variants.css';
+@import '@adea-ai/ui/base.css';
+@import './app.css';
+```
+
+`theme-variants.css` carries one `[data-theme]` block for each of the 32 other
+catalogue themes, and for the default pair only the `--terminal-*` and `--editor-*`
+properties `theme.css` does not declare. With `palette="stylesheet"` the provider
+writes inline only what no stylesheet can know: a host's own `themes`, the accent,
+the terminal pin, `--surface-alpha` and the fonts. Switching from a host theme back
+to a catalogue one removes the properties the host theme wrote.
+
+#### Caveats
+
+- **`palette` and `themeScript`.** The script ignores `palette` and never writes a
+  catalogue palette token. A catalogue palette reaches the first frame only through
+  `theme.css` (the default pair) or `theme-variants.css`. With `palette="inline"` and
+  no sheet, a non-default catalogue theme appears at mount.
+- **`editorRoles="floor"` with `palette="stylesheet"`.** The sheet is generated for
+  `syntax`, so this pairing writes the sixteen `--editor-*` properties inline, as hex,
+  over the sheet. The rest of the palette stays in the sheet.
+- **oklch against hex.** The sheet's colours are `oklch()`. `tokensAsHex` and any
+  `transformTokens` affect inline writes only, so a host that used to write hex for
+  every theme gets `oklch()` from the sheet for the catalogue palette. Check any test
+  or native consumer that reads a computed colour as hex.
+- **Cascade.** A light theme's `[data-theme]` rule and a light accent's
+  `[data-accent]` rule have the same specificity, and the sheet loads later. The light
+  accent blocks are therefore repeated at the end of the sheet so a stored accent
+  still wins. Dark accents (`.dark[data-accent]`) are more specific and are not
+  repeated. Do not reorder the sheet.
+- **Accent attribute.** A hex accent paints `data-accent="custom"` in the script and in
+  the provider; a theme-derived `ansi-*` accent paints none in the script (the
+  provider paints it inline). The legacy accent `theme` makes the script paint
+  `defaultAccent`; the provider writes no `data-accent` for `theme`. A host that sets
+  `defaultAccent` should have its codec store that accent for a fresh install (see
+  `defaults()`), so the two agree.
 
 ### The stylesheet exports
 
-| Export        | What it is                                              | When                                             |
-| ------------- | ------------------------------------------------------- | ------------------------------------------------ |
-| `globals.css` | Tailwind, the base layer, every token.                  | The app does not import Tailwind itself.         |
-| `theme.css`   | Tokens only, plus the `@theme inline` mapping.          | **Preferred.** The app already imports Tailwind. |
-| `base.css`    | State variants, keyframes, named utilities, base layer. | With `theme.css`.                                |
-| `fonts.css`   | The two variable typefaces from `@fontsource-variable`. | Once, if the app wants the system's faces.       |
+| Export               | What it is                                              | When                                             |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------ |
+| `globals.css`        | Tailwind, the base layer, every token.                  | The app does not import Tailwind itself.         |
+| `theme.css`          | Tokens only, plus the `@theme inline` mapping.          | **Preferred.** The app already imports Tailwind. |
+| `theme-variants.css` | Every catalogue theme as a `[data-theme]` block.        | After `theme.css`, with `palette="stylesheet"`.  |
+| `base.css`           | State variants, keyframes, named utilities, base layer. | With `theme.css`.                                |
+| `fonts.css`          | The two variable typefaces from `@fontsource-variable`. | Once, if the app wants the system's faces.       |
 
 `theme.css` is the preferred entry for an application that has its own Tailwind
 setup: importing `globals.css` as well would import Tailwind twice.
