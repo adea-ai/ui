@@ -14,6 +14,8 @@ import {
   variantFromRecord,
 } from '../src/lib/themes'
 import { getTheme } from '@adea-ai/themes'
+import { surfaceAlpha } from '../src/lib/theme-surface'
+import { terminalCssVariables } from '../src/lib/themes'
 import { fakeRoot } from './helpers/fake-root'
 
 const stateOf = (
@@ -230,6 +232,191 @@ describe('themeDocumentTokens', () => {
 
   test('an unknown accent id is not an accent', () => {
     expect(themeDocumentTokens(stateOf({ accent: 'chartreuse' })).accented).toBe(false)
+  })
+})
+
+const terminalNames = (tokens: Record<string, string>) =>
+  Object.keys(tokens).filter((name) => name.startsWith('--terminal-'))
+
+describe('a pinned terminal palette', () => {
+  test('is written over the interface variant, last, and only the terminal ramp', () => {
+    const { root, properties } = fakeRoot()
+    const dracula = themeById('dracula')!
+    applyThemeToRoot(root, { ...stateOf({}, 'nord'), terminalVariant: dracula })
+
+    const pinned = terminalCssVariables(dracula)
+    const interfaceVariant = themeCssVariables(themeById('nord')!)
+    expect(terminalNames(pinned)).toHaveLength(20)
+    expect(pinned['--terminal-background']).not.toBe(interfaceVariant['--terminal-background'])
+    for (const [name, value] of Object.entries(pinned)) expect(properties.get(name)).toBe(value)
+    // Everything else is still nord's.
+    expect(properties.get('--background')).toBe(interfaceVariant['--background'])
+    expect(properties.get('--editor-keyword')).toBe(interfaceVariant['--editor-keyword'])
+  })
+
+  test('dropping the pin repaints the interface palette on the same root', () => {
+    const { root, properties } = fakeRoot()
+    const pinned = applyThemeToRoot(root, {
+      ...stateOf({}, 'nord'),
+      terminalVariant: themeById('dracula')!,
+    })
+    applyThemeToRoot(root, stateOf({}, 'nord'), {}, pinned)
+    const own = themeCssVariables(themeById('nord')!)
+    for (const name of terminalNames(own)) expect(properties.get(name)).toBe(own[name])
+  })
+
+  test('is a custom variant`s verbatim terminal tokens when it carries them', () => {
+    const imported = {
+      ...variantFromRecord({ ...getTheme('nord')!, id: 'custom-t' }),
+      tokens: { '--terminal-background': '#010203' },
+    }
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(root, { ...stateOf(), terminalVariant: imported })
+    expect(properties.get('--terminal-background')).toBe('#010203')
+  })
+
+  test('goes through transformTokens with the rest of the pass', () => {
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(
+      root,
+      { ...stateOf({}, 'nord'), terminalVariant: themeById('dracula')! },
+      { transformTokens: tokensAsHex }
+    )
+    expect(properties.get('--terminal-ansi-red')).toMatch(/^#[0-9a-f]{6}$/)
+  })
+})
+
+const surface = (name: 'opaque' | 'frosted' | 'translucent', reduce = false) => ({
+  surface: { surface: name, reduceTransparencyActive: reduce },
+})
+
+describe('the surface axis on the document', () => {
+  test('absent state writes no attribute and no property', () => {
+    const { root, attributes, properties } = fakeRoot()
+    applyThemeToRoot(root, stateOf())
+    expect(attributes.has('data-surface')).toBe(false)
+    expect(attributes.has('data-reduce-transparency')).toBe(false)
+    expect(properties.has('--surface-alpha')).toBe(false)
+  })
+
+  test('each surface writes its attribute and its alpha', () => {
+    for (const name of ['opaque', 'frosted', 'translucent'] as const) {
+      const { root, attributes, properties } = fakeRoot()
+      applyThemeToRoot(root, { ...stateOf(), ...surface(name) })
+      expect(attributes.get('data-surface')).toBe(name)
+      expect(attributes.get('data-reduce-transparency')).toBe('false')
+      expect(properties.get('--surface-alpha')).toBe(surfaceAlpha[name])
+    }
+  })
+
+  test('reduced transparency is diagnosable and forces the opaque alpha', () => {
+    const { root, attributes, properties } = fakeRoot()
+    applyThemeToRoot(root, { ...stateOf(), ...surface('opaque', true) })
+    expect(attributes.get('data-reduce-transparency')).toBe('true')
+    expect(attributes.get('data-surface')).toBe('opaque')
+    expect(properties.get('--surface-alpha')).toBe('1')
+  })
+
+  test('turning the axis off removes what it wrote', () => {
+    const { root, attributes, properties } = fakeRoot()
+    const on = applyThemeToRoot(root, { ...stateOf(), ...surface('frosted') })
+    applyThemeToRoot(root, stateOf(), {}, on)
+    expect(attributes.has('data-surface')).toBe(false)
+    expect(attributes.has('data-reduce-transparency')).toBe(false)
+    expect(properties.has('--surface-alpha')).toBe(false)
+  })
+
+  test('the alpha is reported among the properties the pass owns', () => {
+    const { root } = fakeRoot()
+    expect(
+      applyThemeToRoot(root, { ...stateOf(), ...surface('frosted') }).has('--surface-alpha')
+    ).toBe(true)
+  })
+})
+
+describe("palette: 'stylesheet'", () => {
+  const options = { palette: 'stylesheet' as const }
+
+  test('a catalogue variant writes no palette inline, default pair or not', () => {
+    for (const [id, appearance] of [
+      ['adea-dark', 'dark'],
+      ['nord', 'dark'],
+      ['adea-light', 'light'],
+    ] as const) {
+      const { root, properties, attributes } = fakeRoot()
+      applyThemeToRoot(root, stateOf({}, id, appearance), options)
+      expect(properties.has('--background')).toBe(false)
+      expect(properties.has('--terminal-background')).toBe(false)
+      expect(properties.has('--editor-keyword')).toBe(false)
+      // The attributes the stylesheet selects on are still written.
+      expect(attributes.get('data-theme')).toBe(id)
+    }
+  })
+
+  test('fonts, an accent and the surface alpha are still written inline', () => {
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(
+      root,
+      {
+        ...stateOf({ accent: 'violet', font: 'geist' }),
+        surface: { surface: 'frosted', reduceTransparencyActive: false },
+      },
+      options
+    )
+    const expected = accentVariables('violet', 'dark', defaultThemeSelection)!
+    for (const [name, value] of Object.entries(expected)) expect(properties.get(name)).toBe(value)
+    expect(properties.get('--font-ui')).toBe('var(--font-family-geist)')
+    expect(properties.get('--surface-alpha')).toBe('0.92')
+  })
+
+  test('a pinned terminal palette is the only palette written for a catalogue variant', () => {
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(
+      root,
+      { ...stateOf({}, 'nord'), terminalVariant: themeById('dracula')! },
+      options
+    )
+    expect(properties.has('--background')).toBe(false)
+    expect(properties.get('--terminal-background')).toBe(
+      terminalCssVariables(themeById('dracula')!)['--terminal-background']
+    )
+  })
+
+  test('an imported variant is written inline, and switching back sweeps every key it wrote', () => {
+    const { root, properties } = fakeRoot()
+    const imported = {
+      ...variantFromRecord({ ...getTheme('nord')!, id: 'custom-x' }),
+      tokens: { '--only-on-import': '#123456' },
+    }
+    const withImport = applyThemeToRoot(root, { ...stateOf(), variant: imported }, options)
+    expect(properties.get('--only-on-import')).toBe('#123456')
+    expect(properties.get('--background')).toBe(themeCssVariables(imported)['--background'])
+
+    applyThemeToRoot(root, stateOf({}, 'adea-dark'), options, withImport)
+    // Nothing the imported theme owned is left inline to beat the stylesheet.
+    expect(properties.has('--only-on-import')).toBe(false)
+    expect(properties.has('--background')).toBe(false)
+    expect(properties.has('--terminal-background')).toBe(false)
+  })
+
+  test('a host copy that merely shares a catalogue id is not the catalogue', () => {
+    const copy = { ...variantFromRecord(getTheme('nord')!), tokens: { '--x': '1' } }
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(root, { ...stateOf(), variant: copy }, options)
+    expect(properties.get('--x')).toBe('1')
+    expect(properties.has('--background')).toBe(true)
+  })
+
+  test('the default `inline` mode is unchanged: the whole palette is written', () => {
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(root, stateOf({}, 'nord'), { palette: 'inline' })
+    expect(properties.get('--background')).toBe(
+      themeCssVariables(themeById('nord')!)['--background']
+    )
+  })
+
+  test('the tokens of a catalogue variant are only the accent and the pin', () => {
+    expect(themeDocumentTokens(stateOf({}, 'nord'), options).tokens).toEqual({})
   })
 })
 

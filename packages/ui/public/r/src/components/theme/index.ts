@@ -21,6 +21,7 @@ export {
   type ThemePersistence,
   type ThemeProviderProps,
   type ThemeSelection,
+  type ThemeSurface,
 } from './theme-provider'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { ThemeModeToggle, type ThemeModeToggleProps } from './theme-mode-toggle'

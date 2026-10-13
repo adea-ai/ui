@@ -2,6 +2,7 @@ import { normalizeCustomAccent } from '#lib/accent-roles'
 import { accentPresets } from '#lib/tokens'
 import { normalizeAppearanceEditorFontSettings } from '#lib/appearance-font-settings'
 import { defaultDarkThemeId, defaultLightThemeId, isThemeAccentId, themeById } from '#lib/themes'
+import { normalizeSurface } from '#lib/theme-surface'
 import { defaultThemeSelection, resolvedDensity, type ThemeSelection } from './theme-state'
 
 /**
@@ -83,6 +84,17 @@ function readSelection(storageKey: string): ThemeSelection {
       // document effect removes the `data-density` that `themeScript` set for the first paint, and
       // the next `setSelection` rewrites the store without it.
       density: resolvedDensity(parsed as ThemeSelection),
+      // The newer axes are read back only when the store holds a usable value and are
+      // otherwise left `undefined`, never defaulted: `JSON.stringify` drops them, so a
+      // consumer that never sets one writes the bytes it always did. An id is kept as
+      // stored, known or not, for the same reason a theme id the registry lacks is.
+      terminalThemeId:
+        typeof parsed.terminalThemeId === 'string' && parsed.terminalThemeId.trim() !== ''
+          ? parsed.terminalThemeId
+          : undefined,
+      surface: normalizeSurface(parsed.surface),
+      reduceTransparency:
+        typeof parsed.reduceTransparency === 'boolean' ? parsed.reduceTransparency : undefined,
     }
   } catch {
     return defaultThemeSelection

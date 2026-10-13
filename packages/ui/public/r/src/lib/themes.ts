@@ -734,6 +734,20 @@ export function themeCssVariables(theme: ThemeVariant): Record<string, string> {
 }
 
 /**
+ * The `--terminal-*` properties of a variant: the palette a terminal paints.
+ *
+ * What a pinned terminal theme writes over the interface variant's own. Taken from
+ * {@link themeCssVariables} rather than rebuilt, so the names, and a custom
+ * variant's verbatim `tokens`, can never drift from what the interface variant
+ * would have written for the same palette.
+ */
+export function terminalCssVariables(theme: ThemeVariant): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(themeCssVariables(theme)).filter(([name]) => name.startsWith('--terminal-'))
+  )
+}
+
+/**
  * Token values with every `oklch()` colour written as `#rrggbb`.
  *
  * For a host whose stylesheet, tests or native shell speak hex: the catalogue's

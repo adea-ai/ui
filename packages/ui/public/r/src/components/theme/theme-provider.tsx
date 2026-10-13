@@ -1,7 +1,9 @@
 import type { JSX } from 'solid-js'
-import { createEffect, createMemo, createSignal, onCleanup, splitProps } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js'
 import { safeScriptStringLiteral } from '../../lib/safe-script'
 import { fontSettingsBootstrapScript } from '../../lib/appearance-font-settings'
+import { fontZoomShortcut, type FontZoomIntent } from '../../lib/font-zoom'
+import { REDUCED_TRANSPARENCY_QUERY, resolveSurfaceState } from '../../lib/theme-surface'
 import {
   builtinThemes,
   themeAccentsFor,
@@ -21,13 +23,16 @@ import {
   initialThemeSelection,
   mergeRegistry,
   mergeThemeSelection,
+  resolveTerminalVariant,
   resolveThemeState,
+  zoomedFontSettings,
   type ThemeContextValue,
   type ThemeSelection,
 } from './theme-state'
 
 export { useOptionalTheme, useTheme } from './theme-context'
 export { localStoragePersistence, type ThemePersistence } from './theme-persistence'
+export type { ThemeSurface } from '../../lib/theme-surface'
 export {
   defaultThemeSelection,
   resolvedDensity,
@@ -121,6 +126,48 @@ export type ThemeProviderProps = {
    * own themes the floor changes no preset.
    */
   accentContrastFloor?: number
+  /**
+   * Turns the surface axis on: `selection.surface` and `selection.reduceTransparency`
+   * are resolved against the operating system's Reduce Transparency setting and the
+   * host's capability, and `data-surface`, `data-reduce-transparency` and
+   * `--surface-alpha` are written to `<html>` (the frost rule in `theme.css` reads
+   * them). Off by default: a provider that never opts in writes none of them, adds no
+   * media-query listener, and stores nothing new.
+   *
+   * An object also states the host's capability. `nativeTranslucency` is whether the
+   * window can render the OS's own translucency; without it a `translucent`
+   * preference paints the tokenized `frosted` surface instead of pretending to
+   * vibrancy. A function is read inside the provider's reactive scope, for a
+   * capability that is learned after mount.
+   *
+   * A selection that already carries a `surface` turns the axis on for itself, so a
+   * host that stores the field gets the same document without the prop.
+   */
+  surface?: boolean | { nativeTranslucency?: boolean | (() => boolean) }
+  /**
+   * Where a catalogue variant's palette comes from. `inline` (the default) writes
+   * every role onto `<html>`. `stylesheet` leaves a catalogue variant to the host's
+   * `[data-theme]` stylesheet and writes inline only what no stylesheet can know: a
+   * host's own `themes`, the accent, the pinned terminal palette, the surface alpha
+   * and the fonts. Switching from a host variant back to a catalogue one removes the
+   * properties the host variant wrote.
+   */
+  palette?: 'inline' | 'stylesheet'
+  /**
+   * Bind the platform zoom chords (Cmd or Ctrl with `=`, `+`, `-`, `0`) to the three
+   * text sizes instead of the browser's page zoom: stepping them together is zoom
+   * inside the persisted type system. Off by default: it adds a capturing `keydown`
+   * listener to `window`, and an event already handled elsewhere is left alone.
+   * `zoomFonts` on the context does the same from a menu or a host's own binding.
+   */
+  fontZoom?: boolean
+}
+
+/** The operating system's Reduce Transparency query, where there is a window to ask. */
+function reducedTransparencyMedia(): MediaQueryList | undefined {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(REDUCED_TRANSPARENCY_QUERY)
+    : undefined
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
@@ -134,6 +181,9 @@ export function ThemeProvider(props: ThemeProviderProps) {
     'transformTokens',
     'disableTransitionOnChange',
     'accentContrastFloor',
+    'surface',
+    'palette',
+    'fontZoom',
   ])
   const storageKey = () => local.storageKey ?? 'adea-appearance'
   const persistence = local.persistence ?? localStoragePersistence(storageKey)
@@ -186,6 +236,37 @@ export function ThemeProvider(props: ThemeProviderProps) {
     draft() ? resolveThemeState(shownSelection(), systemAppearance(), registry()) : committed()
   )
 
+  // The surface axis. Off, none of this reads the operating system: the media query
+  // is subscribed only while the axis is on, so a provider that never opts in adds no
+  // listener and no repaint.
+  const surfaceOn = (candidate: ThemeSelection) =>
+    local.surface === true || typeof local.surface === 'object' || candidate.surface !== undefined
+  const nativeTranslucency = () => {
+    const capability = typeof local.surface === 'object' ? local.surface.nativeTranslucency : false
+    return (typeof capability === 'function' ? capability() : capability) === true
+  }
+  const [osReducedTransparency, setOsReducedTransparency] = createSignal(
+    surfaceOn(untrack(shownSelection)) ? (reducedTransparencyMedia()?.matches ?? false) : false
+  )
+  const axisOn = createMemo(() => surfaceOn(shownSelection()))
+  createEffect(() => {
+    const query = axisOn() ? reducedTransparencyMedia() : undefined
+    setOsReducedTransparency(query?.matches ?? false)
+    if (!query) return
+    const onChange = (event: MediaQueryListEvent) => setOsReducedTransparency(event.matches)
+    query.addEventListener('change', onChange)
+    onCleanup(() => query.removeEventListener('change', onChange))
+  })
+  const surfaceStateOf = (candidate: ThemeSelection) =>
+    resolveSurfaceState(candidate.surface, {
+      osReducedTransparency: osReducedTransparency(),
+      userReducedTransparency: candidate.reduceTransparency === true,
+      nativeTranslucency: nativeTranslucency(),
+    })
+  const committedSurface = createMemo(() =>
+    surfaceOn(selection()) ? surfaceStateOf(selection()) : undefined
+  )
+
   let written: ReadonlySet<string> | undefined
   let restoreTransitions: (() => void) | undefined
   createEffect(() => {
@@ -194,10 +275,13 @@ export function ThemeProvider(props: ThemeProviderProps) {
       selection: shownSelection(),
       appearance: shown().appearance,
       variant: shown().variant,
+      terminalVariant: resolveTerminalVariant(shownSelection().terminalThemeId, registry()),
+      surface: axisOn() ? surfaceStateOf(shownSelection()) : undefined,
     }
     const options = {
       transformTokens: local.transformTokens,
       accentContrastFloor: local.accentContrastFloor,
+      palette: local.palette,
     }
     const apply = () => {
       written = applyThemeToRoot(document.documentElement, state, options, written)
@@ -214,6 +298,24 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const themeAccents = createMemo(() =>
     themeAccentsFor(selection().lightThemeId, selection().darkThemeId)
   )
+
+  const zoomFonts = (intent: FontZoomIntent) =>
+    value.setSelection({ fonts: zoomedFontSettings(selection(), intent) })
+
+  // The platform zoom chords drive the three text sizes, captured like the other
+  // global chords; an event something else already handled never double-steps.
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.defaultPrevented) return
+    const intent = fontZoomShortcut(event)
+    if (!intent) return
+    event.preventDefault()
+    zoomFonts(intent)
+  }
+  createEffect(() => {
+    if (!local.fontZoom || typeof window === 'undefined') return
+    window.addEventListener('keydown', onKeyDown, { capture: true })
+    onCleanup(() => window.removeEventListener('keydown', onKeyDown, { capture: true }))
+  })
 
   const value: ThemeContextValue = {
     selection,
@@ -233,6 +335,9 @@ export function ThemeProvider(props: ThemeProviderProps) {
         registry: registry(),
         accentContrastFloor: local.accentContrastFloor,
       }),
+    effectiveSurface: () => committedSurface()?.surface ?? 'opaque',
+    reduceTransparencyActive: () => committedSurface()?.reduceTransparencyActive ?? false,
+    zoomFonts,
     setSelection(patch) {
       const next = mergeThemeSelection(selection(), patch)
       setSelectionState(next)

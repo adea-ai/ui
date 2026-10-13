@@ -637,6 +637,15 @@
   --z-menu: 140;
   --z-tooltip: 160;
   --z-toast: 180;
+
+  /* Surface glass. `--surface-alpha` is what the provider's surface axis writes: the
+     opacity a frosted dialog's fill keeps (1 = opaque, so the default never matches
+     the frost rule's blur). `--surface-frost` and `--surface-translucent` are the two
+     amounts it chooses between; `lib/theme-surface.ts` writes the same numbers, and
+     `tests/theme-surface.test.ts` fails when they disagree. */
+  --surface-alpha: 1;
+  --surface-frost: 0.92;
+  --surface-translucent: 0.8;
 }
 
 /* Compact density: the standard control ladder one rung tighter.
@@ -685,6 +694,35 @@
   --shadow-md: 0 4px 12px oklch(0 0 0 / 0.25), 0 0 0 1px oklch(1 0 0 / 0.03);
   --shadow-lg: 0 12px 28px oklch(0 0 0 / 0.35);
   --shadow-xl: 0 20px 44px oklch(0 0 0 / 0.45);
+}
+
+/* The OS-level backstop for the surface axis. The provider resolves the effective
+   surface and the reduced-transparency policy and writes `--surface-alpha` inline,
+   which outranks this rule; this is what keeps a frost amount from outliving the
+   system's Reduce Transparency setting for a document the provider has not
+   reached yet (a server-rendered one, before hydration). */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface-alpha: 1;
+  }
+}
+
+/* Tokenized frost: while the resolved surface asks for glass, a modal dialog goes
+   translucent and blurs the content behind it. The opaque default and both
+   reduced-transparency paths resolve `--surface-alpha` to 1 and never write
+   `data-surface='frosted'`, so frost only ever applies when the user chose it and
+   the platform can honour it. Native window vibrancy (a desktop shell's translucent
+   surface) remains the shell's work; this is the frost the surface preference
+   promises everywhere else.
+
+   Modal dialogs only: a sheet carries `data-variant` and keeps its own bands. */
+[data-surface='frosted'] [role='dialog']:not([data-variant]) {
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--surface-alpha) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(1.25rem) saturate(140%);
 }
 
 /* ---------------------------------------------------------------------------

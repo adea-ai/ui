@@ -5,6 +5,8 @@ import {
 } from '../../lib/appearance-font-settings'
 import type { AccentPreset } from '@adea-ai/themes'
 import { normalizeCustomAccent, type AccentRoles } from '../../lib/accent-roles'
+import { stepAppearanceFontSizes, type FontZoomIntent } from '../../lib/font-zoom'
+import type { ThemeSurface } from '../../lib/theme-surface'
 import {
   accentRolesForSelection,
   defaultDarkThemeId,
@@ -63,6 +65,30 @@ export type ThemeSelection = {
    * keeps working and `ThemeSelection` stays assignable without it.
    */
   density?: ThemeDensity
+  /**
+   * The terminal either follows the interface theme (`theme`, or absent) or is pinned
+   * to another theme's terminal palette by that theme's id. The pin is written over
+   * the interface variant's own `--terminal-*` properties, so a light interface can
+   * carry a dark terminal.
+   *
+   * An id the registry does not hold paints the interface palette and stays in the
+   * selection, the same rule as an unknown theme id.
+   *
+   * Optional and not defaulted: see {@link defaultThemeSelection}.
+   */
+  terminalThemeId?: string
+  /**
+   * How opaque elevated panels are. Written to `<html>` only when the provider's
+   * `surface` prop is on or this is set; absent, a host paints no surface axis at
+   * all. Resolved against the OS and the host's capability before it is painted —
+   * see `resolveSurface` — so the value stored is a preference, never the outcome.
+   */
+  surface?: ThemeSurface
+  /**
+   * The user's own Reduce Transparency switch, which forces the `opaque` surface the
+   * same way the operating system's setting does.
+   */
+  reduceTransparency?: boolean
 }
 
 /**
@@ -143,6 +169,24 @@ export type ThemeContextValue = {
    * registry does not hold: each means "keep the inherited accent".
    */
   accentRolesFor: (accent: string | null, variantId?: string) => AccentRoles | undefined
+  /**
+   * The surface the committed selection paints, after Reduce Transparency and the
+   * host's translucency capability. `opaque` when the axis is off. Follows the
+   * committed selection, not a preview, like {@link ThemeContextValue.variant}.
+   */
+  effectiveSurface: () => ThemeSurface
+  /**
+   * True while the operating system or the selection's `reduceTransparency` forces
+   * opaque surfaces. Always false when the surface axis is off, because nothing is
+   * then listening to the operating system.
+   */
+  reduceTransparencyActive: () => boolean
+  /**
+   * Step the three text sizes together, or put them back to the defaults: what the
+   * `fontZoom` prop's chords do, for a host that binds its own keys or a menu. Goes
+   * through {@link ThemeContextValue.setSelection}, so it persists and ends a preview.
+   */
+  zoomFonts: (intent: FontZoomIntent) => void
 }
 
 /** A selection with the `undefined` keys of a patch left out. */
@@ -229,6 +273,34 @@ export function resolveThemeState(
     appearance,
     variant: resolveVariant(registry, selectedThemeId(selection, appearance), appearance),
   }
+}
+
+/**
+ * The variant whose terminal palette is pinned, or `undefined` when the terminal
+ * follows the interface theme.
+ *
+ * `theme`, an absent id and an id the registry does not hold all mean the interface
+ * palette: a terminal must never resolve to a blank or half-painted palette because a
+ * theme was deleted after it was pinned.
+ */
+export function resolveTerminalVariant(
+  terminalThemeId: string | undefined,
+  registry: readonly ThemeVariant[]
+): ThemeVariant | undefined {
+  if (terminalThemeId === undefined || terminalThemeId === 'theme') return undefined
+  return registry.find((candidate) => candidate.id === terminalThemeId)
+}
+
+/**
+ * The font settings a zoom chord asks for: one pixel up or down on every axis, or
+ * the defaults for `reset`.
+ */
+export function zoomedFontSettings(
+  selection: ThemeSelection,
+  intent: FontZoomIntent
+): AppearanceEditorFontSettings {
+  if (intent === 'reset') return { ...DEFAULT_APPEARANCE_EDITOR_FONT_SETTINGS }
+  return stepAppearanceFontSizes(selection.fonts, intent === 'in' ? 1 : -1)
 }
 
 /**

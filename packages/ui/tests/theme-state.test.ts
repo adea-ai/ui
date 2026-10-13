@@ -14,9 +14,11 @@ import {
   mergeRegistry,
   mergeThemeSelection,
   resolveAppearance,
+  resolveTerminalVariant,
   resolveThemeState,
   resolvedDensity,
   selectedThemeId,
+  zoomedFontSettings,
   type ThemeSelection,
 } from '../src/components/theme/theme-state'
 import { getTheme } from '@adea-ai/themes'
@@ -252,5 +254,84 @@ describe('accentRolesForState', () => {
     const lenient = accentRolesForState('#7a9cff', undefined, state())!
     const strict = accentRolesForState('#7a9cff', undefined, state({}, 12))!
     expect(strict.primary).not.toBe(lenient.primary)
+  })
+})
+
+describe('the surface, terminal and reduce-transparency fields', () => {
+  test('merge keeps them, and an explicit undefined clears one', () => {
+    const next = mergeThemeSelection(defaultThemeSelection, {
+      surface: 'frosted',
+      terminalThemeId: 'dracula',
+      reduceTransparency: true,
+    })
+    expect(next).toMatchObject({
+      surface: 'frosted',
+      terminalThemeId: 'dracula',
+      reduceTransparency: true,
+    })
+    const cleared = mergeThemeSelection(next, { surface: undefined })
+    expect(cleared.surface).toBeUndefined()
+    expect(cleared.terminalThemeId).toBe('dracula')
+  })
+
+  test('an initial selection without them serialises without them', () => {
+    const selection = initialThemeSelection(undefined, { appearance: 'dark', font: 'geist' })
+    expect('surface' in selection).toBe(false)
+    expect('terminalThemeId' in selection).toBe(false)
+    expect('reduceTransparency' in selection).toBe(false)
+    const json = JSON.stringify(selection)
+    expect(json).not.toContain('surface')
+    expect(json).not.toContain('terminal')
+    expect(json).not.toContain('reduceTransparency')
+  })
+
+  test('a store that returns them explicitly undefined leaves them absent', () => {
+    const selection = initialThemeSelection(
+      { surface: undefined, terminalThemeId: undefined, reduceTransparency: undefined },
+      undefined
+    )
+    expect(JSON.stringify(selection)).toBe(JSON.stringify(defaultThemeSelection))
+  })
+
+  test('stored values come back, and `initial` still wins', () => {
+    const selection = initialThemeSelection(
+      { surface: 'translucent', reduceTransparency: true },
+      { surface: 'opaque' }
+    )
+    expect(selection.surface).toBe('opaque')
+    expect(selection.reduceTransparency).toBe(true)
+  })
+})
+
+describe('resolveTerminalVariant', () => {
+  test('follows the interface theme for `theme`, for nothing, and for an id nobody holds', () => {
+    for (const id of [undefined, 'theme', 'deleted-theme', '']) {
+      expect(resolveTerminalVariant(id, builtinThemes)).toBeUndefined()
+    }
+  })
+
+  test('pins the variant an id names, from the builtin catalogue or a host extra', () => {
+    expect(resolveTerminalVariant('dracula', builtinThemes)?.id).toBe('dracula')
+    const extra = variantFromRecord({ ...getTheme('nord')!, id: 'custom-t' })
+    expect(resolveTerminalVariant('custom-t', mergeRegistry(builtinThemes, [extra]))).toBe(extra)
+    expect(resolveTerminalVariant('custom-t', builtinThemes)).toBeUndefined()
+  })
+})
+
+describe('zoomedFontSettings', () => {
+  test('steps every size by one pixel and keeps the families', () => {
+    const base = mergeThemeSelection(defaultThemeSelection, { font: 'geist' })
+    const up = zoomedFontSettings(base, 'in')
+    expect(up.ui).toEqual({ family: 'geist', size: base.fonts!.ui.size + 1 })
+    expect(up.content.size).toBe(base.fonts!.content.size + 1)
+    expect(up.code.size).toBe(base.fonts!.code.size + 1)
+    expect(zoomedFontSettings(base, 'out').ui.size).toBe(base.fonts!.ui.size - 1)
+  })
+
+  test('reset is the defaults, whatever the selection held', () => {
+    const zoomed = mergeThemeSelection(defaultThemeSelection, {
+      fonts: zoomedFontSettings(defaultThemeSelection, 'in'),
+    })
+    expect(zoomedFontSettings(zoomed, 'reset')).toEqual(defaultThemeSelection.fonts!)
   })
 })

@@ -53,6 +53,16 @@ async function open(
   )
   await page.evaluate(
     ({ entries, fixture }) => {
+      // Registered before `addEventListener` is wrapped below, so it is not counted as
+      // the provider's: a handler that already handled the chord, for the zoom guard.
+      window.addEventListener(
+        'keydown',
+        (event) => {
+          if ((window as unknown as { blockKeys?: boolean }).blockKeys) event.preventDefault()
+        },
+        { capture: true }
+      )
+
       const backing = new Map<string, string>(Object.entries(entries))
       const store = {
         getItem: (key: string) => backing.get(key) ?? null,
@@ -74,6 +84,39 @@ async function open(
         return (add as (...args: unknown[]) => void)(type, ...rest)
       }) as typeof window.addEventListener
       ;(window as unknown as { windowListeners: string[] }).windowListeners = windowListeners
+
+      // The operating system's Reduce Transparency setting, which no browser lets a
+      // test emulate: a controllable stand-in for that one query, every other query
+      // passed through. Every query asked for is recorded.
+      const reduceQuery = '(prefers-reduced-transparency: reduce)'
+      const queries: string[] = []
+      const reduceListeners = new Set<(event: { matches: boolean }) => void>()
+      let osReduce = (fixture as { osReduce?: boolean }).osReduce === true
+      const nativeMatchMedia = window.matchMedia.bind(window)
+      window.matchMedia = ((query: string) => {
+        queries.push(query)
+        if (query !== reduceQuery) return nativeMatchMedia(query)
+        return {
+          get matches() {
+            return osReduce
+          },
+          media: query,
+          addEventListener(type: string, listener: (event: { matches: boolean }) => void) {
+            if (type === 'change') reduceListeners.add(listener)
+          },
+          removeEventListener(type: string, listener: (event: { matches: boolean }) => void) {
+            if (type === 'change') reduceListeners.delete(listener)
+          },
+        } as unknown as MediaQueryList
+      }) as typeof window.matchMedia
+      Object.assign(window, {
+        mediaQueries: queries,
+        reduceListenerCount: () => reduceListeners.size,
+        setOsReduce(value: boolean) {
+          osReduce = value
+          for (const listener of reduceListeners) listener({ matches: value })
+        },
+      })
 
       // Every inline rule that switches transitions off, even briefly.
       ;(window as unknown as { sawTransitionRule: boolean }).sawTransitionRule = false
@@ -101,6 +144,17 @@ const stored = (page: Page, key: string) =>
   page.evaluate((k) => window.localStorage.getItem(k), key)
 const rootProperty = (page: Page, name: string) =>
   page.evaluate((n) => document.documentElement.style.getPropertyValue(n).trim(), name)
+
+const osReduce = (page: Page, value: boolean) =>
+  page.evaluate(
+    (v) => (window as unknown as { setOsReduce: (v: boolean) => void }).setOsReduce(v),
+    value
+  )
+const frost = (page: Page, testId = 'dialog-probe') =>
+  page.getByTestId(testId).evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { filter: style.backdropFilter, background: style.backgroundColor }
+  })
 
 test.describe('Cortana profile: a consumer that adopts no new prop sees no change', () => {
   let cortana: Bundle
@@ -190,6 +244,29 @@ test.describe('Cortana profile: a consumer that adopts no new prop sees no chang
     ])
     expect(await stored(page, 'cortana.appearance')).toBe(
       '{"appearance":"dark","lightThemeId":"adea-light","darkThemeId":"adea-dark","accent":"violet","font":"geist","fonts":{"ui":{"family":"geist","size":14},"content":{"family":"system","size":14},"code":{"family":"system","size":12}},"density":"comfortable"}'
+    )
+  })
+
+  test('the surface axis stays off: no media query is read and no listener is attached', async ({
+    page,
+  }) => {
+    await open(page, cortana)
+    await page.getByRole('button', { name: 'Pick nord' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord')
+    const queries = await page.evaluate(
+      () => (window as unknown as { mediaQueries: string[] }).mediaQueries
+    )
+    expect(queries).not.toContain('(prefers-reduced-transparency: reduce)')
+    expect(
+      await page.evaluate(() =>
+        (window as unknown as { reduceListenerCount: () => number }).reduceListenerCount()
+      )
+    ).toBe(0)
+    await expect(html(page)).not.toHaveAttribute('data-surface')
+    await expect(html(page)).not.toHaveAttribute('data-reduce-transparency')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('')
+    expect(await stored(page, 'cortana.appearance')).not.toMatch(
+      /surface|terminalThemeId|reduceTransparency/
     )
   })
 
@@ -453,5 +530,215 @@ test.describe('superset profile: persistence, extra themes, preview', () => {
     await expect(html(page)).toHaveAttribute('data-theme', 'nord')
     await expect(page.getByTestId('dark-id')).toHaveText('nord')
     expect(errors).toEqual([])
+  })
+})
+
+test.describe('superset profile: surface, terminal pin, stylesheet palette, font zoom', () => {
+  let superset: Bundle
+  test.beforeAll(async () => {
+    superset = await bundle('tests/fixtures/theme-provider-superset.tsx', 'SupersetSurface')
+  })
+
+  test('without the prop the axis writes nothing, and a stored surface turns it on by itself', async ({
+    page,
+  }) => {
+    await open(page, superset, { fixture: { stored: { mode: 'dark' } } })
+    await expect(html(page)).toHaveAttribute('data-theme', 'adea-dark')
+    await expect(html(page)).not.toHaveAttribute('data-surface')
+    await expect(page.getByTestId('effective-surface')).toHaveText('opaque')
+    expect((await frost(page)).filter).toBe('none')
+
+    const seeded = await page.context().newPage()
+    await open(seeded, superset, { fixture: { stored: { mode: 'dark', surface: 'frosted' } } })
+    await expect(html(seeded)).toHaveAttribute('data-surface', 'frosted')
+    await expect(html(seeded)).toHaveAttribute('data-reduce-transparency', 'false')
+    expect(await rootProperty(seeded, '--surface-alpha')).toBe('0.92')
+    await seeded.close()
+  })
+
+  test('opaque, frosted and translucent each write their attribute and alpha; frost needs `frosted`', async ({
+    page,
+  }) => {
+    await open(page, superset, {
+      fixture: {
+        surface: { nativeTranslucency: true },
+        recordSelection: true,
+        stored: { mode: 'dark' },
+      },
+    })
+    await expect(html(page)).toHaveAttribute('data-surface', 'opaque')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('1')
+    expect((await frost(page)).filter).toBe('none')
+
+    await page.getByRole('button', { name: 'Frosted' }).click()
+    await expect(html(page)).toHaveAttribute('data-surface', 'frosted')
+    await expect(page.getByTestId('effective-surface')).toHaveText('frosted')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('0.92')
+    const frosted = await frost(page)
+    expect(frosted.filter).toContain('blur')
+    expect(frosted.background).not.toBe((await frost(page, 'sheet-probe')).background)
+    // A sheet carries `data-variant` and keeps its own bands.
+    expect((await frost(page, 'sheet-probe')).filter).toBe('none')
+
+    await page.getByRole('button', { name: 'Translucent' }).click()
+    await expect(html(page)).toHaveAttribute('data-surface', 'translucent')
+    await expect(page.getByTestId('effective-surface')).toHaveText('translucent')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('0.8')
+
+    expect((await writes(page))!.at(-1)).toMatchObject({ surface: 'translucent' })
+  })
+
+  test('translucent is frosted until the host can render it', async ({ page }) => {
+    await open(page, superset, { fixture: { surface: true, stored: { mode: 'dark' } } })
+    await page.getByRole('button', { name: 'Translucent' }).click()
+    await expect(html(page)).toHaveAttribute('data-surface', 'frosted')
+    await expect(page.getByTestId('effective-surface')).toHaveText('frosted')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('0.92')
+  })
+
+  test('the OS setting forces opaque and is followed live through one listener', async ({
+    page,
+  }) => {
+    await open(page, superset, {
+      fixture: { surface: true, osReduce: true, stored: { mode: 'dark', surface: 'frosted' } },
+    })
+    await expect(html(page)).toHaveAttribute('data-surface', 'opaque')
+    await expect(html(page)).toHaveAttribute('data-reduce-transparency', 'true')
+    await expect(page.getByTestId('reduce-active')).toHaveText('true')
+    expect(await rootProperty(page, '--surface-alpha')).toBe('1')
+    expect((await frost(page)).filter).toBe('none')
+
+    await osReduce(page, false)
+    await expect(html(page)).toHaveAttribute('data-surface', 'frosted')
+    await expect(html(page)).toHaveAttribute('data-reduce-transparency', 'false')
+    expect((await frost(page)).filter).toContain('blur')
+
+    await osReduce(page, true)
+    await expect(html(page)).toHaveAttribute('data-surface', 'opaque')
+    expect(
+      await page.evaluate(() =>
+        (window as unknown as { reduceListenerCount: () => number }).reduceListenerCount()
+      )
+    ).toBe(1)
+  })
+
+  test('the user flag forces opaque without the OS, and is stored', async ({ page }) => {
+    await open(page, superset, {
+      fixture: {
+        surface: true,
+        recordSelection: true,
+        stored: { mode: 'dark', surface: 'frosted' },
+      },
+    })
+    await expect(html(page)).toHaveAttribute('data-surface', 'frosted')
+    await page.getByRole('button', { name: 'Reduce on' }).click()
+    await expect(html(page)).toHaveAttribute('data-surface', 'opaque')
+    await expect(html(page)).toHaveAttribute('data-reduce-transparency', 'true')
+    await expect(page.getByTestId('reduce-active')).toHaveText('true')
+    await page.getByRole('button', { name: 'Reduce off' }).click()
+    await expect(html(page)).toHaveAttribute('data-surface', 'frosted')
+    expect((await writes(page))!.at(-1)).toMatchObject({
+      surface: 'frosted',
+      reduceTransparency: false,
+    })
+  })
+
+  test('a pinned terminal palette overlays the interface variant, and unpinning gives it back', async ({
+    page,
+  }) => {
+    await open(page, superset, { fixture: { stored: { mode: 'dark', darkThemeId: 'nord' } } })
+    const own = await rootProperty(page, '--terminal-background')
+    const ownRed = await rootProperty(page, '--terminal-ansi-red')
+
+    await page.getByRole('button', { name: 'Pin dracula' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).not.toBe(own)
+    expect(await rootProperty(page, '--terminal-ansi-red')).not.toBe(ownRed)
+    // Only the terminal moved.
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord')
+
+    // An id that holds no palette is the interface palette, not a blank terminal.
+    await page.getByRole('button', { name: 'Pin missing' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).toBe(own)
+
+    await page.getByRole('button', { name: 'Pin dracula' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).not.toBe(own)
+    await page.getByRole('button', { name: 'Unpin terminal' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).toBe(own)
+    expect(await rootProperty(page, '--terminal-ansi-red')).toBe(ownRed)
+  })
+
+  test("palette 'stylesheet' writes no catalogue palette inline, sweeps an imported theme, keeps the pin", async ({
+    page,
+  }) => {
+    await open(page, superset, {
+      fixture: {
+        palette: 'stylesheet',
+        withCustom: true,
+        stored: { mode: 'dark', darkThemeId: 'custom-nord' },
+      },
+    })
+    await expect(html(page)).toHaveAttribute('data-theme', 'custom-nord')
+    expect(await rootProperty(page, '--background')).toBe('#102030')
+    expect(await rootProperty(page, '--custom-extra')).toBe('1')
+
+    await page.getByRole('button', { name: 'Remove custom' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'adea-dark')
+    for (const name of ['--background', '--custom-extra', '--terminal-background', '--primary']) {
+      expect(await rootProperty(page, name), `${name} left inline`).toBe('')
+    }
+
+    await page.getByRole('button', { name: 'Commit nord' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord')
+    expect(await rootProperty(page, '--background')).toBe('')
+
+    await page.getByRole('button', { name: 'Pin dracula' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).toMatch(/^oklch\(/)
+    expect(await rootProperty(page, '--background')).toBe('')
+    await page.getByRole('button', { name: 'Unpin terminal' }).click()
+    await expect.poll(() => rootProperty(page, '--terminal-background')).toBe('')
+  })
+
+  test('fontZoom steps the three sizes with the chords, persists, and leaves handled events alone', async ({
+    page,
+  }) => {
+    await open(page, superset, { fixture: { fontZoom: true, recordSelection: true } })
+    const size = () => page.getByTestId('ui-size')
+    await expect(size()).toHaveText('14')
+    await expect(page.getByTestId('code-size')).toHaveText('12')
+
+    await page.keyboard.press('Control+=')
+    await expect(size()).toHaveText('15')
+    await expect(page.getByTestId('code-size')).toHaveText('13')
+    await page.keyboard.press('Control+-')
+    await page.keyboard.press('Control+-')
+    await expect(size()).toHaveText('13')
+    expect(await rootProperty(page, '--font-ui-size')).toBe('13px')
+    expect((await writes(page))!.at(-1)).toMatchObject({ fonts: { ui: { size: 13 } } })
+
+    // Something earlier already handled the chord: it is not stepped twice.
+    await page.evaluate(() => ((window as unknown as { blockKeys: boolean }).blockKeys = true))
+    await page.keyboard.press('Control+=')
+    await expect(size()).toHaveText('13')
+    await page.evaluate(() => ((window as unknown as { blockKeys: boolean }).blockKeys = false))
+
+    // An unmodified key is typing, not zoom.
+    await page.keyboard.press('=')
+    await expect(size()).toHaveText('13')
+
+    await page.keyboard.press('Control+0')
+    await expect(size()).toHaveText('14')
+    await expect(page.getByTestId('code-size')).toHaveText('12')
+  })
+
+  test('without fontZoom the chords do nothing, and zoomFonts still works from a menu', async ({
+    page,
+  }) => {
+    await open(page, superset, {})
+    await page.keyboard.press('Control+=')
+    await expect(page.getByTestId('ui-size')).toHaveText('14')
+    await page.getByRole('button', { name: 'Zoom in' }).click()
+    await expect(page.getByTestId('ui-size')).toHaveText('15')
+    await page.getByRole('button', { name: 'Zoom reset' }).click()
+    await expect(page.getByTestId('ui-size')).toHaveText('14')
   })
 })

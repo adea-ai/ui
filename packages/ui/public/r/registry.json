@@ -2675,6 +2675,11 @@
           "target": "lib/font-catalog.ts"
         },
         {
+          "path": "src/lib/font-zoom.ts",
+          "type": "registry:lib",
+          "target": "lib/font-zoom.ts"
+        },
+        {
           "path": "src/lib/form-field.ts",
           "type": "registry:lib",
           "target": "lib/form-field.ts"
@@ -2698,6 +2703,11 @@
           "path": "src/lib/theme-accents.ts",
           "type": "registry:lib",
           "target": "lib/theme-accents.ts"
+        },
+        {
+          "path": "src/lib/theme-surface.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-surface.ts"
         },
         {
           "path": "src/lib/themes.ts",
