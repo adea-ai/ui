@@ -31,18 +31,18 @@ is the work.
 These are not style preferences. Each is enforced by a test, a lint rule or the
 build, and breaking one is a failing check rather than a review comment.
 
-| Invariant                                                                       | Enforced by                                          |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `packages/ui/tests/tokens.test.ts`                               |
-| Every text pairing in the system is measurable and measured                     | `packages/ui/tests/tokens.test.ts` (contrast assertions)      |
-| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                  |
-| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                       |
-| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`          |
-| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                              |
-| Every public export belongs to a registry item                                  | `packages/ui/tests/registry.test.ts`                             |
-| The committed registry matches the source                                       | `packages/ui/tests/registry.test.ts`                             |
-| No stories or MDX are shipped as consumer source                                | `packages/ui/tests/registry.test.ts`                             |
-| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts` |
+| Invariant                                                                       | Enforced by                                              |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `packages/ui/tests/tokens.test.ts`                       |
+| Every text pairing in the system is measurable and measured                     | `packages/ui/tests/tokens.test.ts` (contrast assertions) |
+| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                      |
+| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                           |
+| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`              |
+| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                                  |
+| Every public export belongs to a registry item                                  | `packages/ui/tests/registry.test.ts`                     |
+| The committed registry matches the source                                       | `packages/ui/tests/registry.test.ts`                     |
+| No stories or MDX are shipped as consumer source                                | `packages/ui/tests/registry.test.ts`                     |
+| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts`     |
 
 ## Working rules
 
@@ -126,7 +126,7 @@ warning is a failure.
 ## Repository map and visual review
 
 - `packages/ui/src/components/`: Solid components, public folder exports and stories.
-- `packages/ui/src/lib/`, `src/styles/` within that package: shared helpers, variants,
+- `packages/ui/src/lib/`, `packages/ui/src/styles/`: shared helpers, variants,
   token semantics and theme bridge. Palette normalization is owned by Themes.
 - `packages/ui/scripts/`: registry, packed-consumer and changed-scope checks.
 - `apps/storybook/`: Workshop review and Playwright interaction/accessibility lanes.
