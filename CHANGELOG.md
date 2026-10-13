@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.126.0](https://github.com/adea-ai/ui/compare/v0.125.0...v0.126.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** surface axis, pinned terminal palette, font zoom ([#387](https://github.com/adea-ai/ui/issues/387)) ([5a63cf6](https://github.com/adea-ai/ui/commit/5a63cf6625a741994a81fad7386a01fcffdc29b1))
+
 ## [0.125.0](https://github.com/adea-ai/ui/compare/v0.124.0...v0.125.0) (2026-10-13)
 
 
