@@ -34,6 +34,11 @@
       "target": "components/theming/lazy.ts"
     },
     {
+      "path": "src/components/theme/script.ts",
+      "type": "registry:ui",
+      "target": "components/theming/script.ts"
+    },
+    {
       "path": "src/components/theme/theme-catalogue-source.ts",
       "type": "registry:ui",
       "target": "components/theming/theme-catalogue-source.ts"
