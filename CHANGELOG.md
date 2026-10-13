@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.128.3](https://github.com/adea-ai/ui/compare/v0.128.2...v0.128.3) (2026-10-13)
+
+
+### Performance
+
+* **theme:** keep the themes catalogue out of the startup path ([#397](https://github.com/adea-ai/ui/issues/397)) ([9792357](https://github.com/adea-ai/ui/commit/9792357d5526bb8d503012906b7958f0c2160618))
+
 ## [0.128.2](https://github.com/adea-ai/ui/compare/v0.128.1...v0.128.2) (2026-10-13)
 
 
