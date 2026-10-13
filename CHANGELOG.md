@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.128.2](https://github.com/adea-ai/ui/compare/v0.128.1...v0.128.2) (2026-10-13)
+
+
+### Bug Fixes
+
+* **build:** publish every lib module export its types declare ([#395](https://github.com/adea-ai/ui/issues/395)) ([63ecb94](https://github.com/adea-ai/ui/commit/63ecb9434ddfa93d9fcb0c38911a41ef5e53d5f5))
+
 ## [0.128.1](https://github.com/adea-ai/ui/compare/v0.128.0...v0.128.1) (2026-10-13)
 
 
