@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.1](https://github.com/adea-ai/ui/compare/v0.130.0...v0.130.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* **settings:** pad empty and loading lines placed directly in a rows section ([#406](https://github.com/adea-ai/ui/issues/406)) ([e5a45a0](https://github.com/adea-ai/ui/commit/e5a45a0664a271244c5c68839f5633a70e304bab))
+
 ## [0.130.0](https://github.com/adea-ai/ui/compare/v0.129.0...v0.130.0) (2026-10-13)
 
 
