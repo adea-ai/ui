@@ -1,4 +1,4 @@
-/** Proves a packed SplitLayout downloads Corvu only after a real split is mounted. */
+/** Proves a packed SplitLayout downloads its resize controller only after a real split is mounted. */
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -239,10 +239,11 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
     const byName = new Map(chunks.map((chunk) => [chunk.fileName, chunk]))
     const entryChunk = chunks.find((chunk) => chunk.isEntry)
     if (!entryChunk) throw new Error(`Packed ${condition} build emitted no ESM entry chunk`)
-    const corvuChunks = chunks.filter((chunk) =>
-      chunk.modules.some((id) => id.includes('/node_modules/@corvu/resizable/'))
+    const implChunks = chunks.filter((chunk) =>
+      chunk.modules.some((id) => id.includes('/split-layout/resize-controller-core'))
     )
-    if (!corvuChunks.length) throw new Error(`Packed ${condition} build omitted @corvu/resizable`)
+    if (!implChunks.length)
+      throw new Error(`Packed ${condition} build omitted its resize controller implementation`)
     const controllerChunks = chunks.filter((chunk) =>
       chunk.modules.some((id) => id.includes('/split-layout/resize-controller'))
     )
@@ -292,7 +293,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
       condition,
       entry: entryChunk.fileName,
       entryStaticFiles: [...eagerNames],
-      corvuFiles: corvuChunks.map((chunk) => chunk.fileName),
+      implFiles: implChunks.map((chunk) => chunk.fileName),
       controllerFiles: controllerChunks.map((chunk) => chunk.fileName),
       controllerChunkSizes: controllerChunks.map((chunk) => ({
         fileName: chunk.fileName,
@@ -304,13 +305,13 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
         0
       ),
       controllerGzipBytes: gzipSync(controllerChunks.map((chunk) => chunk.code).join('\n')).length,
-      corvuIsDeferred: corvuChunks.every((chunk) => !eagerNames.has(chunk.fileName)),
+      implIsDeferred: implChunks.every((chunk) => !eagerNames.has(chunk.fileName)),
       eagerRawBytes: eager.reduce((total, chunk) => total + Buffer.byteLength(chunk.code), 0),
       eagerGzipBytes: gzipSync(eager.map((chunk) => chunk.code).join('\n')).length,
       totalRawBytes: chunks.reduce((total, chunk) => total + Buffer.byteLength(chunk.code), 0),
       totalGzipBytes: gzipSync(chunks.map((chunk) => chunk.code).join('\n')).length,
-      corvuRawBytes: corvuChunks.reduce((total, chunk) => total + Buffer.byteLength(chunk.code), 0),
-      corvuGzipBytes: gzipSync(corvuChunks.map((chunk) => chunk.code).join('\n')).length,
+      implRawBytes: implChunks.reduce((total, chunk) => total + Buffer.byteLength(chunk.code), 0),
+      implGzipBytes: gzipSync(implChunks.map((chunk) => chunk.code).join('\n')).length,
     }
     console.log(JSON.stringify({ packedLayoutLazyMeasurement: measurement }))
 
@@ -319,7 +320,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
       `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Packed lazy layout</title><link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script type="module" src="/${entryChunk.fileName}"></script></body></html>`
     )
     await writeFile(join(output, 'fixture.css'), styles)
-    const corvuFiles = new Set(corvuChunks.map((chunk) => chunk.fileName))
+    const implFiles = new Set(implChunks.map((chunk) => chunk.fileName))
     const controllerFiles = new Set(controllerChunks.map((chunk) => chunk.fileName))
     const controllerFacadeFiles = new Set([
       initialFacade.fileName,
@@ -348,24 +349,24 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
         await withStaticServer(output, async (url) => {
           const page = await browser.newPage()
           const pageErrors: string[] = []
-          const corvuRequests = new Set<string>()
+          const implRequests = new Set<string>()
           page.on('pageerror', (error) => pageErrors.push(error.message))
           page.on('request', (request) => {
             const pathname = new URL(request.url()).pathname.slice(1)
-            if (corvuFiles.has(pathname)) corvuRequests.add(pathname)
+            if (implFiles.has(pathname)) implRequests.add(pathname)
           })
           await page.goto(url)
           const editor = page.getByRole('textbox', { name: 'Editor a', exact: true })
           await editor.waitFor()
           assert.equal(
-            corvuRequests.size,
+            implRequests.size,
             0,
-            `Packed ${condition}/${browserType.name()} requested Corvu before any split was present`
+            `Packed ${condition}/${browserType.name()} requested the controller implementation before any split was present`
           )
           assert.equal(
-            measurement.corvuIsDeferred,
+            measurement.implIsDeferred,
             true,
-            `Packed ${condition} static ESM graph contains Corvu before split`
+            `Packed ${condition} static ESM graph contains the controller before split`
           )
 
           await editor.fill('preserved draft')
@@ -386,10 +387,13 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
                 .some((resource) =>
                   files.some((file) => new URL(resource.name).pathname.endsWith(`/${file}`))
                 ),
-            [...corvuFiles]
+            [...implFiles]
           )
-          await page.locator('[data-corvu-resizable-handle]').waitFor()
-          assert.ok(corvuRequests.size > 0, `Packed ${condition} did not request its Corvu chunk`)
+          await page.locator('[data-split-layout-handle]').waitFor()
+          assert.ok(
+            implRequests.size > 0,
+            `Packed ${condition} did not request its controller implementation chunk`
+          )
           assert.equal(await editor.inputValue(), 'preserved draft')
           assert.equal(await editor.evaluate((element) => element.isConnected), true)
           assert.equal(
@@ -399,7 +403,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
                 element
             ),
             true,
-            `Packed ${condition}/${browserType.name()} replaced the existing leaf DOM while mounting Corvu`
+            `Packed ${condition}/${browserType.name()} replaced the existing leaf DOM while mounting the controller`
           )
           assert.equal(await editor.evaluate((element) => document.activeElement === element), true)
           assert.deepEqual(
@@ -488,7 +492,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
             await collapsedPage
               .getByRole('separator', { name: 'Resize pane columns', exact: true })
               .waitFor()
-            await collapsedPage.locator('[data-corvu-resizable-handle]').waitFor()
+            await collapsedPage.locator('[data-split-layout-handle]').waitFor()
             assert.equal(collapsedRequests, 2)
             assert.equal(
               await collapsedPage.getByRole('button', { name: 'Retry pane resizing' }).count(),
@@ -565,7 +569,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
                 return [field.selectionStart, field.selectionEnd, field.selectionDirection]
               })
               releaseRetry.resolve()
-              await focusPage.locator('[data-corvu-resizable-handle]').waitFor()
+              await focusPage.locator('[data-split-layout-handle]').waitFor()
               await focusPage.evaluate(
                 () =>
                   new Promise<void>((resolveFrame) =>
@@ -589,7 +593,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
                 }),
                 expectedSelection
               )
-              assert.equal(await focusPage.locator('[data-corvu-resizable-handle]').count(), 1)
+              assert.equal(await focusPage.locator('[data-split-layout-handle]').count(), 1)
               assert.deepEqual(focusErrors, [])
               console.log(
                 JSON.stringify({
@@ -938,7 +942,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               'A failed keyboard retry returns focus to the remounted retry action'
             )
             await retry.press('Enter')
-            const retrySeparator = rejectedPage.locator('[data-corvu-resizable-handle]')
+            const retrySeparator = rejectedPage.locator('[data-split-layout-handle]')
             try {
               await retrySeparator.waitFor({
                 timeout:
@@ -973,7 +977,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               throw error
             }
             assert.equal(controllerRequests, 3)
-            await waitForActiveSelector(rejectedPage, '[data-corvu-resizable-handle]')
+            await waitForActiveSelector(rejectedPage, '[data-split-layout-handle]')
             assert.equal(
               await retrySeparator.evaluate((element) => document.activeElement === element),
               true
@@ -998,7 +1002,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
             await rejectedPage.evaluate(() =>
               window.dispatchEvent(new CustomEvent('packed-layout-lazy', { detail: 'split' }))
             )
-            await rejectedPage.locator('[data-corvu-resizable-handle]').waitFor()
+            await rejectedPage.locator('[data-split-layout-handle]').waitFor()
             assert.equal(
               controllerRequests,
               3,
@@ -1076,8 +1080,8 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
               true
             )
             await sharedRetry.press('Enter')
-            await sharedFailurePage.locator('[data-corvu-resizable-handle]').waitFor()
-            await waitForActiveSelector(sharedFailurePage, '[data-corvu-resizable-handle]')
+            await sharedFailurePage.locator('[data-split-layout-handle]').waitFor()
+            await waitForActiveSelector(sharedFailurePage, '[data-split-layout-handle]')
             assert.equal(sharedControllerRequests, 1)
             assert.equal(retryControllerRequests, 1)
             assert.equal(
@@ -1097,7 +1101,7 @@ export async function verifyPackedLayoutLazyController(consumer: string, conditi
             )
             assert.equal(
               await sharedFailurePage
-                .locator('[data-corvu-resizable-handle]')
+                .locator('[data-split-layout-handle]')
                 .evaluate((element) => document.activeElement === element),
               true
             )

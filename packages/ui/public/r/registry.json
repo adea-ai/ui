@@ -1722,9 +1722,10 @@
       "type": "registry:ui",
       "title": "Pixel Resize Handle",
       "description": "",
-      "dependencies": [],
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
       "registryDependencies": [
-        "@adea-ai/ui/resizable",
         "lib"
       ],
       "files": [
@@ -1806,7 +1807,6 @@
       "title": "Split Layout",
       "description": "Issue-backed binary layout with stable opaque leaf owners; scoped persistence belongs to the host.",
       "dependencies": [
-        "@corvu/resizable@^0.2.5",
         "lucide-solid@^1.51.0"
       ],
       "registryDependencies": [

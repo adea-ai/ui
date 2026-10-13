@@ -39,7 +39,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A host-controlled pixel width, with shared Corvu pointer/keyboard behavior. */
+/** A host-controlled pixel width, with the shared pixel ruler pointer/keyboard behavior. */
 export const ResizableNavigation: Story = {
   render: () => {
     const [width, setWidth] = createSignal(272)

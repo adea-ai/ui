@@ -185,7 +185,7 @@ function cloneDragPreviewNode(source: Node): Node | undefined {
   }
   return clone
 }
-/** Muxy frame geometry keeps leaf owners stable; Corvu owns constrained separator interactions. */
+/** Muxy frame geometry keeps leaf owners stable; the lazy resize controller owns constrained separator interactions. */
 export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L>) {
   let root: HTMLDivElement | undefined
   let pendingFrame: number | undefined
@@ -308,7 +308,7 @@ export function SplitLayout<L extends SplitLayoutLeaf>(props: SplitLayoutProps<L
             const currentFocus = root?.ownerDocument.activeElement
             if (currentFocus && currentFocus !== root?.ownerDocument.body && currentFocus !== root)
               return
-            root?.querySelector<HTMLElement>('[data-corvu-resizable-handle]')?.focus({
+            root?.querySelector<HTMLElement>('[data-split-layout-handle]')?.focus({
               preventScroll: true,
             })
           })

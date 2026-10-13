@@ -86,7 +86,7 @@ describe('registry', () => {
     expect(sidebar.registryDependencies).toContain('@adea-ai/ui/pixel-resize-handle')
     expect(sidebar.registryDependencies).not.toContain('@adea-ai/ui/contextual-sidebar')
     expect(contextual.registryDependencies).toContain('@adea-ai/ui/sidebar-nav')
-    expect(ruler.registryDependencies).toContain('@adea-ai/ui/resizable')
+    expect(ruler.registryDependencies).not.toContain('@adea-ai/ui/resizable')
     expect(ruler.registryDependencies).not.toContain('@adea-ai/ui/sidebar-nav')
     expect(ruler.registryDependencies).not.toContain('@adea-ai/ui/contextual-sidebar')
   })
