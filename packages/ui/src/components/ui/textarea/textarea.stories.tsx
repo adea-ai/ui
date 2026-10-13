@@ -48,6 +48,21 @@ export const Comfortable: Story = {
   ),
 }
 
+/** The monospace face for commands, snippets and other literal text. */
+export const Code: Story = {
+  render: () => (
+    <div class="flex w-96 flex-col gap-1.5">
+      <Label for="textarea-code">Command</Label>
+      <Textarea
+        id="textarea-code"
+        variant="code"
+        resize="none"
+        value={'bun run test --filter @adea-ai/ui\nbun run lint'}
+      />
+    </div>
+  ),
+}
+
 /** With content, at the minimum height. */
 export const WithValue: Story = {
   render: () => (

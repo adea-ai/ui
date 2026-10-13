@@ -19,6 +19,7 @@ export const textareaVariants = cva(
       variant: {
         default: '',
         composer: 'border-0 bg-transparent p-0 shadow-none focus-visible:ring-0',
+        code: 'font-mono',
       },
       size: {
         default: 'min-h-16',
@@ -55,7 +56,8 @@ export type TextareaProps = Omit<ComponentProps<'textarea'>, 'size'> &
  * engine supports it, which is the behaviour a chat composer wants; `rows`
  * remains the fallback so an unsupported engine still gets a usable height.
  * `variant="composer"` removes the standalone field surface when nested in a
- * composer shell. `size="comfortable"` caps growth at the shared 12rem rung, and
+ * composer shell. `variant="code"` keeps the field surface and sets the
+ * monospace face, for commands, snippets and other literal text. `size="comfortable"` caps growth at the shared 12rem rung, and
  * the finite `resize` variants keep browser resize behavior explicit.
  */
 export function Textarea(props: TextareaProps) {
