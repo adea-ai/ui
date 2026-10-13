@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.128.0](https://github.com/adea-ai/ui/compare/v0.127.0...v0.128.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** pre-paint catalogue stylesheet and floor editor roles ([#391](https://github.com/adea-ai/ui/issues/391)) ([a4995fa](https://github.com/adea-ai/ui/commit/a4995faec0327449a0e232eaa2dfa4e641dcb259))
+
 ## [0.127.0](https://github.com/adea-ai/ui/compare/v0.126.0...v0.127.0) (2026-10-13)
 
 
