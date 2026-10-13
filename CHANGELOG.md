@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.128.1](https://github.com/adea-ai/ui/compare/v0.128.0...v0.128.1) (2026-10-13)
+
+
+### Documentation
+
+* **theme:** consumption guide and stories ([#393](https://github.com/adea-ai/ui/issues/393)) ([407a0e8](https://github.com/adea-ai/ui/commit/407a0e85f0cb33c7e209b9eaaafecf455c3d62de))
+
 ## [0.128.0](https://github.com/adea-ai/ui/compare/v0.127.0...v0.128.0) (2026-10-13)
 
 
