@@ -1722,9 +1722,10 @@
       "type": "registry:ui",
       "title": "Pixel Resize Handle",
       "description": "",
-      "dependencies": [],
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
       "registryDependencies": [
-        "@adea-ai/ui/resizable",
         "lib"
       ],
       "files": [

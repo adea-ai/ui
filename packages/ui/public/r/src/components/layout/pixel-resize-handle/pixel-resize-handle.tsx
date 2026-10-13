@@ -1,4 +1,4 @@
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable'
+import { GripVertical } from 'lucide-solid'
 import { createSignal, onCleanup } from 'solid-js'
 import { cn } from '../../../lib/utils'
 
@@ -27,21 +27,21 @@ export type PixelResizeHandleProps = {
  *
  * A keyboard- and pointer-operable edge ruler for a host-owned pane. Keep the
  * pane's actual width and any persistence in its layout owner; this component
- * reports a bounded pixel value and places the shared resizable grip at the
- * matching left or right edge.
+ * reports a bounded pixel value and draws the grip at the matching left or
+ * right edge.
  *
- * Corvu 0.2.5 supplies geometry, keyboard resizing, ARIA and the shared grip,
- * but its global drag handler does not end on pointer cancellation. Prevent
- * that handler through its public start hook and use local pointer capture
- * for bounded pixel gestures, including cancellation and lost capture.
+ * The ruler is a single separator positioned inside a box as wide as the
+ * maximum, so it needs no panel-group geometry (and none of the split-layout
+ * code that comes with one): arrow keys move it by `step` along its visual
+ * edge, Home and End jump to the bounds, and a pointer drag is captured on the
+ * handle so cancellation and lost capture end the gesture.
  */
 export function PixelResizeHandle(props: PixelResizeHandleProps) {
   const maximum = () => Math.max(1, props.maximum)
   const minimum = () => Math.min(maximum(), Math.max(0, props.minimum))
   const value = () => Math.min(maximum(), Math.max(minimum(), Math.round(props.value)))
-  const ratio = () => value() / maximum()
   const isRight = () => props.side === 'right'
-  const rulerSizes = () => (isRight() ? [1 - ratio(), ratio()] : [ratio(), 1 - ratio()])
+  const bounded = (next: number) => Math.min(maximum(), Math.max(minimum(), Math.round(next)))
   const commit = () => props.onCommit?.(value())
   let interacting = false
   const [drag, setDrag] = createSignal<{
@@ -67,51 +67,48 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
     endKeyboard()
     endPointer(false)
   })
+  const move = (next: number) => {
+    if (next !== value()) props.onChange(next)
+  }
+  // Arrow keys describe physical movement of the handle: on a right-edge pane
+  // moving the handle left widens the pane.
+  const KEY_DIRECTION: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1 }
 
   return (
-    <ResizablePanelGroup
-      orientation="horizontal"
-      dir="ltr"
-      sizes={rulerSizes()}
-      keyboardDelta={`${props.step ?? 16}px`}
-      style={{ width: `${maximum()}px` }}
+    <div
       class={cn(
-        'pointer-events-none absolute inset-y-0 flex',
+        'pointer-events-none absolute inset-y-0',
         {
           'left-0': props.side === 'left',
           'right-0': props.side === 'right',
         },
         props.class
       )}
-      onSizesChange={(sizes) => {
-        // Panel registration and teardown also emit sizes. Only user resizing
-        // may update the host preference; collapsing must preserve its width.
-        if (!interacting || sizes.length !== 2) return
-        const next = Math.round((sizes[isRight() ? 1 : 0] ?? ratio()) * maximum())
-        const bounded = Math.min(maximum(), Math.max(minimum(), next))
-        if (bounded !== value()) props.onChange(bounded)
-      }}
+      style={{ width: `${maximum()}px` }}
     >
-      <ResizablePanel
-        minSize={isRight() ? 0 : minimum() / maximum()}
-        maxSize={1}
-        aria-hidden="true"
-      />
-      <ResizableHandle
-        withHandle={props.grip === 'chip' ? true : 'rung'}
-        label={props.label ?? `Resize ${props.side} pane`}
+      <div
+        role="separator"
+        tabIndex={0}
+        aria-orientation="vertical"
+        aria-label={props.label ?? `Resize ${props.side} pane`}
         aria-controls={props.controls}
         aria-valuemin={minimum()}
         aria-valuemax={maximum()}
         aria-valuenow={value()}
         aria-valuetext={`${value()} pixels`}
         data-dragging={drag() ? '' : undefined}
-        onHandleDragStart={(event) => {
-          // Corvu checks defaultPrevented before starting its global handler.
-          event.preventDefault()
+        style={{ left: `${isRight() ? maximum() - value() : value()}px` }}
+        class={cn(
+          'group/resize bg-border pointer-events-auto absolute inset-y-0 flex w-px items-center justify-center',
+          /* Widen the hit target without moving the visual line: 24px on the
+             drag axis meets WCAG 2.5.8's minimum target. */
+          'after:absolute after:inset-y-0 after:-inset-x-3 after:w-6',
+          'transition-colors ease-out focus-visible:bg-primary focus-visible:outline-none',
+          props.grip === 'chip' ? 'hover:bg-primary' : 'hover:bg-primary/45'
+        )}
+        onPointerDown={(event) => {
           if (event.button !== 0 || !event.isPrimary) return
           const handle = event.currentTarget
-          if (!(handle instanceof HTMLElement)) return
           endPointer(false)
           interacting = false
           handle.focus()
@@ -123,7 +120,7 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
             handle,
           })
         }}
-        onPointerMove={(event: PointerEvent) => {
+        onPointerMove={(event) => {
           const current = drag()
           if (!current || event.pointerId !== current.pointerId) return
           if (!current.handle.hasPointerCapture(current.pointerId)) {
@@ -131,19 +128,15 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
             return
           }
           const delta = (event.clientX - current.startX) * (isRight() ? -1 : 1)
-          const next = Math.min(
-            maximum(),
-            Math.max(minimum(), Math.round(current.startValue + delta))
-          )
-          if (next !== value()) props.onChange(next)
+          move(bounded(current.startValue + delta))
         }}
-        onPointerUp={(event: PointerEvent) => {
+        onPointerUp={(event) => {
           if (event.pointerId === drag()?.pointerId) endPointer(true)
         }}
-        onPointerCancel={(event: PointerEvent) => {
+        onPointerCancel={(event) => {
           if (event.pointerId === drag()?.pointerId) endPointer(false)
         }}
-        onLostPointerCapture={(event: PointerEvent) => {
+        onLostPointerCapture={(event) => {
           if (event.pointerId === drag()?.pointerId) endPointer(false)
         }}
         onBlur={() => {
@@ -157,26 +150,32 @@ export function PixelResizeHandle(props: PixelResizeHandleProps) {
             event.preventDefault()
             return
           }
-          if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) interacting = true
-          // Corvu operates on physical panel order. Home/End here describe
-          // the controlled pane width, including a pane after the separator.
-          if (event.key === 'Home' || event.key === 'End') {
+          const direction = KEY_DIRECTION[event.key]
+          if (direction !== undefined) {
             event.preventDefault()
-            props.onChange(event.key === 'Home' ? minimum() : maximum())
+            interacting = true
+            move(bounded(value() + direction * (isRight() ? -1 : 1) * (props.step ?? 16)))
+          } else if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault()
+            interacting = true
+            move(event.key === 'Home' ? minimum() : maximum())
           }
         }}
         onKeyUp={(event) => {
-          if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-            endKeyboard()
-          }
+          if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) endKeyboard()
         }}
-        class="pointer-events-auto"
-      />
-      <ResizablePanel
-        minSize={isRight() ? minimum() / maximum() : 0}
-        maxSize={1}
-        aria-hidden="true"
-      />
-    </ResizablePanelGroup>
+      >
+        {props.grip === 'chip' ? (
+          <div class="bg-border z-(--z-docked) flex h-4 w-2.5 items-center justify-center rounded-sm border border-border">
+            <GripVertical class="size-2.5 text-muted-foreground" />
+          </div>
+        ) : (
+          <div
+            data-slot="resizable-grip"
+            class="z-(--z-docked) h-11 w-1.5 flex-none rounded-full bg-border/55"
+          />
+        )}
+      </div>
+    </div>
   )
 }
