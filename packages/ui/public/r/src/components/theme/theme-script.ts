@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2026 Wing
+ * Licensed under the MIT License.
+ *
+ * The options form is rewritten from Adea's accepted port of Zeron's preference
+ * store (`appearanceThemeScript` in `packages/ui/src/components/appearance.ts`,
+ * https://github.com/zeronsh/zeron) so the boot script reads the document the shared
+ * persistence writes. See NOTICE.
+ */
 import { fontSettingsBootstrapScript } from '../../lib/appearance-font-settings'
 import { isCustomAccent } from '../../lib/accent-roles'
 import { safeScriptStringLiteral } from '../../lib/safe-script'
