@@ -16,7 +16,13 @@
  *      start-up stays inside the budget.
  *   3. **Lazy plus the host helpers an application imports beside it** from
  *      `@adea-ai/ui/lib/themes` (`tokensAsHex`, `isThemeAccentId`, `resolveVariant`):
- *      importing the module for those must not drag the catalogue back in.
+ *      importing the module for those must not drag the catalogue back in. That includes
+ *      `variantFromRecord` and `accents`, which are defined outside `lib/themes.ts` for
+ *      exactly this reason (a bundler places a module whole, so a definition beside the
+ *      table ships the table).
+ *   4. **Lazy plus the modules that define them**, `@adea-ai/ui/lib/theme-records`
+ *      (`variantFromRecord`) and `@adea-ai/ui/lib/accent-presets` (`accents`,
+ *      `accentPresets`): the paths a host imports when it wants nothing else.
  *
  * Run `bun run --cwd packages/ui build` first; like `check:tree-shaking`, this does not
  * build.
@@ -35,6 +41,12 @@ const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} kB`
 
 /** Gzipped bytes the lazy start-up may cost, and the least it must save over the eager control. */
 const BUDGET = { lazyStartupGzip: 20 * 1024, minimumSavingGzip: 9 * 1024 }
+
+/**
+ * `variantFromRecord` projects a record onto the shadcn vocabulary, about 2 kB gzipped,
+ * so a host that imports it starts a little larger than the bare provider.
+ */
+const RECORDS_STARTUP_GZIP = 22 * 1024
 
 /**
  * Strings that exist only in the catalogue's data: the descriptions of themes other than
@@ -114,8 +126,15 @@ try {
   const lazyHost = await measure(
     'lazy-host',
     `import { ThemeProvider, themeScript } from '@adea-ai/ui/components/theme/lazy'\n` +
-      `import { tokensAsHex, isThemeAccentId, resolveVariant } from '@adea-ai/ui/lib/themes'\n` +
-      `console.log(ThemeProvider, themeScript, tokensAsHex, isThemeAccentId, resolveVariant)\n`
+      `import { tokensAsHex, isThemeAccentId, resolveVariant, variantFromRecord, accents } from '@adea-ai/ui/lib/themes'\n` +
+      `console.log(ThemeProvider, themeScript, tokensAsHex, isThemeAccentId, resolveVariant, variantFromRecord, accents)\n`
+  )
+  const lazyRecords = await measure(
+    'lazy-records',
+    `import { ThemeProvider, themeScript } from '@adea-ai/ui/components/theme/lazy'\n` +
+      `import { variantFromRecord } from '@adea-ai/ui/lib/theme-records'\n` +
+      `import { accents, accentPresets } from '@adea-ai/ui/lib/accent-presets'\n` +
+      `console.log(ThemeProvider, themeScript, variantFromRecord, accents, accentPresets)\n`
   )
 
   const row = (label: string, report: typeof eager) =>
@@ -128,6 +147,7 @@ try {
   row('eager (control)', eager)
   row('lazy', lazy)
   row('lazy + lib/themes helpers', lazyHost)
+  row('lazy + record modules', lazyRecords)
 
   if (eager.leaked.length === 0)
     findings.push(
@@ -136,6 +156,7 @@ try {
   for (const [label, report] of [
     ['lazy', lazy],
     ['lazy + lib/themes helpers', lazyHost],
+    ['lazy + record modules', lazyRecords],
   ] as const) {
     if (report.leaked.length > 0)
       findings.push(
@@ -149,9 +170,10 @@ try {
       findings.push(
         `${label}: the catalogue is in no deferred chunk, so the provider can no longer load it.`
       )
-    if (report.startupGzip > BUDGET.lazyStartupGzip)
+    const budget = report === lazy ? BUDGET.lazyStartupGzip : RECORDS_STARTUP_GZIP
+    if (report.startupGzip > budget)
       findings.push(
-        `${label}: start-up is ${kb(report.startupGzip)} gzipped, over the ${kb(BUDGET.lazyStartupGzip)} budget.`
+        `${label}: start-up is ${kb(report.startupGzip)} gzipped, over the ${kb(budget)} budget.`
       )
   }
   if (eager.startupGzip - lazy.startupGzip < BUDGET.minimumSavingGzip)

@@ -349,6 +349,32 @@ host against both providers and fails if the lazy one pulls the catalogue into i
 start-up closure: the lazy host's start-up chunk is 17.5 kB gzipped against 29.3 kB
 for the eager one.
 
+#### Imports that keep the catalogue out
+
+A bundler places a module whole, so what a start-up path imports is decided by which
+module defines it, not by which one re-exports it. These are defined in modules that do
+not import the catalogue, and are safe in a lazy host's start-up:
+
+| Import                                                             | From                             |
+| ------------------------------------------------------------------ | -------------------------------- |
+| `variantFromRecord(record)`                                        | `@adea-ai/ui/lib/theme-records`  |
+| `accents` (the six brand presets), `accentPresets` (`theme` first) | `@adea-ai/ui/lib/accent-presets` |
+| `tokensAsHex`, `terminalCssVariables`                              | `@adea-ai/ui/lib/theme-css`      |
+| `isThemeAccentId`                                                  | `@adea-ai/ui/lib/theme-accents`  |
+| `defaultLightThemeId`, `defaultDarkThemeId`, `resolveVariant`      | `@adea-ai/ui/lib/theme-defaults` |
+
+`@adea-ai/ui/lib/themes` re-exports every one of them, so existing imports keep working
+and, with a tree-shaking bundler, still leave the table out when nothing reads it.
+Import from the defining module when you want the guarantee not to depend on
+the bundler's tree-shaking. `variantFromRecord` turns a record the catalogue does not hold
+(an imported theme, one rebuilt from stored data) into a `ThemeVariant` for `ThemeProvider`'s
+`themes`; a host used to copy it to keep the table out of start-up, and should import it
+instead. It costs about 7 kB raw (2 kB gzipped) at start-up, because it projects a record
+onto the shadcn vocabulary. `check:theme-startup` bundles a lazy host that imports
+`variantFromRecord` and `accents` from `lib/themes` (beside `tokensAsHex`,
+`isThemeAccentId` and `resolveVariant`) and another that imports them from the defining
+modules, and fails if the catalogue reaches either start-up chunk.
+
 ### The stylesheet exports
 
 | Export               | What it is                                              | When                                             |

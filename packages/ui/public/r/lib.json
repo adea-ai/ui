@@ -111,6 +111,11 @@
       "target": "lib/theme-engine.ts"
     },
     {
+      "path": "src/lib/theme-records.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-records.ts"
+    },
+    {
       "path": "src/lib/theme-surface.ts",
       "type": "registry:lib",
       "target": "lib/theme-surface.ts"

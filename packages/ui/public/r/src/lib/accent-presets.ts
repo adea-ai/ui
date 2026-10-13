@@ -4,7 +4,8 @@ import { ACCENTS } from '@adea-ai/themes'
  * Its own module so the theme provider's start-up path (the stored-preference reader
  * and the boot script both need the preset ids) does not import the token manifest in
  * `tokens.ts`, which is 20 KB of documentation data a provider never reads.
- * `tokens.ts` re-exports both names, so every existing import keeps working.
+ * `tokens.ts` re-exports `accentPresets` and `AccentPreset`, and `themes.ts` re-exports
+ * `accents`, so every existing import keeps working.
  */
 
 /**
@@ -41,3 +42,13 @@ export const accentPresets: readonly AccentPreset[] = Object.freeze([
   },
   ...ACCENTS,
 ])
+
+/**
+ * The six brand accent presets, in the order a picker should show them: the list
+ * `accentPresets` carries after its own `theme` entry.
+ *
+ * Here and not beside the theme table in `lib/themes.ts` (which re-exports it, so
+ * `@adea-ai/ui/lib/themes` still has it) because a bundler places a module whole, and
+ * a host that wants only the list should not ship the 34-theme catalogue with it.
+ */
+export const accents = ACCENTS
