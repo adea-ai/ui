@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.129.0](https://github.com/adea-ai/ui/compare/v0.128.4...v0.129.0) (2026-10-13)
+
+
+### Features
+
+* **theme:** publish themeScript from an entry that loads in Node ([#401](https://github.com/adea-ai/ui/issues/401)) ([3e2a1be](https://github.com/adea-ai/ui/commit/3e2a1be58282d6080159dc8c0f3f782330766004))
+
 ## [0.128.4](https://github.com/adea-ai/ui/compare/v0.128.3...v0.128.4) (2026-10-13)
 
 
