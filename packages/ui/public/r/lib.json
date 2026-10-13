@@ -11,6 +11,11 @@
   "registryDependencies": [],
   "files": [
     {
+      "path": "src/lib/accent-presets.ts",
+      "type": "registry:lib",
+      "target": "lib/accent-presets.ts"
+    },
+    {
       "path": "src/lib/accent-roles.ts",
       "type": "registry:lib",
       "target": "lib/accent-roles.ts"
@@ -74,6 +79,36 @@
       "path": "src/lib/theme-accents.ts",
       "type": "registry:lib",
       "target": "lib/theme-accents.ts"
+    },
+    {
+      "path": "src/lib/theme-catalogue.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-catalogue.ts"
+    },
+    {
+      "path": "src/lib/theme-css.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-css.ts"
+    },
+    {
+      "path": "src/lib/theme-defaults.generated.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-defaults.generated.ts"
+    },
+    {
+      "path": "src/lib/theme-defaults.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-defaults.ts"
+    },
+    {
+      "path": "src/lib/theme-engine-light.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-engine-light.ts"
+    },
+    {
+      "path": "src/lib/theme-engine.ts",
+      "type": "registry:lib",
+      "target": "lib/theme-engine.ts"
     },
     {
       "path": "src/lib/theme-surface.ts",

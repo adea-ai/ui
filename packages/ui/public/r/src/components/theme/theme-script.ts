@@ -11,8 +11,8 @@ import { fontSettingsBootstrapScript } from '../../lib/appearance-font-settings'
 import { isCustomAccent } from '../../lib/accent-roles'
 import { safeScriptStringLiteral } from '../../lib/safe-script'
 import { REDUCED_TRANSPARENCY_QUERY, surfaceAlpha } from '../../lib/theme-surface'
-import { accentPresets } from '../../lib/tokens'
-import { builtinThemes, defaultDarkThemeId, defaultLightThemeId } from '../../lib/themes'
+import { accentPresets } from '../../lib/accent-presets'
+import { THEME_INDEX, defaultDarkThemeId, defaultLightThemeId } from '../../lib/theme-defaults'
 import type { ThemeStorageSchema } from './theme-persistence'
 
 /**
@@ -164,7 +164,7 @@ function optionsFormScript(options: ThemeScriptOptions): string {
     `var fallback=dark?${literal(defaultDarkThemeId)}:${literal(defaultLightThemeId)};`,
     `var want=doc?(dark?doc.darkThemeId:doc.lightThemeId):null;`,
     `if(typeof want!=='string')want=fallback;`,
-    `var ids=[${builtinThemes.map((theme) => literal(theme.id)).join(',')}];`,
+    `var ids=[${THEME_INDEX.map(([id]) => literal(id)).join(',')}];`,
     `var id=ids.indexOf(want)!==-1?want:null,tokens=null;`
   )
   if (options.libraryKey !== undefined) {

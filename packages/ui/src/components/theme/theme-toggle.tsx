@@ -3,7 +3,7 @@ import type { ComponentProps } from 'solid-js'
 import { For, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group/toggle-group'
-import { useTheme } from './theme-provider'
+import { useTheme } from './theme-context'
 
 /**
  * ThemeToggle.

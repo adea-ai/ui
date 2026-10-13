@@ -1,7 +1,12 @@
 import { normalizeCustomAccent } from '#lib/accent-roles'
-import { accentPresets } from '#lib/tokens'
+import { accentPresets } from '#lib/accent-presets'
 import { normalizeAppearanceEditorFontSettings } from '#lib/appearance-font-settings'
-import { defaultDarkThemeId, defaultLightThemeId, isThemeAccentId, themeById } from '#lib/themes'
+import { isThemeAccentId } from '#lib/theme-accents'
+import {
+  catalogueThemeAppearance,
+  defaultDarkThemeId,
+  defaultLightThemeId,
+} from '#lib/theme-defaults'
 import { normalizeSurface } from '#lib/theme-surface'
 import {
   defaultPreferenceStorage,
@@ -11,7 +16,7 @@ import {
   writeVersionedRecord,
   type PreferenceStorage,
 } from '#lib/preference-store'
-import { defaultThemeSelection, resolvedDensity, type ThemeSelection } from './theme-state'
+import { defaultThemeSelection, resolvedDensity, type ThemeSelection } from './theme-state-core'
 
 /**
  * Where a selection is kept between sessions.
@@ -51,7 +56,10 @@ function preferenceStore(): Storage | undefined {
   return typeof localStorage === 'undefined' ? undefined : localStorage
 }
 
-/** The stored preference, validated against the catalogue. */
+/**
+ * The stored preference, validated against the catalogue's ids (`theme-defaults`), so
+ * reading it never loads the catalogue.
+ */
 function readSelection(storageKey: string): ThemeSelection {
   try {
     const raw = preferenceStore()?.getItem(storageKey)
@@ -68,11 +76,11 @@ function readSelection(storageKey: string): ThemeSelection {
       // An unknown id would leave the document with no theme at all, so a stale
       // preference from an older catalogue falls back rather than applying nothing.
       lightThemeId:
-        themeById(parsed.lightThemeId ?? '')?.appearance === 'light'
+        catalogueThemeAppearance(parsed.lightThemeId ?? '') === 'light'
           ? (parsed.lightThemeId as string)
           : defaultLightThemeId,
       darkThemeId:
-        themeById(parsed.darkThemeId ?? '')?.appearance === 'dark'
+        catalogueThemeAppearance(parsed.darkThemeId ?? '') === 'dark'
           ? (parsed.darkThemeId as string)
           : defaultDarkThemeId,
       // A theme accent is kept whenever it names a slot, even one the stored pair
