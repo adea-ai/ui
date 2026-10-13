@@ -343,7 +343,7 @@ function styleItem(): RegistryItem {
     type: 'registry:style',
     title: 'Adea theme',
     description:
-      'The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack.',
+      'The design tokens: the semantic palette in OKLCH, the type and control scales, shells geometry, shadows, motion and the z-index stack, plus the pre-paint stylesheet that carries every catalogue theme.',
     // Derived rather than listed: the typefaces the stylesheet imports are the
     // ones the manifest declares, and a hard-coded pair here is how the registry
     // kept shipping two families the package had already stopped depending on.
@@ -358,6 +358,7 @@ function styleItem(): RegistryItem {
     files: [
       'globals.css',
       'theme.css',
+      'theme-variants.css',
       'base.css',
       'appearance-font-settings.css',
       'fonts.css',

@@ -1,4 +1,6 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   inlineScriptLiteral,
   themeScript,
@@ -10,7 +12,13 @@ import { applyThemeToRoot } from '../src/components/theme/theme-document'
 import { mergeThemeSelection, resolveThemeState } from '../src/components/theme/theme-state'
 import { fontSettingsBootstrapScript } from '../src/lib/appearance-font-settings'
 import { accentPresets } from '../src/lib/tokens'
-import { builtinThemes, defaultDarkThemeId, defaultLightThemeId } from '../src/lib/themes'
+import {
+  builtinThemes,
+  defaultDarkThemeId,
+  defaultLightThemeId,
+  themeById,
+  themeCssVariables,
+} from '../src/lib/themes'
 import {
   REDUCED_TRANSPARENCY_QUERY,
   resolveSurfaceState,
@@ -619,4 +627,60 @@ describe('themeScript(options) agrees with the provider', () => {
       )
     })
   }
+})
+
+/**
+ * The script and the pre-paint sheet are two halves of one first frame: the script
+ * names the theme (`data-theme`), the sheet is the rule that attribute selects. Neither
+ * half is useful if the other disagrees about which themes exist.
+ */
+describe('themeScript(options) and theme-variants.css', () => {
+  const sheet = readFileSync(join(import.meta.dir, '../src/styles/theme-variants.css'), 'utf8')
+  const hasRule = (id: string) => sheet.includes(`[data-theme='${id}'] {`)
+  const inline = themeScript({ ...adea, palette: 'inline' })
+
+  test('`palette` does not change what the script writes: it never paints a catalogue palette', () => {
+    // The stylesheet is the catalogue palette's pre-paint source, so there is nothing
+    // for the script to skip in stylesheet mode and nothing for it to add in inline mode.
+    expect(adeaScript).toBe(inline)
+    expect(themeScript({ ...adea, palette: undefined })).toBe(inline)
+  })
+
+  test('a catalogue theme is selected by attribute alone: no palette property is written', () => {
+    for (const id of ['nord', 'dracula', 'adea-dark']) {
+      const run = runScript(adeaScript, v2({ mode: 'dark', darkThemeId: id }))
+      expect(run.attributes.get('data-theme')).toBe(id)
+      const palette = Object.keys(themeCssVariables(themeById(id)!))
+      expect([...run.properties.keys()].filter((name) => palette.includes(name))).toEqual([])
+    }
+  })
+
+  test('every theme id the script accepts has a rule waiting for it', () => {
+    for (const theme of builtinThemes) {
+      const run = runScript(
+        adeaScript,
+        v2({ mode: theme.appearance, [`${theme.appearance}ThemeId`]: theme.id })
+      )
+      expect(run.attributes.get('data-theme'), theme.id).toBe(theme.id)
+      // The default pair is theme.css's: the sheet adds only the properties it lacks.
+      expect(hasRule(theme.id), `${theme.id} has no [data-theme] rule`).toBe(true)
+    }
+  })
+
+  test('an id the script falls back from is not left without a rule either', () => {
+    const run = runScript(adeaScript, v2({ mode: 'dark', darkThemeId: 'gone' }))
+    expect(hasRule(run.attributes.get('data-theme')!)).toBe(true)
+  })
+
+  test('the accent the script sets is one the sheet keeps above the theme', () => {
+    const run = runScript(
+      adeaScript,
+      v2({ mode: 'light', lightThemeId: 'nord-light', accent: 'blue' })
+    )
+    expect(run.attributes.get('data-accent')).toBe('blue')
+    expect(sheet).toContain("[data-accent='blue'] {")
+    expect(sheet.indexOf("[data-accent='blue'] {")).toBeGreaterThan(
+      sheet.indexOf("[data-theme='nord-light'] {")
+    )
+  })
 })

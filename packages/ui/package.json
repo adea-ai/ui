@@ -68,6 +68,7 @@
     },
     "./globals.css": "./src/styles/globals.css",
     "./theme.css": "./src/styles/theme.css",
+    "./theme-variants.css": "./src/styles/theme-variants.css",
     "./base.css": "./src/styles/base.css",
     "./appearance-font-settings.css": "./src/styles/appearance-font-settings.css",
     "./fonts.css": "./src/styles/fonts.css",

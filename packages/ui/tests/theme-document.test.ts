@@ -503,3 +503,77 @@ describe('applyWithoutTransitions', () => {
     expect(appended[0]!.removed).toBe(typeof requestAnimationFrame !== 'function')
   })
 })
+
+const editorNames = (properties: Map<string, string>) =>
+  [...properties.keys()].filter((name) => name.startsWith('--editor-'))
+
+describe('editorRoles', () => {
+  const floor = { editorRoles: 'floor' as const }
+
+  test('absent, `syntax` and an empty options object write exactly the same document', () => {
+    for (const id of ['adea-dark', 'nord', 'adea-light']) {
+      const appearance = themeById(id)!.appearance
+      const documentFor = (options?: Parameters<typeof applyThemeToRoot>[2]) => {
+        const { root, properties, attributes } = fakeRoot()
+        applyThemeToRoot(root, stateOf({ accent: 'blue' }, id, appearance), options)
+        return { properties: [...properties], attributes: [...attributes] }
+      }
+      const baseline = documentFor()
+      expect(documentFor({}), id).toEqual(baseline)
+      expect(documentFor({ editorRoles: 'syntax' }), id).toEqual(baseline)
+      expect(documentFor({ editorRoles: undefined }), id).toEqual(baseline)
+    }
+  })
+
+  test('floor replaces the sixteen editor roles and nothing else', () => {
+    const { root, properties } = fakeRoot()
+    applyThemeToRoot(root, stateOf({}, 'nord'), floor)
+    const plain = fakeRoot()
+    applyThemeToRoot(plain.root, stateOf({}, 'nord'))
+
+    expect(editorNames(properties)).toHaveLength(16)
+    expect(properties.get('--editor-keyword')).toMatch(/^#[0-9a-f]{6}$/)
+    expect(plain.properties.get('--editor-keyword')).toMatch(/^oklch\(/)
+    for (const [name, value] of plain.properties) {
+      if (name.startsWith('--editor-')) continue
+      expect(properties.get(name), name).toBe(value)
+    }
+    expect(properties.size).toBe(plain.properties.size)
+  })
+
+  test("with palette 'stylesheet', floor writes the editor roles and still no other palette", () => {
+    const options = { palette: 'stylesheet' as const, ...floor }
+    const { tokens } = themeDocumentTokens(stateOf({}, 'nord'), options)
+    expect(Object.keys(tokens).toSorted()).toEqual(
+      Object.keys(themeCssVariables(themeById('nord')!, { editor: 'floor' }))
+        .filter((name) => name.startsWith('--editor-'))
+        .toSorted()
+    )
+    // The stylesheet's own projection needs no write at all.
+    expect(
+      themeDocumentTokens(stateOf({}, 'nord'), { palette: 'stylesheet', editorRoles: 'syntax' })
+        .tokens
+    ).toEqual({})
+  })
+
+  test('switching floor on and off leaves nothing behind', () => {
+    const { root, properties } = fakeRoot()
+    const withFloor = applyThemeToRoot(root, stateOf({}, 'nord'), {
+      palette: 'stylesheet',
+      ...floor,
+    })
+    expect(editorNames(properties)).toHaveLength(16)
+    applyThemeToRoot(root, stateOf({}, 'nord'), { palette: 'stylesheet' }, withFloor)
+    expect(editorNames(properties)).toEqual([])
+  })
+
+  test('a host variant keeps its own editor roles and its verbatim tokens', () => {
+    const imported = {
+      ...variantFromRecord({ ...getTheme('nord')!, id: 'custom-x' }),
+      tokens: { '--editor-keyword': '#123456' },
+    }
+    const { tokens } = themeDocumentTokens({ ...stateOf(), variant: imported }, floor)
+    expect(tokens['--editor-keyword']).toBe('#123456')
+    expect(tokens['--editor-string']).toBe(imported.editor.string)
+  })
+})

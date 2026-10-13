@@ -324,6 +324,7 @@ describe('registry', () => {
       'src/styles/base.css',
       'src/styles/fonts.css',
       'src/styles/globals.css',
+      'src/styles/theme-variants.css',
       'src/styles/theme.css',
     ])
   })

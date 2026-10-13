@@ -4,9 +4,10 @@ import {
 } from '#lib/appearance-font-settings'
 import {
   accentVariables,
+  isCatalogueVariant,
   terminalCssVariables,
-  themeById,
   themeCssVariables,
+  type EditorRolesMode,
   type ThemeAppearance,
   type ThemeVariant,
 } from '#lib/themes'
@@ -67,11 +68,34 @@ export type ThemeDocumentOptions = {
    * imported one wrote, so nothing inline outlives it to beat the stylesheet.
    */
   palette?: 'inline' | 'stylesheet'
+  /**
+   * The `--editor-*` projection. `syntax` (the default) is the catalogue's quiet
+   * syntax roles, which is what `theme-variants.css` carries; `floor` holds every
+   * editor role to 4.5:1 on the canvas, as hex.
+   *
+   * With `palette: 'stylesheet'`, `floor` is the one palette write a catalogue
+   * variant still gets: the stylesheet is generated for the default projection, so
+   * the sixteen `--editor-*` properties are written inline over it. The rest of the
+   * palette stays in the stylesheet.
+   */
+  editorRoles?: EditorRolesMode
 }
 
-/** True for the catalogue's own variant, not a host's copy that merely shares its id. */
-function isCatalogueVariant(variant: ThemeVariant): boolean {
-  return themeById(variant.id) === variant
+/**
+ * What a catalogue variant still writes inline when its palette is the stylesheet's:
+ * nothing, unless the editor projection is not the one the stylesheet was generated
+ * for.
+ */
+function stylesheetOverrides(
+  variant: ThemeVariant,
+  editorRoles: EditorRolesMode | undefined
+): Record<string, string> {
+  if (editorRoles !== 'floor') return {}
+  return Object.fromEntries(
+    Object.entries(themeCssVariables(variant, { editor: 'floor' })).filter(([name]) =>
+      name.startsWith('--editor-')
+    )
+  )
 }
 
 /**
@@ -91,7 +115,9 @@ export function themeDocumentTokens(
   options: ThemeDocumentOptions = {}
 ): { tokens: Record<string, string>; accented: boolean } {
   const fromStylesheet = options.palette === 'stylesheet' && isCatalogueVariant(state.variant)
-  const properties = fromStylesheet ? {} : { ...themeCssVariables(state.variant) }
+  const properties = fromStylesheet
+    ? stylesheetOverrides(state.variant, options.editorRoles)
+    : { ...themeCssVariables(state.variant, { editor: options.editorRoles }) }
   const accent = accentVariables(state.selection.accent, state.appearance, state.selection, {
     background: state.variant.colors.background,
     floor: options.accentContrastFloor,
