@@ -6,7 +6,8 @@ This is the repository-level operating contract for coding agents working in
 ## Mission
 
 Keep this design system **the only place** in the Adea organisation where a UI
-component, a colour, a size or a shadow is decided. Adea and Cortana consume it;
+component, a size or a shadow is decided. Palette colours come from
+`@adea-ai/themes`; UI owns their semantic token application. Adea and Cortana consume it;
 neither re-implements any part of it.
 
 That goal has a practical consequence for every change: if a task can be solved by
@@ -29,18 +30,18 @@ is the work.
 These are not style preferences. Each is enforced by a test, a lint rule or the
 build, and breaking one is a failing check rather than a review comment.
 
-| Invariant                                                                       | Enforced by                                          |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `tests/tokens.test.ts`                               |
-| Every text pairing in the system is measurable and measured                     | `tests/tokens.test.ts` (30 contrast assertions)      |
-| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                  |
-| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                       |
-| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`          |
-| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                              |
-| Every public export belongs to a registry item                                  | `tests/registry.test.ts`                             |
-| The committed registry matches the source                                       | `tests/registry.test.ts`                             |
-| No stories or MDX are shipped as consumer source                                | `tests/registry.test.ts`                             |
-| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts` |
+| Invariant                                                                       | Enforced by                                              |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `packages/ui/tests/tokens.test.ts`                       |
+| Every text pairing in the system is measurable and measured                     | `packages/ui/tests/tokens.test.ts` (contrast assertions) |
+| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                      |
+| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                           |
+| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`              |
+| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                                  |
+| Every public export belongs to a registry item                                  | `packages/ui/tests/registry.test.ts`                     |
+| The committed registry matches the source                                       | `packages/ui/tests/registry.test.ts`                     |
+| No stories or MDX are shipped as consumer source                                | `packages/ui/tests/registry.test.ts`                     |
+| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts`     |
 
 ## Working rules
 
@@ -72,7 +73,7 @@ could not derive: why the popover's trigger is the row itself, why a dialog has 
 corner close button, why the dark theme's accent carries a black label. A comment
 that restates the next line is noise and will be asked for in review.
 
-**One component, one folder.** `src/components/<layer>/<name>/` holds
+**One component, one folder.** `packages/ui/src/components/<layer>/<name>/` holds
 `<name>.tsx`, `<name>.stories.tsx`, `<name>.mdx` (optional) and `index.ts`. The
 index exports the public surface; anything not in it is private to the folder.
 
@@ -86,7 +87,7 @@ bun run lint                 # oxlint with @shadcn/lint, zero warnings
 bun run typecheck            # both packages, including stories and tests
 bun run build                # the library build, then declarations
 bun run test                 # unit + registry + token tests
-bun run registry:build       # regenerate registry.json and public/r
+bun run registry:build       # regenerate packages/ui/registry.json and packages/ui/public/r
 bun run registry:validate    # assert the registry is valid and current
 bun run test:storybook       # the accessibility and interaction lane
 bun run verify:changed       # only the checks your branch's changes reach (see below)
@@ -95,7 +96,7 @@ bun run verify:changed       # only the checks your branch's changes reach (see 
 `bun run verify:changed` diffs the working tree and commits against the merge-base
 with `origin/main` (`--base=<ref>` to change it; `--plan` to print without running)
 and runs only what that diff reaches: the registry rebuild plus the same
-`registry.json`/`public/r` drift check CI fails on, the component shard collection
+`packages/ui/registry.json`/`packages/ui/public/r` drift check CI fails on, the component shard collection
 check (list only, no browser), the published-exports gate (a library build, run only when
 a `lib/` module, `vite.config.ts` or the `exports` map changed), a turbo-cached typecheck of the changed workspaces,
 the unit tests that import a changed module (a whole suite only for widely read
@@ -117,7 +118,7 @@ warning is a failure.
   the token galleries are exempt from rules that cannot apply there, and each
   exception carries a reason. A new exception needs a reason too.
 - Do not commit generated output (`dist/`, `storybook-static/`, `coverage/`).
-  `public/r/` and `registry.json` are deliberate exceptions: they are the
+  `packages/ui/public/r/` and `packages/ui/registry.json` are deliberate exceptions: they are the
   distribution contract and are committed on purpose.
 - Do not commit secrets, credentials or machine-specific paths.
 
