@@ -278,12 +278,17 @@ export function AppearancePopover(props: AppearancePopoverProps) {
     <Sheet open={props.open} onOpenChange={(open) => (open ? props.onOpen() : props.onDismiss())}>
       {/* The trigger is an icon-only action, so it explains itself through the
           shared ActionButton's tooltip (keyboard focus included) rather than a
-          bare aria-label. */}
+          bare aria-label. `toolbar` also holds the pressed rung while Kobalte
+          marks the trigger `data-expanded`, and repeats the glyph in the
+          tooltip like the other toolbar actions. */}
       <SheetTrigger
         as={ActionButton}
-        variant="ghost"
+        variant={props.triggerVariant === 'toolbar' ? 'toolbar' : 'ghost'}
         size="icon-sm"
         tooltip="Open appearance settings"
+        tooltipIcon={
+          props.triggerVariant === 'toolbar' ? <Palette aria-hidden="true" /> : undefined
+        }
         aria-label="Appearance settings"
       >
         <Palette />

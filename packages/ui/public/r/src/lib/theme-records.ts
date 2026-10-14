@@ -30,6 +30,9 @@ import type {
   ThemeVariant,
 } from './themes'
 
+/** The catalogue's canonical theme shapes, for a host that holds records and no catalogue. */
+export type { AdeaTheme, AdeaThemeRecord } from '@adea-ai/themes'
+
 /**
  * The shadcn-vocabulary roles of one catalogue entry.
  *

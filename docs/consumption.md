@@ -362,13 +362,13 @@ A bundler places a module whole, so what a start-up path imports is decided by w
 module defines it, not by which one re-exports it. These are defined in modules that do
 not import the catalogue, and are safe in a lazy host's start-up:
 
-| Import                                                             | From                             |
-| ------------------------------------------------------------------ | -------------------------------- |
-| `variantFromRecord(record)`                                        | `@adea-ai/ui/lib/theme-records`  |
-| `accents` (the six brand presets), `accentPresets` (`theme` first) | `@adea-ai/ui/lib/accent-presets` |
-| `tokensAsHex`, `terminalCssVariables`                              | `@adea-ai/ui/lib/theme-css`      |
-| `isThemeAccentId`                                                  | `@adea-ai/ui/lib/theme-accents`  |
-| `defaultLightThemeId`, `defaultDarkThemeId`, `resolveVariant`      | `@adea-ai/ui/lib/theme-defaults` |
+| Import                                                                              | From                             |
+| ----------------------------------------------------------------------------------- | -------------------------------- |
+| `variantFromRecord(record)`, the `AdeaTheme` / `AdeaThemeRecord` types              | `@adea-ai/ui/lib/theme-records`  |
+| `accents` (the six brand presets), `accentPresets` (`theme` first), `getAccent(id)` | `@adea-ai/ui/lib/accent-presets` |
+| `tokensAsHex`, `terminalCssVariables`                                               | `@adea-ai/ui/lib/theme-css`      |
+| `isThemeAccentId`                                                                   | `@adea-ai/ui/lib/theme-accents`  |
+| `defaultLightThemeId`, `defaultDarkThemeId`, `resolveVariant`                       | `@adea-ai/ui/lib/theme-defaults` |
 
 `@adea-ai/ui/lib/themes` re-exports every one of them, so existing imports keep working
 and, with a tree-shaking bundler, still leave the table out when nothing reads it.
@@ -380,7 +380,27 @@ instead. It costs about 7 kB raw (2 kB gzipped) at start-up, because it projects
 onto the shadcn vocabulary. `check:theme-startup` bundles a lazy host that imports
 `variantFromRecord` and `accents` from `lib/themes` (beside `tokensAsHex`,
 `isThemeAccentId` and `resolveVariant`) and another that imports them from the defining
-modules, and fails if the catalogue reaches either start-up chunk.
+modules (plus `getAccent`), and fails if the catalogue reaches either start-up chunk.
+
+#### Helpers for a host that holds records
+
+A host that reads or imports theme records, and wants `@adea-ai/ui` as its only theme
+dependency, imports these. None is a start-up import: `lib/theme-projection` carries the
+two default records, so load it with the importer or the appearance panel, not before
+first paint. It imports no catalogue table and nothing from `lib/themes`.
+
+| Import                                                                             | From                               |
+| ---------------------------------------------------------------------------------- | ---------------------------------- |
+| `defaultThemeRecord(appearance)` — `adea-light` / `adea-dark` as canonical records | `@adea-ai/ui/lib/theme-projection` |
+| `themeAccentsForRecords(light, dark)` — the accents a pair of records carries      | `@adea-ai/ui/lib/theme-projection` |
+| `shadcnVariables`, `shadcnDestructiveProjection`, `toXtermTheme`                   | `@adea-ai/ui/lib/theme-projection` |
+| `editorRolesHex`, `syntaxRolesHex`, `oklchToHex`, `parseOklchColor`                | `@adea-ai/ui/lib/theme-projection` |
+
+The last two rows are the catalogue's own functions, re-exported rather than wrapped, so
+a host's projection of an imported theme cannot drift from the catalogue's. `variantFromRecord`
+is not that projection: it keeps the error colour as `destructive`, and its editor palette
+is the syntax roles rather than the floor-repaired ones, so a host that stores hex values
+for imported themes projects with these helpers instead.
 
 ### The stylesheet exports
 

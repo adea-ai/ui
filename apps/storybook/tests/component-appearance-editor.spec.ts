@@ -158,8 +158,10 @@ test.afterAll(async () => {
 test.beforeEach(async ({ page }, testInfo) => {
   if (testInfo.title.startsWith('System avoids font requests')) return
   const inlineEditor = testInfo.title.includes('inline AppearanceEditor')
+  const denseHost = testInfo.title.startsWith('dense host')
+  const fixture = inlineEditor ? 'inline' : denseHost ? 'dense' : undefined
   await page.setContent(
-    `<!doctype html><html lang="en"${inlineEditor ? ' data-appearance-fixture="inline"' : ''}><head><title>Appearance fixture</title></head><body></body></html>`
+    `<!doctype html><html lang="en"${fixture ? ` data-appearance-fixture="${fixture}"` : ''}><head><title>Appearance fixture</title></head><body></body></html>`
   )
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
@@ -652,6 +654,173 @@ test('the accent picker offers one theme-scoped group: the theme default plus th
   await expect(page.getByLabel('Draft preference')).toContainText('"accent":"blue"')
 })
 
+test('the defaults draw no mode glyphs, no Custom button and the ghost trigger', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  const mode = dialog.getByRole('radiogroup', { name: 'Appearance mode', exact: true })
+  await expect(mode.locator('svg')).toHaveCount(0)
+  await expect(dialog.getByRole('button', { name: 'Custom', exact: true })).toHaveCount(0)
+  await expect(dialog.locator('[data-accent-choices]')).toHaveCount(0)
+  // The glass chips never wrap their own label, however narrow the panel.
+  const chips = dialog.getByRole('radiogroup', { name: 'Glass', exact: true }).locator('label')
+  for (const chip of await chips.all()) await expect(chip).toHaveCSS('white-space', 'nowrap')
+  await dialog.getByRole('button', { name: 'Close appearance settings' }).click()
+  const trigger = page.getByRole('button', { name: 'Appearance settings', exact: true })
+  await trigger.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Open appearance settings')
+  await expect(page.locator('[data-slot="tooltip-icon"]')).toHaveCount(0)
+})
+
+test('dense host: the accent row is one equally spaced line down to a narrow panel', async ({
+  page,
+}) => {
+  for (const width of [320, 1024]) {
+    await page.setViewportSize({ width, height: 900 })
+    const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+    const row = dialog.locator('[data-accent-choices]')
+    await row.scrollIntoViewIfNeeded()
+    const ids = await row
+      .locator('[data-accent-option]')
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute('data-accent-option'))
+      )
+    // No "Theme default" entry and no second Custom label: six presets, one Custom.
+    expect(ids).toEqual(['violet', 'blue', 'green', 'amber', 'cyan', 'pink'])
+    await expect(dialog.getByRole('button', { name: 'Custom', exact: true })).toHaveCount(1)
+    await expect(dialog.getByText('Custom', { exact: true })).toHaveCount(1)
+    const swatches = row.locator('svg.size-full')
+    await expect(swatches).toHaveCount(6)
+    const boxes = await swatches.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const rect = node.getBoundingClientRect()
+        return { x: rect.x, y: rect.y, right: rect.right }
+      })
+    )
+    expect(
+      Math.max(...boxes.map((box) => box.y)) - Math.min(...boxes.map((box) => box.y))
+    ).toBeLessThan(1)
+    const steps = boxes.slice(1).map((box, index) => box.x - boxes[index]!.x)
+    expect(Math.max(...steps) - Math.min(...steps)).toBeLessThan(1)
+    const custom = await row.getByRole('button', { name: 'Custom', exact: true }).boundingBox()
+    expect(custom!.x).toBeGreaterThan(boxes[5]!.right)
+    expect(custom!.x + custom!.width).toBeLessThanOrEqual(width)
+    // Each swatch paints its preset for the resolved appearance.
+    const fills = await row
+      .locator('svg.size-full circle')
+      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).fill))
+    expect(new Set(fills).size).toBe(6)
+  }
+})
+
+test('dense host: Custom opens the native selector without touching the draft until a colour is chosen', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  await page.evaluate(() => {
+    const native = HTMLInputElement.prototype.showPicker
+    HTMLInputElement.prototype.showPicker = function () {
+      native.call(this)
+      this.dataset['pickerOpened'] = 'true'
+    }
+  })
+  const custom = dialog.getByRole('button', { name: 'Custom', exact: true })
+  await expect(custom).toHaveAttribute('aria-pressed', 'false')
+  const before = await page.getByLabel('Draft preference').textContent()
+  await custom.click()
+  const picker = dialog.locator('input[type="color"]')
+  await expect(picker).toHaveAttribute('data-picker-opened', 'true')
+  // The host's starting colour seeds the selector; opening it alone changes nothing.
+  await expect(picker).toHaveValue('#2563eb')
+  await expect(page.getByLabel('Draft preference')).toHaveText(before!)
+  await expect(dialog.getByRole('textbox', { name: 'Custom accent', exact: true })).toHaveCount(0)
+
+  await picker.fill('#ff6600')
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"#ff6600"')
+  await expect(custom).toHaveAttribute('aria-pressed', 'true')
+  const hex = dialog.getByRole('textbox', { name: 'Custom accent', exact: true })
+  await expect(hex).toHaveValue('#ff6600')
+  // No swatch claims the custom colour.
+  await expect(
+    dialog
+      .getByRole('radiogroup', { name: 'Accent', exact: true })
+      .getByRole('radio', { checked: true })
+  ).toHaveCount(0)
+
+  // A preset replaces it.
+  await dialog.locator('[data-accent-option="blue"] label').click()
+  await expect(dialog.getByRole('radio', { name: 'Blue', exact: true })).toBeChecked()
+  await expect(custom).toHaveAttribute('aria-pressed', 'false')
+  await expect(dialog.getByRole('textbox', { name: 'Custom accent', exact: true })).toHaveCount(0)
+})
+
+test('dense host: the swatches keep the radio group keyboard model', async ({ page }) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  const violet = dialog.getByRole('radio', { name: 'Violet', exact: true })
+  await violet.focus()
+  await page.keyboard.press('Space')
+  await expect(violet).toBeChecked()
+  await page.keyboard.press('ArrowRight')
+  await expect(dialog.getByRole('radio', { name: 'Blue', exact: true })).toBeChecked()
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"blue"')
+  await page.keyboard.press('ArrowLeft')
+  await expect(violet).toBeChecked()
+  // One labelled control per entry, and the Custom button is a tab stop after them.
+  await expect(
+    dialog.getByRole('radiogroup', { name: 'Accent', exact: true }).getByRole('radio')
+  ).toHaveCount(6)
+  await dialog.getByRole('radio', { name: 'Pink', exact: true }).focus()
+  await page.keyboard.press('Tab')
+  await expect(dialog.getByRole('button', { name: 'Custom', exact: true })).toBeFocused()
+})
+
+test('dense host: a saved hex restores into the selector and Cancel restores the snapshot', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  await dialog.locator('input[type="color"]').fill('#ff6600')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByLabel('Committed preference')).toContainText('"accent":"#ff6600"')
+  await page.getByRole('button', { name: 'Appearance settings', exact: true }).click()
+  await expect(dialog.locator('input[type="color"]')).toHaveValue('#ff6600')
+  await dialog.getByRole('radio', { name: 'Pink', exact: true }).press('Space')
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page.getByLabel('Draft preference')).toContainText('"accent":"#ff6600"')
+})
+
+test('dense host: mode cards carry a glyph, the typefaces close the list and the trigger holds its pressed rung', async ({
+  page,
+}) => {
+  const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
+  const mode = dialog.getByRole('radiogroup', { name: 'Appearance mode', exact: true })
+  for (const name of ['System', 'Light', 'Dark']) {
+    const card = mode.locator('label', { hasText: name })
+    await expect(card.locator('svg[aria-hidden="true"]')).toHaveCount(1)
+    await expect(card.getByText(name, { exact: true })).toHaveCount(1)
+  }
+  // Selection still goes through the radio, glyph or not.
+  await mode.locator('label', { hasText: 'Light' }).click()
+  await expect(page.getByLabel('Draft preference')).toContainText('"mode":"light"')
+
+  const stack = dialog.locator('[data-appearance-editor] > div.divide-y')
+  await expect(stack.locator(':scope > *').last()).toHaveClass(/global-appearance-font-settings/)
+
+  // Kobalte marks the trigger expanded while its sheet is open; the toolbar variant
+  // paints that state, so the open control never reads like its idle neighbours.
+  // The modal sheet hides its trigger from the accessibility tree while open.
+  const trigger = page.getByRole('button', {
+    name: 'Appearance settings',
+    exact: true,
+    includeHidden: true,
+  })
+  await expect(trigger).toHaveAttribute('data-expanded', '')
+  await dialog.getByRole('button', { name: 'Close appearance settings' }).click()
+  await expect(trigger).not.toHaveAttribute('data-expanded', /.*/)
+  await trigger.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Open appearance settings')
+  await expect(page.locator('[data-slot="tooltip-icon"]')).toBeVisible()
+})
+
 test('unsaved theme selection updates live miniatures and Cancel restores the snapshot', async ({
   page,
 }) => {
@@ -1069,6 +1238,25 @@ for (const width of [320, 768, 1024, 1440]) {
       )
     ).toEqual([])
     await page.screenshot({ path: testInfo.outputPath(`appearance-${width}.png`) })
+  })
+}
+
+for (const width of [320, 1024]) {
+  test(`dense host: the composition at ${width}px has no overflow or serious accessibility violations`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const dialog = page.getByRole('dialog', { name: 'Appearance' })
+    await expect(dialog).toBeVisible()
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true
+    )
+    const result = await new AxeBuilder({ page }).include('[data-appearance-editor]').analyze()
+    expect(
+      result.violations.filter((violation) =>
+        ['serious', 'critical'].includes(violation.impact ?? '')
+      )
+    ).toEqual([])
   })
 }
 

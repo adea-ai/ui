@@ -9,6 +9,14 @@ import { ACCENTS } from '@adea-ai/themes'
  */
 
 /**
+ * A preset by id (`blue`), or `undefined` for `theme`, a theme-carried accent or an
+ * unknown id. The catalogue's own lookup, re-exported rather than copied so a host's
+ * stored-preference reader resolves an id exactly as the catalogue does without
+ * importing `lib/themes`.
+ */
+export { getAccent } from '@adea-ai/themes'
+
+/**
  * The accent axis.
  *
  * adea's accent presets, as a selection rather than a constant. `theme` is the

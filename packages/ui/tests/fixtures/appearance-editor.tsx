@@ -82,6 +82,19 @@ function offeredThemeAccents(light: AdeaTheme, dark: AdeaTheme): AccentPreset[] 
   }))
 }
 
+// The composition a dense toolbar host asks for, opted into per page so the
+// default fixture keeps proving the backward-compatible defaults.
+const dense = document.documentElement.dataset['appearanceFixture'] === 'dense'
+const denseProps = dense
+  ? ({
+      fontSettingsPlacement: 'end',
+      accentEntryStyle: 'row',
+      showThemeDefaultAccent: false,
+      showModeIcons: true,
+      customAccentValue: '#2563eb',
+    } as const)
+  : {}
+
 function Fixture() {
   const fontDefaults = normalizeAppearanceEditorFontSettings(undefined).settings
   const fontBootstrap = fontSettingsBootstrapScript('appearance')
@@ -169,6 +182,8 @@ function Fixture() {
         </code>
       </div>
       <AppearancePopover
+        {...denseProps}
+        triggerVariant={dense ? 'toolbar' : undefined}
         open={open()}
         onOpen={() => {
           setDraft({ ...committed() })

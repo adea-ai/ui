@@ -2045,6 +2045,11 @@
           "target": "components/composites/appearance-editor/accent-swatch-groups.tsx"
         },
         {
+          "path": "src/components/composites/appearance-editor/accent-swatch-row.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/appearance-editor/accent-swatch-row.tsx"
+        },
+        {
           "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
           "type": "registry:ui",
           "target": "components/composites/appearance-editor/appearance-choices.tsx"
@@ -2793,6 +2798,11 @@
           "path": "src/lib/theme-engine.ts",
           "type": "registry:lib",
           "target": "lib/theme-engine.ts"
+        },
+        {
+          "path": "src/lib/theme-projection.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-projection.ts"
         },
         {
           "path": "src/lib/theme-records.ts",

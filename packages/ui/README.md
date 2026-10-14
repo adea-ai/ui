@@ -762,6 +762,21 @@ capability stays visibly unavailable. App-specific persisted versions and the
 legacy `translucent` value need an app-owned adapter to the editor's `theme`
 surface selection. The library does not silently migrate stored preferences.
 
+A host recomposes the editor through props, never by forking it. Every option keeps
+the default below, so an existing consumer renders as before:
+
+| Prop                       | Default    | What it changes                                                                                                                                                                                                                                                      |
+| -------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fontSettingsPlacement`    | `inline`   | `end` closes the option list with the typefaces, after Glass, Reduce transparency and Theme library.                                                                                                                                                                 |
+| `accentEntryStyle`         | `swatches` | `labels` renders every choice as a named chip. `row` draws the presets as circles in one equally spaced line (it holds at 320px, where the grid wraps) and turns Custom into a button that opens the native colour selector: only a chosen colour changes the draft. |
+| `showThemeDefaultAccent`   | `true`     | `false` drops the leading "Theme default" entry, for a host whose default accent already is a preset.                                                                                                                                                                |
+| `showCustomAccentCaption`  | `true`     | `false` drops the "Custom" caption over the `swatches` style's custom chip. No effect on `labels` or `row`.                                                                                                                                                          |
+| `showModeIcons`            | `false`    | A sun, moon or monitor glyph beside each mode card's label.                                                                                                                                                                                                          |
+| `triggerVariant` (popover) | `ghost`    | `toolbar` holds the pressed rung while the sheet is open and repeats the palette glyph in the tooltip, like the other toolbar actions.                                                                                                                               |
+
+`customAccentValue` seeds the native selector (`row`) and the draft the `swatches`
+Custom chip commits; hand it your starting colour.
+
 The component browser lane uses a real Vite/Solid/Tailwind build in headless
 Chromium without an app server. It checks keyboard mode selection, nested menu
 accessibility, focus and pointer dismissal, Escape, live-preview rollback,

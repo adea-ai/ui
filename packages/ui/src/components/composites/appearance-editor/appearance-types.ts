@@ -67,10 +67,16 @@ export type AppearanceEditorProps = {
   fontSettingsPlacement?: 'inline' | 'end'
   /**
    * How the accent row renders its choices. `swatches` — the default — paints
-   * each choice as a colour circle. `labels` renders every choice as a named
-   * chip, for hosts whose accent contract is textual rather than chromatic.
+   * each choice as a colour circle in a wrapping grid, with Custom as one more
+   * chip. `labels` renders every choice as a named chip, for hosts whose accent
+   * contract is textual rather than chromatic. `row` draws the circles in ONE
+   * equally spaced line, which holds at a narrow panel width where the grid
+   * would wrap, and turns Custom into a button that opens the native colour
+   * selector: choosing a colour there is the only thing that changes the draft,
+   * so dismissing the selector leaves the accent as it was. The caption flag
+   * has no effect on `row`, which has nothing to caption.
    */
-  accentEntryStyle?: 'swatches' | 'labels'
+  accentEntryStyle?: 'swatches' | 'labels' | 'row'
   /**
    * Whether the accent row leads with a "Theme default" swatch. Default on.
    * Hosts whose default accent already is one of the catalogue presets pass
@@ -83,10 +89,23 @@ export type AppearanceEditorProps = {
    * caption reads as a second "Custom" label on the control.
    */
   showCustomAccentCaption?: boolean
+  /**
+   * Whether each mode card names its axis with a sun, moon or monitor glyph
+   * beside the label, as `ThemeModeToggle` does. Default off.
+   */
+  showModeIcons?: boolean
 }
 
 export type AppearancePopoverProps = AppearanceEditorProps & {
   open: boolean
   onOpen: () => void
   onDismiss: () => void
+  /**
+   * The trigger's treatment. `ghost` — the default — is a quiet icon action.
+   * `toolbar` is the variant for a control that opens a surface: it holds the
+   * pressed rung while the sheet is open, so the one control that owns the
+   * visible sheet never reads like its idle neighbours, and its tooltip repeats
+   * the palette glyph the other toolbar actions carry.
+   */
+  triggerVariant?: 'ghost' | 'toolbar'
 }

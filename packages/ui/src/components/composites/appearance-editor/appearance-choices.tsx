@@ -24,9 +24,14 @@
 // Pinned mode-card, accent-swatch, and glass-chip composition. Kobalte replaces
 // the app port's manual roving focus; it does not replace the donor hierarchy.
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
+import { Monitor, Moon, Sun } from 'lucide-solid'
 import { For, Show } from 'solid-js'
+import { Dynamic } from 'solid-js/web'
 import { isThemeAccentId } from '#lib/theme-accents'
+import { Button } from '../../ui/button/button'
+import { Input } from '../../ui/input/input'
 import { AccentSwatchGroups } from './accent-swatch-groups'
+import { AccentSwatchRow } from './accent-swatch-row'
 import type { AppearanceEditorProps } from './appearance-types'
 import { ThemeMiniature, ThemeMiniatureSplit } from './theme-preview'
 
@@ -40,6 +45,8 @@ const SURFACES = [
   { value: 'frosted', label: 'Frosted' },
   { value: 'opaque', label: 'Opaque' },
 ] as const
+const MODE_ICONS = { system: Monitor, light: Sun, dark: Moon } as const
+
 export function ModeChoices(props: AppearanceEditorProps) {
   return (
     <Radio
@@ -74,7 +81,18 @@ export function ModeChoices(props: AppearanceEditorProps) {
                   <ThemeMiniatureSplit light={props.lightTheme} dark={props.darkTheme} />
                 </Show>
               </span>
-              <span>{option.label}</span>
+              {/* The glyph names the axis beside the miniature, so the cards read
+                  like ThemeModeToggle without losing the previews. */}
+              <Show when={props.showModeIcons} fallback={<span>{option.label}</span>}>
+                <span class="flex items-center justify-center gap-1.5">
+                  <Dynamic
+                    component={MODE_ICONS[option.value]}
+                    aria-hidden="true"
+                    class="size-3.5"
+                  />
+                  {option.label}
+                </span>
+              </Show>
             </Radio.ItemLabel>
           </Radio.Item>
         )}
@@ -106,75 +124,137 @@ export function AccentChoices(props: AppearanceEditorProps) {
     props.draft.mode === 'system' ? props.resolvedAppearance : props.draft.mode
   const accentSelection = () => (isCustomAccent(props) ? 'custom' : props.draft.accent)
   const showThemeDefault = () => props.showThemeDefaultAccent ?? true
+  const entryStyle = () => props.accentEntryStyle ?? 'swatches'
+  const themeDefaultColor = () =>
+    resolvedAppearance() === 'light'
+      ? props.lightTheme.colors.accent
+      : props.darkTheme.colors.accent
   // The named-chip style feeds the same resolved preset list to both entries:
   // "Theme default" leads only when the host has not folded it into a preset.
   const labelEntries = () => {
     const presets = props.accentOptions.filter((option) => option.id !== 'theme')
     return showThemeDefault() ? [{ id: 'theme', label: 'Theme default' }, ...presets] : presets
   }
+  // The `row` style's Custom entry is a button that opens the native colour
+  // selector, so the draft only changes once a colour is chosen there. The
+  // input stays in the tree for the selector to anchor to and for the value a
+  // saved hex restores.
+  let colorPicker: HTMLInputElement | undefined
+  const openCustomColor = () => {
+    if (!colorPicker || props.saving) return
+    if (typeof colorPicker.showPicker === 'function') colorPicker.showPicker()
+    else colorPicker.click()
+  }
   return (
-    <Radio
-      value={accentSelection()}
-      disabled={props.saving}
-      orientation="horizontal"
-      aria-label="Accent"
-      class="flex flex-col items-start gap-3"
-      onChange={(accent) =>
-        props.onChange({
-          accent: accent === 'custom' ? (props.customAccentValue ?? '') : accent,
-        })
-      }
-    >
-      <Show
-        when={(props.accentEntryStyle ?? 'swatches') === 'labels'}
-        fallback={
-          <>
-            <AccentSwatchGroups
-              accentOptions={props.accentOptions}
-              resolvedAppearance={resolvedAppearance()}
-              showThemeDefault={showThemeDefault()}
-              themeDefaultColor={
-                resolvedAppearance() === 'light'
-                  ? props.lightTheme.colors.accent
-                  : props.darkTheme.colors.accent
-              }
-            />
-            <div class="flex flex-col gap-1">
-              <Show when={props.showCustomAccentCaption ?? true}>
-                <span class="text-xs font-medium text-muted-foreground">Custom</span>
-              </Show>
-              <Radio.Item value="custom">
+    <Show
+      when={entryStyle() === 'row'}
+      fallback={
+        <Radio
+          value={accentSelection()}
+          disabled={props.saving}
+          orientation="horizontal"
+          aria-label="Accent"
+          class="flex flex-col items-start gap-3"
+          onChange={(accent) =>
+            props.onChange({
+              accent: accent === 'custom' ? (props.customAccentValue ?? '') : accent,
+            })
+          }
+        >
+          <Show
+            when={entryStyle() === 'labels'}
+            fallback={
+              <>
+                <AccentSwatchGroups
+                  accentOptions={props.accentOptions}
+                  resolvedAppearance={resolvedAppearance()}
+                  showThemeDefault={showThemeDefault()}
+                  themeDefaultColor={themeDefaultColor()}
+                />
+                <div class="flex flex-col gap-1">
+                  <Show when={props.showCustomAccentCaption ?? true}>
+                    <span class="text-xs font-medium text-muted-foreground">Custom</span>
+                  </Show>
+                  <Radio.Item value="custom">
+                    <Radio.ItemInput />
+                    <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                      Custom
+                    </Radio.ItemLabel>
+                  </Radio.Item>
+                </div>
+              </>
+            }
+          >
+            {/* The named-chip style: one grid, every choice a labelled control,
+                including the custom colour — nothing to caption from above. */}
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" data-accent-grid>
+              <For each={labelEntries()}>
+                {(option) => (
+                  <Radio.Item value={option.id} class="min-w-0" data-accent-option={option.id}>
+                    <Radio.ItemInput />
+                    <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
+                      {option.label}
+                    </Radio.ItemLabel>
+                  </Radio.Item>
+                )}
+              </For>
+              <Radio.Item value="custom" class="min-w-0">
                 <Radio.ItemInput />
                 <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
                   Custom
                 </Radio.ItemLabel>
               </Radio.Item>
             </div>
-          </>
-        }
-      >
-        {/* The named-chip style: one grid, every choice a labelled control,
-            including the custom colour — nothing to caption from above. */}
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" data-accent-grid>
-          <For each={labelEntries()}>
-            {(option) => (
-              <Radio.Item value={option.id} class="min-w-0" data-accent-option={option.id}>
-                <Radio.ItemInput />
-                <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-                  {option.label}
-                </Radio.ItemLabel>
-              </Radio.Item>
-            )}
-          </For>
-          <Radio.Item value="custom" class="min-w-0">
-            <Radio.ItemInput />
-            <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-              Custom
-            </Radio.ItemLabel>
-          </Radio.Item>
-        </div>
-      </Show>
-    </Radio>
+          </Show>
+        </Radio>
+      }
+    >
+      <div class="flex w-full min-w-0 items-center gap-2" data-accent-choices>
+        <Radio
+          value={accentSelection()}
+          disabled={props.saving}
+          orientation="horizontal"
+          aria-label="Accent"
+          class="grid min-w-0 flex-1 auto-cols-fr grid-flow-col"
+          onChange={(accent) => props.onChange({ accent })}
+        >
+          <AccentSwatchRow
+            accentOptions={props.accentOptions}
+            resolvedAppearance={resolvedAppearance()}
+            showThemeDefault={showThemeDefault()}
+            themeDefaultColor={themeDefaultColor()}
+          />
+        </Radio>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={props.saving}
+          aria-pressed={isCustomAccent(props)}
+          onClick={openCustomColor}
+        >
+          Custom
+        </Button>
+        <Input
+          ref={(element) => {
+            colorPicker = element
+          }}
+          type="color"
+          // `w-px` beats the Input's own `w-full`: an absolutely positioned
+          // full-width input sized the sheet's scroll width.
+          class="sr-only w-px"
+          tabIndex={-1}
+          aria-label="Custom accent color"
+          value={
+            /^#[0-9a-f]{6}$/i.test(props.draft.accent)
+              ? props.draft.accent
+              : (props.customAccentValue ?? '#000000')
+          }
+          disabled={props.saving}
+          onChange={(event) => props.onChange({ accent: event.currentTarget.value })}
+        />
+      </div>
+    </Show>
   )
 }
 
@@ -199,7 +279,7 @@ export function GlassChoices(props: AppearanceEditorProps) {
             class="rounded-md focus-within:ring-3 focus-within:ring-ring/50"
           >
             <Radio.ItemInput />
-            <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
+            <Radio.ItemLabel class="flex h-7 cursor-pointer items-center rounded-md border px-2 text-xs whitespace-nowrap data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
               {option.label}
             </Radio.ItemLabel>
           </Radio.Item>

@@ -25,6 +25,11 @@
       "target": "components/composites/appearance-editor/accent-swatch-groups.tsx"
     },
     {
+      "path": "src/components/composites/appearance-editor/accent-swatch-row.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/appearance-editor/accent-swatch-row.tsx"
+    },
+    {
       "path": "src/components/composites/appearance-editor/appearance-choices.tsx",
       "type": "registry:ui",
       "target": "components/composites/appearance-editor/appearance-choices.tsx"

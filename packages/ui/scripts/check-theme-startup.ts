@@ -133,8 +133,8 @@ try {
     'lazy-records',
     `import { ThemeProvider, themeScript } from '@adea-ai/ui/components/theme/lazy'\n` +
       `import { variantFromRecord } from '@adea-ai/ui/lib/theme-records'\n` +
-      `import { accents, accentPresets } from '@adea-ai/ui/lib/accent-presets'\n` +
-      `console.log(ThemeProvider, themeScript, variantFromRecord, accents, accentPresets)\n`
+      `import { accents, accentPresets, getAccent } from '@adea-ai/ui/lib/accent-presets'\n` +
+      `console.log(ThemeProvider, themeScript, variantFromRecord, accents, accentPresets, getAccent)\n`
   )
 
   const row = (label: string, report: typeof eager) =>
