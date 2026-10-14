@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.4](https://github.com/adea-ai/ui/compare/v0.130.3...v0.130.4) (2026-10-14)
+
+
+### Documentation
+
+* tailor agent guidance and draft WIP workflow ([#403](https://github.com/adea-ai/ui/issues/403)) ([4711810](https://github.com/adea-ai/ui/commit/471181069a80cd9ec208d4cf54d59b208ec5a735))
+
 ## [0.130.3](https://github.com/adea-ai/ui/compare/v0.130.2...v0.130.3) (2026-10-13)
 
 
