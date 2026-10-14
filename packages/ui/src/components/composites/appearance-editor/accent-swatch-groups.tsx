@@ -23,6 +23,7 @@
  */
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
 import { For, Show } from 'solid-js'
+import { cn } from '#lib/utils'
 
 type AccentOption = Readonly<{
   id: string
@@ -50,6 +51,13 @@ type AccentSwatchGroupsProps = {
    * colour reads as a duplicate choice.
    */
   showThemeDefault?: boolean
+  /**
+   * `grid` — the default — wraps at four to a line. `row` keeps every swatch on
+   * one line at a smaller size, the columns sharing the width equally, so a
+   * narrow panel does not wrap them; each colour is then the fill of an SVG
+   * circle, which is where a host that asserts on swatch colours reads it.
+   */
+  layout?: 'grid' | 'row'
 }
 
 /**
@@ -62,11 +70,20 @@ type AccentSwatchGroupsProps = {
  */
 export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
   const presets = () => props.accentOptions.filter((option) => option.id !== 'theme')
+  const row = () => props.layout === 'row'
 
   return (
-    <div class="grid grid-cols-4 gap-2" data-accent-grid>
+    <div
+      class={row() ? 'grid auto-cols-fr grid-flow-col' : 'grid grid-cols-4 gap-2'}
+      data-accent-grid
+    >
       <Show when={props.showThemeDefault ?? true}>
-        <AccentSwatch id="theme" label="Theme default" color={props.themeDefaultColor} />
+        <AccentSwatch
+          id="theme"
+          label="Theme default"
+          color={props.themeDefaultColor}
+          row={row()}
+        />
       </Show>
       <For each={presets()}>
         {(option) => (
@@ -74,6 +91,7 @@ export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
             id={option.id}
             label={option.label}
             color={(props.resolvedAppearance === 'light' ? option.light : option.dark) ?? ''}
+            row={row()}
           />
         )}
       </For>
@@ -81,20 +99,36 @@ export function AccentSwatchGroups(props: AccentSwatchGroupsProps) {
   )
 }
 
-function AccentSwatch(props: { id: string; label: string; color: string }) {
+function AccentSwatch(props: { id: string; label: string; color: string; row: boolean }) {
   return (
     <Radio.Item
       value={props.id}
       data-accent-option={props.id}
-      class="rounded-full focus-within:ring-3 focus-within:ring-ring/50"
+      class={cn('rounded-full focus-within:ring-3 focus-within:ring-ring/50', {
+        'flex justify-center': props.row,
+      })}
     >
       <Radio.ItemInput />
-      <Radio.ItemLabel class="block size-7 cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary">
-        <span
-          class="block size-full rounded-full"
-          aria-hidden="true"
-          style={{ 'background-color': props.color }}
-        />
+      <Radio.ItemLabel
+        class={cn(
+          'block cursor-pointer rounded-full border p-0.5 data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary',
+          props.row ? 'size-6' : 'size-7'
+        )}
+      >
+        <Show
+          when={props.row}
+          fallback={
+            <span
+              class="block size-full rounded-full"
+              aria-hidden="true"
+              style={{ 'background-color': props.color }}
+            />
+          }
+        >
+          <svg class="size-full" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="8" fill={props.color} />
+          </svg>
+        </Show>
         <span class="sr-only">{props.label}</span>
       </Radio.ItemLabel>
     </Radio.Item>

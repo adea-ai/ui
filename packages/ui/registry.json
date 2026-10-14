@@ -2795,6 +2795,11 @@
           "target": "lib/theme-engine.ts"
         },
         {
+          "path": "src/lib/theme-projection.ts",
+          "type": "registry:lib",
+          "target": "lib/theme-projection.ts"
+        },
+        {
           "path": "src/lib/theme-records.ts",
           "type": "registry:lib",
           "target": "lib/theme-records.ts"

@@ -49,6 +49,8 @@ function Example(props: {
   recovery?: boolean
   empty?: boolean
   seams?: boolean
+  /** The `row` accent style, mode glyphs and the toolbar trigger a dense host asks for. */
+  dense?: boolean
 }) {
   const [draft, setDraft] = createSignal({ ...defaults })
   const [committed, setCommitted] = createSignal({ ...defaults })
@@ -83,8 +85,9 @@ function Example(props: {
     customAccentError:
       draft().accent !== 'theme' &&
       !ACCENTS.some((accent) => accent.id === draft().accent) &&
-      !isThemeAccentId(draft().accent)
-        ? 'Custom colors are validated by the host; this example accepts presets.'
+      !isThemeAccentId(draft().accent) &&
+      !/^#[\da-f]{6}$/i.test(draft().accent)
+        ? 'Use a six-digit hex color, such as #2563eb.'
         : undefined,
     // The composition seam: typefaces close the list, and the accent row is
     // named chips without a separate theme-default entry or a Custom caption.
@@ -94,12 +97,20 @@ function Example(props: {
       showThemeDefaultAccent: false,
       showCustomAccentCaption: false,
     }),
+    ...(props.dense && {
+      fontSettingsPlacement: 'end' as const,
+      accentEntryStyle: 'row' as const,
+      showThemeDefaultAccent: false,
+      showModeIcons: true,
+      customAccentValue: '#2563eb',
+    }),
   })
   return (
     <div class="w-full max-w-lg">
       {props.popup ? (
         <AppearancePopover
           {...editor()}
+          triggerVariant={props.dense ? 'toolbar' : undefined}
           open={open()}
           onOpen={() => setOpen(true)}
           onDismiss={cancel}
@@ -126,6 +137,14 @@ export const Default: Story = { render: () => <Example /> }
  * theme-default entry, no caption over the custom chip.
  */
 export const HostOrderedRows: Story = { render: () => <Example seams /> }
+/**
+ * The dense composition a toolbar host asks for: typefaces last, the accent row
+ * one equally spaced line of presets with Custom as a button that opens the native
+ * colour selector, a sun, moon or monitor glyph on each mode card. Narrow it to see
+ * why the row exists: the default swatch grid wraps; this one stays a single line.
+ */
+export const DenseHost: Story = { render: () => <Example dense /> }
+export const DenseHostPopup: Story = { render: () => <Example dense popup /> }
 export const AnchoredPopup: Story = { render: () => <Example popup /> }
 export const PendingSave: Story = { render: () => <Example saving /> }
 export const RecoveredPreferences: Story = { render: () => <Example recovery /> }
