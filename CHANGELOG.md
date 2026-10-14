@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.131.0](https://github.com/adea-ai/ui/compare/v0.130.4...v0.131.0) (2026-10-14)
+
+
+### Features
+
+* **appearance-editor:** row accent style, mode glyphs, toolbar trigger and a narrow theme API ([#413](https://github.com/adea-ai/ui/issues/413)) ([ce05fe0](https://github.com/adea-ai/ui/commit/ce05fe09dab20b621f0df70ca19be2c4aec6b216))
+
 ## [0.130.4](https://github.com/adea-ai/ui/compare/v0.130.3...v0.130.4) (2026-10-14)
 
 
