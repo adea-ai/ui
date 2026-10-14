@@ -78,7 +78,8 @@ The rules the linter enforces — and the reasoning behind them — are written 
 - Compose design-system components with their own `variant` and `size` props. Never
   pass appearance classes to one.
 - Colour, size, radius, shadow and elevation come from a token. Declare the token
-  in `theme.css` and in `src/lib/tokens.ts` before using it.
+  in `packages/ui/src/styles/theme.css` and in `packages/ui/src/lib/tokens.ts`
+  before using it.
 - Use `@kobalte/core` and `@corvu/*` for behaviour. React libraries will not run
   here, and `no-restricted-imports` blocks them.
 - Use `cn('base', { 'state': condition })` for conditional classes. A template
