@@ -26,12 +26,10 @@
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
 import { Monitor, Moon, Sun } from 'lucide-solid'
 import { For, Show } from 'solid-js'
-import { Dynamic } from 'solid-js/web'
 import { isThemeAccentId } from '../../../lib/theme-accents'
 import { Button } from '../../ui/button/button'
 import { Input } from '../../ui/input/input'
 import { AccentSwatchGroups } from './accent-swatch-groups'
-import { AccentSwatchRow } from './accent-swatch-row'
 import type { AppearanceEditorProps } from './appearance-types'
 import { ThemeMiniature, ThemeMiniatureSplit } from './theme-preview'
 
@@ -61,41 +59,40 @@ export function ModeChoices(props: AppearanceEditorProps) {
       class="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-3"
     >
       <For each={MODES}>
-        {(option) => (
-          <Radio.Item
-            value={option.value}
-            data-mode={option.value}
-            class="min-w-0 rounded-lg focus-within:ring-3 focus-within:ring-ring/50"
-          >
-            <Radio.ItemInput />
-            <Radio.ItemLabel class="flex cursor-pointer flex-col gap-2 rounded-lg border p-2 text-center text-xs data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
-              <span class="block h-20 w-full">
-                <Show
-                  when={option.value === 'system'}
-                  fallback={
-                    <ThemeMiniature
-                      theme={option.value === 'light' ? props.lightTheme : props.darkTheme}
-                    />
-                  }
-                >
-                  <ThemeMiniatureSplit light={props.lightTheme} dark={props.darkTheme} />
-                </Show>
-              </span>
-              {/* The glyph names the axis beside the miniature, so the cards read
-                  like ThemeModeToggle without losing the previews. */}
-              <Show when={props.showModeIcons} fallback={<span>{option.label}</span>}>
-                <span class="flex items-center justify-center gap-1.5">
-                  <Dynamic
-                    component={MODE_ICONS[option.value]}
-                    aria-hidden="true"
-                    class="size-3.5"
-                  />
-                  {option.label}
+        {(option) => {
+          const Icon = MODE_ICONS[option.value]
+          return (
+            <Radio.Item
+              value={option.value}
+              data-mode={option.value}
+              class="min-w-0 rounded-lg focus-within:ring-3 focus-within:ring-ring/50"
+            >
+              <Radio.ItemInput />
+              <Radio.ItemLabel class="flex cursor-pointer flex-col gap-2 rounded-lg border p-2 text-center text-xs data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
+                <span class="block h-20 w-full">
+                  <Show
+                    when={option.value === 'system'}
+                    fallback={
+                      <ThemeMiniature
+                        theme={option.value === 'light' ? props.lightTheme : props.darkTheme}
+                      />
+                    }
+                  >
+                    <ThemeMiniatureSplit light={props.lightTheme} dark={props.darkTheme} />
+                  </Show>
                 </span>
-              </Show>
-            </Radio.ItemLabel>
-          </Radio.Item>
-        )}
+                {/* The glyph names the axis beside the miniature, so the cards read
+                  like ThemeModeToggle without losing the previews. */}
+                <Show when={props.showModeIcons} fallback={<span>{option.label}</span>}>
+                  <span class="flex items-center justify-center gap-1.5">
+                    <Icon aria-hidden="true" class="size-3.5" />
+                    {option.label}
+                  </span>
+                </Show>
+              </Radio.ItemLabel>
+            </Radio.Item>
+          )
+        }}
       </For>
     </Radio>
   )
@@ -215,14 +212,15 @@ export function AccentChoices(props: AppearanceEditorProps) {
           disabled={props.saving}
           orientation="horizontal"
           aria-label="Accent"
-          class="grid min-w-0 flex-1 auto-cols-fr grid-flow-col"
+          class="min-w-0 flex-1"
           onChange={(accent) => props.onChange({ accent })}
         >
-          <AccentSwatchRow
+          <AccentSwatchGroups
             accentOptions={props.accentOptions}
             resolvedAppearance={resolvedAppearance()}
             showThemeDefault={showThemeDefault()}
             themeDefaultColor={themeDefaultColor()}
+            layout="row"
           />
         </Radio>
         <Button
