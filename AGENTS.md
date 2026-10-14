@@ -6,7 +6,8 @@ This is the repository-level operating contract for coding agents working in
 ## Mission
 
 Keep this design system **the only place** in the Adea organisation where a UI
-component, a colour, a size or a shadow is decided. Adea and Cortana consume it;
+component, a size or a shadow is decided. Palette colours come from
+`@adea-ai/themes`; UI owns their semantic token application. Adea and Cortana consume it;
 neither re-implements any part of it.
 
 That goal has a practical consequence for every change: if a task can be solved by
@@ -29,18 +30,18 @@ is the work.
 These are not style preferences. Each is enforced by a test, a lint rule or the
 build, and breaking one is a failing check rather than a review comment.
 
-| Invariant                                                                       | Enforced by                                          |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `tests/tokens.test.ts`                               |
-| Every text pairing in the system is measurable and measured                     | `tests/tokens.test.ts` (30 contrast assertions)      |
-| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                  |
-| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                       |
-| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`          |
-| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                              |
-| Every public export belongs to a registry item                                  | `tests/registry.test.ts`                             |
-| The committed registry matches the source                                       | `tests/registry.test.ts`                             |
-| No stories or MDX are shipped as consumer source                                | `tests/registry.test.ts`                             |
-| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts` |
+| Invariant                                                                       | Enforced by                                              |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Every token in `theme.css` is documented in `src/lib/tokens.ts`, and vice versa | `packages/ui/tests/tokens.test.ts`                       |
+| Every text pairing in the system is measurable and measured                     | `packages/ui/tests/tokens.test.ts` (contrast assertions) |
+| A component never restyles another component                                    | `@shadcn/lint` via `.oxlintrc.json`                      |
+| No raw palette colour, arbitrary value, inline style or unreadable class        | `@shadcn/lint`                                           |
+| Icon-only shared actions use `ActionButton` with a nonblank tooltip             | Opt-in `adea/require-action-button-tooltip`              |
+| No React, Radix, Ark, Zag or Base UI import                                     | `no-restricted-imports`                                  |
+| Every public export belongs to a registry item                                  | `packages/ui/tests/registry.test.ts`                     |
+| The committed registry matches the source                                       | `packages/ui/tests/registry.test.ts`                     |
+| No stories or MDX are shipped as consumer source                                | `packages/ui/tests/registry.test.ts`                     |
+| Every story is free of accessibility violations                                 | Storybook a11y + `apps/storybook/tests/a11y.spec.ts`     |
 
 ## Working rules
 
@@ -72,7 +73,7 @@ could not derive: why the popover's trigger is the row itself, why a dialog has 
 corner close button, why the dark theme's accent carries a black label. A comment
 that restates the next line is noise and will be asked for in review.
 
-**One component, one folder.** `src/components/<layer>/<name>/` holds
+**One component, one folder.** `packages/ui/src/components/<layer>/<name>/` holds
 `<name>.tsx`, `<name>.stories.tsx`, `<name>.mdx` (optional) and `index.ts`. The
 index exports the public surface; anything not in it is private to the folder.
 
@@ -86,7 +87,7 @@ bun run lint                 # oxlint with @shadcn/lint, zero warnings
 bun run typecheck            # both packages, including stories and tests
 bun run build                # the library build, then declarations
 bun run test                 # unit + registry + token tests
-bun run registry:build       # regenerate registry.json and public/r
+bun run registry:build       # regenerate packages/ui/registry.json and packages/ui/public/r
 bun run registry:validate    # assert the registry is valid and current
 bun run test:storybook       # the accessibility and interaction lane
 bun run verify:changed       # only the checks your branch's changes reach (see below)
@@ -95,7 +96,7 @@ bun run verify:changed       # only the checks your branch's changes reach (see 
 `bun run verify:changed` diffs the working tree and commits against the merge-base
 with `origin/main` (`--base=<ref>` to change it; `--plan` to print without running)
 and runs only what that diff reaches: the registry rebuild plus the same
-`registry.json`/`public/r` drift check CI fails on, the component shard collection
+`packages/ui/registry.json`/`packages/ui/public/r` drift check CI fails on, the component shard collection
 check (list only, no browser), the published-exports gate (a library build, run only when
 a `lib/` module, `vite.config.ts` or the `exports` map changed), a turbo-cached typecheck of the changed workspaces,
 the unit tests that import a changed module (a whole suite only for widely read
@@ -117,7 +118,7 @@ warning is a failure.
   the token galleries are exempt from rules that cannot apply there, and each
   exception carries a reason. A new exception needs a reason too.
 - Do not commit generated output (`dist/`, `storybook-static/`, `coverage/`).
-  `public/r/` and `registry.json` are deliberate exceptions: they are the
+  `packages/ui/public/r/` and `packages/ui/registry.json` are deliberate exceptions: they are the
   distribution contract and are committed on purpose.
 - Do not commit secrets, credentials or machine-specific paths.
 
@@ -125,10 +126,11 @@ warning is a failure.
 
 Branch from `main` with `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*` or
 `test/*`. Use Conventional Commit subjects — Release Please derives versions from
-them. Open the pull request as a **draft** and mark it ready only once the local
-suite is clean. Run `bun run verify:changed` before marking a pull request ready —
-it runs the registry-drift and component-shard gates that otherwise only fail in
-CI, and commit any registry files it reports.
+them. Open the pull request as a **draft**. After personal review of the exact
+head, mark it ready to trigger CI. Run `bun run verify:changed` and record its
+results; it runs the registry-drift and component-shard gates that otherwise only
+fail in CI, and commit any registry files it reports. Applicable passing checks
+and protections gate merge.
 
 A change to what a token means lands in the same commit as the update to
 `theme.css`, the manifest, and the affected story.
@@ -413,3 +415,52 @@ Branch/PR:
 Use exact command names and outcomes. Mention external changes separately from local changes, and distinguish completed work from recommendations.
 
 <!-- /code-foundry-managed: completion-report -->
+
+## Repository-specific working guidance
+
+Code Foundry owns the managed blocks above. For AGENTS-only updates, preview and
+run its sync in a disposable checkout, then retain only the AGENTS.md changes.
+Leave generated workflow, configuration and hook changes in the disposable copy.
+Apply repository-specific additions outside managed blocks.
+
+The repository maps, commands and draft-WIP workflow below supplement the original
+guide above. For ordinary authorized work, the draft-WIP workflow below clarifies
+earlier boilerplate: commit and push incomplete work to the task's draft branch
+throughout the task and before handoff; report failing or skipped checks there.
+Personal review of the exact head gates readiness; mark reviewed drafts ready to
+trigger CI. Applicable passing checks and protections gate merge, rather than WIP pushes.
+
+## Repository map and visual review
+
+- `packages/ui/src/components/`: Solid components, public folder exports and stories.
+- `packages/ui/src/lib/`, `packages/ui/src/styles/`: shared helpers, variants,
+  token semantics and theme bridge. Palette normalization is owned by Themes.
+- `packages/ui/scripts/`: registry, packed-consumer and changed-scope checks.
+- `apps/storybook/`: Workshop review and Playwright interaction/accessibility lanes.
+- [docs/conventions.md](docs/conventions.md), [docs/consumption.md](docs/consumption.md)
+  and [docs/design-system.md](docs/design-system.md): authoring, package/registry
+  consumption and the design artifact's source map.
+
+Use `.mise.toml` (Node 24.18.0, Bun 1.4.0) and the committed `bun.lock`.
+For visual changes, inspect affected stories and Foundations galleries in Storybook;
+exercise variants, sizes, awkward states, keyboard and focus behavior. Run the
+appropriate `test:components`, `test:a11y` or `test:layout` lane in addition to
+`verify:changed`; that command deliberately does not drive a browser. Use
+`check:packed-*` scripts when changing the corresponding published consumer surface.
+A token meaning change includes `theme.css`, the manifest and affected stories.
+For guidance-only edits, check Markdown formatting, links and documented commands.
+
+## Draft WIP workflow
+
+Use one focused topic branch from `main` and one draft PR targeting `main`.
+Check existing PRs before starting; reuse the suitable draft branch for the task.
+Commit and push WIP to that branch throughout the task and before stopping or
+handing off, then verify the remote SHA. Incomplete work and failing checks belong
+in the draft PR with exact results and remaining work; they do not block WIP pushes.
+Personal review of the exact head gates readiness; mark reviewed drafts ready to
+trigger CI. Applicable passing checks and protections gate merge. Use Conventional
+Commit subjects; this repository uses Code Foundry's direct, squash workflow.
+
+Proceed with ordinary authorized edits, checks, commits and draft pushes. Resolve
+routine implementation choices from repository sources. Ask only when a genuinely
+missing consequential decision or authority prevents the work.
