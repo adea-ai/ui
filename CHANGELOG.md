@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.3](https://github.com/adea-ai/ui/compare/v0.130.2...v0.130.3) (2026-10-13)
+
+
+### Bug Fixes
+
+* **layout:** show the pointer cursor on the resize dividers ([#410](https://github.com/adea-ai/ui/issues/410)) ([957442d](https://github.com/adea-ai/ui/commit/957442dea1ab84815efa89b6a77b226e82d8cf1a))
+
 ## [0.130.2](https://github.com/adea-ai/ui/compare/v0.130.1...v0.130.2) (2026-10-13)
 
 
