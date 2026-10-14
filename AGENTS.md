@@ -126,10 +126,11 @@ warning is a failure.
 
 Branch from `main` with `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*` or
 `test/*`. Use Conventional Commit subjects — Release Please derives versions from
-them. Open the pull request as a **draft** and mark it ready only once the local
-suite is clean. Run `bun run verify:changed` before marking a pull request ready —
-it runs the registry-drift and component-shard gates that otherwise only fail in
-CI, and commit any registry files it reports.
+them. Open the pull request as a **draft**. After personal review of the exact
+head, mark it ready to trigger CI. Run `bun run verify:changed` and record its
+results; it runs the registry-drift and component-shard gates that otherwise only
+fail in CI, and commit any registry files it reports. Applicable passing checks
+and protections gate merge.
 
 A change to what a token means lands in the same commit as the update to
 `theme.css`, the manifest, and the affected story.
@@ -417,14 +418,17 @@ Use exact command names and outcomes. Mention external changes separately from l
 
 ## Repository-specific working guidance
 
-Code Foundry owns the managed blocks above. Run its sync before applying
-repository-specific additions outside those blocks.
+Code Foundry owns the managed blocks above. For AGENTS-only updates, preview and
+run its sync in a disposable checkout, then retain only the AGENTS.md changes.
+Leave generated workflow, configuration and hook changes in the disposable copy.
+Apply repository-specific additions outside managed blocks.
 
 The repository maps, commands and draft-WIP workflow below supplement the original
 guide above. For ordinary authorized work, the draft-WIP workflow below clarifies
 earlier boilerplate: commit and push incomplete work to the task's draft branch
 throughout the task and before handoff; report failing or skipped checks there.
-Review and applicable passing checks gate readiness and merge, rather than WIP pushes.
+Personal review of the exact head gates readiness; mark reviewed drafts ready to
+trigger CI. Applicable passing checks and protections gate merge, rather than WIP pushes.
 
 ## Repository map and visual review
 
@@ -453,7 +457,8 @@ Check existing PRs before starting; reuse the suitable draft branch for the task
 Commit and push WIP to that branch throughout the task and before stopping or
 handing off, then verify the remote SHA. Incomplete work and failing checks belong
 in the draft PR with exact results and remaining work; they do not block WIP pushes.
-Review and applicable passing checks gate readiness and merge. Use Conventional
+Personal review of the exact head gates readiness; mark reviewed drafts ready to
+trigger CI. Applicable passing checks and protections gate merge. Use Conventional
 Commit subjects; this repository uses Code Foundry's direct, squash workflow.
 
 Proceed with ordinary authorized edits, checks, commits and draft pushes. Resolve
