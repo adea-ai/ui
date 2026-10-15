@@ -34,6 +34,39 @@ selection policy, rename, drag/drop, and service effects remain host decisions.
 Action controls rendered in `trailing` remain normal keyboard stops and do not
 trigger tree-row activation or tree navigation while focused.
 
+## Disclosure marker
+
+By default the disclosure chevron is decoration: a pointer click anywhere on a
+row, the chevron included, calls `onActivate`, which is the file-explorer
+convention (the host's `onActivate` toggles a folder). A tree where expanding and
+selecting are separate decisions, such as a list of sources that can be opened
+without being selected, opts in with `disclosure="marker"` on `Tree`. The prop is
+`'row'` (default) or `'marker'`; with it omitted or `'row'` the DOM, classes,
+ARIA and behavior are unchanged.
+
+In marker mode the chevron of an expandable row is its own pointer target
+(`data-slot="tree-row-disclosure"`):
+
+- A click calls `onExpand(id, !expanded)` and nothing else. It does not call
+  `onActivate`, `onDoubleClick` or `onActiveIdChange`, and it does not change
+  selection. Rows that cannot expand have no target, so a click on their marker
+  slot is an ordinary row click.
+- The rest of the row, including the leading icon and label, activates exactly
+  as before and never expands. Interactive descendants in `trailing` still do not
+  activate the row. A `Switch` whose visual control is a plain element needs a
+  `data-tree-keyboard-stop` wrapper, as it does without the prop.
+- The chevron does not take focus. Its `mousedown` is cancelled, so focus and the
+  roving stop stay on whichever row (or control outside the tree) had them, and
+  Left/Right keep acting on that row. Pressing a row's chevron is not a way to
+  move to it.
+- The target is 26 CSS pixels wide and the row's full height (a 14px glyph
+  widened by a pseudo-element), so it follows row density and stops at the row's
+  own padding and gap. A double-click on the chevron is two toggles and does not
+  reach `onDoubleClick`.
+- Keyboard behavior is identical in both modes. The chevron remains `aria-hidden`,
+  unfocusable and outside the tab order; Left/Right expand and collapse, Enter
+  calls `onActivate` and Space calls `onSelectItem` without toggling.
+
 The packed browser contract measures 320 CSS-pixel viewport bounds separately
 from a 200% root-font-size text-fit stress. The latter checks text and row
 geometry at an enlarged root size; it is not browser or operating-system zoom.

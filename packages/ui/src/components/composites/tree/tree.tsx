@@ -26,6 +26,8 @@ type TreeContextValue = {
   focusItem: (id: string) => void
   noteFocus: (id: string) => void
   activate: (id: string, event: Event) => void
+  expand: (id: string, expanded: boolean) => void
+  disclosure: () => TreeDisclosure
   onActiveIdChange: (id: string) => void
 }
 
@@ -36,6 +38,19 @@ function useTreeContext() {
   if (!tree) throw new Error('[adea-ui]: TreeRow must be used inside Tree.')
   return tree
 }
+
+/**
+ * Who owns the pointer on a row's disclosure chevron.
+ *
+ * - `row` (default): the chevron is decoration; a click anywhere on the row,
+ *   chevron included, is a row activation. This is the file-explorer
+ *   convention, where the host's `onActivate` toggles a folder.
+ * - `marker`: the chevron of an expandable row is its own pointer target. It
+ *   calls `onExpand(id, !expanded)` and nothing else; the rest of the row still
+ *   activates. For trees where expanding and selecting are independent (a
+ *   source list that selects a source and separately reveals its details).
+ */
+export type TreeDisclosure = 'row' | 'marker'
 
 type TreeAccessibleName =
   | { 'aria-label': string; 'aria-labelledby'?: string }
@@ -54,6 +69,11 @@ export type TreeProps = Omit<
     onActiveIdChange: (id: string) => void
     /** Called for Left/Right expand and collapse requests. */
     onExpand?: (id: string, expanded: boolean) => void
+    /**
+     * Opt-in pointer behaviour of the disclosure chevron; see {@link TreeDisclosure}.
+     * Keyboard behaviour is identical in both modes: Left/Right expand and collapse.
+     */
+    disclosure?: TreeDisclosure
     /** Called for Enter or pointer activation. Domain action stays host-owned. */
     onActivate?: (id: string, event: Event) => void
     /** Called for Space selection. Selection state stays host-owned. */
@@ -78,6 +98,13 @@ export type TreeProps = Omit<
  *
  * Kobalte 0.13.14 has no Tree primitive, so this component implements the
  * WAI-ARIA tree row navigation contract and leaves product state to callbacks.
+ *
+ * By default the disclosure chevron is decoration and a click anywhere on a
+ * row activates it, so a file explorer can toggle a folder from `onActivate`.
+ * Reach for `disclosure="marker"` when expanding and selecting are separate
+ * decisions: the chevron then calls only `onExpand`, and the rest of the row
+ * calls only `onActivate`. The chevron stays `aria-hidden` and out of the tab
+ * order in both modes; keyboard expansion is Left/Right either way.
  */
 export function Tree(props: TreeProps) {
   const [local, rest] = splitProps(props, [
@@ -86,6 +113,7 @@ export function Tree(props: TreeProps) {
     'activeId',
     'onActiveIdChange',
     'onExpand',
+    'disclosure',
     'onActivate',
     'onSelectItem',
     'onRequestReveal',
@@ -187,6 +215,8 @@ export function Tree(props: TreeProps) {
       focusedId = id
     },
     activate: (id, event) => local.onActivate?.(id, event),
+    expand: (id, expanded) => local.onExpand?.(id, expanded),
+    disclosure: () => local.disclosure ?? 'row',
     onActiveIdChange: local.onActiveIdChange,
   }
 
@@ -282,6 +312,12 @@ export type TreeRowProps = Omit<
  * Keeps the donor's disclosure marker, leading file/folder affordance, primary
  * label and trailing-action hierarchy while replacing the donor's button and
  * runtime callbacks with a shared treeitem and host-owned slots/actions.
+ *
+ * With `Tree`'s `disclosure="marker"` the chevron of an expandable row is a
+ * separate pointer target (`data-slot="tree-row-disclosure"`) that only calls
+ * `onExpand`. It is not focusable and has no role: the row remains the single
+ * focus stop, Enter and Space still activate and select, and Left/Right still
+ * expand and collapse, so the marker adds a pointer path and nothing else.
  */
 export function TreeRow(props: TreeRowProps) {
   const tree = useTreeContext()
@@ -333,7 +369,15 @@ export function TreeRow(props: TreeRowProps) {
   }
 
   const position = () => tree.index().positionById.get(id())
+  // Only an expandable row has a chevron to press; a leaf's marker slot stays
+  // part of the row so a click there is an ordinary row click.
+  const markerTarget = () => tree.disclosure() === 'marker' && local.item.expandable
 
+  const handleMarkerClick: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) => {
+    // The row's own handler would focus and activate the row.
+    event.stopPropagation()
+    tree.expand(id(), !local.item.expanded)
+  }
   return (
     <div
       {...rest}
@@ -364,7 +408,23 @@ export function TreeRow(props: TreeRowProps) {
       onClick={handleClick}
       onDblClick={handleDoubleClick}
     >
-      <span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+      <span
+        data-slot={markerTarget() ? 'tree-row-disclosure' : undefined}
+        class={cn(
+          'flex',
+          !markerTarget() && 'size-3.5',
+          'shrink-0 items-center justify-center text-muted-foreground',
+          /* The glyph stays 14px wide but the target is not: it takes the row's full
+             height (a flex child's `self-stretch`, so it follows row density and a
+             tall trailing control) and the pseudo-element widens it to 26px, which
+             stops at the row's own padding and gap, never over the icon or label. */
+          markerTarget() &&
+            'relative w-3.5 cursor-pointer self-stretch hover:text-foreground after:absolute after:inset-y-0 after:-inset-x-1.5'
+        )}
+        onMouseDown={markerTarget() ? handleMarkerMouseDown : undefined}
+        onClick={markerTarget() ? handleMarkerClick : undefined}
+        onDblClick={markerTarget() ? handleMarkerDoubleClick : undefined}
+      >
         {local.item.expandable ? (
           <ChevronRight
             aria-hidden="true"
@@ -411,6 +471,18 @@ export function TreeRowActions(props: ComponentProps<'span'> & { pinned?: boolea
     />
   )
 }
+
+// Pressing the chevron must not move focus: a mousedown on a non-focusable
+// child would otherwise focus the row, making it the roving stop (and
+// notifying `onActiveIdChange`) for what is a disclosure toggle, not a
+// selection. Focus stays wherever it was, so Left/Right keep acting on the
+// row the keyboard user left off at.
+const handleMarkerMouseDown: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) =>
+  event.preventDefault()
+// A double-click is two toggles; it must not also reach `onDoubleClick`
+// (rename, open) as though the row itself had been double-clicked.
+const handleMarkerDoubleClick: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) =>
+  event.stopPropagation()
 
 function isActionTarget(target: EventTarget | null, currentTarget: HTMLElement): boolean {
   if (!(target instanceof Element) || target === currentTarget) return false
