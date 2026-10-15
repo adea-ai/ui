@@ -137,3 +137,24 @@ for (const card of cards) {
     })
   }
 }
+
+// Dismissal and reopening of the toolbar sheet. A handler passed to solid-js/html
+// without a parameter is read as a reactive getter, so closing and reopening threw
+// even though the first render was clean.
+for (const theme of THEMES) {
+  test(`AppearancePopover closes and reopens in ${theme}`, async ({ page }) => {
+    const errors = await mount(page, 'AppearancePopover', theme)
+    const sheet = page.getByRole('dialog', { name: 'Appearance' })
+    const trigger = page.getByRole('button', { name: 'Appearance' }).first()
+    await expect(sheet).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(sheet).toBeHidden()
+    await trigger.click()
+    await expect(sheet).toBeVisible()
+    await sheet.getByRole('button', { name: 'Close' }).click()
+    await expect(sheet).toBeHidden()
+    await trigger.click()
+    await expect(sheet).toBeVisible()
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+}
