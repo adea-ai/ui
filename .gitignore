@@ -88,6 +88,8 @@ mise.local.lock
 # Repository-specific rules
 storybook-static/
 test-results/
+# The `test-results` component folder is source, not Playwright output.
+!packages/ui/src/components/composites/test-results/
 playwright-report/
 blob-report/
 .vite/
