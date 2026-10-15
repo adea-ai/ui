@@ -164,6 +164,47 @@ render(
         </ListRowControl>
       </form>
       <ListRowControl
+        data-testid="truncated-description-row"
+        class="w-full max-w-80"
+        truncateDescription
+        leading={<CircleDot aria-hidden="true" />}
+        description={description}
+        trailing={
+          <Badge size="sm" variant="secondary">
+            Pending
+          </Badge>
+        }
+      >
+        Truncated description row
+      </ListRowControl>
+      <ListRowControl
+        data-testid="wrapping-description-row"
+        class="w-full max-w-80"
+        leading={<CircleDot aria-hidden="true" />}
+        description={description}
+        trailing={
+          <Badge size="sm" variant="secondary">
+            Pending
+          </Badge>
+        }
+      >
+        Wrapping description row
+      </ListRowControl>
+      <ListRowControl
+        data-testid="short-description-row"
+        class="w-full max-w-80"
+        truncateDescription
+        leading={<CircleDot aria-hidden="true" />}
+        description="Short"
+        trailing={
+          <Badge size="sm" variant="secondary">
+            Pending
+          </Badge>
+        }
+      >
+        Short description row
+      </ListRowControl>
+      <ListRowControl
         as="div"
         data-testid="plain-row-div"
         leading={

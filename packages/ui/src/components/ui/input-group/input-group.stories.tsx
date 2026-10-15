@@ -125,6 +125,39 @@ export const SecretWithClear: Story = {
 }
 
 /**
+ * The clear action is named for the field it belongs to. `clearLabel` is its
+ * accessible name and tooltip, `disabledReason` the tooltip while the group is
+ * disabled, and `aria-label` names the input when no `FormField` does. Without
+ * them the group announces an API key, which is wrong for a token or a path.
+ */
+export const SecretWithCustomLabels: Story = {
+  render: () => {
+    const [token, setToken] = createSignal('bearer-example')
+    return (
+      <div class="flex w-80 flex-col gap-3">
+        <SecretInputGroup
+          aria-label="New bearer token"
+          clearLabel="Clear stored bearer token"
+          value={token()}
+          disabled={false}
+          onChange={(event) => setToken(event.currentTarget.value)}
+          onClear={() => setToken('')}
+        />
+        <SecretInputGroup
+          aria-label="New token path"
+          clearLabel="Clear stored token path"
+          disabledReason="Set a token variable name first"
+          value=""
+          disabled
+          onChange={() => {}}
+          onClear={() => {}}
+        />
+      </div>
+    )
+  },
+}
+
+/**
  * `size` is the control rung, matching `Input`: `sm` for a toolbar search beside
  * `icon-sm` actions. The input, addon glyph and text follow the group.
  */

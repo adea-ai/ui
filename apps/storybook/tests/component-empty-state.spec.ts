@@ -62,3 +62,47 @@ test('announces loading and errors with a heading and usable retry action', asyn
   await retry.click()
   await expect(page.getByLabel('Retries')).toHaveText('1')
 })
+
+test('a second action sits beside the primary one, after it in tab order, and is its own control', async ({
+  page,
+}) => {
+  const state = page.getByTestId('two-actions')
+  const primary = state.getByRole('button', { name: 'Retry status', exact: true })
+  const secondary = state.getByRole('button', { name: 'Open settings', exact: true })
+  await expect(
+    state.getByRole('heading', { name: 'Sync health unavailable', level: 2 })
+  ).toBeVisible()
+
+  const [a, b] = await Promise.all([primary.boundingBox(), secondary.boundingBox()])
+  // Side by side on one line, primary first, 8px apart.
+  expect(Math.abs(a!.y - b!.y)).toBeLessThan(1)
+  expect(Math.round(b!.x - (a!.x + a!.width))).toBe(8)
+  // The primary keeps the filled treatment; the secondary is the quieter variant.
+  const fill = (locator: typeof primary) =>
+    locator.evaluate((element) => getComputedStyle(element).backgroundColor)
+  expect(await fill(primary)).not.toBe(await fill(secondary))
+
+  await page.getByRole('button', { name: 'Try again', exact: true }).focus()
+  await page.keyboard.press('Tab')
+  await expect(primary).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(secondary).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Review configuration and resolve setup requirements.'
+  )
+  await page.keyboard.press('Enter')
+  await expect(page.getByLabel('Settings opened')).toHaveText('1')
+  await primary.click()
+  await expect(page.getByLabel('Retries')).toHaveText('10')
+})
+
+test('a single action keeps the original layout: one centred column, no row wrapper', async ({
+  page,
+}) => {
+  const content = page
+    .getByRole('alert')
+    .filter({ hasText: 'Graph unavailable' })
+    .locator('[data-slot=empty-content]')
+  await expect(content).toHaveCSS('flex-direction', 'column')
+  await expect(content.getByRole('button')).toHaveCount(1)
+})

@@ -37,7 +37,11 @@ export function AccordionTrigger(props: ComponentProps<typeof KobalteAccordion.T
     <KobalteAccordion.Header class="flex">
       <KobalteAccordion.Trigger
         class={cn(
-          'flex flex-1 items-center justify-between gap-2 py-3 text-left text-sm font-medium',
+          // `group/accordion` is what the chevron's `group-data-[expanded]/accordion`
+          // reads. Kobalte puts `data-expanded` on this trigger, not on the item, so
+          // the trigger is the group; without the class the rotation selector has no
+          // ancestor to match and the chevron never turns.
+          'group/accordion flex flex-1 items-center justify-between gap-2 py-3 text-left text-sm font-medium',
           'transition-colors ease-out outline-none',
           'hover:text-foreground',
           'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',

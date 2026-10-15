@@ -121,6 +121,50 @@ export const WithDescription: Story = {
   ),
 }
 
+/**
+ * `truncateDescription` keeps a described row at its minimum height however long
+ * the text is: the description ends in an ellipsis instead of wrapping. It is for
+ * lists whose rows must be a predictable height, such as a virtualised queue, where
+ * a wrapping description would break the fixed row size. The first row wraps (the
+ * default) so the difference is visible; pair a truncated row with a `tooltip` when
+ * the full text matters, and with `stackTrailing={false}` when its trailing slot
+ * should stay beside the text rather than drop below it in a narrow row.
+ */
+export const TruncatedDescription: Story = {
+  render: () => (
+    <div class="w-80 rounded-xl border border-border p-2">
+      <ListRow
+        leading={<FileText />}
+        description="Wraps by default, so the row grows to fit this whole description however long it is."
+      >
+        Wrapping description
+      </ListRow>
+      <ListRow
+        truncateDescription
+        stackTrailing={false}
+        leading={<FileText />}
+        tooltip="Release notes for the migration, including the follow-up work that is tracked separately"
+        description="Release notes for the migration, including the follow-up work that is tracked separately"
+        trailing={
+          <Badge size="sm" variant="secondary">
+            Pending
+          </Badge>
+        }
+      >
+        Truncated description
+      </ListRow>
+      <ListRow
+        selected
+        truncateDescription
+        leading={<FileText />}
+        description="Short descriptions are untouched"
+      >
+        Selected, truncated
+      </ListRow>
+    </div>
+  ),
+}
+
 /** A long label and several actions stay readable in a narrow described row. */
 export const ActionHeavyDescription: Story = {
   render: () => (
