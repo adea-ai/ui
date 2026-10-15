@@ -1,0 +1,119 @@
+<div id="tree-omitted" aria-label="Sources omitted" role="tree" data-slot="tree" class="flex min-w-0 flex-col [overflow-anchor:none]">
+<div id="tree-cl-N-item-sources" role="treeitem" aria-level="1" aria-expanded="true" aria-selected="false" aria-posinset="1" aria-setsize="1" tabindex="0" data-tree-id="sources" data-active="" data-expanded="true" class="group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle hover:bg-surface-hover" style="padding-inline-start: 6px;">
+<span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right lucide-icon size-3.5 transition-transform rotate-90" aria-hidden="true">
+<path d="m9 18 6-6-6-6" key="mthhwq">
+</path>
+</svg>
+</span>
+<span class="flex size-4 shrink-0 items-center justify-center [&amp;_svg]:size-4">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder lucide-icon text-muted-foreground" aria-hidden="true">
+<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" key="1kt360">
+</path>
+</svg>
+</span>
+<span class="min-w-0 flex-1 truncate">Sources</span>
+<span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+</span>
+</div>
+<div id="tree-cl-N-item-repo-a" role="treeitem" aria-level="2" aria-expanded="true" aria-selected="false" aria-posinset="1" aria-setsize="3" tabindex="-1" data-tree-id="repo-a" data-expanded="true" class="group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle hover:bg-surface-hover" style="padding-inline-start: 18px;">
+<span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right lucide-icon size-3.5 transition-transform rotate-90" aria-hidden="true">
+<path d="m9 18 6-6-6-6" key="mthhwq">
+</path>
+</svg>
+</span>
+<span class="flex size-4 shrink-0 items-center justify-center [&amp;_svg]:size-4">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder lucide-icon text-muted-foreground" aria-hidden="true">
+<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" key="1kt360">
+</path>
+</svg>
+</span>
+<span class="min-w-0 flex-1 truncate">Repository A</span>
+<span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+<span data-slot="status-chip" class="inline-flex w-fit items-center gap-1.5 text-xs font-medium whitespace-nowrap text-foreground">
+<span aria-hidden="true" class="size-2 shrink-0 rounded-full bg-success">
+</span>
+<span class="">Ready</span>
+</span>
+<span data-tree-keyboard-stop="" class="inline-flex">
+<div role="group" id="switch-cl-N" data-slot="switch" class="group/switch flex items-center gap-2.5">
+<input type="checkbox" role="switch" id="switch-cl-N-input" name="switch-cl-N" value="on" aria-checked="false" aria-label="Use Repository A" style="border: 0px; clip: rect(0px, 0px, 0px, 0px); clip-path: inset(50%); height: 1px; margin: 0px -1px -1px 0px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap;">
+<div id="switch-cl-N-control" class="bg-input inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent transition-colors ease-out outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle data-[checked]:bg-primary data-[invalid]:border-destructive data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
+<div id="switch-cl-N-thumb" class="bg-background pointer-events-none block size-4 rounded-full shadow-xs transition-transform ease-out data-[checked]:translate-x-4">
+</div>
+</div>
+</div>
+</span>
+<span data-slot="tree-row-actions" data-pinned="" class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity ease-out group-hover/tree-row:opacity-100 group-focus-within/tree-row:opacity-100 data-pinned:opacity-100">
+<button type="button" data-slot="action-button" class="transition-colors ease-out outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 inline-flex shrink-0 items-center justify-center rounded-md font-medium whitespace-nowrap select-none [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 text-foreground hover:bg-surface-hover size-control-xs p-0 [&amp;_svg]:size-3.5" data-closed="" aria-label="Rename Repository A" tabindex="0">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil lucide-icon" aria-hidden="true">
+<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" key="1a8usu">
+</path>
+<path d="m15 5 4 4" key="1mk7zo">
+</path>
+</svg>
+</button>
+</span>
+</span>
+</div>
+<div id="tree-cl-N-item-repo-a-hint" role="treeitem" aria-level="3" aria-selected="false" aria-posinset="1" aria-setsize="1" tabindex="-1" data-tree-id="repo-a-hint" class="group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle hover:bg-surface-hover" style="padding-inline-start: 30px;">
+<span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+</span>
+<span class="flex size-4 shrink-0 items-center justify-center [&amp;_svg]:size-4">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text lucide-icon text-muted-foreground" aria-hidden="true">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" key="1oefj6">
+</path>
+<path d="M14 2v5a1 1 0 0 0 1 1h5" key="wfsgrz">
+</path>
+<path d="M10 9H8" key="b1mrlr">
+</path>
+<path d="M16 13H8" key="t4e002">
+</path>
+<path d="M16 17H8" key="z1uh3a">
+</path>
+</svg>
+</span>
+<span class="min-w-0 flex-1 truncate">12 chunks</span>
+<span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+</span>
+</div>
+<div id="tree-cl-N-item-repo-b" role="treeitem" aria-level="2" aria-expanded="false" aria-selected="false" aria-posinset="2" aria-setsize="3" tabindex="-1" data-tree-id="repo-b" data-expanded="false" class="group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle hover:bg-surface-hover" style="padding-inline-start: 18px;">
+<span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right lucide-icon size-3.5 transition-transform" aria-hidden="true">
+<path d="m9 18 6-6-6-6" key="mthhwq">
+</path>
+</svg>
+</span>
+<span class="flex size-4 shrink-0 items-center justify-center [&amp;_svg]:size-4">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder lucide-icon text-muted-foreground" aria-hidden="true">
+<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" key="1kt360">
+</path>
+</svg>
+</span>
+<span class="min-w-0 flex-1 truncate">Repository B</span>
+<span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+</span>
+</div>
+<div id="tree-cl-N-item-notes" role="treeitem" aria-level="2" aria-selected="false" aria-posinset="3" aria-setsize="3" tabindex="-1" data-tree-id="notes" class="group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle hover:bg-surface-hover" style="padding-inline-start: 18px;">
+<span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+</span>
+<span class="flex size-4 shrink-0 items-center justify-center [&amp;_svg]:size-4">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text lucide-icon text-muted-foreground" aria-hidden="true">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" key="1oefj6">
+</path>
+<path d="M14 2v5a1 1 0 0 0 1 1h5" key="wfsgrz">
+</path>
+<path d="M10 9H8" key="b1mrlr">
+</path>
+<path d="M16 13H8" key="t4e002">
+</path>
+<path d="M16 17H8" key="z1uh3a">
+</path>
+</svg>
+</span>
+<span class="min-w-0 flex-1 truncate">Notes</span>
+<span class="ms-auto flex shrink-0 items-center gap-1 text-muted-foreground">
+</span>
+</div>
+</div>
