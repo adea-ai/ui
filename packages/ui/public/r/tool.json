@@ -1,0 +1,31 @@
+{
+  "name": "tool",
+  "type": "registry:ui",
+  "title": "Tool",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/badge",
+    "@adea-ai/ui/code-block",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/tool/format-tool-value.ts",
+      "type": "registry:ui",
+      "target": "components/composites/tool/format-tool-value.ts"
+    },
+    {
+      "path": "src/components/composites/tool/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/tool/index.ts"
+    },
+    {
+      "path": "src/components/composites/tool/tool.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/tool/tool.tsx"
+    }
+  ]
+}

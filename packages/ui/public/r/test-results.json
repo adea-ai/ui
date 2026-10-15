@@ -1,0 +1,33 @@
+{
+  "name": "test-results",
+  "type": "registry:ui",
+  "title": "Test Results",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/diff-block",
+    "@adea-ai/ui/stack-trace",
+    "@adea-ai/ui/trace",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/test-results/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/test-results/index.ts"
+    },
+    {
+      "path": "src/components/composites/test-results/test-results-model.ts",
+      "type": "registry:ui",
+      "target": "components/composites/test-results/test-results-model.ts"
+    },
+    {
+      "path": "src/components/composites/test-results/test-results.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/test-results/test-results.tsx"
+    }
+  ]
+}

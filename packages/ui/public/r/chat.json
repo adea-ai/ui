@@ -1,0 +1,24 @@
+{
+  "name": "chat",
+  "type": "registry:ui",
+  "title": "Chat",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/chat/chat.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/chat/chat.tsx"
+    },
+    {
+      "path": "src/components/composites/chat/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/chat/index.ts"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "checkpoint",
+  "type": "registry:ui",
+  "title": "Checkpoint",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/alert-dialog",
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/confirmation",
+    "@adea-ai/ui/marker",
+    "@adea-ai/ui/sources",
+    "@adea-ai/ui/spinner",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/checkpoint/checkpoint-model.ts",
+      "type": "registry:ui",
+      "target": "components/composites/checkpoint/checkpoint-model.ts"
+    },
+    {
+      "path": "src/components/composites/checkpoint/checkpoint.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/checkpoint/checkpoint.tsx"
+    },
+    {
+      "path": "src/components/composites/checkpoint/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/checkpoint/index.ts"
+    }
+  ]
+}

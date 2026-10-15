@@ -1,0 +1,34 @@
+{
+  "name": "inline-citation",
+  "type": "registry:ui",
+  "title": "Inline Citation",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/popover",
+    "@adea-ai/ui/sources",
+    "@adea-ai/ui/text-link",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/inline-citation/citation.ts",
+      "type": "registry:ui",
+      "target": "components/composites/inline-citation/citation.ts"
+    },
+    {
+      "path": "src/components/composites/inline-citation/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/inline-citation/index.ts"
+    },
+    {
+      "path": "src/components/composites/inline-citation/inline-citation.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/inline-citation/inline-citation.tsx"
+    }
+  ]
+}

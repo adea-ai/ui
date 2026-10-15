@@ -81,6 +81,8 @@ const MAX_INLINE_DEPTH = 4
 /** Inline spans. Delimiters must close on the same block, or they stay literal. */
 export function parseInline(text: string, depth = 0): readonly MessageInline[] {
   const out: MessageInline[] = []
+  let brackets: ReadonlyMap<number, number> | undefined
+  let paren = -2
   let buffer = ''
   const flush = () => {
     if (buffer) out.push({ kind: 'text', text: buffer })
@@ -129,9 +131,13 @@ export function parseInline(text: string, depth = 0): readonly MessageInline[] {
       }
     }
     if (depth < MAX_INLINE_DEPTH && char === '[') {
-      const labelEnd = findBracketEnd(text, index)
+      brackets ??= bracketMatches(text)
+      const labelEnd = brackets.get(index) ?? -1
       if (labelEnd > index && text[labelEnd + 1] === '(') {
-        const hrefEnd = text.indexOf(')', labelEnd + 2)
+        // The nearest `)` is remembered: a run of `[a](` with no `)` after it
+        // would otherwise search to the end of the text from every opener.
+        if (paren !== -1 && paren < labelEnd + 2) paren = text.indexOf(')', labelEnd + 2)
+        const hrefEnd = paren
         if (hrefEnd > labelEnd + 1) {
           const href = safeHref(text.slice(labelEnd + 2, hrefEnd))
           if (href) {
@@ -172,18 +178,24 @@ function findClosing(text: string, delimiter: string, from: number): number {
   return -1
 }
 
-function findBracketEnd(text: string, from: number): number {
-  let depth = 0
-  for (let index = from; index < text.length; index += 1) {
+/**
+ * The `]` that closes each `[`, found in one pass. A match never crosses a
+ * newline, and an unmatched `[` has no entry. Scanning forward from every `[`
+ * instead is quadratic on a long line of unclosed brackets, which a pasted page
+ * or a hostile model can use to hang the renderer.
+ */
+function bracketMatches(text: string): ReadonlyMap<number, number> {
+  const matches = new Map<number, number>()
+  const open: number[] = []
+  for (let index = 0; index < text.length; index += 1) {
     const char = text[index]
-    if (char === '[') depth += 1
+    if (char === '[') open.push(index)
     else if (char === ']') {
-      depth -= 1
-      if (depth === 0) return index
-    }
-    if (char === '\n') return -1
+      const start = open.pop()
+      if (start !== undefined) matches.set(start, index)
+    } else if (char === '\n') open.length = 0
   }
-  return -1
+  return matches
 }
 
 /** Parse text into blocks. Pure, total, and linear in the length of `text`. */

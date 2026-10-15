@@ -1,7 +1,7 @@
 export {
   Attachment,
   AttachmentList,
-  formatBytes,
+  formatAttachmentSize,
   safePreviewSrc,
   type AttachmentKind,
   type AttachmentProps,

@@ -63,7 +63,7 @@ export function Message(props: MessageProps) {
       aria-label={local.label}
       aria-busy={local.streaming || undefined}
       class={cn(
-        'group/message flex min-w-0 flex-col gap-2 py-2',
+        'group/message mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-2 py-2',
         // The engine may skip layout for turns far off screen; the intrinsic size
         // keeps the scrollbar honest while it does.
         '[content-visibility:auto] [contain-intrinsic-size:auto_6rem]',

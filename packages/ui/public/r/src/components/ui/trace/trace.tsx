@@ -5,6 +5,7 @@ import {
   CircleAlert,
   CircleDashed,
   CircleSlash,
+  Dot,
   ExternalLink,
   LoaderCircle,
 } from 'lucide-solid'
@@ -99,7 +100,7 @@ export type TraceLineProps = Omit<ComponentProps<'li'>, 'title' | 'onSelect'> & 
   children?: JSX.Element
 }
 
-function StatusMark(props: { status?: TraceStatus; icon?: JSX.Element }) {
+function StatusMark(props: { status?: TraceStatus; icon?: JSX.Element; completed?: boolean }) {
   return (
     <span
       data-slot="trace-mark"
@@ -119,7 +120,10 @@ function StatusMark(props: { status?: TraceStatus; icon?: JSX.Element }) {
               <Show
                 when={props.status === 'cancelled'}
                 fallback={
-                  <Show when={props.status === 'pending'} fallback={props.icon ?? <Check />}>
+                  <Show
+                    when={props.status === 'pending'}
+                    fallback={props.icon ?? (props.completed ? <Check /> : <Dot />)}
+                  >
                     <CircleDashed />
                   </Show>
                 }
@@ -163,6 +167,7 @@ function LineHead(props: {
       <StatusMark
         status={statusOwnsMark(props.status) ? props.status : undefined}
         icon={props.icon}
+        completed={props.status === 'success'}
       />
       <span class="flex min-w-0 flex-1 items-baseline gap-2">
         <span
@@ -178,7 +183,7 @@ function LineHead(props: {
         <Show when={props.description}>
           <span
             data-slot="trace-description"
-            class="min-w-0 truncate text-xs text-muted-foreground/80"
+            class="min-w-0 truncate text-xs text-muted-foreground"
           >
             {props.description}
           </span>

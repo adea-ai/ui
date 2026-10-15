@@ -52,18 +52,23 @@ const KIND_ICON = {
   other: FileIcon,
 } as const
 
+/** The figure as written: whole numbers from 10 up, one decimal below. */
+const shown = (amount: number) => (amount >= 10 ? Math.round(amount) : Math.round(amount * 10) / 10)
+
 /** `1536` → `1.5 KB`. Returns nothing for a value that is not a finite size. */
-export function formatBytes(bytes: number | undefined): string | undefined {
+export function formatAttachmentSize(bytes: number | undefined): string | undefined {
   if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return undefined
-  if (bytes < 1024) return `${Math.round(bytes)} B`
+  if (Math.round(bytes) < 1024) return `${Math.round(bytes)} B`
   const units = ['KB', 'MB', 'GB', 'TB']
+  // What is shown, not the raw value, decides the unit: 1023.9 KB rounds to
+  // "1024 KB", which should read "1 MB".
   let value = bytes / 1024
   let unit = 0
-  while (value >= 1024 && unit < units.length - 1) {
+  while (shown(value) >= 1024 && unit < units.length - 1) {
     value /= 1024
     unit += 1
   }
-  return `${value >= 10 ? Math.round(value) : Math.round(value * 10) / 10} ${units[unit]}`
+  return `${shown(value)} ${units[unit]}`
 }
 
 /** The only sources a preview may use. */
@@ -120,7 +125,7 @@ export function Attachment(props: AttachmentProps) {
   const status = () => local.status ?? 'ready'
   const preview = () => (local.kind === 'image' ? safePreviewSrc(local.previewSrc) : undefined)
   const Icon = () => KIND_ICON[local.kind ?? 'other']
-  const size = () => formatBytes(local.size)
+  const size = () => formatAttachmentSize(local.size)
   const actionable = () => status() === 'ready' || status() === 'error'
 
   const mark = (): JSX.Element => {

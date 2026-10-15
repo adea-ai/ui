@@ -1,0 +1,32 @@
+{
+  "name": "stack-trace",
+  "type": "registry:ui",
+  "title": "Stack Trace",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/code-block",
+    "@adea-ai/ui/trace",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/stack-trace/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/stack-trace/index.ts"
+    },
+    {
+      "path": "src/components/composites/stack-trace/parse-stack-trace.ts",
+      "type": "registry:ui",
+      "target": "components/composites/stack-trace/parse-stack-trace.ts"
+    },
+    {
+      "path": "src/components/composites/stack-trace/stack-trace.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/stack-trace/stack-trace.tsx"
+    }
+  ]
+}

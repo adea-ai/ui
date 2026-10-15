@@ -1,0 +1,34 @@
+{
+  "name": "model-selector",
+  "type": "registry:ui",
+  "title": "Model Selector",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/command",
+    "@adea-ai/ui/dropdown-menu",
+    "@adea-ai/ui/popover",
+    "@adea-ai/ui/sources",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/model-selector/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/model-selector/index.ts"
+    },
+    {
+      "path": "src/components/composites/model-selector/model-selector.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/model-selector/model-selector.tsx"
+    },
+    {
+      "path": "src/components/composites/model-selector/models.ts",
+      "type": "registry:ui",
+      "target": "components/composites/model-selector/models.ts"
+    }
+  ]
+}
