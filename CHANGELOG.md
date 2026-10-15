@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.137.0](https://github.com/adea-ai/ui/compare/v0.136.0...v0.137.0) (2026-10-15)
+
+
+### Features
+
+* **tree:** add an opt-in pointer disclosure marker ([#436](https://github.com/adea-ai/ui/issues/436)) ([621f0a1](https://github.com/adea-ai/ui/commit/621f0a1cb3ab2b0ee0bbbf57051d73514308e15e))
+
 ## [0.136.0](https://github.com/adea-ai/ui/compare/v0.135.1...v0.136.0) (2026-10-15)
 
 
