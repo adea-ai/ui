@@ -74,6 +74,12 @@
         "group": "Forms"
       }
     ],
+    "callout": [
+      {
+        "card": "Callout",
+        "group": "Feedback"
+      }
+    ],
     "card": [
       {
         "card": "Card",
