@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.135.0](https://github.com/adea-ai/ui/compare/v0.134.0...v0.135.0) (2026-10-15)
+
+
+### Features
+
+* **stat:** add StatGroup fit to size columns from the group's own width ([#426](https://github.com/adea-ai/ui/issues/426)) ([3ce47ea](https://github.com/adea-ai/ui/commit/3ce47ea9912a3cf6a8c64c3419d9d94e30a7e192))
+
+
+### Bug Fixes
+
+* **card:** lay CardHeader out as a grid so CardAction takes its column ([#419](https://github.com/adea-ai/ui/issues/419)) ([ab7ecf8](https://github.com/adea-ai/ui/commit/ab7ecf84ebf36bedd8df365c9932869e507f3e38))
+
 ## [0.134.0](https://github.com/adea-ai/ui/compare/v0.133.0...v0.134.0) (2026-10-15)
 
 
