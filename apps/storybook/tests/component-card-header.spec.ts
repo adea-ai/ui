@@ -110,3 +110,18 @@ test('the small card keeps the action on the 12px header padding', async ({ page
   const slot = await box(page, 'small-slot')
   expect(Math.round(header.right - slot.right)).toBe(12)
 })
+
+test('a CardAction inside a caller wrapper does not turn the header into two columns', async ({
+  page,
+}) => {
+  // `has-data-[slot=card-action]` matches at any depth; the second column must
+  // only appear for a direct-child action, or the wrapper shrinks to one column.
+  const header = await box(page, 'wrapped-header')
+  const row = await box(page, 'wrapped-row')
+  expect(Math.round(row.left - header.left)).toBe(16)
+  expect(Math.round(header.right - row.right)).toBe(16)
+  await expect(page.getByTestId('wrapped-header')).toHaveCSS(
+    'grid-template-columns',
+    /^\d+(\.\d+)?px$/
+  )
+})

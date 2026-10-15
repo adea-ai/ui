@@ -48,6 +48,19 @@ function Fixture() {
           </CardAction>
         </CardHeader>
       </Card>
+      <Card class="w-96" data-testid="wrapped">
+        <CardHeader data-testid="wrapped-header">
+          <div class="flex items-start justify-between gap-3" data-testid="wrapped-row">
+            <div class="flex min-w-0 flex-1 flex-col gap-2">
+              <CardTitle>Wrapped heading row</CardTitle>
+              <CardDescription>The caller lays out its own row.</CardDescription>
+            </div>
+            <CardAction data-testid="wrapped-slot">
+              <span class="inline-block h-6 w-20">Published</span>
+            </CardAction>
+          </div>
+        </CardHeader>
+      </Card>
       <Card class="w-96" size="sm" data-testid="small">
         <CardHeader data-testid="small-header">
           <CardTitle>Small</CardTitle>
