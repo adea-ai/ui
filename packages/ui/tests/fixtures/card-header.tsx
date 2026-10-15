@@ -40,6 +40,14 @@ function Fixture() {
         </CardHeader>
         <CardContent>Body</CardContent>
       </Card>
+      <Card class="w-96" data-testid="centered">
+        <CardHeader class="items-center" data-testid="centered-header">
+          <CardTitle data-testid="centered-title">Principal 1</CardTitle>
+          <CardAction class="row-span-1" data-testid="centered-slot">
+            <span class="inline-block h-8 w-8">x</span>
+          </CardAction>
+        </CardHeader>
+      </Card>
       <Card class="w-96" size="sm" data-testid="small">
         <CardHeader data-testid="small-header">
           <CardTitle>Small</CardTitle>

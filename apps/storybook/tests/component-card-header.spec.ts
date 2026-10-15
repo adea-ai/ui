@@ -44,6 +44,8 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: script })
 })
 
+const mid = (b: { top: number; bottom: number }) => (b.top + b.bottom) / 2
+
 const box = (page: Page, testId: string) =>
   page.getByTestId(testId).evaluate((element) => {
     const { left, right, top, bottom } = element.getBoundingClientRect()
@@ -69,13 +71,24 @@ test('a trailing action sits at the header end, level with the title', async ({ 
   expect(description.right).toBeLessThanOrEqual(slot.left)
 })
 
-test('a title-only header with an action keeps one row and wraps the title before the action', async ({
+test('a title-only header wraps the title before the action instead of under it', async ({
   page,
 }) => {
   const slot = await box(page, 'title-only-slot')
   const title = await box(page, 'title-only-title')
   expect(title.right).toBeLessThanOrEqual(slot.left)
   expect(slot.top).toBeLessThanOrEqual(title.top + 1)
+})
+
+test('a one-line title and an icon action centre on each other with layout classes only', async ({
+  page,
+}) => {
+  const slot = await box(page, 'centered-slot')
+  const title = await box(page, 'centered-title')
+  const header = await box(page, 'centered-header')
+  expect(Math.abs(mid(title) - mid(slot))).toBeLessThan(1)
+  // The header is exactly as tall as the action: no empty second row.
+  expect(Math.round(header.bottom - header.top)).toBe(Math.round(slot.bottom - slot.top))
 })
 
 test('a header without an action is unchanged: stacked, full width, 4px apart', async ({

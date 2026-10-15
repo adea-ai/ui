@@ -91,8 +91,11 @@ export const WithAction: Story = {
 
 /**
  * The action is its own column, so a long title wraps before it reaches the
- * action instead of running underneath it, and an icon-only control sits level
- * with the title without a wrapper element around the copy.
+ * action instead of running underneath it. By default it is top-aligned and
+ * spans the title and description rows, which suits a badge beside a two-line
+ * header. A one-line header with an icon-only control centres the two with
+ * layout classes alone: `items-center` on the header and `row-span-1` on the
+ * action, so no wrapper element is needed around the copy.
  */
 export const ActionBesideAWrappingTitle: Story = {
   render: () => (
@@ -107,9 +110,9 @@ export const ActionBesideAWrappingTitle: Story = {
         </CardHeader>
       </Card>
       <Card size="sm" class="w-72">
-        <CardHeader>
+        <CardHeader class="items-center">
           <CardTitle>Principal 1</CardTitle>
-          <CardAction class="self-center">
+          <CardAction class="row-span-1">
             <ActionButton
               variant="destructive"
               size="icon-sm"
