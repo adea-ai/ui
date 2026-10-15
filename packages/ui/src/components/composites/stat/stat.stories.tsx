@@ -46,6 +46,41 @@ export const Group: Story = {
   ),
 }
 
+// A function: a JSX element is one DOM tree and can be placed only once.
+const stats = () => (
+  <>
+    <Stat label="Documents" value="12,480" />
+    <Stat label="Chunks" value="96,210" />
+    <Stat label="Sources" value="7" />
+    <Stat label="Embedding cache hits" value="41,002" />
+    <Stat label="Query cache" value="318 entries" />
+    <Stat label="Retrieval fallbacks" value="0" />
+    <Stat label="Answers total" value="1,204" />
+  </>
+)
+
+/**
+ * `fit` sizes the columns from the group's own width, not the viewport's.
+ *
+ * The same seven stats in a 384px pane and a 768px pane. The default group steps by
+ * viewport breakpoint, so a narrow pane in a wide window still asks for four columns
+ * and the tiles crush; the `fit` group fits as many 150px-minimum tiles as the pane
+ * holds (two here, then four) and lets them grow to fill the row, whatever the stat
+ * count. Use it for a metrics block inside a docked or resizable pane.
+ */
+export const Fit: Story = {
+  render: () => (
+    <div class="flex flex-col gap-6">
+      <div class="w-96 rounded-xl border border-border p-3">
+        <StatGroup fit>{stats()}</StatGroup>
+      </div>
+      <div class="w-192 rounded-xl border border-border p-3">
+        <StatGroup fit>{stats()}</StatGroup>
+      </div>
+    </div>
+  ),
+}
+
 /**
  * The tone carries the judgement, not the sign.
  *
