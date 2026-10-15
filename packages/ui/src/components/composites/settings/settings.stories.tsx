@@ -3,7 +3,9 @@ import { createSignal } from 'solid-js'
 import { Bell, Database, Settings, ShieldCheck, UserRound } from 'lucide-solid'
 import { expect, within } from 'storybook/test'
 import { Button } from '../../ui/button/button'
+import { Card } from '../../ui/card/card'
 import { EmptyDescription } from '../../ui/empty/empty'
+import { FormField } from '../../ui/field/field'
 import { Input } from '../../ui/input/input'
 import { Switch } from '../../ui/switch/switch'
 import { TabsContent } from '../../ui/tabs/tabs'
@@ -113,6 +115,36 @@ export const ContentBody: Story = {
           <Input value="90 days" aria-label="Retention" />
         </SettingsField>
         <div class="rounded-xl border border-border bg-card p-4">A separately bordered card</div>
+      </SettingsSection>
+    </SettingsPage>
+  ),
+}
+
+/**
+ * A row loose in a content section. Its default 16px padding is there to clear
+ * the edge of a divided rows body or a card, so beside a bare field it insets the
+ * label by 16px; `flush` drops the padding and the label lines up with the field
+ * above it. Inside a `Card` (second block) the default padding is right.
+ */
+export const FlushRowInContentBody: Story = {
+  render: () => (
+    <SettingsPage class="h-screen">
+      <SettingsSection title="Query and answer model" bodyLayout="content">
+        <FormField label="Model" hint="Used to write grounded answers.">
+          <Input value="gpt-5.4-mini" />
+        </FormField>
+        <SettingsRow
+          flush
+          label="Grounded answer synthesis"
+          description="Uses retrieved evidence and validates citations before answering."
+        >
+          <Switch defaultChecked aria-label="Enable answer synthesis" />
+        </SettingsRow>
+        <Card size="flush">
+          <SettingsRow label="Open at login" description="The tray keeps running when closed.">
+            <Switch aria-label="Open at login" />
+          </SettingsRow>
+        </Card>
       </SettingsSection>
     </SettingsPage>
   ),

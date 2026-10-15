@@ -97,6 +97,51 @@ test('action-heavy description rows preserve readable text and contained control
   }
 })
 
+test('truncateDescription keeps one line and the minimum row height; the default still wraps', async ({
+  page,
+}) => {
+  await mount(page, 640)
+  const measure = (testId: string) =>
+    page.getByTestId(testId).evaluate((row) => {
+      const description = row.querySelector<HTMLElement>('[data-slot="list-row-description"]')!
+      const trailing = row.querySelector('[data-slot="list-row-trailing"]')!
+      const lineHeight = Number.parseFloat(getComputedStyle(description).lineHeight)
+      const rowBox = row.getBoundingClientRect()
+      const trailingBox = trailing.getBoundingClientRect()
+      return {
+        lines: Math.round(description.getBoundingClientRect().height / lineHeight),
+        ellipsis: getComputedStyle(description).textOverflow,
+        clipped: description.scrollWidth > description.clientWidth,
+        rowHeight: rowBox.height,
+        trailingInside: trailingBox.right <= rowBox.right + 1 && trailingBox.left >= rowBox.left,
+        // The row must not be pushed wider than the width its caller gave it.
+        rowWidth: rowBox.width,
+      }
+    })
+
+  const truncated = await measure('truncated-description-row')
+  const short = await measure('short-description-row')
+  const wrapping = await measure('wrapping-description-row')
+
+  expect(truncated.lines, JSON.stringify(truncated)).toBe(1)
+  expect(truncated.ellipsis).toBe('ellipsis')
+  expect(truncated.clipped, JSON.stringify(truncated)).toBe(true)
+  expect(truncated.trailingInside, JSON.stringify(truncated)).toBe(true)
+  expect(truncated.rowWidth).toBe(320)
+  // A long truncated description and a short one give the same row height.
+  expect(truncated.rowHeight).toBe(short.rowHeight)
+  expect(short.clipped).toBe(false)
+
+  expect(wrapping.lines).toBeGreaterThan(1)
+  expect(wrapping.ellipsis).toBe('clip')
+  expect(wrapping.rowHeight).toBeGreaterThan(truncated.rowHeight)
+
+  // The full text stays in the DOM for assistive technology.
+  await expect(page.getByTestId('truncated-description-row')).toContainText(
+    'complete set of management controls'
+  )
+})
+
 test('preserves native button and link semantics, refs, events, and keyboard tooltips', async ({
   page,
   browserName,
