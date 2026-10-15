@@ -291,3 +291,46 @@ export const TwoColumns: Story = {
     </FieldGroup>
   ),
 }
+
+/**
+ * `columns={3}` is the same grid with three columns from `sm`, for a row of short
+ * values — here three numeric limits. Below `sm` the fields stack, so each one
+ * keeps a readable width on a narrow window. A field that needs the full width
+ * says `class="col-span-full"`.
+ */
+export const ThreeColumns: Story = {
+  render: () => {
+    const [working, setWorking] = createSignal(3)
+    const [durable, setDurable] = createSignal(365)
+    const [candidate, setCandidate] = createSignal(7)
+
+    return (
+      <FieldGroup columns={3} class="w-full max-w-176">
+        <NumberField
+          label="Working ceiling (days)"
+          min={1}
+          max={7}
+          value={working()}
+          onChange={setWorking}
+        />
+        <NumberField
+          label="Durable ceiling (days)"
+          min={1}
+          max={3650}
+          value={durable()}
+          onChange={setDurable}
+        />
+        <NumberField
+          label="Candidate expiry (days)"
+          min={1}
+          max={7}
+          value={candidate()}
+          onChange={setCandidate}
+        />
+        <FormField label="Note" hint="A field that spans every column." class="col-span-full">
+          <Input />
+        </FormField>
+      </FieldGroup>
+    )
+  },
+}
