@@ -49,10 +49,25 @@ export function Card(props: CardProps) {
   )
 }
 
+/**
+ * The header is a grid so that `CardAction` has tracks to be placed in: the
+ * action is a direct child that takes a second column spanning the title and
+ * description rows. A flex column gives `col-start-2` nothing to land on and
+ * the action would simply stack under the copy. The extra column exists only
+ * when an action is present, so a header without one lays out as it always
+ * did (a single full-width column, 4px between its children).
+ */
 export function CardHeader(props: ComponentProps<'div'>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
-    <div data-slot="card-header" class={cn('flex flex-col gap-1 px-4', local.class)} {...rest} />
+    <div
+      data-slot="card-header"
+      class={cn(
+        'grid grid-cols-1 auto-rows-min gap-x-4 gap-y-1 px-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]',
+        local.class
+      )}
+      {...rest}
+    />
   )
 }
 
