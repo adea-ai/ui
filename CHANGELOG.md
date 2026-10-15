@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.135.1](https://github.com/adea-ai/ui/compare/v0.135.0...v0.135.1) (2026-10-15)
+
+
+### Documentation
+
+* **design-system:** show the dense host editor and its toolbar sheet ([#415](https://github.com/adea-ai/ui/issues/415)) ([1bec409](https://github.com/adea-ai/ui/commit/1bec409c206c3c59863384f2bfdb1f1464f141c5))
+
 ## [0.135.0](https://github.com/adea-ai/ui/compare/v0.134.0...v0.135.0) (2026-10-15)
 
 
