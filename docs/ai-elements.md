@@ -46,3 +46,37 @@ given and nothing else.
 
 See the table at the end of this file; each row names the component, its
 module path and the host data that makes it live.
+
+## Composition
+
+`Composites/Chat Scenario` (`packages/ui/src/components/composites/chat/chat-scenario.stories.tsx`)
+assembles the suite into whole conversations, one realistic scene per story, and
+is the reference for how the parts fit together. `Composites/Chat`
+(`chat.stories.tsx`) shows the frame on its own.
+
+| Story                 | What it shows                                                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Working`             | A run in flight: reasoning, tools (one running), a subagent, grounded prose with `Sources`, a streaming tail, and a busy composer with Stop, a queued follow-up and a staged file |
+| `WaitingForApproval`  | The run has stopped on a `Questionnaire` and a `Confirmation`; Send is off with the reason in words and clears as each is answered                                                |
+| `Finished`            | `Terminal`, `TestResults` (one failing), `StackTrace`, `FileTree`, a restorable `Checkpoint` and an answer with a diff                                                            |
+| `Reconnecting`        | A live `ChatNotice` with a retry; the last turn stays readable and Send is off with a reason                                                                                      |
+| `Failed`, `Cancelled` | A `Marker` note records the end of the run; nothing is spinning                                                                                                                   |
+| `Empty`               | `ChatEmpty` with `Suggestions`                                                                                                                                                    |
+
+Which component fills which role:
+
+| Role                                                   | Component                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frame, header, whole-conversation notices              | `Chat`, `ChatHeader`, `ChatNotice`                                                                                                                                                                                                                                                 |
+| The thread and its turns                               | `MessageScroller`, `Message`, `Bubble`                                                                                                                                                                                                                                             |
+| What the agent did (one quiet column under the answer) | `Trace` lines: `Reasoning`, `Tool`, `Subagent`, `Terminal`, `TestResults`, `StackTrace`, `FileTree`                                                                                                                                                                                |
+| What the reader must act on (the only surfaces)        | `Questionnaire`, `Confirmation`                                                                                                                                                                                                                                                    |
+| Grounding the prose                                    | `Sources`, `InlineCitation`                                                                                                                                                                                                                                                        |
+| Events between and inside turns                        | `Checkpoint`, `Marker`                                                                                                                                                                                                                                                             |
+| Empty thread                                           | `ChatEmpty`, `Suggestions`                                                                                                                                                                                                                                                         |
+| Composer                                               | `ChatComposer`: `Suggestions` in `followUps`, `QueueFollowUps` in `band`, `Attachment` in `attachments`, `ComposerAttachmentButton` in `leadingActions`, a Stop `Button` in `trailingActions`, `ModelSelector` and `Context` in `context`, and `blockedReason` for a disabled Send |
+
+Two rules these scenes keep, from the principles above: every status, citation
+and checkpoint is data the story supplies (a running tool has no duration, the
+unrestorable case has no Restore), and the only reasoning shown is a summary the
+host marked as visible.
