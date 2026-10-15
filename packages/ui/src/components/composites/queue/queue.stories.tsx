@@ -70,6 +70,14 @@ export const NoStatuses: Story = {
 /** An empty list draws nothing... */
 export const Empty: Story = {
   args: { items: [] },
+  // The queue itself is empty, so the frame is what makes the story visible.
+  render: (args) => (
+    <div class="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+      <p class="m-0">Nothing is drawn between the lines.</p>
+      <Queue {...args} />
+      <p class="m-0">Nothing is drawn between the lines.</p>
+    </div>
+  ),
 }
 
 /** ...unless the host gives it words. */
@@ -157,5 +165,11 @@ export const FollowUpsLongText: StoryObj = {
 
 /** Nothing waiting: nothing is drawn. */
 export const FollowUpsEmpty: StoryObj = {
-  render: () => <QueueFollowUps items={[]} />,
+  render: () => (
+    <div class="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+      <p class="m-0">Nothing is drawn between the lines.</p>
+      <QueueFollowUps items={[]} />
+      <p class="m-0">Nothing is drawn between the lines.</p>
+    </div>
+  ),
 }

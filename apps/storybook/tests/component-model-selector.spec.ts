@@ -28,7 +28,8 @@ test('an in-flight block closes and prevents opening model and effort controls',
   await setBlocked(page, true)
   await expect(page.getByRole('menuitemradio', { name: 'Second' })).toHaveCount(0)
   await expect(model).toHaveAttribute('aria-disabled', 'true')
-  await model.click()
+  // aria-disabled is not "disabled" to Playwright, but a forced press must still do nothing.
+  await model.click({ force: true })
   await expect(page.getByRole('menuitemradio', { name: 'Second' })).toHaveCount(0)
 
   await setBlocked(page, false)
@@ -38,7 +39,7 @@ test('an in-flight block closes and prevents opening model and effort controls',
   await setBlocked(page, true)
   await expect(page.getByRole('menuitemradio', { name: 'Low' })).toHaveCount(0)
   await expect(effort).toHaveAttribute('aria-disabled', 'true')
-  await effort.click()
+  await effort.click({ force: true })
   await expect(page.getByRole('menuitemradio', { name: 'Low' })).toHaveCount(0)
 
   expect(
@@ -58,6 +59,6 @@ test('an in-flight block closes and prevents opening the searchable model palett
   await setBlocked(page, true)
   await expect(input).toHaveCount(0)
   await expect(model).toHaveAttribute('aria-disabled', 'true')
-  await model.click()
+  await model.click({ force: true })
   await expect(input).toHaveCount(0)
 })

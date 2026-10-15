@@ -1,7 +1,7 @@
 # AI Elements
 
 A Solid-native port of the shadcn AI Elements suite (October 2026 architecture),
-built on this library's tokens and primitives. The suite is a set of *patterns*:
+built on this library's tokens and primitives. The suite is a set of _patterns_:
 Trace, Code Block, Message Scroller, Message, Bubble, Marker, Attachment and
 Questionnaire are the foundation, and the twenty-one named patterns are
 compositions of them. Nothing here knows about a harness, a model vendor or a
@@ -36,10 +36,10 @@ given and nothing else.
 
 ## Layering
 
-| Layer | Contents |
-| --- | --- |
-| `components/ui/*` | Foundation primitives: `trace`, `code-block`, `message`, `bubble`, `marker`, `attachment`, `questionnaire` |
-| `components/composites/*` | The suite: scrolling, activity, results, grounding, controls |
+| Layer                       | Contents                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `components/ui/*`           | Foundation primitives: `trace`, `code-block`, `message`, `bubble`, `marker`, `attachment`, `questionnaire`                                                   |
+| `components/composites/*`   | The suite: scrolling, activity, results, grounding, controls                                                                                                 |
 | `components/conversation/*` | Pre-existing transcript pieces (`ConversationSurface`, `MessageRow`, `TranscriptComposition`, paste-token composer). Unchanged; Cortana still consumes them. |
 
 ## Coverage matrix

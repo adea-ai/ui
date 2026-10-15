@@ -202,7 +202,7 @@ test.describe('output: copy, marks, lazy highlighting, bounds', () => {
       current.removeAllRanges()
       current.addRange(range)
     })
-    await page.keyboard.press('Control+C')
+    await page.keyboard.press('ControlOrMeta+C')
     await expect.poll(() => clipboard(page)).toContain('first line')
     const copied = await clipboard(page)
     expect(copied.replace(/\r/g, '').trim()).toBe(await source(page, 'selection'))
@@ -397,9 +397,9 @@ test.describe('output: copy, marks, lazy highlighting, bounds', () => {
   // transcript with two blocks in one language would otherwise list "ts code"
   // twice as a landmark, and a long answer would fill the landmark list.
   test('blocks of one language are not duplicate landmarks', async ({ page }) => {
-    const names = await page.locator('[data-slot="code-block-body"]').evaluateAll((bodies) =>
-      bodies.map((body) => body.getAttribute('aria-label'))
-    )
+    const names = await page
+      .locator('[data-slot="code-block-body"]')
+      .evaluateAll((bodies) => bodies.map((element) => element.getAttribute('aria-label')))
     expect(names.filter((name) => name === 'ts code').length).toBeGreaterThan(1)
     await expect(page.locator('[data-slot="code-block-body"][role="region"]')).toHaveCount(0)
     const result = await new AxeBuilder({ page }).withRules(['landmark-unique']).analyze()
