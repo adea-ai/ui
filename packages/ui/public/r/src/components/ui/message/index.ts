@@ -12,6 +12,7 @@ export {
   type MessageRole,
   type MessageTextProps,
 } from './message'
+export { placeCitationMarkers, type CitationPlacement, type PlacedCitations } from './cite-ranges'
 export {
   parseInline,
   parseMessageText,

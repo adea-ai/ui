@@ -95,6 +95,17 @@ marker still streaming (`[^1`) and a marker inside a link label all stay the tex
 that was written. With no `citations` prop nothing is a citation. The parser takes
 only the source count, so replacing the render function does not reparse the text.
 
+**Placing markers from producer offsets.** A host that holds producer-supplied
+citation spans (half-open UTF-16 offsets into the exact answer text) turns them
+into markers with `placeCitationMarkers(text, [{ end, numbers }], sourceCount)`.
+It never reads the text for citations: it inserts `[^n]` at each span end, one
+marker per position (at most six numbers, chained beyond that), and uses
+`parseMessageText` as the oracle, so a marker that would land inside a code span,
+a fence, a link label or split emphasis is skipped and counted in `skipped`. If the
+text already contains something that reads as a marker (`[^1`), it places nothing
+and reports `collision`, because the host's offsets could no longer be trusted to
+mean what the producer meant. Spans the host cannot place are the host's to state.
+
 **Line marks.** `codeBlockProps` is either one set of props for every fence or a
 function `(block) => props` called with the fence's position (`index` among the
 fences, from 0), `language`, `code` and `complete`. That is how a host marks the

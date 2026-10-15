@@ -10,6 +10,11 @@
   ],
   "files": [
     {
+      "path": "src/components/ui/message/cite-ranges.ts",
+      "type": "registry:ui",
+      "target": "components/ui/message/cite-ranges.ts"
+    },
+    {
       "path": "src/components/ui/message/index.ts",
       "type": "registry:ui",
       "target": "components/ui/message/index.ts"
