@@ -63,6 +63,9 @@ export type MessageScrollerProps = Omit<ConversationSurfaceProps, 'header' | 'em
 /** How far from the top counts as "reached the top", in px. */
 const TOP_MARGIN = 160
 
+/** How long a host that still reports `loadingOlder` is waited for, in frames (~10 s). */
+const MAX_HOST_WAIT_FRAMES = 600
+
 export function MessageScroller(props: MessageScrollerProps) {
   const [local, rest] = splitProps(props, [
     'class',
@@ -89,35 +92,59 @@ export function MessageScroller(props: MessageScrollerProps) {
     setInFlight(false)
   })
 
-  const settle = (anchor: ScrollAnchor | undefined, run: number, heightBefore: number) => {
+  const settle = (
+    anchor: ScrollAnchor | undefined,
+    run: number,
+    heightBefore: number,
+    restoreFocus: boolean
+  ) => {
+    const finish = () => {
+      if (run !== epoch) return
+      if (scroller) restoreAnchor(scroller, anchor)
+      observer?.disconnect()
+      setInFlight(false)
+      // The control that started the load was replaced by the loading line, which
+      // takes focus with it. Put it back on the control (or the thread), so a
+      // keyboard user is not dropped onto the page.
+      if (restoreFocus && scroller && document.activeElement === document.body) {
+        const again = scroller.querySelector<HTMLElement>(
+          '[data-slot="message-scroller-older"] button'
+        )
+        ;(again ?? scroller).focus({ preventScroll: true })
+      }
+      // Still at the top after a load that added content: keep going, so a
+      // pane taller than one page of history fills without a second scroll.
+      if (
+        scroller &&
+        local.hasOlder &&
+        scroller.scrollTop < TOP_MARGIN &&
+        scroller.scrollHeight > heightBefore
+      )
+        void load()
+    }
     // Two frames: the first lets the host's insert commit, the second lets
-    // late-sizing content (images, highlighted code) report its height.
-    requestAnimationFrame(() =>
+    // late-sizing content (images, highlighted code) report its height. A host
+    // that says it is still loading (`loadingOlder`) after its promise resolved
+    // is not finished either: its turns will land later, and the anchor must
+    // still be held when they do.
+    const wait = (waited: number) =>
       requestAnimationFrame(() => {
         if (run !== epoch) return
-        if (scroller) restoreAnchor(scroller, anchor)
-        observer?.disconnect()
-        setInFlight(false)
-        // Still at the top after a load that added content: keep going, so a
-        // pane taller than one page of history fills without a second scroll.
-        if (
-          scroller &&
-          local.hasOlder &&
-          scroller.scrollTop < TOP_MARGIN &&
-          scroller.scrollHeight > heightBefore
-        )
-          void load()
+        if (local.loadingOlder && waited < MAX_HOST_WAIT_FRAMES) return void wait(waited + 1)
+        finish()
       })
-    )
+    requestAnimationFrame(() => wait(0))
   }
 
   let observer: MutationObserver | undefined
-  const load = async () => {
+  const load = async (fromControl = false) => {
     if (!scroller || !local.onLoadOlder || !local.hasOlder || local.loadingOlder || inFlight())
       return
     const run = epoch
     const anchor = captureAnchor(scroller)
     const heightBefore = scroller.scrollHeight
+    const restoreFocus =
+      fromControl && document.activeElement?.closest('[data-slot="message-scroller-older"]') != null
     setInFlight(true)
     // Every layout change while the load is open re-pins the anchor *before
     // paint*, which is what makes the insert invisible.
@@ -131,7 +158,7 @@ export function MessageScroller(props: MessageScrollerProps) {
     } catch {
       // The host reports its own failure; the control stays so the reader can retry.
     }
-    settle(anchor, run, heightBefore)
+    settle(anchor, run, heightBefore, restoreFocus)
   }
 
   onCleanup(() => {
@@ -183,7 +210,7 @@ export function MessageScroller(props: MessageScrollerProps) {
                       variant="ghost"
                       size="sm"
                       class="gap-1.5 text-muted-foreground"
-                      onClick={() => void load()}
+                      onClick={() => void load(true)}
                     >
                       <History aria-hidden="true" />
                       {local.olderLabel ?? 'Load earlier messages'}
@@ -192,7 +219,9 @@ export function MessageScroller(props: MessageScrollerProps) {
                 >
                   <p
                     role="status"
-                    class="flex items-center gap-1.5 py-1 text-xs text-muted-foreground"
+                    // The button's own height: swapping one for the other must not move
+                    // the turns below it by even a pixel while the anchor is being held.
+                    class="flex h-control-sm items-center gap-1.5 text-xs text-muted-foreground"
                   >
                     <LoaderCircle aria-hidden="true" class="size-3.5 motion-safe:animate-spin" />
                     {local.loadingOlderLabel ?? 'Loading earlier messages…'}
