@@ -35,6 +35,6 @@
       fontSettingsPlacement: 'end', accentEntryStyle: 'row', showThemeDefaultAccent: false,
       showModeIcons: true, customAccentValue: '#2563eb',
     };
-    return html`<${AppearancePopover} ...${props} triggerVariant="toolbar" open=${() => open()} onOpen=${() => setOpen(true)} onDismiss=${() => setOpen(false)} />`;
+    return html`<${AppearancePopover} ...${props} triggerVariant="toolbar" open=${() => open()} onOpen=${(_event) => setOpen(true)} onDismiss=${(_event) => setOpen(false)} />`;
   }, document.getElementById('root'));
 </script>
