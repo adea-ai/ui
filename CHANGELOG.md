@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.133.0](https://github.com/adea-ai/ui/compare/v0.132.0...v0.133.0) (2026-10-15)
+
+
+### Features
+
+* **number-field:** add step ([#422](https://github.com/adea-ai/ui/issues/422)) ([55cbb46](https://github.com/adea-ai/ui/commit/55cbb46c6731fae730fca665fabab14bbc21fe5b))
+
 ## [0.132.0](https://github.com/adea-ai/ui/compare/v0.131.1...v0.132.0) (2026-10-15)
 
 
