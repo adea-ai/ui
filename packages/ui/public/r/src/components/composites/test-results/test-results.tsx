@@ -1,5 +1,6 @@
 import { CircleCheck, CircleMinus, CircleX, FlaskConical, LoaderCircle } from 'lucide-solid'
 import {
+  createComputed,
   createMemo,
   createEffect,
   createSignal,
@@ -141,6 +142,35 @@ const TRACE_STATUS: Readonly<Record<TestCaseStatus, { status: TraceStatus; label
   pending: { status: 'pending', label: 'Not run yet' },
 }
 
+/**
+ * Keep keyboard focus through a reorder. Solid moves a keyed row's node instead
+ * of replacing it, and a browser blurs a focused element that is moved, so an
+ * immutable reorder would drop the reader's place onto the body even though the
+ * node and its open state survive. The focused element is noted just before the
+ * rows move and given focus back just after, but only when nothing else has taken
+ * focus meanwhile, and only inside a test run, so a reader who has moved on is
+ * never pulled back and an unrelated element is never refocused.
+ */
+function keepFocusThroughReorder(keys: Accessor<readonly string[]>) {
+  let noted: HTMLElement | undefined
+  createComputed(() => {
+    keys()
+    const active = typeof document === 'undefined' ? null : document.activeElement
+    noted =
+      active instanceof HTMLElement && active.closest('[data-slot="test-results"]')
+        ? active
+        : undefined
+  })
+  createEffect(() => {
+    keys()
+    const element = noted
+    noted = undefined
+    if (!element || !element.isConnected) return
+    const active = document.activeElement
+    if (active === null || active === document.body) element.focus({ preventScroll: true })
+  })
+}
+
 /** A list that shows its first `limit` items and offers the rest. */
 function Bounded<T>(props: {
   items: readonly T[]
@@ -153,6 +183,7 @@ function Bounded<T>(props: {
   const page = createMemo(() => boundedEntries(props.items, shown(), props.itemKey))
   const visible = () => page().entries
   const visibleKeys = createMemo(() => visible().map((entry) => entry.key))
+  keepFocusThroughReorder(visibleKeys)
   const hidden = () => props.items.length - visible().length
   return (
     <>

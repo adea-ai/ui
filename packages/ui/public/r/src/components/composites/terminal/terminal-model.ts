@@ -29,20 +29,69 @@ export function isFailedExit(status: TerminalStatus | undefined): boolean {
 export type TerminalWindow = Readonly<{
   /** Index of the first mounted finished line. */
   start: number
+  /** Index after the last mounted finished line. */
+  end: number
   /** Retained lines before `start` that "show earlier" can reveal. */
   revealable: number
   /** Every earlier line not on screen, including those the parser discarded. */
   hidden: number
+  /** Retained finished lines after `end`: output that arrived while the view was parked. */
+  later: number
+  /** Lines of the parked view that retention discarded before the reader moved on. */
+  evicted: number
+  /** The whole parked view was discarded, so the oldest retained lines are shown instead. */
+  lost: boolean
 }>
 
 /**
- * The tail of the retained lines that is mounted. `limit` is how many finished
+ * The slice of the retained lines that is mounted. `limit` is how many finished
  * lines to show; the rest are counted, not rendered, because a terminal that
  * mounts every line of a long build is a frozen page.
+ *
+ * While the reader follows the tail the slice ends at the newest line. Once they
+ * have scrolled away it is *parked*: `anchorEnd` is the number of lines (counting
+ * the ones retention already discarded) that existed when they left, and the
+ * slice stays ending there while output keeps arriving, so what they are reading
+ * does not move under them. If retention discards the lines they were reading,
+ * `evicted` says how many, and when all of them are gone `lost` is set and the
+ * oldest retained lines are shown, because the nearest thing that still exists
+ * is better than a blank box.
  */
-export function terminalWindow(retained: number, dropped: number, limit: number): TerminalWindow {
-  const start = Math.max(0, retained - Math.max(1, Math.floor(limit)))
-  return { start, revealable: start, hidden: start + dropped }
+export function terminalWindow(
+  retained: number,
+  dropped: number,
+  limit: number,
+  anchorEnd?: number
+): TerminalWindow {
+  const size = Math.max(1, Math.floor(limit))
+  if (anchorEnd === undefined || anchorEnd >= dropped + retained) {
+    const start = Math.max(0, retained - size)
+    return {
+      start,
+      end: retained,
+      revealable: start,
+      hidden: start + dropped,
+      later: 0,
+      evicted: 0,
+      lost: false,
+    }
+  }
+  const wantedStart = Math.max(0, anchorEnd - size)
+  const lost = anchorEnd <= dropped
+  const end = lost ? Math.min(retained, size) : anchorEnd - dropped
+  const start = lost ? 0 : Math.max(0, end - size)
+  const evicted = lost
+    ? anchorEnd - wantedStart
+    : Math.max(0, Math.min(dropped, anchorEnd) - wantedStart)
+  return {
+    start,
+    end,
+    revealable: start,
+    hidden: start + dropped,
+    later: retained - end,
+    evicted,
+    lost,
+  }
 }
 
 /** The limit after one "show earlier" press: one more page, never past what exists. */

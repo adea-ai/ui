@@ -461,3 +461,47 @@ export function dedentLines(lines: readonly string[]): string[] {
   if (indent === Infinity) return [...lines]
   return lines.map((line) => line.slice(Math.min(indent, LEADING_SPACE.exec(line)![0].length)))
 }
+
+export type BoundedLines = Readonly<{
+  lines: string[]
+  /** Lines beyond the bound that are not in `lines` at all. */
+  omittedLines: number
+  /** Characters beyond the bound, in omitted lines and in the cut end of the last shown line. */
+  omittedChars: number
+}>
+
+/**
+ * The first lines of `lines`, up to `maxLines` of them and `maxChars` characters
+ * between them, with what was left out counted rather than dropped silently. It
+ * visits the shown lines and adds up the length of the rest, so the cost does not
+ * depend on how much text there is to omit.
+ */
+export function boundLines(
+  lines: readonly string[],
+  maxLines: number,
+  maxChars: number
+): BoundedLines {
+  const shown: string[] = []
+  let chars = 0
+  let index = 0
+  let partial = 0
+  while (index < lines.length && shown.length < maxLines) {
+    const line = lines[index]!
+    const room = maxChars - chars
+    if (line.length <= room) {
+      shown.push(line)
+      chars += line.length
+      index += 1
+      continue
+    }
+    if (room > 0) {
+      shown.push(line.slice(0, room))
+      partial = line.length - room
+      index += 1
+    }
+    break
+  }
+  let omittedChars = partial
+  for (let rest = index; rest < lines.length; rest += 1) omittedChars += lines[rest]!.length
+  return { lines: shown, omittedLines: lines.length - index, omittedChars }
+}

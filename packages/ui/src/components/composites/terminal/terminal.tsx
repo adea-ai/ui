@@ -77,9 +77,14 @@ import {
  * ## Following the tail
  *
  * The terminal scrolls inside its own bounded box and follows new output only
- * while the reader is at the bottom of that box. Scrolling up parks the view and
- * offers "new output" instead of yanking it back; the page itself is never
- * scrolled. Scrolling is instant, so there is no animation to reduce.
+ * while the reader is at the bottom of that box. Scrolling up *parks* the view:
+ * the lines mounted are the ones that were there when they left, however much
+ * output arrives, and "Jump to latest" is the only way back to the tail (reaching
+ * the bottom of a parked view with nothing newer resumes it, because nothing was
+ * missed). If retention discards the lines they were reading the note says how
+ * many, and when none are left the oldest retained lines are shown. The page
+ * itself is never scrolled. Scrolling is instant, so there is no animation to
+ * reduce.
  *
  * ## Status is a claim
  *
@@ -97,6 +102,8 @@ export type TerminalProps = Omit<ComponentProps<'div'>, 'children'> & {
   status?: TerminalStatus
   /** Finished lines mounted at once; earlier ones are counted and revealed a page at a time. */
   maxLines?: number
+  /** Finished lines kept at all; older ones are discarded and counted. Default 200 000. */
+  retainLines?: number
   /** Height of the output box, which scrolls past it. A number is pixels. Default `20rem`. */
   maxHeight?: number | string
   /** Soft-wrap long lines instead of scrolling sideways. Off: terminal columns keep their alignment. */
@@ -243,6 +250,7 @@ export function Terminal(props: TerminalProps) {
     'command',
     'status',
     'maxLines',
+    'retainLines',
     'maxHeight',
     'wrap',
     'size',
@@ -262,19 +270,24 @@ export function Terminal(props: TerminalProps) {
   // The parser outlives renders: it holds the half-read escape sequence, the
   // current style and the open line. A new `output` that extends the old one is
   // fed only its tail; anything else (a clear, a different command) starts over.
-  let parser = createAnsiParser()
+  const newParser = () => createAnsiParser({ retainLines: local.retainLines })
+  let parser = newParser()
   let consumed = ''
+  // Bumped when the output restarts, so a parked position from the old output
+  // is never applied to the new one.
+  let epoch = 0
   const revision = createMemo(
     () => {
       const next = local.output
       if (next.length >= consumed.length && next.startsWith(consumed)) {
         parser.write(next.slice(consumed.length))
       } else {
-        parser = createAnsiParser()
+        parser = newParser()
         parser.write(next)
+        epoch += 1
       }
       consumed = next
-      return {}
+      return epoch
     },
     undefined,
     { equals: false }
@@ -293,9 +306,17 @@ export function Terminal(props: TerminalProps) {
     )
   )
 
+  // Where the reader parked, as a count of lines since the output began.
+  const [parked, setParked] = createSignal<{ epoch: number; end: number }>()
+  const total = () => parser.droppedLines + parser.lines.length
+  const anchorEnd = () => {
+    const current = revision()
+    const position = parked()
+    return position && position.epoch === current ? position.end : undefined
+  }
   const lineWindow = createMemo(() => {
     revision()
-    return terminalWindow(parser.lines.length, parser.droppedLines, limit())
+    return terminalWindow(parser.lines.length, parser.droppedLines, limit(), anchorEnd())
   })
   // Sliced fresh each time, but the lines inside are the parser's own immutable
   // objects, so `For` keeps every finished line's DOM and only adds and removes
@@ -303,7 +324,7 @@ export function Terminal(props: TerminalProps) {
   const finished = createMemo(
     () => {
       revision()
-      return parser.lines.slice(lineWindow().start)
+      return parser.lines.slice(lineWindow().start, lineWindow().end)
     },
     [],
     { equals: false }
@@ -318,27 +339,28 @@ export function Terminal(props: TerminalProps) {
   )
 
   let scroller: HTMLDivElement | undefined
-  const [following, setFollowing] = createSignal(true)
-  const [behind, setBehind] = createSignal(false)
+  const following = () => anchorEnd() === undefined
 
   const onScroll = () => {
     if (!scroller) return
     const atEnd = isAtBottom(scroller.scrollHeight, scroller.scrollTop, scroller.clientHeight)
-    setFollowing(atEnd)
-    if (atEnd) setBehind(false)
+    const position = anchorEnd()
+    if (!atEnd) {
+      if (position === undefined) setParked({ epoch: revision(), end: total() })
+    } else if (position !== undefined && position >= total()) {
+      // Back at the end of a view with nothing newer: nothing was missed.
+      setParked(undefined)
+    }
   }
   createEffect(
     on(revision, () => {
-      if (!scroller) return
-      if (following()) scroller.scrollTop = scroller.scrollHeight
-      else setBehind(true)
+      if (scroller && following()) scroller.scrollTop = scroller.scrollHeight
     })
   )
   const jumpToLatest = () => {
     if (!scroller) return
+    setParked(undefined)
     scroller.scrollTop = scroller.scrollHeight
-    setFollowing(true)
-    setBehind(false)
     // The button is about to disappear; leave focus somewhere real.
     scroller.focus()
   }
@@ -427,19 +449,27 @@ export function Terminal(props: TerminalProps) {
         </div>
       </div>
 
-      <Show when={lineWindow().hidden > 0}>
+      <Show when={lineWindow().hidden > 0 || lineWindow().evicted > 0}>
         <div
           data-slot="terminal-hidden-note"
           class="flex items-center gap-2 border-t border-border px-3 py-1 text-xs text-muted-foreground"
         >
           <span>
-            {lineWindow().hidden.toLocaleString()} earlier{' '}
-            {lineWindow().hidden === 1 ? 'line' : 'lines'} hidden
-            <Show when={parser.droppedLines > 0}>
-              {' '}
-              ({parser.droppedLines.toLocaleString()} only in the copy)
+            <Show when={lineWindow().hidden > 0}>
+              {lineWindow().hidden.toLocaleString()} earlier{' '}
+              {lineWindow().hidden === 1 ? 'line' : 'lines'} hidden
+              <Show when={parser.droppedLines > 0}>
+                {' '}
+                ({parser.droppedLines.toLocaleString()} only in the copy)
+              </Show>
+              .
             </Show>
-            .
+            <Show when={lineWindow().evicted > 0}>
+              {' '}
+              {lineWindow().lost
+                ? `The lines you were reading were discarded to keep memory bounded; showing the oldest ${lineWindow().end.toLocaleString()} still kept.`
+                : `${lineWindow().evicted.toLocaleString()} of the lines you were reading were discarded to keep memory bounded.`}
+            </Show>
           </span>
           <Show when={lineWindow().revealable > 0}>
             <Button
@@ -484,13 +514,15 @@ export function Terminal(props: TerminalProps) {
               <For each={finished()}>
                 {(line) => <LineView line={line} wrap={local.wrap === true} />}
               </For>
-              <Show when={open()}>
+              {/* A half-written line is drawn only where the finished lines above
+                  reach the end; after a parked window it would not follow them. */}
+              <Show when={lineWindow().later === 0 ? open() : undefined}>
                 {(line) => <LineView line={line()} wrap={local.wrap === true} />}
               </Show>
             </pre>
           </Show>
         </div>
-        <Show when={behind()}>
+        <Show when={lineWindow().later > 0}>
           <Button
             variant="secondary"
             size="2xs"
@@ -498,7 +530,11 @@ export function Terminal(props: TerminalProps) {
             onClick={jumpToLatest}
           >
             <ArrowDown aria-hidden="true" />
-            New output
+            Jump to latest
+            <span class="text-muted-foreground tabular-nums">
+              ({lineWindow().later.toLocaleString()} newer{' '}
+              {lineWindow().later === 1 ? 'line' : 'lines'})
+            </span>
           </Button>
         </Show>
       </div>

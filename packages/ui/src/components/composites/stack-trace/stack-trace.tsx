@@ -15,6 +15,7 @@ import { Button } from '../../ui/button'
 import { CodeBlock } from '../../ui/code-block'
 import { TraceLine } from '../../ui/trace'
 import {
+  boundLines,
   dedentLines,
   describeFrameGroup,
   frameLocation,
@@ -59,9 +60,12 @@ import {
  * on this machine is the host's call.
  *
  * Text is text throughout: frames, messages and source lines are rendered as text
- * nodes, long unbroken tokens wrap rather than widening the column, and a single
- * text line beyond 10 000 characters is shown truncated with the omission stated
- * (copy still has all of it).
+ * nodes, long unbroken tokens wrap rather than widening the column, and what is
+ * drawn is bounded with the omission stated every time: a text line or a header
+ * message beyond 10 000 characters, a frame's printed lines beyond 40 lines or
+ * 10 000 characters, and the frames of a folded group, which are built only while
+ * it is open and then `maxBlocks` at a time. Copy and `onOpenFrame` still get all of
+ * it.
  */
 export type StackTraceProps = Omit<ComponentProps<'div'>, 'children'> & {
   /** The trace exactly as the runtime printed it. */
@@ -83,11 +87,101 @@ export type StackTraceProps = Omit<ComponentProps<'div'>, 'children'> & {
 
 export const STACK_TRACE_MAX_BLOCKS = 200
 const TEXT_DISPLAY_LIMIT = 10_000
+/** What a frame's own printed lines (a Python source line, a locals dump) may show. */
+const DETAIL_LINE_LIMIT = 40
+const DETAIL_CHAR_LIMIT = 10_000
 
 const rowClass =
   'flex min-w-0 flex-wrap items-baseline gap-x-2 rounded-md px-1.5 py-0.5 text-start text-xs outline-none'
 const interactiveClass =
   'w-full cursor-pointer transition-colors ease-out hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-primary-subtle focus-visible:border-ring'
+
+function omissionNote(lines: number, chars: number): string {
+  return lines > 0
+    ? `… ${lines.toLocaleString()} more ${lines === 1 ? 'line' : 'lines'} (${chars.toLocaleString()} characters) not shown`
+    : `… ${chars.toLocaleString()} more characters not shown`
+}
+
+/** A frame's printed lines, bounded so one frame cannot be the whole page. */
+function FrameDetail(props: { lines: readonly string[] }) {
+  const bounded = createMemo(() => boundLines(props.lines, DETAIL_LINE_LIMIT, DETAIL_CHAR_LIMIT))
+  return (
+    <>
+      <pre class="m-0 ms-1.5 px-1.5 font-code text-code whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
+        {dedentLines(bounded().lines).join('\n')}
+      </pre>
+      <Show when={bounded().omittedLines > 0 || bounded().omittedChars > 0}>
+        <p class="m-0 ms-1.5 px-1.5 text-xs text-muted-foreground italic">
+          {omissionNote(bounded().omittedLines, bounded().omittedChars)}
+          {' (copy has all of it)'}
+        </p>
+      </Show>
+    </>
+  )
+}
+
+/** Header text, cut to the display limit with what was cut stated. */
+function ClippedText(props: { text: string; class?: string }) {
+  const clipped = () => props.text.length > TEXT_DISPLAY_LIMIT
+  return (
+    <>
+      <span class={props.class}>
+        {clipped() ? props.text.slice(0, TEXT_DISPLAY_LIMIT) : props.text}
+      </span>
+      <Show when={clipped()}>
+        <span class="block text-xs text-muted-foreground italic">
+          … {(props.text.length - TEXT_DISPLAY_LIMIT).toLocaleString()} more characters not shown
+          (copy has all of it)
+        </span>
+      </Show>
+    </>
+  )
+}
+
+/**
+ * A folded run of dependency or runtime frames. Its rows are built only while it
+ * is open and then a page at a time, so a run of ten thousand frames costs the
+ * same as one of a few hundred until the reader asks for more.
+ */
+function FrameGroup(props: {
+  frames: readonly StackFrame[]
+  defaultOpen?: boolean
+  pageSize: number
+  onOpen?: (frame: StackFrame) => void
+}) {
+  const [open, setOpen] = createSignal(props.defaultOpen === true)
+  const [limit, setLimit] = createSignal<number | undefined>()
+  const title = createMemo(() => describeFrameGroup(props.frames))
+  const shown = createMemo(() => props.frames.slice(0, limit() ?? props.pageSize))
+  const hidden = () => props.frames.length - shown().length
+  return (
+    <TraceLine icon={<Package />} title={title()} open={open()} onOpenChange={setOpen}>
+      <Show when={open()}>
+        <ol role="list" aria-label={title()} class="m-0 flex min-w-0 list-none flex-col gap-px p-0">
+          <For each={shown()}>{(frame) => <FrameRow frame={frame} onOpen={props.onOpen} />}</For>
+        </ol>
+        <Show when={hidden() > 0}>
+          <ShowMore
+            hidden={hidden()}
+            pageSize={props.pageSize}
+            onClick={() => setLimit(shown().length + props.pageSize)}
+          />
+        </Show>
+      </Show>
+    </TraceLine>
+  )
+}
+
+function ShowMore(props: { hidden: number; pageSize: number; onClick: () => void }) {
+  return (
+    <div class="ps-1.5">
+      <Button variant="ghost" size="2xs" onClick={props.onClick}>
+        Show {Math.min(props.hidden, props.pageSize).toLocaleString()} more (
+        {props.hidden.toLocaleString()} hidden)
+      </Button>
+    </div>
+  )
+}
 
 function FrameRow(props: { frame: StackFrame; onOpen?: (frame: StackFrame) => void }) {
   const location = () => frameLocation(props.frame)
@@ -132,9 +226,7 @@ function FrameRow(props: { frame: StackFrame; onOpen?: (frame: StackFrame) => vo
         </button>
       </Show>
       <Show when={props.frame.detail && props.frame.detail.length > 0}>
-        <pre class="m-0 ms-1.5 px-1.5 font-code text-code whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
-          {dedentLines(props.frame.detail!).join('\n')}
-        </pre>
+        <FrameDetail lines={props.frame.detail!} />
       </Show>
     </li>
   )
@@ -220,16 +312,16 @@ export function StackTrace(props: StackTraceProps) {
                 <>
                   <p class="m-0 whitespace-pre-wrap [overflow-wrap:anywhere]">
                     <Show when={header().type}>
-                      <span class="font-semibold text-destructive">{header().type}</span>
+                      <ClippedText class="font-semibold text-destructive" text={header().type!} />
                       <Show when={header().message !== ''}>
                         <span class="text-muted-foreground">: </span>
                       </Show>
                     </Show>
-                    <span class="text-foreground">{header().message}</span>
+                    <ClippedText class="text-foreground" text={header().message} />
                   </p>
                   <Show when={header().location}>
                     <p class="m-0 font-code text-code text-muted-foreground [overflow-wrap:anywhere]">
-                      {header().location}
+                      <ClippedText text={header().location!} />
                     </p>
                   </Show>
                 </>
@@ -275,41 +367,26 @@ export function StackTrace(props: StackTraceProps) {
                   )}
                 </Match>
                 <Match when={block.type === 'group' && block}>
-                  {(entry) => {
-                    const frames = () => (entry() as Extract<StackBlock, { type: 'group' }>).frames
-                    return (
-                      <TraceLine
-                        icon={<Package />}
-                        title={describeFrameGroup(frames())}
-                        defaultOpen={local.defaultDependenciesOpen}
-                      >
-                        <ol
-                          role="list"
-                          aria-label={describeFrameGroup(frames())}
-                          class="m-0 flex min-w-0 list-none flex-col gap-px p-0"
-                        >
-                          <For each={frames()}>
-                            {(frame) => <FrameRow frame={frame} onOpen={local.onOpenFrame} />}
-                          </For>
-                        </ol>
-                      </TraceLine>
-                    )
-                  }}
+                  {(entry) => (
+                    <FrameGroup
+                      frames={(entry() as Extract<StackBlock, { type: 'group' }>).frames}
+                      defaultOpen={local.defaultDependenciesOpen}
+                      pageSize={pageSize()}
+                      onOpen={local.onOpenFrame}
+                    />
+                  )}
                 </Match>
               </Switch>
             )}
           </For>
         </ol>
         <Show when={hidden() > 0}>
-          <div class="ms-2 ps-2">
-            <Button
-              variant="ghost"
-              size="2xs"
+          <div class="ms-2">
+            <ShowMore
+              hidden={hidden()}
+              pageSize={pageSize()}
               onClick={() => setLimit(shown().length + pageSize())}
-            >
-              Show {Math.min(hidden(), pageSize()).toLocaleString()} more (
-              {hidden().toLocaleString()} hidden)
-            </Button>
+            />
           </div>
         </Show>
       </Show>

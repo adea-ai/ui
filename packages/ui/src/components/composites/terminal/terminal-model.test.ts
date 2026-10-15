@@ -36,22 +36,89 @@ describe('isFailedExit', () => {
 
 describe('terminalWindow', () => {
   test('shows everything while it fits', () => {
-    expect(terminalWindow(10, 0, 1000)).toEqual({ start: 0, revealable: 0, hidden: 0 })
-    expect(terminalWindow(1000, 0, 1000)).toEqual({ start: 0, revealable: 0, hidden: 0 })
+    expect(terminalWindow(10, 0, 1000)).toMatchObject({
+      start: 0,
+      end: 10,
+      revealable: 0,
+      hidden: 0,
+    })
+    expect(terminalWindow(1000, 0, 1000)).toMatchObject({ start: 0, revealable: 0, hidden: 0 })
   })
 
   test('hides the head, counting what the parser discarded too', () => {
-    expect(terminalWindow(1001, 0, 1000)).toEqual({ start: 1, revealable: 1, hidden: 1 })
-    expect(terminalWindow(5000, 250, 1000)).toEqual({
+    expect(terminalWindow(1001, 0, 1000)).toMatchObject({ start: 1, revealable: 1, hidden: 1 })
+    expect(terminalWindow(5000, 250, 1000)).toMatchObject({
       start: 4000,
+      end: 5000,
       revealable: 4000,
       hidden: 4250,
+      later: 0,
     })
   })
 
   test('a limit below one still shows a line', () => {
     expect(terminalWindow(5, 0, 0).start).toBe(4)
     expect(terminalWindow(5, 0, -3).start).toBe(4)
+  })
+
+  describe('parked at an anchor', () => {
+    test('stays where the reader left while output arrives', () => {
+      // 100 lines when they scrolled away, 5 000 now; 10 are shown.
+      expect(terminalWindow(5000, 0, 10, 100)).toEqual({
+        start: 90,
+        end: 100,
+        revealable: 90,
+        hidden: 90,
+        later: 4900,
+        evicted: 0,
+        lost: false,
+      })
+    })
+
+    test('counts lines by position in the whole output, not in what is retained', () => {
+      // 300 were discarded; the reader left after line 400 (index 100 retained).
+      expect(terminalWindow(5000, 300, 10, 400)).toMatchObject({
+        start: 90,
+        end: 100,
+        hidden: 390,
+        later: 4900,
+        evicted: 0,
+      })
+    })
+
+    test('an anchor at the end is the tail', () => {
+      expect(terminalWindow(50, 0, 10, 50)).toMatchObject({ start: 40, end: 50, later: 0 })
+      expect(terminalWindow(50, 0, 10, 99)).toMatchObject({ start: 40, end: 50, later: 0 })
+    })
+
+    test('says how many of the lines being read retention discarded', () => {
+      // Reading lines 95..105 (anchor 105, 10 shown); lines before 100 are gone.
+      expect(terminalWindow(500, 100, 10, 105)).toEqual({
+        start: 0,
+        end: 5,
+        revealable: 0,
+        hidden: 100,
+        later: 495,
+        evicted: 5,
+        lost: false,
+      })
+    })
+
+    test('falls back to the oldest retained lines when all of them are gone', () => {
+      expect(terminalWindow(500, 1000, 10, 600)).toEqual({
+        start: 0,
+        end: 10,
+        revealable: 0,
+        hidden: 1000,
+        later: 490,
+        evicted: 10,
+        lost: true,
+      })
+    })
+
+    test('revealing earlier lines grows the parked window upward only', () => {
+      expect(terminalWindow(5000, 0, 20, 100)).toMatchObject({ start: 80, end: 100 })
+    })
   })
 })
 

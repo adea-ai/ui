@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  boundLines,
   classifyFrame,
   dedentLines,
   describeFrameGroup,
@@ -459,5 +460,51 @@ describe('dedentLines', () => {
   test('leaves blank-only input alone and never over-trims a shallower line', () => {
     expect(dedentLines(['  ', ''])).toEqual(['  ', ''])
     expect(dedentLines(['\t\ta', '\tb'])).toEqual(['\ta', 'b'])
+  })
+})
+
+describe('boundLines', () => {
+  test('returns everything that fits and counts nothing omitted', () => {
+    expect(boundLines(['a', 'bb'], 10, 100)).toEqual({
+      lines: ['a', 'bb'],
+      omittedLines: 0,
+      omittedChars: 0,
+    })
+    expect(boundLines([], 10, 100)).toEqual({ lines: [], omittedLines: 0, omittedChars: 0 })
+  })
+
+  test('stops at the line bound and counts the rest', () => {
+    expect(boundLines(['a', 'bb', 'ccc', 'dddd'], 2, 100)).toEqual({
+      lines: ['a', 'bb'],
+      omittedLines: 2,
+      omittedChars: 7,
+    })
+  })
+
+  test('cuts the line that crosses the character bound and counts what it lost', () => {
+    expect(boundLines(['aaaa', 'bbbb', 'cc'], 10, 6)).toEqual({
+      lines: ['aaaa', 'bb'],
+      omittedLines: 1,
+      omittedChars: 4,
+    })
+  })
+
+  test('a budget spent exactly shows no empty line', () => {
+    expect(boundLines(['aaaa', 'bb'], 10, 4)).toEqual({
+      lines: ['aaaa'],
+      omittedLines: 1,
+      omittedChars: 2,
+    })
+  })
+
+  test('ten thousand lines of four thousand characters stay bounded and fast', () => {
+    const lines = Array.from({ length: 9_996 }, () => 'x'.repeat(4_000))
+    const started = performance.now()
+    const bounded = boundLines(lines, 40, 10_000)
+    expect(performance.now() - started).toBeLessThan(100)
+    expect(bounded.lines.join('').length).toBe(10_000)
+    expect(bounded.lines).toHaveLength(3)
+    expect(bounded.omittedLines).toBe(9_993)
+    expect(bounded.lines.join('').length + bounded.omittedChars).toBe(9_996 * 4_000)
   })
 })
