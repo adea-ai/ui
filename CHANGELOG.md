@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.132.0](https://github.com/adea-ai/ui/compare/v0.131.1...v0.132.0) (2026-10-15)
+
+
+### Features
+
+* **empty-state:** add a secondary action beside the primary one ([#423](https://github.com/adea-ai/ui/issues/423)) ([ed7c19a](https://github.com/adea-ai/ui/commit/ed7c19ac62d82baaef1a6ef09df41bc1e97ab18b))
+* **field:** add a three-column FieldGroup ([#421](https://github.com/adea-ai/ui/issues/421)) ([6ac5220](https://github.com/adea-ai/ui/commit/6ac5220864bd9b856333bea9468f4c5d61a5f6ce))
+* **list-row:** add truncateDescription for a single-line description ([#420](https://github.com/adea-ai/ui/issues/420)) ([c4796e9](https://github.com/adea-ai/ui/commit/c4796e9934832d2843170a15cadb467d16e19f69))
+
 ## [0.131.1](https://github.com/adea-ai/ui/compare/v0.131.0...v0.131.1) (2026-10-15)
 
 
