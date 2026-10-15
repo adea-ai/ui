@@ -88,3 +88,38 @@ test('a field without step keeps whole-number behaviour', async ({ page }) => {
   await expect(workers).toHaveAttribute('aria-invalid', 'true')
   await expect(page.getByText('Workers must be a whole number.')).toBeVisible()
 })
+
+test('an integral step from a fractional min accepts the grid and rejects whole numbers off it', async ({
+  page,
+}) => {
+  // The grid is 0.5, 1.5, 2.5: whole-number inference must not apply, because
+  // the spinner's own values are fractional and 1 and 2 are the off-grid ones.
+  const margin = page.getByRole('spinbutton', { name: 'Margin', exact: true })
+  await expect(margin).toHaveAttribute('step', '1')
+  await expect(margin).toHaveValue('1.5')
+
+  await margin.focus()
+  await margin.press('ArrowUp')
+  await expect(margin).toHaveValue('2.5')
+  await expect(margin).not.toHaveAttribute('aria-invalid', 'true')
+  await margin.press('ArrowDown')
+  await margin.press('ArrowDown')
+  await expect(margin).toHaveValue('0.5')
+  await expect(margin).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByLabel('Reported changes')).toHaveText('margin=2.5;margin=1.5;margin=0.5;')
+
+  await margin.fill('1.5')
+  await expect(margin).not.toHaveAttribute('aria-invalid', 'true')
+  for (const offGrid of ['1', '2', '0.75']) {
+    await margin.fill(offGrid)
+    await expect(margin, `${offGrid} is off the 0.5 + n grid`).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    )
+  }
+  await expect(page.getByText('Margin must be 0.5 plus a multiple of 1.')).toBeVisible()
+  await expect(page.getByLabel('Reported changes')).not.toContainText('margin=1;')
+  await expect(page.getByLabel('Reported changes')).not.toContainText('margin=2;')
+  await margin.blur()
+  await expect(margin).toHaveValue('1.5')
+})

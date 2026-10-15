@@ -8,6 +8,7 @@ function NumberFieldStepFixture() {
   const [percent, setPercent] = createSignal(50)
   const [offset, setOffset] = createSignal(0.25)
   const [count, setCount] = createSignal(4)
+  const [margin, setMargin] = createSignal(1.5)
   const [changes, setChanges] = createSignal('')
   const record = (name: string, set: (value: number) => void) => (value: number) => {
     set(value)
@@ -40,6 +41,14 @@ function NumberFieldStepFixture() {
         max={2}
         step={0.25}
         onChange={record('offset', setOffset)}
+      />
+      <NumberField
+        label="Margin"
+        value={margin()}
+        min={0.5}
+        max={2.5}
+        step={1}
+        onChange={record('margin', setMargin)}
       />
       <NumberField
         label="Workers"

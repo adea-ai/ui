@@ -17,9 +17,10 @@ export type NumberFieldProps = {
    */
   step?: number
   /**
-   * Whether only whole numbers are valid. It defaults to `true`, or to whether
-   * `step` is a whole number when one is given, so `step={0.05}` accepts decimals
-   * without also saying `integer={false}`.
+   * Whether only whole numbers are valid. It defaults to `true`, or, when a
+   * `step` is given, to whether both the step and its base `min` are whole
+   * numbers, so `step={0.05}` accepts decimals without also saying
+   * `integer={false}`, and `min={0.5} step={1}` accepts 0.5, 1.5, 2.5.
    */
   integer?: boolean
   onChange: (value: number) => void
@@ -37,7 +38,12 @@ export type NumberFieldProps = {
 export function NumberField(props: NumberFieldProps) {
   const [draft, setDraft] = createSignal(String(props.value))
   const [error, setError] = createSignal('')
-  const integer = () => props.integer ?? (props.step === undefined || Number.isInteger(props.step))
+  // Whole numbers only when nothing on the grid is fractional: a whole step from
+  // a fractional `min` (0.5, 1.5, 2.5) puts the spinner's own values off the
+  // integers, so inference needs the step and its base to both be whole.
+  const integer = () =>
+    props.integer ??
+    (props.step === undefined || (Number.isInteger(props.step) && Number.isInteger(props.min)))
 
   createEffect(() => {
     setDraft(String(props.value))
