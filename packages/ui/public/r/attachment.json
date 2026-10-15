@@ -1,0 +1,25 @@
+{
+  "name": "attachment",
+  "type": "registry:ui",
+  "title": "Attachment",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/attachment/attachment.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/attachment/attachment.tsx"
+    },
+    {
+      "path": "src/components/ui/attachment/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/attachment/index.ts"
+    }
+  ]
+}

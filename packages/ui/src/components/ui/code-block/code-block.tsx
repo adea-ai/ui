@@ -1,7 +1,10 @@
 import {
+  createEffect,
   createMemo,
   createSignal,
   For,
+  on,
+  onCleanup,
   Show,
   splitProps,
   type ComponentProps,
@@ -47,6 +50,30 @@ import { cn } from '#lib/utils'
  * block that grows the moment its content resolves shifts everything below it.
  * If a caller's `highlight` changes the line box, that is the caller's height to
  * hold — `lineHeight` is a prop for exactly that reason.
+ *
+ * ## Output, not only source
+ *
+ * The same surface carries terminal output, logs and diffs inside an agent's
+ * activity, so it also:
+ *
+ * - **loads its highlighter lazily** (`loadHighlight`). The grammar is fetched
+ *   only for a block that is complete and has a language, the block renders plain
+ *   until it arrives, and a loader that returns nothing — an unknown language, a
+ *   failed fetch — leaves the plain text in place without an error. Highlighting
+ *   a block on every streamed delta would re-tokenise the whole thing per token,
+ *   so a streaming block stays plain until `complete`.
+ * - **marks lines** (`lineMarks`) as added, removed, highlighted or failed. A mark
+ *   is carried by a gutter glyph and by `<ins>`/`<del>` for the two that change
+ *   text, never by colour alone, and the glyph is not selectable so a copied
+ *   selection stays the source.
+ * - **copies the source exactly.** The copy button writes `code` as given: no
+ *   trailing-newline trimming, no line numbers, no gutter glyphs, and the whole
+ *   block even when only part of it is rendered (`lineLimit`).
+ * - **bounds a large render.** Past `lineLimit` lines the per-line renderer shows
+ *   the first lines and a control to show the rest, because tens of thousands of
+ *   row elements are a freeze, not a transcript. The plain renderer is a single
+ *   text node and needs no limit.
+ * - **comes in a small size** (`size="sm"`) for tool output inside a Trace line.
  */
 export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children'> & {
   code: string
@@ -82,7 +109,29 @@ export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children'> & {
    * any `pre` inside `highlight` output; line numbers stay on the first visual line.
    */
   wrap?: boolean
+  /** `sm` is the compact chrome for output nested inside a Trace line. */
+  size?: 'default' | 'sm'
+  /**
+   * Marks on 1-based line numbers. Applies to the per-line renderer, which is
+   * used whenever marks or line numbers are present and no `highlight` is given.
+   */
+  lineMarks?: Readonly<Record<number, CodeLineMark>>
+  /**
+   * Resolve a highlighter for the block's language. Called once the block is
+   * complete; resolving to `undefined` (or rejecting) keeps the plain rendering.
+   */
+  loadHighlight?: (language: string | undefined) => Promise<CodeHighlighter | undefined>
+  /** Lines the per-line renderer shows before offering the rest. Default 2000. */
+  lineLimit?: number
+  /** Called after each copy attempt with whether the clipboard accepted it. */
+  onCopy?: (ok: boolean) => void
 }
+
+export type CodeLineMark = 'add' | 'remove' | 'highlight' | 'error'
+export type CodeHighlighter = (code: string) => JSX.Element
+
+/** Lines the per-line renderer shows before it offers the rest. */
+export const CODE_BLOCK_LINE_LIMIT = 2_000
 
 /** The height a block must exceed before its actions are repeated. */
 export const TALL_CODE_BLOCK_PX = 480
@@ -118,6 +167,11 @@ export function CodeBlock(props: CodeBlockProps) {
     'tallThreshold',
     'maxHeight',
     'wrap',
+    'size',
+    'lineMarks',
+    'loadHighlight',
+    'lineLimit',
+    'onCopy',
     'class',
     'ref',
   ])
@@ -126,9 +180,45 @@ export function CodeBlock(props: CodeBlockProps) {
   const [failed, setFailed] = createSignal(false)
   const [tall, setTall] = createSignal(false)
 
-  const label = () => local.title ?? local.language ?? 'code'
-  const regionLabel = () => (local.language ? `${local.language} code` : 'code')
+  const [loaded, setLoaded] = createSignal<CodeHighlighter>()
+  const [showAll, setShowAll] = createSignal(false)
+
+  // A language string can come from untrusted model output. It is rendered as
+  // text, so it cannot inject markup; the cap keeps a pathological one from
+  // swallowing the header.
+  const language = () => local.language?.trim().slice(0, 40) || undefined
+  const label = () => local.title ?? language() ?? 'code'
+  const regionLabel = () => (language() ? `${language()} code` : 'code')
+  const small = () => local.size === 'sm'
   const lines = createMemo(() => local.code.replace(/\n$/, '').split('\n'))
+  const lineLimit = () => local.lineLimit ?? CODE_BLOCK_LINE_LIMIT
+  const visibleLines = createMemo(() => (showAll() ? lines() : lines().slice(0, lineLimit())))
+  const hiddenLines = () => lines().length - visibleLines().length
+  const perLine = () =>
+    local.highlight === undefined &&
+    (local.showLineNumbers === true || local.lineMarks !== undefined)
+
+  // Load once the block has stopped changing. `on` keys the effect to the
+  // language and completion, not to every streamed character, and a stale
+  // resolution (the language changed while the grammar was in flight) is dropped.
+  createEffect(
+    on(
+      () => [local.complete, language(), local.loadHighlight] as const,
+      ([complete, lang, load]) => {
+        setLoaded(undefined)
+        if (!complete || !load || local.highlight) return
+        let current = true
+        onCleanup(() => (current = false))
+        load(lang).then(
+          (highlighter) => {
+            if (current && highlighter) setLoaded(() => highlighter)
+          },
+          () => undefined
+        )
+      }
+    )
+  )
+  const highlighter = (): CodeHighlighter | undefined => local.highlight ?? loaded()
   const maxHeight = () =>
     typeof local.maxHeight === 'number' ? `${local.maxHeight}px` : local.maxHeight
 
@@ -136,11 +226,12 @@ export function CodeBlock(props: CodeBlockProps) {
     const ok = await copyText(local.code)
     setCopied(ok)
     setFailed(!ok)
+    local.onCopy?.(ok)
     if (ok) setTimeout(() => setCopied(false), 1500)
   }
 
   const Actions = () => (
-    <div class="flex items-center gap-1 opacity-0 transition-opacity group-focus-within/code:opacity-100 group-hover/code:opacity-100">
+    <div class="flex items-center gap-1 opacity-0 transition-opacity group-focus-within/code:opacity-100 group-hover/code:opacity-100 [@media(hover:none)]:opacity-100">
       {local.actions}
       <Button
         variant="ghost"
@@ -158,7 +249,13 @@ export function CodeBlock(props: CodeBlockProps) {
 
   return (
     <div
-      class={cn('group/code overflow-hidden rounded-xl border border-border bg-card', local.class)}
+      data-slot="code-block"
+      data-size={local.size ?? 'default'}
+      class={cn(
+        'group/code overflow-hidden border border-border bg-card',
+        small() ? 'rounded-lg' : 'rounded-xl',
+        local.class
+      )}
       {...rest}
       ref={(element) => {
         // Composed rather than replaced: a caller's ref must survive.
@@ -170,9 +267,12 @@ export function CodeBlock(props: CodeBlockProps) {
           setTall(element.offsetHeight > (local.tallThreshold ?? TALL_CODE_BLOCK_PX))
         })
         observer.observe(element)
+        onCleanup(() => observer.disconnect())
       }}
     >
-      <div class="flex items-center justify-between gap-2 px-3 py-1">
+      <div
+        class={cn('flex items-center justify-between gap-2', small() ? 'px-2 py-0.5' : 'px-3 py-1')}
+      >
         <span class="truncate font-code text-code text-muted-foreground">{label()}</span>
         <Actions />
       </div>
@@ -192,22 +292,23 @@ export function CodeBlock(props: CodeBlockProps) {
         aria-label={regionLabel()}
       >
         <Show
-          when={local.highlight}
+          when={highlighter()}
           fallback={
-            <pre class="m-0 px-3 py-2" style={{ 'line-height': local.lineHeight ?? '1.5' }}>
+            <pre
+              class={cn('m-0', small() ? 'px-2 py-1.5' : 'px-3 py-2')}
+              style={{ 'line-height': local.lineHeight ?? '1.5' }}
+            >
               <code class="font-code text-code">
-                <Show when={local.showLineNumbers} fallback={local.code.replace(/\n$/, '')}>
-                  <For each={lines()}>
+                <Show when={perLine()} fallback={local.code.replace(/\n$/, '')}>
+                  <For each={visibleLines()}>
                     {(line, index) => (
-                      <span class="grid grid-cols-[3ch_1fr] gap-3">
-                        <span
-                          class="text-right text-muted-foreground select-none"
-                          aria-hidden="true"
-                        >
-                          {index() + 1}
-                        </span>
-                        <span class={cn({ 'min-w-0': local.wrap })}>{line || ' '}</span>
-                      </span>
+                      <CodeLine
+                        line={line}
+                        number={index() + 1}
+                        numbered={local.showLineNumbers === true}
+                        mark={local.lineMarks?.[index() + 1]}
+                        wrap={local.wrap === true}
+                      />
                     )}
                   </For>
                 </Show>
@@ -215,7 +316,20 @@ export function CodeBlock(props: CodeBlockProps) {
             </pre>
           }
         >
-          {(highlight) => <div class="px-3 py-2">{highlight()(local.code)}</div>}
+          {(highlight) => (
+            <div class={small() ? 'px-2 py-1.5' : 'px-3 py-2'}>{highlight()(local.code)}</div>
+          )}
+        </Show>
+        <Show when={perLine() && hiddenLines() > 0}>
+          <div class="flex items-center gap-2 border-t border-border px-3 py-1 text-xs text-muted-foreground">
+            <span>
+              Showing the first {visibleLines().length.toLocaleString()} of{' '}
+              {lines().length.toLocaleString()} lines.
+            </span>
+            <Button variant="ghost" size="2xs" onClick={() => setShowAll(true)}>
+              Show all {lines().length.toLocaleString()} lines
+            </Button>
+          </div>
         </Show>
         {/*
           In the scroller's box, and a single line: the indicator must not add
@@ -235,6 +349,77 @@ export function CodeBlock(props: CodeBlockProps) {
         </div>
       </Show>
     </div>
+  )
+}
+
+const MARK_GLYPH: Readonly<Record<CodeLineMark, string>> = {
+  add: '+',
+  remove: '−',
+  highlight: '',
+  error: '!',
+}
+
+/**
+ * One rendered line. The gutter glyph and the element (`ins`/`del`) carry what a
+ * mark means so it survives greyscale and a screen reader; both gutters are
+ * unselectable so dragging across the block and copying yields only source.
+ */
+function CodeLine(props: {
+  line: string
+  number: number
+  numbered: boolean
+  mark?: CodeLineMark
+  wrap: boolean
+}) {
+  const content = () => (
+    <>
+      <Show when={props.numbered}>
+        <span class="text-right text-muted-foreground select-none" aria-hidden="true">
+          {props.number}
+        </span>
+      </Show>
+      <span
+        class="w-[1ch] text-center text-muted-foreground select-none"
+        aria-hidden="true"
+        data-slot="code-line-mark"
+      >
+        {props.mark ? MARK_GLYPH[props.mark] : ''}
+      </span>
+      <span class={cn({ 'min-w-0': props.wrap })}>{props.line || ' '}</span>
+    </>
+  )
+  const rowClass = () =>
+    cn(
+      'grid gap-3 no-underline',
+      props.numbered ? 'grid-cols-[3ch_1ch_1fr]' : 'grid-cols-[1ch_1fr]',
+      {
+        'bg-success-subtle': props.mark === 'add',
+        'bg-destructive-subtle': props.mark === 'remove' || props.mark === 'error',
+        'bg-primary-subtle': props.mark === 'highlight',
+      }
+    )
+  return (
+    <Show
+      when={props.mark === 'add' || props.mark === 'remove'}
+      fallback={
+        <span data-mark={props.mark} class={rowClass()}>
+          {content()}
+        </span>
+      }
+    >
+      <Show
+        when={props.mark === 'add'}
+        fallback={
+          <del data-mark="remove" class={rowClass()}>
+            {content()}
+          </del>
+        }
+      >
+        <ins data-mark="add" class={rowClass()}>
+          {content()}
+        </ins>
+      </Show>
+    </Show>
   )
 }
 

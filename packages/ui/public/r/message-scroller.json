@@ -1,0 +1,31 @@
+{
+  "name": "message-scroller",
+  "type": "registry:ui",
+  "title": "Message Scroller",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/conversation",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/message-scroller/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/message-scroller/index.ts"
+    },
+    {
+      "path": "src/components/composites/message-scroller/message-scroller.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/message-scroller/message-scroller.tsx"
+    },
+    {
+      "path": "src/components/composites/message-scroller/scroll-anchor.ts",
+      "type": "registry:ui",
+      "target": "components/composites/message-scroller/scroll-anchor.ts"
+    }
+  ]
+}
