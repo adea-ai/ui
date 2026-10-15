@@ -44,8 +44,8 @@ given and nothing else.
 
 ## Coverage matrix
 
-See the table at the end of this file; each row names the component, its
-module path and the host data that makes it live.
+See [`ai-elements-coverage.md`](./ai-elements-coverage.md); each row names the
+component, its module path, its stories and the host data that makes it live.
 
 ## Composition
 
