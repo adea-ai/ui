@@ -7,6 +7,19 @@ import {
   type MessageInline,
 } from '../src/components/ui/message/parse-message-text'
 
+function measureContinuations(count: number): number {
+  const source = `- root\n${'  detail\n'.repeat(count)}`
+  const start = performance.now()
+  const [block] = parseMessageText(source)
+  const elapsed = performance.now() - start
+  expect(block?.kind).toBe('list')
+  if (block?.kind === 'list') {
+    expect(block.items).toHaveLength(1)
+    expect(block.items[0]).toHaveLength(1 + count * 2)
+  }
+  return elapsed
+}
+
 /**
  * The parser reads untrusted text, so these hold three things: what it
  * recognises (and what it must leave alone), that nothing it returns can become
@@ -537,6 +550,14 @@ describe('robustness', () => {
       // A linear parse takes a fraction of a second; a quadratic one takes minutes.
       expect(elapsed, `${name} took ${Math.round(elapsed)}ms`).toBeLessThan(5_000)
     }
+  })
+
+  test('long list continuations scale linearly', () => {
+    measureContinuations(2_000)
+    const small = Math.min(...Array.from({ length: 3 }, () => measureContinuations(8_000)))
+    const large = Math.min(...Array.from({ length: 3 }, () => measureContinuations(32_000)))
+    // Four times the lines should not take much more than four times as long.
+    expect(large / Math.max(small, 1)).toBeLessThan(10)
   })
 
   test('doubling the input does not much more than double the time', () => {

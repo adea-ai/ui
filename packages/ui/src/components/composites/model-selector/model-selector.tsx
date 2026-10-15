@@ -1,5 +1,13 @@
 import { Brain, Check, ChevronsUpDown } from 'lucide-solid'
-import { createMemo, createSignal, createUniqueId, For, Show, splitProps } from 'solid-js'
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  createUniqueId,
+  For,
+  Show,
+  splitProps,
+} from 'solid-js'
 import { cn } from '#lib/utils'
 import { Button } from '../../ui/button'
 import {
@@ -228,6 +236,10 @@ function ModelMenu(props: PickerProps) {
   const groups = createMemo(() => groupModels(props.models))
   const inert = () => props.blocked || props.models.length === 0
 
+  createEffect(() => {
+    if (inert()) setOpen(false)
+  })
+
   return (
     <DropdownMenu
       open={open()}
@@ -255,7 +267,9 @@ function ModelMenu(props: PickerProps) {
           onChange={(id: unknown) => {
             // Disabled rows cannot be activated, but the guard is the contract.
             const model = typeof id === 'string' ? findModel(props.models, id) : undefined
-            if (model && !model.disabledReason) props.onChange(model.id)
+            if (!props.blocked && model && model.disabledReason === undefined) {
+              props.onChange(model.id)
+            }
           }}
         >
           <For each={groups()}>
@@ -266,7 +280,7 @@ function ModelMenu(props: PickerProps) {
                   {(model) => (
                     <DropdownMenuRadioItem
                       value={model.id}
-                      disabled={model.disabledReason !== undefined}
+                      disabled={inert() || model.disabledReason !== undefined}
                     >
                       <ModelOptionBody model={model} />
                     </DropdownMenuRadioItem>
@@ -284,6 +298,10 @@ function ModelMenu(props: PickerProps) {
 function ModelSearch(props: PickerProps) {
   const [open, setOpen] = createSignal(false)
   const groups = createMemo(() => groupModels(props.models))
+
+  createEffect(() => {
+    if (props.blocked) setOpen(false)
+  })
 
   return (
     <Popover
@@ -314,9 +332,9 @@ function ModelSearch(props: PickerProps) {
                     {(model) => (
                       <CommandItem
                         value={modelSearchValue(model)}
-                        disabled={model.disabledReason !== undefined}
+                        disabled={props.blocked || model.disabledReason !== undefined}
                         onSelect={() => {
-                          if (model.disabledReason) return
+                          if (props.blocked || model.disabledReason !== undefined) return
                           props.onChange(model.id)
                           setOpen(false)
                         }}
@@ -349,6 +367,10 @@ function EffortMenu(props: {
   const [open, setOpen] = createSignal(false)
   const label = () => props.efforts.find((effort) => effort.id === props.value)?.label
 
+  createEffect(() => {
+    if (props.blocked) setOpen(false)
+  })
+
   return (
     <DropdownMenu
       open={open()}
@@ -371,14 +393,14 @@ function EffortMenu(props: {
         <DropdownMenuRadioGroup
           value={props.value ?? ''}
           onChange={(id: unknown) => {
-            if (typeof id === 'string') props.onChange(id)
+            if (!props.blocked && typeof id === 'string') props.onChange(id)
           }}
         >
           <DropdownMenuGroup>
             <DropdownMenuLabel>Thinking effort</DropdownMenuLabel>
             <For each={props.efforts}>
               {(effort) => (
-                <DropdownMenuRadioItem value={effort.id}>
+                <DropdownMenuRadioItem value={effort.id} disabled={props.blocked}>
                   <span class="flex min-w-0 flex-col">
                     <span>{effort.label}</span>
                     <Show when={effort.description}>

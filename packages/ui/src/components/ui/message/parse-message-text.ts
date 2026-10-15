@@ -350,11 +350,10 @@ export function parseMessageText(
         }
         // An indented continuation belongs to the previous item.
         if (/^ {2,}\S/.test(current) && items.length > 0) {
-          items[items.length - 1] = [
-            ...items[items.length - 1]!,
-            { kind: 'text', text: ' ' },
-            ...inline(current.trim()),
-          ]
+          // Append in place: copying the accumulated spans on every continuation
+          // makes a long item quadratic in its number of lines.
+          const item = items[items.length - 1]!
+          item.push({ kind: 'text', text: ' ' }, ...inline(current.trim()))
           rawLines.push(current)
           index += 1
           continue

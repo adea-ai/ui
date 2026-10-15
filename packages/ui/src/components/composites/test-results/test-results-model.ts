@@ -111,6 +111,8 @@ export type RunCounts = Readonly<{
   /** Whose numbers these are. `listed` must be labelled as such. */
   basis: 'reported' | 'listed'
   lines: readonly CountLine[]
+  /** The host's total, when supplied. */
+  reportedTotal?: number
   /** The reported total, when the host gave one and the list disagrees. */
   totalNote?: Readonly<{ reported: number; listed: number }>
 }>
@@ -148,7 +150,12 @@ export function reconcileCounts(summary: TestSummary | undefined, listed: Listed
       hasTotal && listed.total > 0 && summary.total !== listed.total
         ? { reported: summary.total as number, listed: listed.total }
         : undefined
-    return { basis: 'reported', lines, ...(totalNote && { totalNote }) }
+    return {
+      basis: 'reported',
+      lines,
+      ...(hasTotal && { reportedTotal: summary.total as number }),
+      ...(totalNote && { totalNote }),
+    }
   }
 
   const lines: CountLine[] = OUTCOMES.filter((outcome) => listed[outcome] > 0).map((outcome) => ({
@@ -217,6 +224,44 @@ export function testKey(parent: string, test: TestCase, index: number): string {
   return `${parent}:${test.id ?? `t${index}`}`
 }
 
+/** Distinguish repeated ids without tying a row to the object instance it renders. */
+export function repeatedKey(key: string, occurrence: number): string {
+  return JSON.stringify([key, occurrence])
+}
+
+export type BoundedEntry<T> = Readonly<{
+  key: string
+  item: T
+  index: number
+}>
+
+/** Build keyed rows only for the currently visible prefix of a bounded list. */
+export function boundedEntries<T>(
+  items: readonly T[],
+  visibleCount: number,
+  itemKey: (item: T, index: number) => string
+): Readonly<{
+  entries: readonly BoundedEntry<T>[]
+  byKey: ReadonlyMap<string, BoundedEntry<T>>
+}> {
+  const entries: BoundedEntry<T>[] = []
+  const byKey = new Map<string, BoundedEntry<T>>()
+  const occurrences = new Map<string, number>()
+  const count = Math.max(0, Math.min(items.length, Math.floor(visibleCount)))
+
+  for (let index = 0; index < count; index += 1) {
+    const item = items[index]!
+    const base = itemKey(item, index)
+    const occurrence = occurrences.get(base) ?? 0
+    occurrences.set(base, occurrence + 1)
+    const entry = { key: repeatedKey(base, occurrence), item, index }
+    entries.push(entry)
+    byKey.set(entry.key, entry)
+  }
+
+  return { entries, byKey }
+}
+
 /** The key of the first failing test in reading order, so exactly one failure opens by default. */
 export function firstFailureKey(suites: readonly TestSuite[]): string | undefined {
   type Frame = { suites: readonly TestSuite[]; parent: string; index: number }
@@ -230,11 +275,46 @@ export function firstFailureKey(suites: readonly TestSuite[]): string | undefine
     }
     frame.index += 1
     const key = suiteKey(frame.parent, suite, frame.index - 1)
-    const tests = suite.tests ?? []
-    for (let i = 0; i < tests.length; i += 1) {
-      if (tests[i]!.status === 'failed') return testKey(key, tests[i]!, i)
+    for (let i = 0; i < (suite.tests?.length ?? 0); i += 1) {
+      if (suite.tests![i]!.status === 'failed') return testKey(key, suite.tests![i]!, i)
     }
     if (suite.suites?.length) stack.push({ suites: suite.suites, parent: key, index: 0 })
+  }
+  return undefined
+}
+
+/** The unique rendering key for the first failure, including repeated host ids. */
+export function firstFailureRenderKey(suites: readonly TestSuite[]): string | undefined {
+  type Frame = {
+    suites: readonly TestSuite[]
+    parent: string
+    index: number
+    occurrences: Map<string, number>
+  }
+  const stack: Frame[] = [{ suites, parent: '', index: 0, occurrences: new Map() }]
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1]!
+    const suite = frame.suites[frame.index]
+    if (!suite) {
+      stack.pop()
+      continue
+    }
+    frame.index += 1
+    const baseKey = suiteKey(frame.parent, suite, frame.index - 1)
+    const suiteOccurrence = frame.occurrences.get(baseKey) ?? 0
+    frame.occurrences.set(baseKey, suiteOccurrence + 1)
+    const key = repeatedKey(baseKey, suiteOccurrence)
+    const tests = suite.tests ?? []
+    const testOccurrences = new Map<string, number>()
+    for (let i = 0; i < tests.length; i += 1) {
+      const baseTestKey = testKey(key, tests[i]!, i)
+      const testOccurrence = testOccurrences.get(baseTestKey) ?? 0
+      testOccurrences.set(baseTestKey, testOccurrence + 1)
+      if (tests[i]!.status === 'failed') return repeatedKey(baseTestKey, testOccurrence)
+    }
+    if (suite.suites?.length) {
+      stack.push({ suites: suite.suites, parent: key, index: 0, occurrences: new Map() })
+    }
   }
   return undefined
 }

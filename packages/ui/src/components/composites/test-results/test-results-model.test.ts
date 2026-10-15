@@ -1,10 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  boundedEntries,
   describeCount,
   firstFailureKey,
+  firstFailureRenderKey,
   formatDuration,
   listedCounts,
   reconcileCounts,
+  repeatedKey,
   suiteKey,
   suiteState,
   testKey,
@@ -105,7 +108,13 @@ describe('reconcileCounts', () => {
   test('when nothing is listed there is nothing to disagree with', () => {
     const result = reconcileCounts({ passed: 40, failed: 2, total: 42 }, none)
     expect(result.lines.every((line) => !line.differs)).toBe(true)
+    expect(result.reportedTotal).toBe(42)
     expect(result.totalNote).toBeUndefined()
+  })
+
+  test('keeps a supplied total when no outcome counts or tests are listed', () => {
+    const result = reconcileCounts({ total: 10 }, none)
+    expect(result).toEqual({ basis: 'reported', lines: [], reportedTotal: 10 })
   })
 
   test('a failures-only list says so by showing zero listed', () => {
@@ -233,5 +242,50 @@ describe('keys and the first failure', () => {
       { name: 'b', tests: [{ name: 'worse', status: 'failed' }] },
     ])
     expect(key).toBe('/s0/s0:t0')
+  })
+
+  test('render keys distinguish duplicate stable ids by their sibling occurrence', () => {
+    const values = [
+      {
+        name: 'same',
+        id: 'suite',
+        tests: [{ name: 'first', id: 'test', status: 'passed' as const }],
+      },
+      {
+        name: 'same',
+        id: 'suite',
+        tests: [{ name: 'second', id: 'test', status: 'failed' as const }],
+      },
+    ]
+    const secondSuite = repeatedKey('/suite', 1)
+    expect(firstFailureRenderKey(values)).toBe(
+      repeatedKey(testKey(secondSuite, values[1]!.tests![0]!, 0), 0)
+    )
+    expect(
+      firstFailureRenderKey([
+        { ...values[1]!, tests: [{ ...values[1]!.tests![0]!, status: 'failed' }] },
+      ])
+    ).toBe(repeatedKey(testKey(repeatedKey('/suite', 0), values[1]!.tests![0]!, 0), 0))
+    expect(firstFailureKey(values)).toBe('/suite:test')
+  })
+
+  test('bounded entries key only the visible prefix and keep duplicate ids distinct', () => {
+    const items = [
+      { id: 'same', name: 'first' },
+      { id: 'same', name: 'second' },
+      { id: 'later', name: 'hidden' },
+    ]
+    const itemKey = (item: (typeof items)[number]) => `/${item.id}`
+    const firstPage = boundedEntries(items, 1, itemKey)
+
+    expect(firstPage.entries.map((entry) => entry.key)).toEqual([repeatedKey('/same', 0)])
+    expect(firstPage.byKey.size).toBe(1)
+    expect(firstPage.byKey.has(repeatedKey('/same', 1))).toBe(false)
+    expect(firstPage.byKey.has('/later')).toBe(false)
+
+    const expandedPage = boundedEntries(items, 2, itemKey)
+    expect(expandedPage.entries[0]!.key).toBe(firstPage.entries[0]!.key)
+    expect(expandedPage.entries[1]!.key).toBe(repeatedKey('/same', 1))
+    expect(expandedPage.byKey.get(repeatedKey('/same', 1))?.item).toBe(items[1])
   })
 })

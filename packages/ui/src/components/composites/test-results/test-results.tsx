@@ -5,6 +5,7 @@ import {
   For,
   Show,
   splitProps,
+  type Accessor,
   type ComponentProps,
   type JSX,
 } from 'solid-js'
@@ -14,8 +15,9 @@ import { DiffBlock } from '../../ui/diff-block'
 import { Trace, TraceDetail, TraceLine, type TraceStatus } from '../../ui/trace'
 import { StackTrace, type StackTraceProps } from '../stack-trace'
 import {
+  boundedEntries,
   describeCount,
-  firstFailureKey,
+  firstFailureRenderKey,
   formatDuration,
   listedCounts,
   reconcileCounts,
@@ -138,16 +140,28 @@ const TRACE_STATUS: Readonly<Record<TestCaseStatus, { status: TraceStatus; label
 /** A list that shows its first `limit` items and offers the rest. */
 function Bounded<T>(props: {
   items: readonly T[]
+  itemKey: (item: T, index: number) => string
   limit: number
   noun: string
-  children: (item: T, index: number) => JSX.Element
+  children: (item: Accessor<T>, index: Accessor<number>, key: string) => JSX.Element
 }) {
   const [shown, setShown] = createSignal(props.limit)
-  const visible = () => props.items.slice(0, shown())
+  const page = createMemo(() => boundedEntries(props.items, shown(), props.itemKey))
+  const visible = () => page().entries
+  const visibleKeys = createMemo(() => visible().map((entry) => entry.key))
   const hidden = () => props.items.length - visible().length
   return (
     <>
-      <For each={visible()}>{(item, index) => props.children(item, index())}</For>
+      <For each={visibleKeys()}>
+        {(key) => {
+          const entry = createMemo(() => page().byKey.get(key)!)
+          return props.children(
+            () => entry().item,
+            () => entry().index,
+            key
+          )
+        }}
+      </For>
       <Show when={hidden() > 0}>
         <li class="px-1.5 py-0.5">
           <Button variant="ghost" size="2xs" onClick={() => setShown(shown() + props.limit)}>
@@ -161,33 +175,34 @@ function Bounded<T>(props: {
 }
 
 function TestLine(props: {
-  test: TestCase
+  test: Accessor<TestCase>
   keyed: string
   openKey?: string
   onOpenFrame?: TestResultsProps['onOpenFrame']
 }) {
-  const state = () => (props.test.status ? TRACE_STATUS[props.test.status] : undefined)
-  const hasDetail = () => Boolean(props.test.message || props.test.diff || props.test.stack)
+  const test = () => props.test()
+  const state = () => (test().status ? TRACE_STATUS[test().status as TestCaseStatus] : undefined)
+  const hasDetail = () => Boolean(test().message || test().diff || test().stack)
   return (
     <TraceLine
-      title={props.test.name}
+      title={test().name}
       status={state()?.status}
       statusLabel={state()?.label}
-      meta={formatDuration(props.test.durationMs)}
+      meta={formatDuration(test().durationMs)}
       defaultOpen={props.openKey === props.keyed}
     >
       {hasDetail() ? (
         <TraceDetail class="flex flex-col gap-2">
-          <Show when={props.test.message}>
+          <Show when={test().message}>
             <pre class="m-0 font-code text-code whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">
-              {props.test.message}
+              {test().message}
             </pre>
           </Show>
-          <Show when={props.test.diff}>
-            <DiffBlock patch={props.test.diff!} complete title="Expected and received" />
+          <Show when={test().diff}>
+            <DiffBlock patch={test().diff!} complete title="Expected and received" />
           </Show>
-          <Show when={props.test.stack}>
-            <StackTrace text={props.test.stack!} onOpenFrame={props.onOpenFrame} />
+          <Show when={test().stack}>
+            <StackTrace text={test().stack!} onOpenFrame={props.onOpenFrame} />
           </Show>
         </TraceDetail>
       ) : undefined}
@@ -196,18 +211,20 @@ function TestLine(props: {
 }
 
 function SuiteLine(props: {
-  suite: TestSuite
+  suite: Accessor<TestSuite>
   keyed: string
   limit: number
   openKey?: string
   onOpenFrame?: TestResultsProps['onOpenFrame']
 }) {
-  const counts = createMemo(() => listedCounts([props.suite]))
+  const suite = () => props.suite()
+  const counts = createMemo(() => listedCounts([suite()]))
   const state = createMemo(() => suiteState(counts()))
-  const children = () => (props.suite.tests?.length ?? 0) + (props.suite.suites?.length ?? 0) > 0
+  const children = () => (suite().tests?.length ?? 0) + (suite().suites?.length ?? 0) > 0
+  const [open, setOpen] = createSignal(state() === 'failed')
   const description = () => {
     const parts = [
-      props.suite.file,
+      suite().file,
       counts().failed > 0 ? `${counts().failed.toLocaleString()} failed` : undefined,
     ]
     return parts.filter(Boolean).join(' · ') || undefined
@@ -215,7 +232,7 @@ function SuiteLine(props: {
   return (
     <TraceLine
       icon={<FlaskConical />}
-      title={props.suite.name}
+      title={suite().name}
       description={description()}
       status={
         state() === 'failed'
@@ -233,33 +250,48 @@ function SuiteLine(props: {
             ? 'All listed tests passed'
             : undefined
       }
-      meta={formatDuration(props.suite.durationMs)}
-      defaultOpen={state() === 'failed'}
+      meta={formatDuration(suite().durationMs)}
+      open={open()}
+      onOpenChange={setOpen}
     >
       {children() ? (
-        <Trace size="sm" aria-label={`${props.suite.name} tests`}>
-          <Bounded items={props.suite.tests ?? []} limit={props.limit} noun="tests">
-            {(test, index) => (
-              <TestLine
-                test={test}
-                keyed={testKey(props.keyed, test, index)}
-                openKey={props.openKey}
-                onOpenFrame={props.onOpenFrame}
-              />
-            )}
-          </Bounded>
-          <Bounded items={props.suite.suites ?? []} limit={props.limit} noun="suites">
-            {(suite, index) => (
-              <SuiteLine
-                suite={suite}
-                keyed={suiteKey(props.keyed, suite, index)}
+        <div>
+          <Show when={open()}>
+            <Trace size="sm" aria-label={`${suite().name} tests`}>
+              <Bounded
+                items={suite().tests ?? []}
+                itemKey={(test, index) => testKey(props.keyed, test, index)}
                 limit={props.limit}
-                openKey={props.openKey}
-                onOpenFrame={props.onOpenFrame}
-              />
-            )}
-          </Bounded>
-        </Trace>
+                noun="tests"
+              >
+                {(test, _index, key) => (
+                  <TestLine
+                    test={test}
+                    keyed={key}
+                    openKey={props.openKey}
+                    onOpenFrame={props.onOpenFrame}
+                  />
+                )}
+              </Bounded>
+              <Bounded
+                items={suite().suites ?? []}
+                itemKey={(nested, index) => suiteKey(props.keyed, nested, index)}
+                limit={props.limit}
+                noun="suites"
+              >
+                {(nested, _index, key) => (
+                  <SuiteLine
+                    suite={nested}
+                    keyed={key}
+                    limit={props.limit}
+                    openKey={props.openKey}
+                    onOpenFrame={props.onOpenFrame}
+                  />
+                )}
+              </Bounded>
+            </Trace>
+          </Show>
+        </div>
       ) : undefined}
     </TraceLine>
   )
@@ -279,9 +311,13 @@ export function TestResults(props: TestResultsProps) {
   const listed = createMemo(() => listedCounts(local.suites))
   const counts = createMemo(() => reconcileCounts(local.summary, listed()))
   const limit = () => Math.max(1, Math.floor(local.listLimit ?? TEST_RESULTS_LIST_LIMIT))
-  const openKey = createMemo(() => firstFailureKey(local.suites))
+  const openKey = createMemo(() => firstFailureRenderKey(local.suites))
   const duration = () => formatDuration(local.summary?.durationMs, 'long')
-  const nothing = () => counts().lines.length === 0 && local.suites.length === 0 && !local.running
+  const nothing = () =>
+    counts().lines.length === 0 &&
+    counts().reportedTotal === undefined &&
+    local.suites.length === 0 &&
+    !local.running
 
   return (
     <section
@@ -304,6 +340,17 @@ export function TestResults(props: TestResultsProps) {
               </span>
             </Show>
             <For each={counts().lines}>{(line) => <CountReadout line={line} />}</For>
+            <Show
+              when={
+                counts().lines.length === 0 &&
+                !counts().totalNote &&
+                counts().reportedTotal !== undefined
+              }
+            >
+              <span class="text-muted-foreground">
+                {counts().reportedTotal?.toLocaleString()} tests reported
+              </span>
+            </Show>
             <Show when={counts().totalNote}>
               {(note) => (
                 <span class="text-muted-foreground">
@@ -323,11 +370,16 @@ export function TestResults(props: TestResultsProps) {
         </div>
         <Show when={local.suites.length > 0}>
           <Trace aria-label="Test suites">
-            <Bounded items={local.suites} limit={limit()} noun="suites">
-              {(suite, index) => (
+            <Bounded
+              items={local.suites}
+              itemKey={(suite, index) => suiteKey('', suite, index)}
+              limit={limit()}
+              noun="suites"
+            >
+              {(suite, _index, key) => (
                 <SuiteLine
                   suite={suite}
-                  keyed={suiteKey('', suite, index)}
+                  keyed={key}
                   limit={limit()}
                   openKey={openKey()}
                   onOpenFrame={local.onOpenFrame}
