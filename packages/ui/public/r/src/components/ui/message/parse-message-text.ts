@@ -142,6 +142,13 @@ export function parseInline(
       const double = text[index + 1] === char
       const delimiter = double ? char + char : char
       const start = index + delimiter.length
+      // Word-internal underscores cannot open emphasis. Reject before scanning,
+      // and consume both marks so the second cannot rescan the remaining pairs.
+      if (char === '_' && index > 0 && /[A-Za-z0-9]/.test(text[index - 1] ?? '')) {
+        buffer += delimiter
+        index = start
+        continue
+      }
       const next = text[start]
       // A delimiter opens only before a non-space, so `a * b * c` and `2 * 3` stay arithmetic.
       if (next !== undefined && !/\s/.test(next)) {
@@ -155,18 +162,13 @@ export function parseInline(
           continue
         }
         if (close > start && !/\s/.test(text[close - 1] ?? ' ')) {
-          // `_` inside a word (snake_case) is not emphasis.
-          const wordInternal =
-            char === '_' && index > 0 && /[A-Za-z0-9]/.test(text[index - 1] ?? '')
-          if (!wordInternal) {
-            flush()
-            out.push({
-              kind: double ? 'strong' : 'em',
-              children: parseInline(text.slice(start, close), depth + 1, options),
-            })
-            index = close + delimiter.length
-            continue
-          }
+          flush()
+          out.push({
+            kind: double ? 'strong' : 'em',
+            children: parseInline(text.slice(start, close), depth + 1, options),
+          })
+          index = close + delimiter.length
+          continue
         }
       }
     }

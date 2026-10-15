@@ -420,7 +420,11 @@ function Inline(props: { nodes: readonly MessageInline[]; citations?: MessageCit
               const marker = () => cite() as { numbers: readonly number[]; raw: string }
               // The parser read this as a citation only while the host had sources;
               // if they have gone since, the marker is the text it was written as.
-              return props.citations ? props.citations.render(marker().numbers) : marker().raw
+              // Match invokes this callback untracked; JSX keeps renderer and
+              // same-count source replacements reactive without replacing the block.
+              return (
+                <>{props.citations ? props.citations.render(marker().numbers) : marker().raw}</>
+              )
             }}
           </Match>
         </Switch>

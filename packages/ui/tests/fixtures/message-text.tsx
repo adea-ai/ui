@@ -1,7 +1,12 @@
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { messageCitations } from '../../src/components/composites/inline-citation'
-import { MessageText, type MessageCodeBlockProps } from '../../src/components/ui/message'
+import type { Source } from '../../src/components/composites/sources'
+import {
+  MessageText,
+  type MessageCitations,
+  type MessageCodeBlockProps,
+} from '../../src/components/ui/message'
 import '../../src/styles/globals.css'
 
 /**
@@ -13,6 +18,8 @@ type FixtureWindow = Window & {
   pwned?: string[]
   setStreamText?: (text: string) => void
   setStreaming?: (streaming: boolean) => void
+  setCitationSources?: (sources: readonly Source[]) => void
+  setCitations?: (citations: MessageCitations | undefined) => void
 }
 const fixture = window as FixtureWindow
 fixture.pwned = []
@@ -94,6 +101,11 @@ const [stream, setStream] = createSignal('')
 const [streaming, setStreaming] = createSignal(true)
 fixture.setStreamText = setStream
 fixture.setStreaming = setStreaming
+const [citations, setCitations] = createSignal<MessageCitations | undefined>(
+  messageCitations([{ title: 'Source A', url: 'https://example.com/a' }])
+)
+fixture.setCitationSources = (sources) => setCitations(messageCitations(sources))
+fixture.setCitations = setCitations
 
 render(
   () => (
@@ -103,6 +115,7 @@ render(
       <MessageText id="stream" text={stream()} streaming={streaming()} />
       <MessageText id="cited" text={citedText} citations={messageCitations(cited)} />
       <MessageText id="uncited" text={citedText} />
+      <MessageText id="reactive-citations" text="Claim [^1]." citations={citations()} />
       <MessageText
         id="marked"
         text={marked}

@@ -271,6 +271,15 @@ describe('inline spans', () => {
     ])
   })
 
+  test('word-internal underscore pairs stay literal before valid emphasis', () => {
+    expect(parseInline('a__b a__b _italic_ __bold__')).toEqual([
+      { kind: 'text', text: 'a__b a__b ' },
+      { kind: 'em', children: [{ kind: 'text', text: 'italic' }] },
+      { kind: 'text', text: ' ' },
+      { kind: 'strong', children: [{ kind: 'text', text: 'bold' }] },
+    ])
+  })
+
   test('arithmetic stays arithmetic', () => {
     expect(parseInline('2 * 3 * 4')).toEqual([{ kind: 'text', text: '2 * 3 * 4' }])
     expect(parseInline('a * b')).toEqual([{ kind: 'text', text: 'a * b' }])
@@ -418,6 +427,15 @@ describe('safeHref', () => {
 })
 
 describe('robustness', () => {
+  test('word-internal underscore pairs scale linearly', () => {
+    // Warm up before comparing the best of three runs to limit scheduler noise.
+    measureUnderscores(2_000)
+    const small = Math.min(...Array.from({ length: 3 }, () => measureUnderscores(2_000)))
+    const large = Math.min(...Array.from({ length: 3 }, () => measureUnderscores(8_000)))
+    // Four times the input is ~4x for a linear parser and ~16x for the regression.
+    expect(large / Math.max(small, 1)).toBeLessThan(10)
+  })
+
   test('random input never throws and keeps its invariants', () => {
     const random = prng(0xadea)
     const alphabet = [
@@ -505,6 +523,7 @@ describe('robustness', () => {
       'emphasis over unclosed strong': '*a **b '.repeat(MB / 7),
       'unclosed citations': '[^1 [^1] '.repeat(MB / 9),
       'unclosed underscores': '_a '.repeat(MB / 3),
+      'word-internal underscore pairs': 'a__b '.repeat(MB / 5),
       'unclosed backticks': '`a '.repeat(MB / 3),
       'nested emphasis': '*'.repeat(MB / 2) + 'x' + '*'.repeat(MB / 2),
       'long list': '- item\n'.repeat(MB / 7),
@@ -534,6 +553,16 @@ describe('robustness', () => {
 })
 
 /** Milliseconds one parse takes. */
+function measureUnderscores(repeats: number): number {
+  const source = 'a__b '.repeat(repeats)
+  const start = performance.now()
+  const nodes = parseInline(source)
+  const elapsed = performance.now() - start
+  expect(nodes).toEqual([{ kind: 'text', text: source }])
+  return elapsed
+}
+
+/** Milliseconds one block parse takes. */
 function measure(text: string): number {
   const start = performance.now()
   parseMessageText(text)

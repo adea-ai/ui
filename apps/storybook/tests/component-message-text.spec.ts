@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
+import type { MessageCitations } from '../../../packages/ui/src/components/ui/message'
+import type { Source } from '../../../packages/ui/src/components/composites/sources'
 import { bundleFixture } from './fixture-bundle'
 import { expectNoAxeViolations, hasNoHorizontalOverflow, mountFixture } from './ai-elements-harness'
 
@@ -23,6 +25,8 @@ type StreamWindow = Window & {
   pwned?: string[]
   setStreamText?: (text: string) => void
   setStreaming?: (streaming: boolean) => void
+  setCitationSources?: (sources: readonly Source[]) => void
+  setCitations?: (citations: MessageCitations | undefined) => void
   tags?: Record<string, Element>
 }
 
@@ -195,6 +199,8 @@ const survivors = (page: Page) =>
 const setText = (page: Page, text: string) =>
   page.evaluate((next) => (window as StreamWindow).setStreamText?.(next), text)
 
+const strip = (value: string | null) => (value ?? '').replace(/[0-9+−!]/g, '').trim()
+
 test('streaming appends leave finished blocks, their focus and selection untouched', async ({
   page,
 }) => {
@@ -362,6 +368,66 @@ test('a multi-source marker names every source it cites', async ({ page }) => {
   await expect(popover).toContainText('Runbook')
 })
 
+test('same-count source replacement updates the citation badge and destination', async ({
+  page,
+}) => {
+  const root = page.locator('#reactive-citations')
+  await expect(root.getByRole('button', { name: /Source A/ })).toBeVisible()
+  await tag(page, 'citation-paragraph', '#reactive-citations > p')
+
+  await page.evaluate(() =>
+    (window as StreamWindow).setCitationSources?.([
+      { title: 'Source B', url: 'https://example.com/b' },
+    ])
+  )
+  await expect(root.getByRole('button', { name: /Source A/ })).toHaveCount(0)
+  await root.getByRole('button', { name: /Source B/ }).click()
+  await expect(page.getByRole('dialog')).toContainText('Source B')
+  await expect(page.getByRole('dialog').getByRole('link')).toHaveAttribute(
+    'href',
+    'https://example.com/b'
+  )
+  expect(await survivors(page)).toEqual({
+    'citation-paragraph': { connected: true, expando: true },
+  })
+})
+
+test('citation renderer replacement and removal recover without changing the text', async ({
+  page,
+}) => {
+  const root = page.locator('#reactive-citations')
+  await expect(root.getByRole('button', { name: /Source A/ })).toBeVisible()
+  await page.evaluate(() =>
+    (window as StreamWindow).setCitations?.({
+      count: 1,
+      render: (numbers) => `Replacement ${numbers.join(',')}`,
+    })
+  )
+  await expect(root).toHaveText('Claim Replacement 1.')
+  await expect(root.getByRole('button')).toHaveCount(0)
+
+  await page.evaluate(() => (window as StreamWindow).setCitations?.(undefined))
+  await expect(root).toHaveText('Claim [^1].')
+  await page.evaluate(() =>
+    (window as StreamWindow).setCitationSources?.([
+      { title: 'Source B', url: 'https://example.com/b' },
+    ])
+  )
+  await expect(root.getByRole('button', { name: /Source B/ })).toBeVisible()
+  await page.evaluate(() => (window as StreamWindow).setCitationSources?.([]))
+  await expect(root).toHaveText('Claim [^1].')
+  await page.evaluate(() =>
+    (window as StreamWindow).setCitationSources?.([
+      { title: 'Source A', url: 'https://example.com/a' },
+    ])
+  )
+  await root.getByRole('button', { name: /Source A/ }).click()
+  await expect(page.getByRole('dialog').getByRole('link')).toHaveAttribute(
+    'href',
+    'https://example.com/a'
+  )
+})
+
 test('line marks reach the block the host chose and no other', async ({ page }) => {
   const blocks = page.locator('#marked [data-slot="code-block"]')
   await expect(blocks).toHaveCount(2)
@@ -374,7 +440,6 @@ test('line marks reach the block the host chose and no other', async ({ page }) 
       }))
     )
   )
-  const strip = (value: string | null) => (value ?? '').replace(/[0-9+−!]/g, '').trim()
   expect(marks[0]?.map((line) => [line.mark, line.tag, strip(line.text)])).toEqual([
     ['add', 'INS', 'added'],
     ['remove', 'DEL', 'removed'],
