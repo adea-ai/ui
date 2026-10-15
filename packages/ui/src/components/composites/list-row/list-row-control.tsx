@@ -19,6 +19,15 @@ export type ListRowControlProps<T extends ValidComponent = 'div'> = PolymorphicP
     /** A second line that wraps and grows the row to fit its content. */
     description?: string
     /**
+     * Keep the description on one line and end it with an ellipsis instead of
+     * wrapping, so a described row stays at its minimum height however long the
+     * text is. Use it where rows must be a predictable height (a virtualised
+     * queue); leave it off where the whole description should be readable. Pair
+     * it with a `tooltip` when the full text matters, and with
+     * `stackTrailing={false}` to keep a trailing slot beside the text.
+     */
+    truncateDescription?: boolean
+    /**
      * Whether a described row may drop its trailing slot onto its own line when
      * the row gets narrow (the default). Pass `false` for a short, truncating
      * label whose single action must stay beside it.
@@ -43,6 +52,7 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
     'leading',
     'trailing',
     'description',
+    'truncateDescription',
     'stackTrailing',
     'type',
     'tabIndex',
@@ -92,7 +102,8 @@ export function ListRowControl<T extends ValidComponent = 'div'>(props: ListRowC
             <span
               data-slot="list-row-description"
               class={cn(
-                'text-xs break-words',
+                'text-xs',
+                { truncate: local.truncateDescription, 'break-words': !local.truncateDescription },
                 local.selected ? 'text-foreground' : 'text-muted-foreground'
               )}
             >

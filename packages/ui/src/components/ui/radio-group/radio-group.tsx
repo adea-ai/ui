@@ -63,7 +63,9 @@ export type RadioGroupItemProps = ComponentProps<typeof KobalteRadioGroup.Item> 
    * `card` draws the option as a bordered, selectable card — for a choice
    * whose options need a sentence each (a source type, a sync budget), where a
    * bare radio row reads as a form field rather than a decision. The whole card
-   * is the hit target, and the selected card takes the primary edge.
+   * is the hit target, and the selected card takes the primary edge. The radio,
+   * `media` and text centre on one axis; the default variant keeps the radio on
+   * the first line of its label.
    */
   variant?: 'default' | 'card'
   /** A leading icon or `EntityIcon` between the radio and the text, for `card`. */
@@ -100,8 +102,14 @@ export function RadioGroupItem(props: RadioGroupItemProps) {
       data-variant={card() ? 'card' : undefined}
       title={local.title}
       class={cn(
-        'group/radio flex items-start gap-2.5',
+        'group/radio flex gap-2.5',
         {
+          'items-start': !card(),
+          // A card centres its radio, media and text on one axis. Top alignment
+          // is right for a bare row, where the radio sits on the label's first
+          // line, but in a card the media is taller than that line, so a
+          // top-aligned radio floats above the icon and the label beside it.
+          'items-center': card(),
           'relative rounded-lg border border-border bg-card px-3 py-2.5 transition-[color,box-shadow,border-color,background-color] ease-out hover:bg-surface-hover data-[checked]:border-primary data-[disabled]:cursor-not-allowed data-[disabled]:hover:bg-card':
             card(),
           'has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-primary-subtle':

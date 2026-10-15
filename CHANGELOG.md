@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.134.0](https://github.com/adea-ai/ui/compare/v0.133.0...v0.134.0) (2026-10-15)
+
+
+### Features
+
+* **native-select:** add wrapperClass for layout of the control ([#425](https://github.com/adea-ai/ui/issues/425)) ([0b2e16e](https://github.com/adea-ai/ui/commit/0b2e16e0ac86db6b24e20dfd2eefd58e7fd656b7))
+* **secret-input-group:** name the clear action per field ([#424](https://github.com/adea-ai/ui/issues/424)) ([6d70729](https://github.com/adea-ai/ui/commit/6d707298fcd8204b4636ba5a5aecb3bd69c61925))
+* **settings:** add a flush SettingsRow for rows loose in a content section ([#427](https://github.com/adea-ai/ui/issues/427)) ([5fde0be](https://github.com/adea-ai/ui/commit/5fde0be3c9f5dc9a09b6010c1f66a55769cc07f8))
+
+## [0.133.0](https://github.com/adea-ai/ui/compare/v0.132.0...v0.133.0) (2026-10-15)
+
+
+### Features
+
+* **number-field:** add step ([#422](https://github.com/adea-ai/ui/issues/422)) ([55cbb46](https://github.com/adea-ai/ui/commit/55cbb46c6731fae730fca665fabab14bbc21fe5b))
+
+## [0.132.0](https://github.com/adea-ai/ui/compare/v0.131.1...v0.132.0) (2026-10-15)
+
+
+### Features
+
+* **empty-state:** add a secondary action beside the primary one ([#423](https://github.com/adea-ai/ui/issues/423)) ([ed7c19a](https://github.com/adea-ai/ui/commit/ed7c19ac62d82baaef1a6ef09df41bc1e97ab18b))
+* **field:** add a three-column FieldGroup ([#421](https://github.com/adea-ai/ui/issues/421)) ([6ac5220](https://github.com/adea-ai/ui/commit/6ac5220864bd9b856333bea9468f4c5d61a5f6ce))
+* **list-row:** add truncateDescription for a single-line description ([#420](https://github.com/adea-ai/ui/issues/420)) ([c4796e9](https://github.com/adea-ai/ui/commit/c4796e9934832d2843170a15cadb467d16e19f69))
+
+## [0.131.1](https://github.com/adea-ai/ui/compare/v0.131.0...v0.131.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **accordion:** rotate the chevron when a section opens ([#417](https://github.com/adea-ai/ui/issues/417)) ([84a303a](https://github.com/adea-ai/ui/commit/84a303a4af6044b70c6bf9f55c41937ec9011557))
+* **radio-group:** centre the radio of a card option against its content ([#418](https://github.com/adea-ai/ui/issues/418)) ([e121f7f](https://github.com/adea-ai/ui/commit/e121f7f66fe8c065146b3958a6b4166132563e33))
+
 ## [0.131.0](https://github.com/adea-ai/ui/compare/v0.130.4...v0.131.0) (2026-10-14)
 
 

@@ -66,3 +66,34 @@ test('content body spaces controls and cards without adding an enclosing row bor
   await expect(page.getByTestId('field-content')).toBeVisible()
   await expect(page.getByText('Settings card')).toBeVisible()
 })
+
+test('a flush row aligns its label and control with the fields around it', async ({ page }) => {
+  const edges = (testId: string) =>
+    page.getByTestId(testId).evaluate((element) => {
+      const { left, right, top, bottom } = element.getBoundingClientRect()
+      return { left, right, top, bottom }
+    })
+  const field = await edges('field-content')
+  const flush = await edges('flush-row')
+  const padded = await edges('padded-row')
+  const flushLabel = await page
+    .getByTestId('flush-row')
+    .locator('[data-slot=settings-row-label]')
+    .evaluate((element) => element.getBoundingClientRect().left)
+  const paddedLabel = await page
+    .getByTestId('padded-row')
+    .locator('[data-slot=settings-row-label]')
+    .evaluate((element) => element.getBoundingClientRect().left)
+  const flushControl = await edges('flush-control')
+
+  // Flush: the label starts where the neighbouring field starts and the control
+  // ends on the section's content edge.
+  expect(Math.round(flushLabel)).toBe(Math.round(field.left))
+  expect(Math.round(flushControl.right)).toBe(Math.round(field.right))
+  await expect(page.getByTestId('flush-row')).toHaveCSS('padding', '0px')
+  // The row is no taller than its content, so the section gap is the only spacing.
+  expect(flush.bottom - flush.top).toBeLessThan(padded.bottom - padded.top)
+  // Default is unchanged: 16px of padding insets the label.
+  expect(Math.round(paddedLabel - field.left)).toBe(16)
+  await expect(page.getByTestId('padded-row')).toHaveCSS('padding', '16px')
+})

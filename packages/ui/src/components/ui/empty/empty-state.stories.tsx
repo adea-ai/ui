@@ -35,3 +35,34 @@ export const ErrorWithRetry: Story = {
   },
   render: (args) => <EmptyState {...args} action={() => {}} />,
 }
+
+/**
+ * Two ways out: the primary action first, a quieter `secondary` one after it.
+ * They sit side by side and wrap together on a narrow pane, and the tab order is
+ * the reading order. Reach for `Empty` and its parts when a state needs more
+ * than two, or an action that is not a button.
+ */
+export const ErrorWithTwoActions: Story = {
+  args: {
+    title: 'Sync health unavailable',
+    detail: 'The status snapshot did not load. Retry, or review the configuration.',
+    announceAs: 'alert',
+    headingLevel: 2,
+    action: () => {},
+    actionLabel: 'Retry status',
+    secondaryAction: () => {},
+    secondaryActionLabel: 'Open settings',
+    secondaryActionTooltip: 'Review configuration and resolve setup requirements.',
+    class: 'min-h-64 border',
+  },
+}
+
+/** Narrow enough that the two buttons no longer fit on one line. */
+export const TwoActionsWrapInANarrowPane: Story = {
+  args: ErrorWithTwoActions.args,
+  render: (args) => (
+    <div class="w-56">
+      <EmptyState {...args} />
+    </div>
+  ),
+}
