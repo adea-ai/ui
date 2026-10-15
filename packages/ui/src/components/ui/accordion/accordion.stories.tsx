@@ -22,6 +22,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/**
+ * The chevron is the state indicator as well as the affordance: it points down on
+ * a closed section and turns over on an open one. `component-accordion.spec.ts`
+ * asserts the turn, because nothing else would notice the selector going dead.
+ */
 export const Default: Story = {
   render: () => (
     <Accordion class="w-[32rem]" collapsible defaultValue={['environment']}>
