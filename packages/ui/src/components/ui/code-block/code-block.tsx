@@ -240,6 +240,7 @@ export function CodeBlock(props: CodeBlockProps) {
       <Button
         variant="ghost"
         size="icon-2xs"
+        touchTarget="comfortable"
         aria-label={copied() ? (local.copiedLabel ?? 'Copied') : (local.copyLabel ?? 'Copy code')}
         title={failed() ? 'Copying is unavailable in this context' : undefined}
         onClick={() => void copy()}
