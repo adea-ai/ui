@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.131.1](https://github.com/adea-ai/ui/compare/v0.131.0...v0.131.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **accordion:** rotate the chevron when a section opens ([#417](https://github.com/adea-ai/ui/issues/417)) ([84a303a](https://github.com/adea-ai/ui/commit/84a303a4af6044b70c6bf9f55c41937ec9011557))
+* **radio-group:** centre the radio of a card option against its content ([#418](https://github.com/adea-ai/ui/issues/418)) ([e121f7f](https://github.com/adea-ai/ui/commit/e121f7f66fe8c065146b3958a6b4166132563e33))
+
 ## [0.131.0](https://github.com/adea-ai/ui/compare/v0.130.4...v0.131.0) (2026-10-14)
 
 
