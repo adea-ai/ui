@@ -236,11 +236,18 @@ export const SharedFormField: Story = {
   },
 }
 
-/** Draft validation and controlled updates for numeric values. */
+/**
+ * Draft validation and controlled updates for numeric values. `step` is both the
+ * spinner's increment and the grid a typed value must sit on (measured from
+ * `min`), and a fractional step accepts decimals without `integer={false}`. Try
+ * 0.12 in the confidence field: it is in range but off the 0.05 grid, so it is
+ * announced and never reported through `onChange`.
+ */
 export const Number: Story = {
   render: () => {
     const [workers, setWorkers] = createSignal(4)
     const [ratio, setRatio] = createSignal(1.5)
+    const [confidence, setConfidence] = createSignal(0.5)
 
     return (
       <div class="flex w-96 flex-col gap-4">
@@ -259,6 +266,15 @@ export const Number: Story = {
           max={5}
           integer={false}
           onChange={setRatio}
+        />
+        <NumberField
+          label="Default confidence"
+          hint="0 to 1, in steps of 0.05."
+          value={confidence()}
+          min={0}
+          max={1}
+          step={0.05}
+          onChange={setConfidence}
         />
         <Button size="sm" onClick={() => setWorkers(6)}>
           Set workers to six
