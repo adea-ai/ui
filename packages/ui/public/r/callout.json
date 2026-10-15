@@ -1,0 +1,22 @@
+{
+  "name": "callout",
+  "type": "registry:ui",
+  "title": "Callout",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/callout/callout.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/callout/callout.tsx"
+    },
+    {
+      "path": "src/components/ui/callout/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/callout/index.ts"
+    }
+  ]
+}
