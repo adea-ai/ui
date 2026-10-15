@@ -468,6 +468,10 @@
       {
         "card": "AppearanceEditor",
         "group": "Composites"
+      },
+      {
+        "card": "AppearancePopover",
+        "group": "Composites"
       }
     ],
     "catalog-browser": [
