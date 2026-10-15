@@ -2,7 +2,7 @@
 
 The [Adea UI design system](https://claude.ai/artifact/BRWYnXVxsBF1w98d6M9KWs) is a
 published Design System page: the brand book, every token in all six Adea themes, the
-type scale with the real font files, and a live card for each of the 95 components —
+type scale with the real font files, and a live card for each of the 125 components —
 built from this repository's source, rendering the real SolidJS components.
 
 It is private to its owner until shared from the page's Share menu.

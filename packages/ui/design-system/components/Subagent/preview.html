@@ -1,0 +1,28 @@
+<!-- @dsCard group="Conversation" height=430 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Icons, Trace, TraceLine, Tool, Subagent, MessageText } = window.AdeaUI
+  const result = 'All **1,204** tests passed.\n\nSlowest: \x60tree-navigation\x60 at 1.9s.'
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${Subagent} name="Test runner" task="Run the unit tests for packages/ui" status="success" model="sonnet-5" duration=${42} defaultOpen=${true}
+          result=${html`<${MessageText} text=${result} />`}>
+          <${Tool} name="run_command" icon=${html`<${Icons.Terminal} />`} description="bun test" status="success" />
+          <${Tool} name="read_file" icon=${html`<${Icons.FileText} />`} description="tests/users.test.ts" status="success" />
+        <//>
+        <${Subagent} name="Researcher" task="Find prior art for the migration" status="running" model="haiku-4" defaultOpen=${true}>
+          <${Tool} name="web_search" icon=${html`<${Icons.Search} />`} description="online schema change" status="success" />
+          <${Tool} name="fetch_url" description="https://example.com/gh-ost" status="running" />
+        <//>
+        <${Subagent} name="Deployer" task="Deploy to staging" status="error" defaultOpen=${true}
+          errorText="Deployment rejected: the staging environment is locked by another run." />
+        <${Subagent} name="Indexer" task="Index the repository" status="success" duration=${128}>
+          <${TraceLine} title="Indexed packages/ui" />
+          <${TraceLine} title="Indexed packages/themes" />
+        <//>
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

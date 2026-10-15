@@ -1,0 +1,46 @@
+<!-- @dsCard group="Conversation" height=620 -->
+<div id="root" style="padding:16px;max-width:640px"></div>
+<script>
+  const { render, html, Icons, Message, MessageHeader, MessageContent, MessageText, MessageActions, Bubble, Button, ConversationAvatar } = window.AdeaUI
+  const tick = String.fromCharCode(96)
+  const fence = tick + tick + tick
+  const answer = [
+    'The plan is ready. Two risks are worth fixing before approval:',
+    '',
+    '1. **Migration order**: ' + tick + '0054' + tick + ' depends on ' + tick + '0053' + tick + ', so a partial deploy fails.',
+    '2. The rollback script is *not* idempotent.',
+    '',
+    '- Run ' + tick + 'bun run db:check' + tick + ' first',
+    '- Then read [the runbook](https://example.com/runbook)',
+    '',
+    fence + 'sh',
+    'bun run --cwd packages/db db:check',
+    fence,
+  ].join('\n')
+  const streaming = 'Running the check now:\n\n' + fence + 'sh\nbun run lint\nbun run ty'
+  const copy = (_event) => {}
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column">
+        <${Message} role="user" label="You">
+          <${Bubble}>Review the deployment plan and summarise the risks.<//>
+        <//>
+        <${Message} role="assistant" label="Assistant">
+          <${MessageHeader} avatar=${html`<${ConversationAvatar} kind="agent" />`} time="10:02">Assistant<//>
+          <${MessageContent}>
+            <${MessageText} text=${answer} />
+          <//>
+          <${MessageActions}>
+            <${Button} variant="ghost" size="icon-sm" aria-label="Copy reply" onClick=${copy}><${Icons.Copy} /><//>
+          <//>
+        <//>
+        <${Message} role="assistant" label="Assistant" streaming=${true}>
+          <${MessageContent}>
+            <${MessageText} streaming=${true} text=${streaming} />
+          <//>
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>
