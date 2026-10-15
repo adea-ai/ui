@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.134.0](https://github.com/adea-ai/ui/compare/v0.133.0...v0.134.0) (2026-10-15)
+
+
+### Features
+
+* **native-select:** add wrapperClass for layout of the control ([#425](https://github.com/adea-ai/ui/issues/425)) ([0b2e16e](https://github.com/adea-ai/ui/commit/0b2e16e0ac86db6b24e20dfd2eefd58e7fd656b7))
+* **secret-input-group:** name the clear action per field ([#424](https://github.com/adea-ai/ui/issues/424)) ([6d70729](https://github.com/adea-ai/ui/commit/6d707298fcd8204b4636ba5a5aecb3bd69c61925))
+* **settings:** add a flush SettingsRow for rows loose in a content section ([#427](https://github.com/adea-ai/ui/issues/427)) ([5fde0be](https://github.com/adea-ai/ui/commit/5fde0be3c9f5dc9a09b6010c1f66a55769cc07f8))
+
 ## [0.133.0](https://github.com/adea-ai/ui/compare/v0.132.0...v0.133.0) (2026-10-15)
 
 
