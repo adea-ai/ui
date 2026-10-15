@@ -344,3 +344,288 @@ test.describe('keyboard', () => {
     await expect(page.locator('#tree-marker [role="treeitem"][tabindex="0"]')).toHaveCount(1)
   })
 })
+
+const treeRows = (page: Page, mode: Mode) =>
+  page
+    .locator(`#tree-${mode} [data-tree-id]`)
+    .evaluateAll((rows) => rows.map((element) => element.getAttribute('data-tree-id')))
+const tabStops = (page: Page, mode: Mode) =>
+  page
+    .locator(`#tree-${mode} [role="treeitem"][tabindex="0"]`)
+    .evaluateAll((rows) => rows.map((element) => element.getAttribute('data-tree-id')))
+/** The element that really holds focus: a row id, a tag name, or BODY. */
+const focusOwner = (page: Page) =>
+  page.evaluate(() => {
+    const active = document.activeElement
+    return active?.getAttribute('data-tree-id') ?? active?.tagName ?? 'none'
+  })
+/** What the host does that `Tree` cannot see; see `HostControls` in the fixture. */
+const host = (
+  page: Page,
+  mode: Mode,
+  call: 'setExpanded' | 'setActiveId' | 'setToggleOnActivate',
+  ...args: unknown[]
+) =>
+  page.evaluate(
+    ({ target, name, values }) =>
+      (
+        window as unknown as {
+          treeDisclosureHost: Record<string, Record<string, (...values: unknown[]) => void>>
+        }
+      ).treeDisclosureHost[target]![name]!(...values),
+    { target: mode, name: call, values: args }
+  )
+
+/** How a collapse of `id` arrives: the chevron where there is one, the host otherwise. */
+const collapse = async (page: Page, mode: Mode, id: string) => {
+  if (mode === 'marker') await marker(page, mode, id).click()
+  else await host(page, mode, 'setExpanded', id, false)
+}
+
+/**
+ * Every key the tree handles, from the row that took focus after `sources` was
+ * collapsed with `repo-a-hint` focused. `repo-a` is still expanded inside it.
+ */
+async function keysAfterRecovery(page: Page, mode: Mode) {
+  const seen: Array<[string, string]> = []
+  for (const key of ['ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowLeft', 'End', 'Home']) {
+    await page.keyboard.press(key)
+    await expect(page.locator(`#tree-${mode} [data-tree-id]:focus`)).toHaveCount(1)
+    seen.push([key, await focusOwner(page)])
+  }
+  await page.keyboard.press('Enter')
+  await page.keyboard.press(' ')
+  return { seen, tabStops: await tabStops(page, mode), log: (await logs(page, mode)).slice(3) }
+}
+const expectedKeys = {
+  seen: [
+    ['ArrowRight', 'sources'], // expands the recovered row
+    ['ArrowDown', 'repo-a'],
+    ['ArrowRight', 'repo-a-hint'], // repo-a kept its expansion
+    ['ArrowLeft', 'repo-a'],
+    ['End', 'notes'],
+    ['Home', 'sources'],
+  ],
+  tabStops: ['sources'],
+  log: [
+    'expand:sources:true',
+    'active:repo-a',
+    'active:repo-a-hint',
+    'active:repo-a',
+    'active:notes',
+    'active:sources',
+    'activate:sources:keydown',
+    'select:sources',
+  ],
+}
+
+/**
+ * Collapsing a row hides its whole subtree, and when that removes the row that
+ * held focus `Tree` recovers it. The recovery is `Tree`'s existing behaviour and
+ * identical in every mode; these specs pin what it really does so that docs/tree.md
+ * can state it, and so the chevron (which never moves focus itself) is measured
+ * against the same outcome as a host-driven or keyboard collapse.
+ */
+test.describe('collapsing an ancestor', () => {
+  test('a collapsed row hides every descendant, not only its children', async ({ page }) => {
+    for (const mode of modes) {
+      // `repo-a` is expanded inside `sources`; its child is a grandchild of `sources`.
+      expect(await treeRows(page, mode)).toEqual([
+        'sources',
+        'repo-a',
+        'repo-a-hint',
+        'repo-b',
+        'notes',
+      ])
+      await row(page, mode, 'sources').focus()
+      await page.keyboard.press('ArrowLeft')
+      await expect(row(page, mode, 'sources')).toHaveAttribute('aria-expanded', 'false')
+      expect(await treeRows(page, mode)).toEqual(['sources'])
+      await expect(page.locator(`#tree-${mode} [data-tree-id="repo-a-hint"]`)).toHaveCount(0)
+
+      // The inner folder kept its expansion, so the subtree comes back as it was.
+      await page.keyboard.press('ArrowRight')
+      expect(await treeRows(page, mode)).toEqual([
+        'sources',
+        'repo-a',
+        'repo-a-hint',
+        'repo-b',
+        'notes',
+      ])
+      await expect(row(page, mode, 'repo-a')).toHaveAttribute('aria-expanded', 'true')
+    }
+  })
+
+  test('the chevron hides the whole subtree of the row it collapses', async ({ page }) => {
+    await marker(page, 'marker', 'sources').click()
+    expect(await treeRows(page, 'marker')).toEqual(['sources'])
+    await marker(page, 'marker', 'sources').click()
+    expect(await treeRows(page, 'marker')).toEqual([
+      'sources',
+      'repo-a',
+      'repo-a-hint',
+      'repo-b',
+      'notes',
+    ])
+  })
+
+  test('Left up a branch never hides the focused row, and focus stays on the row Left acts on', async ({
+    page,
+  }) => {
+    const steps = [
+      // key, focused row, tab stops, rows left in the tree
+      ['ArrowLeft', 'repo-a', ['repo-a'], 5], // hint -> its parent
+      ['ArrowLeft', 'repo-a', ['repo-a'], 4], // collapse repo-a; its hint goes
+      ['ArrowLeft', 'sources', ['sources'], 4], // up to the parent
+      ['ArrowLeft', 'sources', ['sources'], 1], // collapse sources; the rest goes
+    ] as const
+    for (const mode of modes) {
+      await row(page, mode, 'repo-a-hint').focus()
+      for (const [key, focused, stops, rows] of steps) {
+        await page.keyboard.press(key)
+        await expect(row(page, mode, focused)).toBeFocused()
+        expect(await tabStops(page, mode)).toEqual(stops)
+        expect(await treeRows(page, mode)).toHaveLength(rows)
+      }
+      expect(await logs(page, mode)).toEqual([
+        'active:repo-a-hint',
+        'active:repo-a',
+        'expand:repo-a:false',
+        'active:sources',
+        'expand:sources:false',
+      ])
+    }
+  })
+
+  test('marker: the chevron on an ancestor of the focused row lands focus on the first visible row', async ({
+    page,
+  }) => {
+    await row(page, 'marker', 'repo-a-hint').focus()
+    await marker(page, 'marker', 'sources').click()
+
+    expect(await treeRows(page, 'marker')).toEqual(['sources'])
+    await expect(row(page, 'marker', 'sources')).toBeFocused()
+    expect(await focusOwner(page)).toBe('sources')
+    expect(await tabStops(page, 'marker')).toEqual(['sources'])
+    await expect(row(page, 'marker', 'sources')).toHaveAttribute('tabindex', '0')
+    expect(await logs(page, 'marker')).toEqual([
+      'active:repo-a-hint',
+      'expand:sources:false',
+      'active:sources',
+    ])
+    // `onActiveIdChange` named only the row that was focused and the row that took over.
+    const calls = await activeCalls(page, 'marker')
+    expect(new Set(calls)).toEqual(new Set(['repo-a-hint', 'sources']))
+    expect(calls.at(-1)).toBe('sources')
+
+    // And the keyboard works from there.
+    expect(await keysAfterRecovery(page, 'marker')).toEqual(expectedKeys)
+  })
+
+  test('marker: the chevron on the parent of the focused row lands focus on the first visible row, not on that parent', async ({
+    page,
+  }) => {
+    await row(page, 'marker', 'repo-a-hint').focus()
+    await marker(page, 'marker', 'repo-a').click()
+
+    expect(await treeRows(page, 'marker')).toEqual(['sources', 'repo-a', 'repo-b', 'notes'])
+    await expect(row(page, 'marker', 'sources')).toBeFocused()
+    expect(await tabStops(page, 'marker')).toEqual(['sources'])
+    await expect(row(page, 'marker', 'repo-a')).toHaveAttribute('tabindex', '-1')
+    expect(await logs(page, 'marker')).toEqual([
+      'active:repo-a-hint',
+      'expand:repo-a:false',
+      'active:sources',
+    ])
+  })
+
+  for (const mode of ['omitted', 'row'] as const) {
+    test(`${mode}: a host collapse of an ancestor recovers focus the same way`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+      await host(page, mode, 'setExpanded', 'sources', false)
+
+      expect(await treeRows(page, mode)).toEqual(['sources'])
+      await expect(row(page, mode, 'sources')).toBeFocused()
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+      expect(await logs(page, mode)).toEqual([
+        'active:repo-a-hint',
+        'host-expand:sources:false',
+        'active:sources',
+      ])
+      const calls = await activeCalls(page, mode)
+      expect(new Set(calls)).toEqual(new Set(['repo-a-hint', 'sources']))
+      expect(calls.at(-1)).toBe('sources')
+      expect(await keysAfterRecovery(page, mode)).toEqual(expectedKeys)
+    })
+
+    test(`${mode}: a click on an ancestor's chevron focuses that ancestor, then the host collapses it`, async ({
+      page,
+    }) => {
+      // The file-explorer convention: onActivate toggles the folder. The chevron is
+      // part of the row here, so the press focuses the row (default mode only).
+      await host(page, mode, 'setToggleOnActivate', true)
+      await row(page, mode, 'repo-a-hint').focus()
+      await marker(page, mode, 'sources').click()
+
+      expect(await treeRows(page, mode)).toEqual(['sources'])
+      await expect(row(page, mode, 'sources')).toBeFocused()
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+      expect(await logs(page, mode)).toEqual([
+        'active:repo-a-hint',
+        'active:sources',
+        'activate:sources:click',
+        'toggle:sources:false',
+      ])
+    })
+  }
+
+  test('the roving stop moves to the first visible row without taking focus', async ({ page }) => {
+    for (const mode of modes) {
+      await host(page, mode, 'setActiveId', 'repo-a-hint')
+      expect(await tabStops(page, mode)).toEqual(['repo-a-hint'])
+      expect(await focusOwner(page)).toBe('BODY')
+
+      await collapse(page, mode, 'sources')
+      await expect(row(page, mode, 'sources')).toHaveAttribute('tabindex', '0')
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+      expect(await focusOwner(page)).toBe('BODY')
+      expect((await activeCalls(page, mode)).at(-1)).toBe('sources')
+      expect((await logs(page, mode)).filter((entry) => entry.startsWith('active:'))).toEqual([
+        'active:sources',
+      ])
+    }
+  })
+
+  test('marker: a chevron press that hides no focused row leaves focus in a control outside the tree', async ({
+    page,
+  }) => {
+    await row(page, 'marker', 'repo-a').focus()
+    await page.locator('#outside').focus()
+    await marker(page, 'marker', 'repo-b').click()
+
+    expect(await treeRows(page, 'marker')).toContain('repo-b-hint')
+    expect(await focusOwner(page)).toBe('INPUT')
+    expect(await tabStops(page, 'marker')).toEqual(['repo-a'])
+    expect(await logs(page, 'marker')).toEqual(['active:repo-a', 'expand:repo-b:true'])
+  })
+
+  // Current behaviour, not a feature: `Tree` keeps the last row it saw focused
+  // and does not clear it when focus leaves, so hiding that row pulls focus back
+  // from whatever has it. It is the same on main, without the disclosure prop.
+  for (const mode of ['marker', 'omitted'] as const) {
+    test(`${mode}: hiding the last-focused row pulls focus back from a control outside the tree`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+      await page.locator('#outside').focus()
+      expect(await focusOwner(page)).toBe('INPUT')
+
+      await collapse(page, mode, 'sources')
+
+      await expect(row(page, mode, 'sources')).toBeFocused()
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+    })
+  }
+})

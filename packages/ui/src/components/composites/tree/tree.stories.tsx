@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { createMemo, createSignal, For, Show } from 'solid-js'
 import { Database, FileText, Folder, Pencil, RefreshCw } from 'lucide-solid'
 import { StatusChip } from '../../ui/status-chip/status-chip'
@@ -155,31 +155,77 @@ const sources: readonly Source[] = [
   { id: 'notes', parentId: null, level: 1, expandable: false, label: 'Pinned notes' },
 ]
 
-const sourceLabel = (id: string) => sources.find((source) => source.id === id)!.label
+/**
+ * A source three levels deep, so collapsing the top row has to hide a grandchild
+ * that sits under a folder which is itself still expanded.
+ */
+const nestedSources: readonly Source[] = [
+  {
+    id: 'docs',
+    parentId: null,
+    level: 1,
+    expandable: true,
+    label: 'Product docs',
+    tone: 'success',
+    status: 'Ready',
+  },
+  { id: 'guides', parentId: 'docs', level: 2, expandable: true, label: 'Guides' },
+  {
+    id: 'guides-hint',
+    parentId: 'guides',
+    level: 3,
+    expandable: false,
+    label: '4 chunks · healthy',
+  },
+  { id: 'reference', parentId: 'docs', level: 2, expandable: false, label: 'Reference' },
+  { id: 'notes', parentId: null, level: 1, expandable: false, label: 'Pinned notes' },
+]
+
+/**
+ * The projection a host owes `Tree`: a row is visible only when EVERY ancestor is
+ * expanded, not just its parent. Hiding only direct children would leave the
+ * grandchildren of a collapsed row on screen, under an expanded folder that is
+ * itself hidden. The expansion state of hidden folders is kept, so expanding
+ * the ancestor again restores what was open inside it.
+ */
+function visibleProjection(
+  items: readonly Source[],
+  expanded: ReadonlySet<string>
+): TreeItemDescriptor[] {
+  const parentOf = new Map(items.map((item) => [item.id, item.parentId]))
+  const isVisible = (item: Source) => {
+    for (let parent = item.parentId; parent !== null; parent = parentOf.get(parent) ?? null) {
+      if (!expanded.has(parent)) return false
+    }
+    return true
+  }
+  return items.filter(isVisible).map((item) => ({
+    id: item.id,
+    parentId: item.parentId,
+    level: item.level,
+    expandable: item.expandable,
+    expanded: expanded.has(item.id),
+  }))
+}
 
 /**
  * A source list in which expanding and selecting are separate decisions, so the
  * chevron is its own pointer target (`disclosure="marker"`). The row carries a
  * status chip, a switch and an action, as a real source row does.
  */
-function SourceTree() {
-  const [activeId, setActiveId] = createSignal<string | null>('docs')
+function SourceTree(props: {
+  items?: readonly Source[]
+  expanded?: readonly string[]
+  active?: string
+}) {
+  const items = () => props.items ?? sources
+  const sourceLabel = (id: string) => items().find((source) => source.id === id)!.label
+  const [activeId, setActiveId] = createSignal<string | null>(props.active ?? 'docs')
   const [selectedId, setSelectedId] = createSignal('docs')
-  const [expandedIds, setExpandedIds] = createSignal(new Set(['docs']))
+  const [expandedIds, setExpandedIds] = createSignal(new Set(props.expanded ?? ['docs']))
   const [enabledIds, setEnabledIds] = createSignal(new Set(['docs']))
   const [refreshed, setRefreshed] = createSignal(0)
-  const visibleItems = createMemo(() => {
-    const expanded = expandedIds()
-    return sources
-      .filter((source) => source.parentId === null || expanded.has(source.parentId))
-      .map((source): TreeItemDescriptor => ({
-        id: source.id,
-        parentId: source.parentId,
-        level: source.level,
-        expandable: source.expandable,
-        expanded: expanded.has(source.id),
-      }))
-  })
+  const visibleItems = createMemo(() => visibleProjection(items(), expandedIds()))
 
   return (
     <div class="w-96">
@@ -201,15 +247,15 @@ function SourceTree() {
           }
           onActivate={(id) => {
             // Selection only. Expansion is the chevron's (or Left/Right's) job.
-            if (sources.find((source) => source.id === id)?.parentId === null) setSelectedId(id)
+            if (items().find((source) => source.id === id)?.parentId === null) setSelectedId(id)
           }}
           onSelectItem={(id) => {
-            if (sources.find((source) => source.id === id)?.parentId === null) setSelectedId(id)
+            if (items().find((source) => source.id === id)?.parentId === null) setSelectedId(id)
           }}
         >
           <For each={visibleItems()}>
             {(item) => {
-              const source = sources.find((candidate) => candidate.id === item.id)!
+              const source = items().find((candidate) => candidate.id === item.id)!
               return (
                 <TreeRow
                   item={item}
@@ -283,8 +329,9 @@ const disclosureOf = (canvasElement: HTMLElement, id: string) =>
  *
  * The chevron stays `aria-hidden`, unfocusable and out of the tab order, so
  * keyboard users are unchanged: Left/Right expand, Enter activates, Space selects.
- * Pressing the chevron does not move focus either; it is a pointer shortcut for
- * `onExpand` and nothing more.
+ * Pressing the chevron never moves focus to its own row; it is a pointer shortcut
+ * for `onExpand`. (Collapsing a row can still remove the focused row, and then
+ * `Tree` moves focus itself: see `DisclosureMarkerCollapse`.)
  */
 export const DisclosureMarker: Story = {
   args: {
@@ -389,5 +436,63 @@ export const DisclosureMarkerKeyboard: Story = {
     await userEvent.keyboard(' ')
     await expect(selection).toHaveTextContent('Selected source: Product docs')
     await expect(docs()).toHaveAttribute('aria-expanded', 'true')
+  },
+}
+
+/**
+ * Collapsing a row hides its whole subtree, however deep, and the expansion
+ * state of the folders inside it is kept. When that removes the row that held
+ * focus, `Tree` does what it does in either disclosure mode: the first visible
+ * row becomes the one roving stop and takes focus, and the host hears
+ * `onActiveIdChange` for it. Here the focused grandchild sits under an
+ * expanded Guides folder, so a projection that only hid direct children would
+ * leave it on screen.
+ */
+export const DisclosureMarkerCollapse: Story = {
+  args: {
+    'aria-label': 'Sources',
+    visibleItems: [],
+    activeId: null,
+    onActiveIdChange: () => undefined,
+  },
+  render: () => (
+    <SourceTree items={nestedSources} expanded={['docs', 'guides']} active="guides-hint" />
+  ),
+  play: async ({ canvasElement }) => {
+    const ids = () =>
+      Array.from(canvasElement.querySelectorAll('[role="treeitem"]')).map((element) =>
+        element.getAttribute('data-tree-id')
+      )
+    const stops = () =>
+      Array.from(canvasElement.querySelectorAll('[role="treeitem"][tabindex="0"]')).map((element) =>
+        element.getAttribute('data-tree-id')
+      )
+    // The host re-keys rows when the projection changes, so look rows up afresh each time.
+    const row = (id: string) => treeRow(canvasElement, id)
+
+    await expect(ids()).toEqual(['docs', 'guides', 'guides-hint', 'reference', 'notes'])
+    row('guides-hint').focus()
+    await expect(row('guides-hint')).toHaveFocus()
+
+    // The chevron on the top row hides the folder, its grandchild and the
+    // folder's own (still expanded) contents; the focused row is one of them.
+    await userEvent.click(disclosureOf(canvasElement, 'docs'))
+    await expect(ids()).toEqual(['docs', 'notes'])
+    await waitFor(() => expect(row('docs')).toHaveFocus())
+    await expect(stops()).toEqual(['docs'])
+
+    // The keyboard carries on from the row that took focus. Guides is still
+    // expanded inside, so it comes back with its child.
+    await userEvent.keyboard('{ArrowRight}')
+    await expect(ids()).toEqual(['docs', 'guides', 'guides-hint', 'reference', 'notes'])
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(row('guides')).toHaveFocus()
+
+    // Left on an open folder collapses it and leaves focus on it: the focused
+    // row is still visible, so nothing is recovered.
+    await userEvent.keyboard('{ArrowLeft}')
+    await expect(ids()).toEqual(['docs', 'guides', 'reference', 'notes'])
+    await expect(row('guides')).toHaveFocus()
+    await expect(stops()).toEqual(['guides'])
   },
 }

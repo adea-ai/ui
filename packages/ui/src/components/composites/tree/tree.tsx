@@ -65,7 +65,11 @@ export type TreeProps = Omit<
     visibleItems: readonly TreeItemDescriptor[]
     /** The host-owned identity of the row that currently owns roving focus. */
     activeId: string | null
-    /** Called when keyboard or pointer navigation changes the active row. */
+    /**
+     * Called when keyboard or pointer navigation changes the active row, and when
+     * the active row leaves `visibleItems` (collapsed away, filtered out) and the
+     * first visible row takes over as the roving stop.
+     */
     onActiveIdChange: (id: string) => void
     /** Called for Left/Right expand and collapse requests. */
     onExpand?: (id: string, expanded: boolean) => void
@@ -105,6 +109,13 @@ export type TreeProps = Omit<
  * decisions: the chevron then calls only `onExpand`, and the rest of the row
  * calls only `onActivate`. The chevron stays `aria-hidden` and out of the tab
  * order in both modes; keyboard expansion is Left/Right either way.
+ *
+ * Collapsing is the one thing that can move focus without a key or a click on
+ * the target row: when the active row leaves `visibleItems`, the first visible
+ * row becomes the roving stop and `onActiveIdChange` is called with it. If the
+ * removed row held focus, or was the last row the tree saw focused, focus moves
+ * to that same row; if it had no focus, only the roving stop moves. This is the
+ * same in both `disclosure` modes and for every way a host collapses a row.
  */
 export function Tree(props: TreeProps) {
   const [local, rest] = splitProps(props, [
@@ -220,13 +231,17 @@ export function Tree(props: TreeProps) {
     onActiveIdChange: local.onActiveIdChange,
   }
 
-  // A filtered or removed active ID falls back to the first visible item. This
-  // keeps one treeitem in the sequential tab order while notifying the host.
+  // A filtered, collapsed-away or removed active ID falls back to the first
+  // visible item. This keeps one treeitem in the sequential tab order while
+  // notifying the host.
   createEffect(() => {
     const activeId = effectiveActiveId()
     if (activeId === null) return
-    // If a host filter removes the row that had DOM focus, move focus to the
-    // same projection fallback that now owns the roving tab stop.
+    // If the projection removes the last row that took focus (a host filter, or
+    // an ancestor collapsing), move focus to the same fallback that now owns the
+    // roving tab stop. `focusedId` is not cleared when focus leaves the tree, so
+    // this also reclaims focus from a control outside it; that long-standing
+    // behaviour is deliberately left as it was.
     if (focusedId !== null && !index().byId.has(focusedId) && pendingFocusId !== activeId) {
       focusItem(activeId)
     } else if (local.activeId !== activeId) {
@@ -318,6 +333,9 @@ export type TreeRowProps = Omit<
  * `onExpand`. It is not focusable and has no role: the row remains the single
  * focus stop, Enter and Space still activate and select, and Left/Right still
  * expand and collapse, so the marker adds a pointer path and nothing else.
+ * Pressing it does not move focus or the roving stop to its row; if the toggle
+ * hides the focused row, `Tree` recovers focus as it does for any collapse (see
+ * the `Tree` comment and docs/tree.md).
  */
 export function TreeRow(props: TreeRowProps) {
   const tree = useTreeContext()
@@ -472,11 +490,12 @@ export function TreeRowActions(props: ComponentProps<'span'> & { pinned?: boolea
   )
 }
 
-// Pressing the chevron must not move focus: a mousedown on a non-focusable
-// child would otherwise focus the row, making it the roving stop (and
-// notifying `onActiveIdChange`) for what is a disclosure toggle, not a
-// selection. Focus stays wherever it was, so Left/Right keep acting on the
-// row the keyboard user left off at.
+// Pressing the chevron must not move focus to its row: a mousedown on a
+// non-focusable child would otherwise focus the row, making it the roving stop
+// (and notifying `onActiveIdChange`) for what is a disclosure toggle, not a
+// selection. The press itself leaves focus where it was, so Left/Right keep
+// acting on the row the keyboard user left off at. It cannot stop the toggle
+// from hiding that row; `Tree` then recovers focus onto the first visible row.
 const handleMarkerMouseDown: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) =>
   event.preventDefault()
 // A double-click is two toggles; it must not also reach `onDoubleClick`

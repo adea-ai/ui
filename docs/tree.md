@@ -8,7 +8,10 @@ and selection state, mounted virtual window, filesystem actions, and native
 services.
 
 The `visibleItems` prop must contain every currently visible item in reading
-order, including rows outside the mounted window. Each item has a stable `id`,
+order, including rows outside the mounted window. A row is visible only when
+every one of its ancestors is expanded, so collapsing a row removes its whole
+subtree, however deep, and not only its direct children; keep the expansion state
+of the hidden folders if re-expanding the ancestor should restore them. Each item has a stable `id`,
 `parentId`, one-based `level`, `expandable`, and `expanded` state. Render only the
 rows in the current window as `TreeRow` children. Both keyed rows and recycled
 window slots are supported; recycled slots must pass their current item
@@ -55,10 +58,12 @@ In marker mode the chevron of an expandable row is its own pointer target
   as before and never expands. Interactive descendants in `trailing` still do not
   activate the row. A `Switch` whose visual control is a plain element needs a
   `data-tree-keyboard-stop` wrapper, as it does without the prop.
-- The chevron does not take focus. Its `mousedown` is cancelled, so focus and the
-  roving stop stay on whichever row (or control outside the tree) had them, and
-  Left/Right keep acting on that row. Pressing a row's chevron is not a way to
-  move to it.
+- The chevron does not take focus. Its `mousedown` is cancelled, so pressing it
+  does not move focus or the roving stop to its own row, and Left/Right keep
+  acting on the row that had them. Pressing a row's chevron is not a way to move
+  to it. The one way a press can still move focus is by hiding the focused row,
+  which `Tree` then recovers as described under "When a collapse hides the
+  focused row".
 - The target is 26 CSS pixels wide and the row's full height (a 14px glyph
   widened by a pseudo-element), so it follows row density and stops at the row's
   own padding and gap. A double-click on the chevron is two toggles and does not
@@ -66,6 +71,29 @@ In marker mode the chevron of an expandable row is its own pointer target
 - Keyboard behavior is identical in both modes. The chevron remains `aria-hidden`,
   unfocusable and outside the tab order; Left/Right expand and collapse, Enter
   calls `onActivate` and Space calls `onSelectItem` without toggling.
+
+## When a collapse hides the focused row
+
+Collapsing a row removes the rows below it from `visibleItems`. If one of them was
+the active row, `Tree` behaves the same way in both `disclosure` modes, whether the
+collapse came from Left, the marker chevron, or the host (for example from
+`onActivate` in the file-explorer convention):
+
+- The first visible row, not the collapsed ancestor, becomes the one roving stop
+  (`tabindex="0"`), and `onActiveIdChange` is called with its ID.
+- If the removed row held DOM focus, or was the last row the tree saw focused,
+  focus moves to that same row. It does not fall to `document.body`, and Up, Down,
+  Home, End, Left, Right, Enter and Space act on it from then on.
+- If the active row had no DOM focus (a restored or host-set roving stop), only
+  the roving stop moves; the tree does not take focus.
+- If the focused row stays visible, nothing moves: Left on an open row collapses
+  it and leaves focus on it, and a chevron press that hides only other rows
+  leaves focus on its row, or on a control outside the tree.
+- `Tree` remembers the last row that took focus and does not forget it when focus
+  leaves the tree. If that row is later hidden, even by a press on a chevron while
+  focus is in a control outside the tree, focus is pulled back into the tree, onto
+  the first visible row. This is how `Tree` has always behaved; it is not specific
+  to `disclosure="marker"`.
 
 The packed browser contract measures 320 CSS-pixel viewport bounds separately
 from a 200% root-font-size text-fit stress. The latter checks text and row
