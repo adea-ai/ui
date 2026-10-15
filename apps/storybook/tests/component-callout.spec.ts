@@ -221,3 +221,131 @@ test('narrow containers wrap the text, fill the width and keep the rule full hei
     .evaluate((element) => element.scrollWidth - element.clientWidth)
   expect(overflow).toBe(0)
 })
+
+/**
+ * The rendered gap between the title's bottom edge and the first glyph (or box) that
+ * follows it. CSS cannot see text nodes, so this measures the layout rather than the
+ * selector: the first rect of the first following text node, taken through a Range.
+ * `bare` removes the title's margin for the same measurement, which isolates what the
+ * margin contributes from the half-leading every line carries.
+ */
+const titleGap = (page: Page, calloutId: string) =>
+  page.getByTestId(calloutId).evaluate((callout) => {
+    const title = callout.querySelector<HTMLElement>('[data-slot="callout-title"]')!
+    const walker = document.createTreeWalker(callout, NodeFilter.SHOW_TEXT)
+    let node = walker.nextNode()
+    while (node && (title.contains(node) || !node.textContent?.trim())) node = walker.nextNode()
+    const range = document.createRange()
+    range.selectNodeContents(node!)
+    const measure = () => range.getClientRects()[0]!.top - title.getBoundingClientRect().bottom
+    const withMargin = measure()
+    const previous = title.style.marginBottom
+    title.style.marginBottom = '0px'
+    const without = measure()
+    title.style.marginBottom = previous
+    return {
+      withMargin,
+      without,
+      margin: getComputedStyle(title).marginBottom,
+      nextIsText: title.nextSibling?.nodeType === Node.TEXT_NODE,
+    }
+  })
+
+test.describe('title spacing', () => {
+  const cases = [
+    ['a bare text node', 'spacing-text'],
+    ['a block child', 'spacing-block'],
+    ['text with inline code and a link', 'spacing-inline'],
+    ['an inline link first', 'spacing-inline-first'],
+  ] as const
+
+  for (const [name, id] of cases) {
+    test(`a title followed by ${name} sits 4px above it`, async ({ page }) => {
+      const gap = await titleGap(page, id)
+      expect(gap.margin).toBe('4px')
+      expect(gap.withMargin - gap.without).toBeCloseTo(4, 1)
+    })
+  }
+
+  test('the gap is the same whatever follows: text, a block, inline mixes', async ({ page }) => {
+    const gaps = await Promise.all(cases.map(([, id]) => titleGap(page, id)))
+    expect((await titleGap(page, 'spacing-text')).nextIsText).toBe(true)
+    for (const gap of gaps) expect(gap.withMargin).toBeCloseTo(gaps[0]!.withMargin, 0)
+  })
+
+  test('a title-only callout keeps the same padding above and below with mb-0', async ({
+    page,
+  }) => {
+    const only = await page.getByTestId('spacing-only').evaluate((callout) => {
+      const title = callout.querySelector('[data-slot="callout-title"]')!
+      const box = callout.getBoundingClientRect()
+      const text = title.getBoundingClientRect()
+      return { above: text.top - box.top, below: box.bottom - text.bottom }
+    })
+    expect(only.above).toBe(12)
+    expect(only.below).toBe(12)
+  })
+
+  test('a title-only callout without mb-0 keeps the 4px margin (documented trade-off)', async ({
+    page,
+  }) => {
+    const below = await page.getByTestId('spacing-only-default').evaluate((callout) => {
+      const title = callout.querySelector('[data-slot="callout-title"]')!
+      return callout.getBoundingClientRect().bottom - title.getBoundingClientRect().bottom
+    })
+    expect(below).toBe(16)
+  })
+})
+
+test.describe('unbroken text', () => {
+  const cases = [
+    [
+      'a fixed-width block (200-character token in title and body)',
+      'unbroken-block-token',
+      'unbroken-block',
+    ],
+    ['a long URL', 'unbroken-block-url', 'unbroken-block'],
+    ['a long path', 'unbroken-block-path', 'unbroken-block'],
+    ['a flex row item', 'unbroken-flex-token', 'unbroken-flex'],
+    ['a flex column item', 'unbroken-flex-column-token', 'unbroken-flex-column'],
+    ['a grid item', 'unbroken-grid-token', 'unbroken-grid'],
+  ] as const
+
+  for (const [name, id, hostId] of cases) {
+    test(`wraps inside ${name} without horizontal overflow`, async ({ page }) => {
+      const result = await page.evaluate(
+        ([calloutId, host]) => {
+          const callout = document.querySelector<HTMLElement>(`[data-testid="${calloutId}"]`)!
+          const container = document.querySelector<HTMLElement>(`[data-testid="${host}"]`)!
+          const box = callout.getBoundingClientRect()
+          const outer = container.getBoundingClientRect()
+          return {
+            scrollWidth: callout.scrollWidth,
+            clientWidth: callout.clientWidth,
+            width: box.width,
+            containerWidth: container.clientWidth,
+            insideStart: box.left >= outer.left,
+            insideEnd: box.right <= outer.right + 0.01,
+            height: box.height,
+          }
+        },
+        [id, hostId]
+      )
+      expect(result.scrollWidth).toBe(result.clientWidth)
+      expect(result.width).toBeLessThanOrEqual(result.containerWidth)
+      expect(result.insideStart && result.insideEnd).toBe(true)
+      // 200 characters cannot fit on one line of a 192px box, so it really did wrap.
+      expect(result.height).toBeGreaterThan(80)
+    })
+  }
+
+  test('wrapping does not change the box: padding and rule are still the sm rung', async ({
+    page,
+  }) => {
+    expect(await computed(page, 'unbroken-block-token')).toMatchObject({
+      paddingTop: '12px',
+      paddingLeft: '14px',
+      borderLeftWidth: '2px',
+    })
+  })
+})

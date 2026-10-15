@@ -81,7 +81,10 @@ export const Matrix: Story = {
   ),
 }
 
-/** A title line above the body. A title alone takes no trailing margin. */
+/**
+ * A title line above the body. The title always leaves 4px below it; a title with
+ * nothing after it passes `class="mb-0"` so the block ends at its own padding.
+ */
 export const WithTitle: Story = {
   render: () => (
     <div class="flex w-144 flex-col gap-3">
@@ -90,7 +93,39 @@ export const WithTitle: Story = {
         This workspace deploys from the main branch, and releases are cut by Release Please.
       </Callout>
       <Callout variant="info">
-        <CalloutTitle>Title only</CalloutTitle>
+        <CalloutTitle class="mb-0">Title only</CalloutTitle>
+      </Callout>
+    </div>
+  ),
+}
+
+/**
+ * Whatever follows the title sits the same 4px below it: bare text, a mix of text
+ * with inline code and a link, a link that comes first, and a block child. CSS
+ * cannot see text nodes, so the margin is unconditional rather than `:last-child`.
+ */
+export const TitleSpacing: Story = {
+  render: () => (
+    <div class="flex w-144 flex-col gap-3">
+      <Callout size="sm">
+        <CalloutTitle>Bare text</CalloutTitle>
+        The body is a single text node directly after the title.
+      </Callout>
+      <Callout size="sm">
+        <CalloutTitle>Text with inline code and a link</CalloutTitle>
+        Run <code class="font-mono text-sm">bun run verify:changed</code>, then read the{' '}
+        <TextLink href="#contributing">contributing guide</TextLink>.
+      </Callout>
+      <Callout size="sm">
+        <CalloutTitle>Link first</CalloutTitle>
+        <TextLink href="#checks">The checks</TextLink> come first in this body.
+      </Callout>
+      <Callout size="sm">
+        <CalloutTitle>Block child</CalloutTitle>
+        <p>The body is a paragraph element.</p>
+      </Callout>
+      <Callout size="sm">
+        <CalloutTitle class="mb-0">Title only</CalloutTitle>
       </Callout>
     </div>
   ),
@@ -111,6 +146,36 @@ export const LongContent: Story = {
         packages-ui-src-components-ui-callout-callout-stories-tsx-with-an-unbroken-name-that-has-no-break-opportunity
       </p>
     </Callout>
+  ),
+}
+
+/**
+ * Text with no break opportunity (a 200-character token, a URL, a path) wraps inside
+ * the block instead of overflowing it, in a fixed-width column and as a flex or grid
+ * item, which would otherwise stretch to the text's width.
+ */
+export const UnbrokenText: Story = {
+  render: () => (
+    <div class="flex w-144 flex-col gap-3">
+      <div class="w-56">
+        <Callout size="sm">
+          <CalloutTitle>
+            Identifier-with-no-break-opportunity-and-no-spaces-at-all-in-the-title
+          </CalloutTitle>
+          https://example.com/a/very/long/path/with/no/spaces/or/hyphens/that/keeps/going/index.html
+        </Callout>
+      </div>
+      <div class="flex w-56">
+        <Callout size="sm" variant="info">
+          /home/user/projects/adea-ai/ui/packages/ui/src/components/ui/callout/callout.stories.tsx
+        </Callout>
+      </div>
+      <div class="grid w-56">
+        <Callout size="sm" variant="warning">
+          {'x'.repeat(200)}
+        </Callout>
+      </div>
+    </div>
   ),
 }
 

@@ -37,27 +37,41 @@ import { cn } from '../../../lib/utils'
  * Type size and colour are inherited rather than set (only the card foreground is
  * applied), so a callout in a dense panel and one in an article both read at the
  * size of the text around them.
+ *
+ * Text that has no break opportunity (a 200-character token, a URL, a file path)
+ * wraps with `overflow-wrap: anywhere` rather than overflowing the box. `anywhere`
+ * and not `break-word`, because only `anywhere` lowers the box's min-content width:
+ * a callout that is a flex or grid item (auto minimum size) then shrinks to its
+ * track instead of stretching it. The callout's own padding, rule and width are
+ * untouched, so none of its sizing differs from Cortana's.
+ *
+ * The block is deliberately not a flex or grid container: its children are inline
+ * text, links and code, and a flex root would turn each of those into a separate
+ * item and break the line.
  */
-export const calloutVariants = cva('bg-card text-card-foreground block rounded-none', {
-  variants: {
-    variant: {
-      default: 'border-s-primary',
-      destructive: 'border-s-destructive',
-      success: 'border-s-success',
-      warning: 'border-s-warning',
-      info: 'border-s-info',
+export const calloutVariants = cva(
+  'bg-card text-card-foreground block rounded-none wrap-anywhere',
+  {
+    variants: {
+      variant: {
+        default: 'border-s-primary',
+        destructive: 'border-s-destructive',
+        success: 'border-s-success',
+        warning: 'border-s-warning',
+        info: 'border-s-info',
+      },
+      size: {
+        /** 12px block / 14px inline padding, 2px rule: a short inline note. */
+        sm: 'border-s-2 px-3.5 py-3',
+        /** 18px block / 20px inline padding, 3px rule: a supporting aside. */
+        md: 'border-s-3 px-5 py-4.5',
+        /** 22px block / 24px inline padding, 3px rule: the lead summary of a view. */
+        lg: 'border-s-3 px-6 py-5.5',
+      },
     },
-    size: {
-      /** 12px block / 14px inline padding, 2px rule: a short inline note. */
-      sm: 'border-s-2 px-3.5 py-3',
-      /** 18px block / 20px inline padding, 3px rule: a supporting aside. */
-      md: 'border-s-3 px-5 py-4.5',
-      /** 22px block / 24px inline padding, 3px rule: the lead summary of a view. */
-      lg: 'border-s-3 px-6 py-5.5',
-    },
-  },
-  defaultVariants: { variant: 'default', size: 'md' },
-})
+    defaultVariants: { variant: 'default', size: 'md' },
+  }
+)
 
 export type CalloutProps = ComponentProps<'div'> & VariantProps<typeof calloutVariants>
 
@@ -78,13 +92,23 @@ export function Callout(props: CalloutProps) {
  * element: a callout sits inside someone else's outline, and a fixed heading
  * level would break it. Pass `role="heading"` with `aria-level` where the
  * content does belong in the outline.
+ *
+ * The title always carries a 4px (`mb-1`) margin below it, whatever follows: a
+ * paragraph, a list, or bare text. CSS cannot see text nodes, so a selector such
+ * as `:last-child` or `:only-child` cannot tell `<Title/>text` (needs the gap)
+ * from `<Title/>` (needs none), and `not-last:mb-1` silently dropped the gap for
+ * bare text, the most common body. The unconditional margin is the less
+ * surprising failure: it is never missing where text follows. The price is the
+ * title-only callout, which would end 4px taller than its padding says. Pass
+ * `class="mb-0"` there (`cn` lets the caller's margin win); the `WithTitle` story
+ * shows it.
  */
 export function CalloutTitle(props: ComponentProps<'div'>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
     <div
       data-slot="callout-title"
-      class={cn('not-last:mb-1 font-medium tracking-tight', local.class)}
+      class={cn('mb-1 font-medium tracking-tight', local.class)}
       {...rest}
     />
   )

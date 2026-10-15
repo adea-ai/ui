@@ -58,6 +58,14 @@ describe('calloutVariants', () => {
     expect(sm).toEqual(expect.arrayContaining(['py-3', 'px-3.5', 'border-s-2']))
   })
 
+  test('unbroken text wraps with overflow-wrap: anywhere, which also lets flex and grid items shrink', () => {
+    const list = classes(calloutVariants())
+    expect(list).toContain('wrap-anywhere')
+    expect(list).not.toContain('wrap-break-word')
+    // The block must stay a plain block: a flex or grid root would split inline children.
+    expect(list.some((c) => /^(?:inline-)?(?:flex|grid)$/.test(c))).toBe(false)
+  })
+
   test('the box is square and borderless apart from the rule', () => {
     const list = classes(calloutVariants())
     expect(list).toContain('rounded-none')
@@ -98,6 +106,9 @@ describe('Callout source contract', () => {
     const title = body('CalloutTitle')
     expect(title).toContain('data-slot="callout-title"')
     expect(title).toContain('local.class')
+    // Unconditional: `not-last:` ignores text nodes and dropped the gap before bare text.
+    expect(title).toContain("'mb-1 ")
+    expect(title).not.toContain('not-last')
     expect(title).toContain('{...rest}')
   })
 })
