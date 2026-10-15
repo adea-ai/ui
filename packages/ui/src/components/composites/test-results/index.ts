@@ -2,7 +2,7 @@ export { TestResults, TEST_RESULTS_LIST_LIMIT, type TestResultsProps } from './t
 export {
   describeCount,
   firstFailureKey,
-  formatDuration,
+  formatDuration as formatTestDuration,
   listedCounts,
   reconcileCounts,
   suiteKey,
