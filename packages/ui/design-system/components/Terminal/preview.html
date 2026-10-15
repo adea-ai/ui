@@ -1,0 +1,34 @@
+<!-- @dsCard group="Code" height=570 -->
+<div id="root" style="padding:16px;max-width:640px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, Terminal } = window.AdeaUI
+  const ESC = String.fromCharCode(27)
+  const sgr = (codes, text) => ESC + '[' + codes + 'm' + text + ESC + '[0m'
+  const failed = [
+    sgr('1', 'bun test') + ' v1.4.2',
+    '',
+    sgr('90', 'src/lib/keyed-rows.test.ts:'),
+    sgr('32', '✓') + ' keeps rows across a refetch ' + sgr('90', '[0.31ms]'),
+    sgr('32', '✓') + ' drops a row when its key disappears ' + sgr('90', '[0.12ms]'),
+    sgr('31', '✗') + ' reuses the row when the key repeats ' + sgr('90', '[1.04ms]'),
+    sgr('31;1', 'error') + ': expect(received).toBe(expected)',
+    '',
+    sgr('2', 'Expected: 2'),
+    sgr('2', 'Received: 3'),
+    '',
+    ' ' + sgr('32', '2 pass'),
+    ' ' + sgr('31', '1 fail'),
+    'Ran 3 tests across 1 file. [18.00ms]',
+    '',
+  ].join('\n')
+  const lint = sgr('32', 'Found 0 warnings and 0 errors.') + '\nFinished in 112ms on 214 files using 4 threads.\n'
+  const log = 'e5de178 chore(main): release 0.131.0\nce05fe0 feat(appearance-editor): row accent style\nad6fc44 chore(main): release 0.130.4\n'
+  render(
+    () => html`
+      <${Terminal} command="bun test --conditions=browser src/lib" output=${failed} status=${{ state: 'exited', code: 1 }} />
+      <${Terminal} command="bun run lint" output=${lint} status=${{ state: 'exited', code: 0 }} />
+      <${Terminal} command="git log --oneline -3" output=${log} />
+    `,
+    document.getElementById('root')
+  )
+</script>

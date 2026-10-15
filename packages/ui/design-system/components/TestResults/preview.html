@@ -1,0 +1,39 @@
+<!-- @dsCard group="Code" height=550 -->
+<div id="root" style="padding:16px;max-width:640px"></div>
+<script>
+  const { render, html, TestResults } = window.AdeaUI
+  const stack = [
+    'AssertionError: expected 3 to be 2',
+    '    at Object.<anonymous> (/repo/src/lib/keyed-rows.test.ts:48:21)',
+    '    at Promise.then.completed (/repo/node_modules/bun-test/dist/runner.js:210:28)',
+    '    at new Promise (<anonymous>)',
+    '    at run (/repo/src/lib/keyed-rows.test.ts:40:3)',
+  ].join('\n')
+  const diff = '--- expected\n+++ received\n@@ -1,3 +1,3 @@\n rows: [\n-  "a", "b"\n+  "a", "b", "b"\n ]'
+  const suites = [
+    {
+      name: 'keyed rows',
+      file: 'src/lib/keyed-rows.test.ts',
+      durationMs: 18,
+      tests: [
+        { name: 'keeps rows across a refetch', status: 'passed', durationMs: 0.31 },
+        { name: 'drops a row when its key disappears', status: 'passed', durationMs: 0.12 },
+        { name: 'reuses the row when the key repeats', status: 'failed', durationMs: 1.04, message: 'expected 3 to be 2', diff, stack },
+        { name: 'handles an empty list', status: 'skipped' },
+      ],
+    },
+    {
+      name: 'terminal',
+      file: 'src/components/composites/terminal/ansi.test.ts',
+      durationMs: 420,
+      tests: [
+        { name: 'drops OSC 52 clipboard writes', status: 'passed', durationMs: 4 },
+        { name: 'reassembles a CSI split across chunks', status: 'passed', durationMs: 2 },
+      ],
+    },
+  ]
+  render(
+    () => html`<${TestResults} suites=${suites} summary=${{ passed: 4, failed: 1, skipped: 1, durationMs: 3400 }} />`,
+    document.getElementById('root')
+  )
+</script>

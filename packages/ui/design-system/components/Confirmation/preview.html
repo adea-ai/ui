@@ -1,0 +1,28 @@
+<!-- @dsCard group="Conversation" height=930 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, Confirmation } = window.AdeaUI
+  const command = { kind: 'code', language: 'sh', title: 'bash', code: 'bun run --cwd packages/db db:migrate --env staging' }
+  const patch = [
+    'diff --git a/src/config.ts b/src/config.ts',
+    '--- a/src/config.ts',
+    '+++ b/src/config.ts',
+    '@@ -1,4 +1,4 @@',
+    ' export const config = {',
+    '-  retries: 1,',
+    '+  retries: 3,',
+    ' }',
+  ].join('\n')
+  const answer = (_event) => {}
+  render(
+    () => html`
+      <${Confirmation} title="Run a shell command?" description="It will migrate the staging database. Nothing runs until you answer."
+        details=${command} onApprove=${answer} onDeny=${answer} />
+      <${Confirmation} title="Edit src/config.ts?" details=${{ kind: 'diff', patch }} onApprove=${answer} onDeny=${answer} />
+      <${Confirmation} title="Run a shell command?" state="approved" details=${command} resolvedBy="Ana" resolvedAt="10:02" />
+      <${Confirmation} title="Run a shell command?" state="unavailable" details=${command}
+        disabledReason="You are offline. Reconnect to answer; the agent keeps waiting." onApprove=${answer} onDeny=${answer} />
+    `,
+    document.getElementById('root')
+  )
+</script>

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Code" height=480 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, createSignal, FileTree } = window.AdeaUI
+  const files = [
+    { path: 'packages/ui/src/components/composites/terminal/terminal.tsx', change: 'added', additions: 412, deletions: 0 },
+    { path: 'packages/ui/src/components/composites/terminal/ansi.ts', change: 'added', additions: 530, deletions: 0 },
+    { path: 'packages/ui/src/components/composites/terminal/ansi.test.ts', change: 'added', additions: 388, deletions: 0 },
+    { path: 'packages/ui/src/components/ui/code-block/code-block.tsx', change: 'modified', additions: 18, deletions: 4 },
+    { path: 'packages/ui/src/components/ui/code-block/index.ts', change: 'modified', additions: 2, deletions: 0 },
+    { path: 'packages/ui/src/lib/clipboard.ts', change: 'deleted', additions: 0, deletions: 44 },
+    { path: 'packages/ui/src/lib/copy-text.ts', change: 'renamed', renamedFrom: 'packages/ui/src/lib/clip.ts', additions: 3, deletions: 3 },
+    { path: 'docs/ai-elements.md', change: 'modified', additions: 9, deletions: 1 },
+    { path: 'README.md' },
+  ]
+  render(() => {
+    const [selected, setSelected] = createSignal('packages/ui/src/components/composites/terminal/ansi.ts')
+    return html`<${FileTree} files=${files} defaultExpanded=${true} maxHeight="30rem" selected=${() => selected()} onSelect=${(path) => setSelected(path)} />`
+  }, document.getElementById('root'))
+</script>

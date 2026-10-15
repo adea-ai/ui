@@ -1,0 +1,25 @@
+<!-- @dsCard group="Conversation" height=500 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Trace, Plan, Button } = window.AdeaUI
+  const noop = (_event) => {}
+  const steps = [
+    { label: 'Add a nullable locale column to users', status: 'complete' },
+    { label: 'Backfill from profile.language in batches', description: '5,000 rows at a time, with a pause between batches', status: 'active' },
+    { label: 'Add the not-null constraint', status: 'pending' },
+    { label: 'Create the index concurrently', status: 'pending' },
+    { label: 'Remove the old profile.language reads', status: 'pending' },
+  ]
+  const drafting = [{ label: 'Add a nullable locale column to users' }, { label: 'Backfill from profile.language' }]
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${Plan} title="Add a locale column" description="Adds locale without locking the users table." steps=${steps}
+          actions=${html`<${Button} size="xs" onClick=${noop}>Approve plan<//><${Button} size="xs" variant="outline" onClick=${noop}>Edit<//>`} />
+        <${Plan} title="Rename the legacy flags" steps=${steps.slice(0, 3)} defaultOpen=${false} />
+        <${Plan} title="Draft a rollback" streaming=${true} description="Adds locale without lock" steps=${drafting} />
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

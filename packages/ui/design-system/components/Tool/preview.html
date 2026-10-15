@@ -1,0 +1,29 @@
+<!-- @dsCard group="Conversation" height=820 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Icons, Trace, Tool, Button } = window.AdeaUI
+  const migration = 'ALTER TABLE users ADD COLUMN locale text;\nUPDATE users SET locale = profile_language;\nCREATE INDEX CONCURRENTLY users_locale_idx ON users (locale);'
+  const failure = 'Command failed with exit code 1\ntests/users.test.ts: expected 2, received 3'
+  const noop = (_event) => {}
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${Tool} name="read_file" icon=${html`<${Icons.FileText} />`} description="src/db/migrations/0054_add_locale.sql" status="success" defaultOpen=${true}
+          input=${{ path: 'src/db/migrations/0054_add_locale.sql', lines: [1, 40] }} output=${migration} />
+        <${Tool} name="run_command" icon=${html`<${Icons.Terminal} />`} description="bun run typecheck" status="running" defaultOpen=${true}
+          input=${{ command: 'bun run typecheck', cwd: 'packages/ui' }} />
+        <${Tool} name="delete_branch" description="feat/old-migration" status="awaiting-approval"
+          input=${{ branch: 'feat/old-migration', remote: true }}>
+          <div style="display:flex;align-items:center;gap:8px">
+            <${Button} size="xs" onClick=${noop}>Approve<//>
+            <${Button} size="xs" variant="outline" onClick=${noop}>Deny<//>
+          </div>
+        <//>
+        <${Tool} name="run_command" icon=${html`<${Icons.Terminal} />`} description="bun test" status="error" defaultOpen=${true} errorText=${failure} />
+        <${Tool} name="web_search" description="postgres lock levels" status="pending" />
+        <${Tool} name="read_file" icon=${html`<${Icons.FileText} />`} description="README.md" />
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

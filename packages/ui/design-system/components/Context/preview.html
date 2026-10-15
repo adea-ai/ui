@@ -1,0 +1,24 @@
+<!-- @dsCard group="Conversation" height=440 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:12px;min-height:420px;box-sizing:border-box"></div>
+<script>
+  const { render, html, Context } = window.AdeaUI
+  const breakdown = { input: 88400, output: 21300, cacheRead: 9800, cacheWrite: 2100, reasoning: 2400 }
+  const root = document.getElementById('root')
+  render(
+    () => html`
+      <div style="display:flex;align-items:center;gap:16px">
+        <${Context} used=${124000} total=${200000} breakdown=${breakdown} cost=${{ amount: 0.42, currency: 'USD' }} />
+        <${Context} used=${156000} total=${200000} />
+        <${Context} used=${186000} total=${200000} />
+        <${Context} used=${48200} />
+      </div>
+    `,
+    root
+  )
+  // The trigger owns its popover, so the card opens the first one the way a pointer would.
+  const trigger = root.querySelector('button')
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }))
+  document.activeElement?.blur()
+</script>

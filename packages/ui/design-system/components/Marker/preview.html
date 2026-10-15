@@ -1,0 +1,18 @@
+<!-- @dsCard group="Conversation" height=200 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, Icons, Marker, Button } = window.AdeaUI
+  const reconnect = (_event) => {}
+  render(
+    () => html`
+      <${Marker} label="Today" />
+      <${Marker} label="Run cancelled" tone="warning" icon=${html`<${Icons.Square} />`} />
+      <${Marker} label="Connection lost" description="Showing the last events received" tone="danger" live="assertive"
+        icon=${html`<${Icons.X} />`}
+        action=${html`<${Button} size="2xs" variant="outline" onClick=${reconnect}>Reconnect<//>`} />
+      <${Marker} variant="note" label="Earlier history is not retained" description="Older events need a checkpoint" icon=${html`<${Icons.Info} />`} />
+      <${Marker} variant="note" label="Unrecognised event" description="session.paused" icon=${html`<${Icons.CircleHelp} />`} />
+    `,
+    document.getElementById('root')
+  )
+</script>

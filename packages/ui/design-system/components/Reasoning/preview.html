@@ -1,0 +1,23 @@
+<!-- @dsCard group="Conversation" height=350 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, createSignal, Trace, Reasoning } = window.AdeaUI
+  const fence = '\x60\x60\x60'
+  const summary = 'The migration touches users and the sessions index, so order matters.\n\nI will add the column as nullable first, backfill in batches, and only then add the constraint. Doing it in one statement would hold a lock on users for the whole backfill.'
+  const partial = 'Checking the lock behaviour first.\n\n' + fence + 'sql\nALTER TABLE users ADD COLUMN locale text'
+  render(
+    () => {
+      // Open is the host's to own: a held-open thought is the reader's choice, not the default.
+      const [held, setHeld] = createSignal(true)
+      return html`
+      <${Trace} aria-label="Agent activity">
+        <${Reasoning} text=${summary} duration=${4} open=${() => held()} onOpenChange=${(next) => setHeld(next)} />
+        <${Reasoning} text=${summary} duration=${9} />
+        <${Reasoning} text=${summary} />
+        <${Reasoning} streaming=${true} text=${partial} />
+      <//>
+    `
+    },
+    document.getElementById('root')
+  )
+</script>
