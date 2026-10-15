@@ -161,8 +161,8 @@ const manyTests: TestSuite[] = Array.from({ length: 12 }, (_unused, s) => ({
 
 /**
  * 4 800 tests across 12 suites. Suites and tests are listed 50 at a time with a
- * count of what is hidden; a suite renders its tests only when opened, and the
- * one with the failure is open with the failing test expanded.
+ * count of what is hidden; the suite with the failure is open, but the test stays
+ * unmounted behind "show more" until its page is revealed.
  */
 export const LongRun: Story = {
   args: { suites: manyTests, summary: { passed: 4799, failed: 1, durationMs: 88_000 } },

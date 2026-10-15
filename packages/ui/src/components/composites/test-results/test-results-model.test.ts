@@ -4,6 +4,7 @@ import {
   describeCount,
   firstFailureKey,
   firstFailureRenderKey,
+  firstFailureRenderPath,
   formatDuration,
   listedCounts,
   reconcileCounts,
@@ -227,6 +228,28 @@ describe('keys and the first failure', () => {
         },
       ])
     ).toBe('/s1/s0:t1')
+  })
+
+  test('returns the complete keyed ancestor path for the first failure', () => {
+    const values: TestSuite[] = [
+      {
+        id: 'outer',
+        name: 'outer',
+        suites: [
+          {
+            id: 'inner',
+            name: 'inner',
+            tests: [{ id: 'broken', name: 'broken', status: 'failed' }],
+          },
+        ],
+      },
+    ]
+    const outerKey = repeatedKey('/outer', 0)
+    const innerKey = repeatedKey(`${outerKey}/inner`, 0)
+    expect(firstFailureRenderPath(values)).toEqual({
+      suites: [outerKey, innerKey],
+      test: repeatedKey(testKey(innerKey, values[0]!.suites![0]!.tests![0]!, 0), 0),
+    })
   })
 
   test('is undefined when nothing failed', () => {

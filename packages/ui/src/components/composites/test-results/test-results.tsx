@@ -1,6 +1,7 @@
 import { CircleCheck, CircleMinus, CircleX, FlaskConical, LoaderCircle } from 'lucide-solid'
 import {
   createMemo,
+  createEffect,
   createSignal,
   For,
   Show,
@@ -17,7 +18,7 @@ import { StackTrace, type StackTraceProps } from '../stack-trace'
 import {
   boundedEntries,
   describeCount,
-  firstFailureRenderKey,
+  firstFailureRenderPath,
   formatDuration,
   listedCounts,
   reconcileCounts,
@@ -30,6 +31,7 @@ import {
   type TestOutcome,
   type TestSuite,
   type TestSummary,
+  type FirstFailureRenderPath,
 } from './test-results-model'
 
 /**
@@ -62,8 +64,10 @@ import {
  * ## Bounded
  *
  * Suites and tests are listed `listLimit` at a time with "show more", and a suite's
- * tests are not rendered until it is open. Exactly one failing test — the first —
- * opens by default; the rest are one click away.
+ * tests are not rendered until it is open. The first failure in reading order opens
+ * when its row is visible; a failure beyond a "show more" boundary stays unmounted
+ * until its page is revealed. When a running result first reports a failure, its
+ * suite and test open once. Later updates preserve the user's disclosure choices.
  *
  * Failure details are text: the message is a `pre`, the diff goes to `DiffBlock`
  * and the stack to `StackTrace`. If a stack already begins with the message, pass
@@ -177,19 +181,43 @@ function Bounded<T>(props: {
 function TestLine(props: {
   test: Accessor<TestCase>
   keyed: string
-  openKey?: string
+  failure?: FirstFailureRenderPath
   onOpenFrame?: TestResultsProps['onOpenFrame']
 }) {
   const test = () => props.test()
   const state = () => (test().status ? TRACE_STATUS[test().status as TestCaseStatus] : undefined)
   const hasDetail = () => Boolean(test().message || test().diff || test().stack)
+  const failureKey = () => props.failure?.test
+  const [open, setOpen] = createSignal(failureKey() === props.keyed)
+  let previousFailureKey = failureKey()
+  let collapsedFailureKey: string | undefined
+
+  createEffect(() => {
+    const currentFailureKey = failureKey()
+    if (
+      currentFailureKey === props.keyed &&
+      currentFailureKey !== previousFailureKey &&
+      currentFailureKey !== collapsedFailureKey
+    ) {
+      setOpen(true)
+    }
+    previousFailureKey = currentFailureKey
+  })
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && failureKey() === props.keyed) collapsedFailureKey = props.keyed
+    else if (next) collapsedFailureKey = undefined
+    setOpen(next)
+  }
+
   return (
     <TraceLine
       title={test().name}
       status={state()?.status}
       statusLabel={state()?.label}
       meta={formatDuration(test().durationMs)}
-      defaultOpen={props.openKey === props.keyed}
+      open={open()}
+      onOpenChange={handleOpenChange}
     >
       {hasDetail() ? (
         <TraceDetail class="flex flex-col gap-2">
@@ -214,7 +242,7 @@ function SuiteLine(props: {
   suite: Accessor<TestSuite>
   keyed: string
   limit: number
-  openKey?: string
+  failure?: FirstFailureRenderPath
   onOpenFrame?: TestResultsProps['onOpenFrame']
 }) {
   const suite = () => props.suite()
@@ -222,6 +250,30 @@ function SuiteLine(props: {
   const state = createMemo(() => suiteState(counts()))
   const children = () => (suite().tests?.length ?? 0) + (suite().suites?.length ?? 0) > 0
   const [open, setOpen] = createSignal(state() === 'failed')
+  const failureKey = () => props.failure?.test
+  const containsFailure = () => props.failure?.suites.includes(props.keyed) ?? false
+  let previousFailureKey = failureKey()
+  let collapsedFailureKey: string | undefined
+
+  createEffect(() => {
+    const currentFailureKey = failureKey()
+    if (
+      containsFailure() &&
+      currentFailureKey &&
+      currentFailureKey !== previousFailureKey &&
+      currentFailureKey !== collapsedFailureKey
+    ) {
+      setOpen(true)
+    }
+    previousFailureKey = currentFailureKey
+  })
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && containsFailure()) collapsedFailureKey = failureKey()
+    else if (next) collapsedFailureKey = undefined
+    setOpen(next)
+  }
+
   const description = () => {
     const parts = [
       suite().file,
@@ -252,7 +304,7 @@ function SuiteLine(props: {
       }
       meta={formatDuration(suite().durationMs)}
       open={open()}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
     >
       {children() ? (
         <div>
@@ -268,7 +320,7 @@ function SuiteLine(props: {
                   <TestLine
                     test={test}
                     keyed={key}
-                    openKey={props.openKey}
+                    failure={props.failure}
                     onOpenFrame={props.onOpenFrame}
                   />
                 )}
@@ -284,7 +336,7 @@ function SuiteLine(props: {
                     suite={nested}
                     keyed={key}
                     limit={props.limit}
-                    openKey={props.openKey}
+                    failure={props.failure}
                     onOpenFrame={props.onOpenFrame}
                   />
                 )}
@@ -311,7 +363,7 @@ export function TestResults(props: TestResultsProps) {
   const listed = createMemo(() => listedCounts(local.suites))
   const counts = createMemo(() => reconcileCounts(local.summary, listed()))
   const limit = () => Math.max(1, Math.floor(local.listLimit ?? TEST_RESULTS_LIST_LIMIT))
-  const openKey = createMemo(() => firstFailureRenderKey(local.suites))
+  const failure = createMemo(() => firstFailureRenderPath(local.suites))
   const duration = () => formatDuration(local.summary?.durationMs, 'long')
   const nothing = () =>
     counts().lines.length === 0 &&
@@ -381,7 +433,7 @@ export function TestResults(props: TestResultsProps) {
                   suite={suite}
                   keyed={key}
                   limit={limit()}
-                  openKey={openKey()}
+                  failure={failure()}
                   onOpenFrame={local.onOpenFrame}
                 />
               )}

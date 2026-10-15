@@ -45,3 +45,66 @@ test('a reported total without suites is useful output, not an empty-state messa
   await expect(page.getByText('10 tests reported')).toBeVisible()
   await expect(page.getByText('No test results')).toHaveCount(0)
 })
+
+test('a paged first failure opens when revealed and keyed rows survive reorder and shrink', async ({
+  page,
+}) => {
+  const results = page.getByRole('region', { name: 'Paged test results' })
+  const suite = results.getByRole('button', { name: 'Paged suite' })
+  await expect(suite).toHaveAttribute('aria-expanded', 'true')
+
+  const failure = results.getByRole('button', { name: 'Paged first failure' })
+  await expect(failure).toHaveCount(0)
+  await results.getByRole('button', { name: /Show 2 more tests/ }).click()
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(results.getByText('Paged failure details')).toBeVisible()
+  await failure.focus()
+  await expect(failure).toBeFocused()
+
+  await page.evaluate(() => {
+    ;(window as Window & { reorderPagedResults?: () => void }).reorderPagedResults?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(failure).toBeFocused()
+
+  await page.evaluate(() => {
+    ;(window as Window & { shrinkPagedResults?: () => void }).shrinkPagedResults?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(failure).toBeFocused()
+  await expect(results.getByRole('button', { name: 'Second row' })).toHaveCount(0)
+
+  await page.evaluate(() => {
+    ;(window as Window & { growPagedResults?: () => void }).growPagedResults?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(failure).toBeFocused()
+  await expect(results.getByRole('button', { name: 'Second row' })).toHaveCount(0)
+  await expect(results.getByRole('button', { name: /Show 1 more tests/ })).toBeVisible()
+})
+
+test('a first failure arriving during a run opens once and respects a user collapse', async ({
+  page,
+}) => {
+  const results = page.getByRole('region', { name: 'Streaming test results' })
+  const suite = results.getByRole('button', { name: 'Streaming suite' })
+  await expect(suite).toHaveAttribute('aria-expanded', 'false')
+
+  await page.evaluate(() => {
+    ;(window as Window & { reportStreamingFailure?: () => void }).reportStreamingFailure?.()
+  })
+  await expect(suite).toHaveAttribute('aria-expanded', 'true')
+
+  const failure = results.getByRole('button', { name: 'Streamed failure' })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(results.getByText('Initial streamed failure')).toBeVisible()
+
+  await failure.click()
+  await expect(failure).toHaveAttribute('aria-expanded', 'false')
+  await page.evaluate(() => {
+    ;(window as Window & { updateStreamingFailure?: () => void }).updateStreamingFailure?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'false')
+  await expect(results.getByText('Initial streamed failure')).toHaveCount(0)
+  await expect(results.getByText('Updated streamed failure')).toHaveCount(0)
+})

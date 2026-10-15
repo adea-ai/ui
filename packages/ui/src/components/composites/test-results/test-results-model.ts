@@ -262,7 +262,7 @@ export function boundedEntries<T>(
   return { entries, byKey }
 }
 
-/** The key of the first failing test in reading order, so exactly one failure opens by default. */
+/** The key of the first failing test in reading order. */
 export function firstFailureKey(suites: readonly TestSuite[]): string | undefined {
   type Frame = { suites: readonly TestSuite[]; parent: string; index: number }
   const stack: Frame[] = [{ suites, parent: '', index: 0 }]
@@ -283,15 +283,25 @@ export function firstFailureKey(suites: readonly TestSuite[]): string | undefine
   return undefined
 }
 
-/** The unique rendering key for the first failure, including repeated host ids. */
-export function firstFailureRenderKey(suites: readonly TestSuite[]): string | undefined {
+export type FirstFailureRenderPath = Readonly<{
+  /** Suite rendering keys from the root through the suite containing the failure. */
+  suites: readonly string[]
+  /** The unique rendering key for the first failed test, including repeated host ids. */
+  test: string
+}>
+
+/** The first failure's unique rendering keys, including its ancestor suites. */
+export function firstFailureRenderPath(
+  suites: readonly TestSuite[]
+): FirstFailureRenderPath | undefined {
   type Frame = {
     suites: readonly TestSuite[]
     parent: string
     index: number
     occurrences: Map<string, number>
+    path: readonly string[]
   }
-  const stack: Frame[] = [{ suites, parent: '', index: 0, occurrences: new Map() }]
+  const stack: Frame[] = [{ suites, parent: '', index: 0, occurrences: new Map(), path: [] }]
   while (stack.length > 0) {
     const frame = stack[stack.length - 1]!
     const suite = frame.suites[frame.index]
@@ -304,17 +314,25 @@ export function firstFailureRenderKey(suites: readonly TestSuite[]): string | un
     const suiteOccurrence = frame.occurrences.get(baseKey) ?? 0
     frame.occurrences.set(baseKey, suiteOccurrence + 1)
     const key = repeatedKey(baseKey, suiteOccurrence)
+    const path = [...frame.path, key]
     const tests = suite.tests ?? []
     const testOccurrences = new Map<string, number>()
     for (let i = 0; i < tests.length; i += 1) {
       const baseTestKey = testKey(key, tests[i]!, i)
       const testOccurrence = testOccurrences.get(baseTestKey) ?? 0
       testOccurrences.set(baseTestKey, testOccurrence + 1)
-      if (tests[i]!.status === 'failed') return repeatedKey(baseTestKey, testOccurrence)
+      if (tests[i]!.status === 'failed') {
+        return { suites: path, test: repeatedKey(baseTestKey, testOccurrence) }
+      }
     }
     if (suite.suites?.length) {
-      stack.push({ suites: suite.suites, parent: key, index: 0, occurrences: new Map() })
+      stack.push({ suites: suite.suites, parent: key, index: 0, occurrences: new Map(), path })
     }
   }
   return undefined
+}
+
+/** The unique rendering key for the first failure, including repeated host ids. */
+export function firstFailureRenderKey(suites: readonly TestSuite[]): string | undefined {
+  return firstFailureRenderPath(suites)?.test
 }
