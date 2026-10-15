@@ -12,6 +12,14 @@ export type NativeSelectProps = Omit<ComponentProps<'select'>, 'size'> & {
    * control that this styled single-line select is not.
    */
   size?: 'sm' | 'md' | 'lg'
+  /**
+   * Layout classes for the element that wraps the select and its chevron: a
+   * width or `max-w-*`, `flex-1`, `col-span-*`, a margin. `class` reaches the
+   * `<select>` itself, which is the wrong box for any of those, because the
+   * wrapper is what a flex or grid parent lays out. The select fills the
+   * wrapper, so the chevron stays at the control's edge at any width.
+   */
+  wrapperClass?: string
   /** Render the choices from data instead of raw option children. */
   options?: readonly NativeSelectOption[]
   /** Initialize an uncontrolled selection after its native options mount. */
@@ -69,6 +77,7 @@ export type NativeSelectOption = Readonly<{
 export function NativeSelect(props: NativeSelectProps) {
   const [local, rest] = splitProps(props, [
     'class',
+    'wrapperClass',
     'size',
     'children',
     'defaultValue',
@@ -103,7 +112,10 @@ export function NativeSelect(props: NativeSelectProps) {
   })
 
   return (
-    <span data-slot="native-select-wrapper" class="relative inline-flex min-w-0">
+    <span
+      data-slot="native-select-wrapper"
+      class={cn('relative inline-flex min-w-0', local.wrapperClass)}
+    >
       <select
         ref={(element) => {
           select = element
@@ -116,7 +128,7 @@ export function NativeSelect(props: NativeSelectProps) {
         aria-invalid={field?.['aria-invalid'] ?? local['aria-invalid']}
         aria-errormessage={field?.['aria-errormessage'] ?? local['aria-errormessage']}
         class={cn(
-          'min-w-0 appearance-none rounded-md border border-input bg-transparent',
+          'w-full min-w-0 appearance-none rounded-md border border-input bg-transparent',
           {
             'h-control-sm px-control-sm pr-8 text-xs': local.size === 'sm',
             'h-control-md px-control-md pr-9 text-sm':
