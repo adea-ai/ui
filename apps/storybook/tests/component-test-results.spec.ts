@@ -83,6 +83,36 @@ test('a paged first failure opens when revealed and keyed rows survive reorder a
   await expect(results.getByRole('button', { name: /Show 1 more tests/ })).toBeVisible()
 })
 
+test('a reorder never pulls focus back once the user has moved elsewhere', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Paged test results' })
+  await results.getByRole('button', { name: /Show 2 more tests/ }).click()
+  const failure = results.getByRole('button', { name: 'Paged first failure' })
+  await failure.focus()
+  await expect(failure).toBeFocused()
+
+  await page.evaluate(() => {
+    const outside = document.createElement('button')
+    outside.id = 'outside-focus-target'
+    outside.textContent = 'Outside'
+    document.body.append(outside)
+    outside.focus()
+  })
+  await page.evaluate(() => {
+    ;(window as Window & { reorderPagedResults?: () => void }).reorderPagedResults?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.locator('#outside-focus-target')).toBeFocused()
+
+  await page.evaluate(() => {
+    ;(document.activeElement as HTMLElement | null)?.blur()
+  })
+  await page.evaluate(() => {
+    ;(window as Window & { reorderPagedResults?: () => void }).growPagedResults?.()
+  })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(failure).not.toBeFocused()
+})
+
 test('a first failure arriving during a run opens once and respects a user collapse', async ({
   page,
 }) => {
