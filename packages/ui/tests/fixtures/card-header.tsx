@@ -1,0 +1,76 @@
+import { render } from 'solid-js/web'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../src/components/ui/card/card'
+import '../../src/styles/globals.css'
+
+function Fixture() {
+  return (
+    <main>
+      <Card class="w-96" data-testid="plain">
+        <CardHeader data-testid="plain-header">
+          <CardTitle>Nightly soak</CardTitle>
+          <CardDescription>Runs the endurance lane at 02:00.</CardDescription>
+        </CardHeader>
+        <CardContent>Body</CardContent>
+      </Card>
+      <Card class="w-96" data-testid="action">
+        <CardHeader data-testid="action-header">
+          <CardTitle>Release 0.55.0</CardTitle>
+          <CardDescription>Cut from main on 24 September.</CardDescription>
+          <CardAction data-testid="action-slot">
+            <span class="inline-block h-6 w-20">Published</span>
+          </CardAction>
+        </CardHeader>
+        <CardContent>Body</CardContent>
+      </Card>
+      <Card class="w-96" data-testid="title-only">
+        <CardHeader data-testid="title-only-header">
+          <CardTitle data-testid="title-only-title">
+            A very long principal name that has to wrap
+          </CardTitle>
+          <CardAction data-testid="title-only-slot">
+            <span class="inline-block h-8 w-8">x</span>
+          </CardAction>
+        </CardHeader>
+        <CardContent>Body</CardContent>
+      </Card>
+      <Card class="w-96" data-testid="centered">
+        <CardHeader class="items-center" data-testid="centered-header">
+          <CardTitle data-testid="centered-title">Principal 1</CardTitle>
+          <CardAction class="row-span-1" data-testid="centered-slot">
+            <span class="inline-block h-8 w-8">x</span>
+          </CardAction>
+        </CardHeader>
+      </Card>
+      <Card class="w-96" data-testid="wrapped">
+        <CardHeader data-testid="wrapped-header">
+          <div class="flex items-start justify-between gap-3" data-testid="wrapped-row">
+            <div class="flex min-w-0 flex-1 flex-col gap-2">
+              <CardTitle>Wrapped heading row</CardTitle>
+              <CardDescription>The caller lays out its own row.</CardDescription>
+            </div>
+            <CardAction data-testid="wrapped-slot">
+              <span class="inline-block h-6 w-20">Published</span>
+            </CardAction>
+          </div>
+        </CardHeader>
+      </Card>
+      <Card class="w-96" size="sm" data-testid="small">
+        <CardHeader data-testid="small-header">
+          <CardTitle>Small</CardTitle>
+          <CardAction data-testid="small-slot">
+            <span class="inline-block h-6 w-12">Live</span>
+          </CardAction>
+        </CardHeader>
+      </Card>
+    </main>
+  )
+}
+
+render(() => <Fixture />, document.body)
