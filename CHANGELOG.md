@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.136.0](https://github.com/adea-ai/ui/compare/v0.135.1...v0.136.0) (2026-10-15)
+
+
+### Features
+
+* **callout:** add a quiet accent-rule note block ([#435](https://github.com/adea-ai/ui/issues/435)) ([317357e](https://github.com/adea-ai/ui/commit/317357ebd15d46a7a574b970534e44b631a409cb))
+
+## [0.135.1](https://github.com/adea-ai/ui/compare/v0.135.0...v0.135.1) (2026-10-15)
+
+
+### Documentation
+
+* **design-system:** show the dense host editor and its toolbar sheet ([#415](https://github.com/adea-ai/ui/issues/415)) ([1bec409](https://github.com/adea-ai/ui/commit/1bec409c206c3c59863384f2bfdb1f1464f141c5))
+
 ## [0.135.0](https://github.com/adea-ai/ui/compare/v0.134.0...v0.135.0) (2026-10-15)
 
 

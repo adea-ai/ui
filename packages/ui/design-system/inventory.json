@@ -74,6 +74,12 @@
         "group": "Forms"
       }
     ],
+    "callout": [
+      {
+        "card": "Callout",
+        "group": "Feedback"
+      }
+    ],
     "card": [
       {
         "card": "Card",
@@ -467,6 +473,10 @@
     "appearance-editor": [
       {
         "card": "AppearanceEditor",
+        "group": "Composites"
+      },
+      {
+        "card": "AppearancePopover",
         "group": "Composites"
       }
     ],
