@@ -4,7 +4,15 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { Bubble } from '../bubble'
 import { Button } from '../button'
 import { ConversationAvatar } from '../../conversation/conversation-avatar'
-import { Message, MessageActions, MessageContent, MessageHeader, MessageText } from './message'
+import { messageCitations } from '../../composites/inline-citation'
+import {
+  Message,
+  MessageActions,
+  MessageContent,
+  MessageHeader,
+  MessageText,
+  type MessageCodeBlockProps,
+} from './message'
 
 const meta = {
   title: 'UI/Message',
@@ -87,6 +95,58 @@ export const UntrustedText: Story = {
         <MessageText
           text={
             '<img src=x onerror=alert(1)> and <script>alert(2)</script>\n\n[click](javascript:alert(3)) [ok](https://example.com) [mail](mailto:a@example.com)\n\n| a | b |\n| - | - |\n| 1 | 2 |'
+          }
+        />
+      </MessageContent>
+    </Message>
+  ),
+}
+
+/**
+ * Citation markers. The host supplies the sources the reply really used and
+ * `messageCitations` turns `[^n]` into their badges. A number with no source
+ * (`[^9]`), an array index (`arr[1]`) and code are left exactly as written.
+ */
+export const Citations: Story = {
+  args: { role: 'assistant', label: 'Assistant' },
+  render: () => (
+    <Message role="assistant" label="Assistant">
+      <MessageContent>
+        <MessageText
+          citations={messageCitations([
+            {
+              title: 'Migration guide',
+              url: 'https://example.com/guide',
+              snippet: 'Apply additive changes before the backfill.',
+            },
+            { title: 'Runbook', url: 'https://example.com/runbook' },
+          ])}
+          text={
+            'Add the column first [^1], then backfill [^2]. Both documents agree on the order [^1,2]. A marker with no source [^9] and `arr[1]` stay text.'
+          }
+        />
+      </MessageContent>
+    </Message>
+  ),
+}
+
+/**
+ * Line marks. The host chooses a block's props by position, because only it knows
+ * which lines changed or failed; the text itself can never mark a line.
+ */
+export const LineMarks: Story = {
+  args: { role: 'assistant', label: 'Assistant' },
+  render: () => (
+    <Message role="assistant" label="Assistant">
+      <MessageContent>
+        <MessageText
+          codeBlockProps={(block): MessageCodeBlockProps =>
+            block.index === 0
+              ? { lineMarks: { 2: 'add', 3: 'remove' } }
+              : { lineMarks: { 1: 'error' } }
+          }
+          text={
+            'The change:\n\n```diff\nkeep\nadded\nremoved\n```\n\nThe failing line:\n\n```ts\nbroken(\n```'
           }
         />
       </MessageContent>

@@ -61,8 +61,14 @@ export type ToolStatus =
   | 'error'
   | 'awaiting-approval'
   | 'denied'
+  | 'cancelled'
 
-/** The words spoken (and, for the last two, shown) for each status. */
+/**
+ * The words spoken (and, for the last three, shown) for each status. `denied` is
+ * a decision about the call; `cancelled` is the run being stopped while the call
+ * was in flight. Give a call `cancelled` only when the host knows that call was
+ * stopped: a run ending does not by itself say what became of each call.
+ */
 export const TOOL_STATUS_LABELS: Readonly<Record<ToolStatus, string>> = {
   pending: 'Pending',
   running: 'Running',
@@ -70,6 +76,7 @@ export const TOOL_STATUS_LABELS: Readonly<Record<ToolStatus, string>> = {
   error: 'Failed',
   'awaiting-approval': 'Awaiting approval',
   denied: 'Denied',
+  cancelled: 'Cancelled',
 }
 
 const TRACE_STATUS: Readonly<Record<ToolStatus, TraceStatus>> = {
@@ -79,6 +86,7 @@ const TRACE_STATUS: Readonly<Record<ToolStatus, TraceStatus>> = {
   error: 'error',
   'awaiting-approval': 'pending',
   denied: 'cancelled',
+  cancelled: 'cancelled',
 }
 
 export type ToolProps = Omit<
@@ -183,15 +191,17 @@ export function Tool(props: ToolProps) {
     </TraceDetail>
   )
 
-  // Words as well as marks for the two states whose glyph is easy to misread. The
+  // Words as well as marks for the states whose glyph is easy to misread. The
   // badge is hidden from assistive technology: the status word is already spoken.
   const wordBadge = () =>
-    local.status === 'awaiting-approval' || local.status === 'denied' ? (
+    local.status === 'awaiting-approval' ||
+    local.status === 'denied' ||
+    local.status === 'cancelled' ? (
       <span class="flex items-center gap-2">
         <Badge
           aria-hidden="true"
           size="sm"
-          variant={local.status === 'denied' ? 'outline' : 'warning'}
+          variant={local.status === 'awaiting-approval' ? 'warning' : 'outline'}
         >
           {TOOL_STATUS_LABELS[local.status]}
         </Badge>

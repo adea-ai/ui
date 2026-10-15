@@ -14,6 +14,11 @@
  * (the paragraph renders `white-space: pre-wrap`), so unsupported syntax
  * degrades to readable source instead of vanishing.
  *
+ * A citation marker, `[^1]` or `[^1,2]`, is read only when the caller says how
+ * many sources it has (`citations`) and every number names one of them. A marker
+ * the host cannot resolve stays literal text: it is never a citation by shape
+ * alone, and `arr[1]` or a footnote the model invented is not one either.
+ *
  * Streaming is a first-class input. `streaming: true` means the text may end
  * mid-construct, so an unterminated fence is a *partial* code block — shown as
  * code from its first line, flagged incomplete — and an unterminated inline
@@ -27,6 +32,8 @@ export type MessageInline =
   | Readonly<{ kind: 'strong'; children: readonly MessageInline[] }>
   | Readonly<{ kind: 'em'; children: readonly MessageInline[] }>
   | Readonly<{ kind: 'link'; href: string; children: readonly MessageInline[] }>
+  /** A resolved citation marker: 1-based source numbers, each within `citations`. */
+  | Readonly<{ kind: 'cite'; numbers: readonly number[]; raw: string }>
 
 export type MessageBlock =
   | Readonly<{ kind: 'paragraph'; inline: readonly MessageInline[]; raw: string }>
@@ -78,8 +85,33 @@ export function safeHref(value: string): string | undefined {
 
 const MAX_INLINE_DEPTH = 4
 
+/** A marker may cite at most this many sources, so one cannot flood a sentence. */
+const MAX_CITED_SOURCES = 6
+const CITATION = /\[\^(\d{1,4}(?:[ \t]*,[ \t]*\d{1,4}){0,5})\]/y
+
+export type ParseInlineOptions = {
+  /** How many sources the host has. Without it no marker is a citation. */
+  citations?: number
+  /** Inside a link label, where a citation (itself a button) must not nest. */
+  inLink?: boolean
+}
+
+function citationAt(text: string, index: number, count: number): MessageInline | undefined {
+  CITATION.lastIndex = index
+  const match = CITATION.exec(text)
+  if (!match) return undefined
+  const numbers = [...new Set(match[1]!.split(',').map((part) => Number(part.trim())))]
+  if (numbers.length > MAX_CITED_SOURCES) return undefined
+  if (numbers.some((number) => number < 1 || number > count)) return undefined
+  return { kind: 'cite', numbers, raw: match[0] }
+}
+
 /** Inline spans. Delimiters must close on the same block, or they stay literal. */
-export function parseInline(text: string, depth = 0): readonly MessageInline[] {
+export function parseInline(
+  text: string,
+  depth = 0,
+  options: ParseInlineOptions = {}
+): readonly MessageInline[] {
   const out: MessageInline[] = []
   let brackets: ReadonlyMap<number, number> | undefined
   let paren = -2
@@ -114,6 +146,14 @@ export function parseInline(text: string, depth = 0): readonly MessageInline[] {
       // A delimiter opens only before a non-space, so `a * b * c` and `2 * 3` stay arithmetic.
       if (next !== undefined && !/\s/.test(next)) {
         const close = findClosing(text, delimiter, start)
+        if (double && !(close > start && !/\s/.test(text[close - 1] ?? ' '))) {
+          // An opener that does not close stays literal as a pair. Retrying its
+          // second mark as emphasis would scan to the end of the line again, so a
+          // line of unclosed `**a ` would be quadratic.
+          buffer += delimiter
+          index = start
+          continue
+        }
         if (close > start && !/\s/.test(text[close - 1] ?? ' ')) {
           // `_` inside a word (snake_case) is not emphasis.
           const wordInternal =
@@ -122,12 +162,21 @@ export function parseInline(text: string, depth = 0): readonly MessageInline[] {
             flush()
             out.push({
               kind: double ? 'strong' : 'em',
-              children: parseInline(text.slice(start, close), depth + 1),
+              children: parseInline(text.slice(start, close), depth + 1, options),
             })
             index = close + delimiter.length
             continue
           }
         }
+      }
+    }
+    if (char === '[' && text[index + 1] === '^' && options.citations && !options.inLink) {
+      const cite = citationAt(text, index, options.citations)
+      if (cite && cite.kind === 'cite') {
+        flush()
+        out.push(cite)
+        index += cite.raw.length
+        continue
       }
     }
     if (depth < MAX_INLINE_DEPTH && char === '[') {
@@ -145,7 +194,10 @@ export function parseInline(text: string, depth = 0): readonly MessageInline[] {
             out.push({
               kind: 'link',
               href,
-              children: parseInline(text.slice(index + 1, labelEnd), depth + 1),
+              children: parseInline(text.slice(index + 1, labelEnd), depth + 1, {
+                ...options,
+                inLink: true,
+              }),
             })
             index = hrefEnd + 1
             continue
@@ -170,8 +222,22 @@ function findClosing(text: string, delimiter: string, from: number): number {
       index = close + 1
       continue
     }
-    if (text.startsWith(delimiter, index) && text[index + delimiter.length] !== delimiter[0]) {
-      return index
+    if (text[index] === delimiter[0]) {
+      let end = index + 1
+      while (text[end] === delimiter[0]) end += 1
+      const run = end - index
+      if (delimiter.length === 1) {
+        // Emphasis closes on a run of one (or an odd run, whose last mark closes).
+        // An even run is `**` pairs: strong spans inside the emphasis, which the
+        // inner parse reads. One pass, and the scan stops at the next odd run, so
+        // a line of unclosed delimiters is still linear.
+        if (run % 2 === 1) return end - 1
+      } else if (run >= delimiter.length) {
+        // Strong closes on the last two marks of a run.
+        return end - delimiter.length
+      }
+      index = end
+      continue
     }
     index += 1
   }
@@ -201,15 +267,16 @@ function bracketMatches(text: string): ReadonlyMap<number, number> {
 /** Parse text into blocks. Pure, total, and linear in the length of `text`. */
 export function parseMessageText(
   text: string,
-  options: { streaming?: boolean } = {}
+  options: { streaming?: boolean; citations?: number } = {}
 ): readonly MessageBlock[] {
+  const inline = (source: string) => parseInline(source, 0, { citations: options.citations })
   const lines = text.replace(/\r\n?/g, '\n').split('\n')
   const blocks: MessageBlock[] = []
   let paragraph: string[] = []
   const flushParagraph = () => {
     if (paragraph.length === 0) return
     const raw = paragraph.join('\n')
-    blocks.push({ kind: 'paragraph', inline: parseInline(raw), raw })
+    blocks.push({ kind: 'paragraph', inline: inline(raw), raw })
     paragraph = []
   }
 
@@ -256,7 +323,7 @@ export function parseMessageText(
       blocks.push({
         kind: 'heading',
         level: heading[1]!.length as 1 | 2 | 3 | 4,
-        inline: parseInline(heading[2]!),
+        inline: inline(heading[2]!),
         raw: line,
       })
       index += 1
@@ -274,7 +341,7 @@ export function parseMessageText(
         const current = lines[index]!
         const match = isOrdered ? ORDERED.exec(current) : BULLET.exec(current)
         if (match) {
-          items.push([...parseInline(isOrdered ? match[2]! : match[1]!)])
+          items.push([...inline(isOrdered ? match[2]! : match[1]!)])
           rawLines.push(current)
           index += 1
           continue
@@ -284,7 +351,7 @@ export function parseMessageText(
           items[items.length - 1] = [
             ...items[items.length - 1]!,
             { kind: 'text', text: ' ' },
-            ...parseInline(current.trim()),
+            ...inline(current.trim()),
           ]
           rawLines.push(current)
           index += 1
@@ -306,7 +373,7 @@ export function parseMessageText(
         index += 1
       }
       const raw = quoted.join('\n')
-      blocks.push({ kind: 'quote', inline: parseInline(raw), raw })
+      blocks.push({ kind: 'quote', inline: inline(raw), raw })
       continue
     }
     paragraph.push(line)

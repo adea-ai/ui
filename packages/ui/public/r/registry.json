@@ -2502,6 +2502,7 @@
       "registryDependencies": [
         "@adea-ai/ui/action-button",
         "@adea-ai/ui/button",
+        "@adea-ai/ui/message",
         "@adea-ai/ui/popover",
         "@adea-ai/ui/sources",
         "@adea-ai/ui/text-link",

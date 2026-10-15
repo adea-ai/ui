@@ -41,8 +41,9 @@ import { cn } from '#lib/utils'
  * **The scroller is focusable and named.** A horizontally scrollable region has
  * to be reachable by keyboard — this is axe's `scrollable-region-focusable`, and
  * a region that scrolls but cannot be focused is a WCAG 2.1.1 failure. It is a
- * `region` with a label rather than a bare `tabindex`, so the tab stop announces
- * what it is.
+ * labelled `group` rather than a bare `tabindex`, so the tab stop announces what
+ * it is. It is deliberately not a `region` landmark: a transcript holds many
+ * blocks, often in one language, and repeated landmarks of one name are noise.
  *
  * **Resolving a streaming block must not move the reader.** When `complete` is
  * false the block shows the code it has plus a generating indicator; the
@@ -189,7 +190,7 @@ export function CodeBlock(props: CodeBlockProps) {
   // swallowing the header.
   const language = () => local.language?.trim().slice(0, 40) || undefined
   const label = () => local.title ?? language() ?? 'code'
-  const regionLabel = () => (language() ? `${language()} code` : 'code')
+  const groupLabel = () => (language() ? `${language()} code` : 'code')
   const small = () => local.size === 'sm'
   const lines = createMemo(() => local.code.replace(/\n$/, '').split('\n'))
   const lineLimit = () => local.lineLimit ?? CODE_BLOCK_LINE_LIMIT
@@ -293,9 +294,12 @@ export function CodeBlock(props: CodeBlockProps) {
         })}
         style={maxHeight() === undefined ? undefined : { 'max-height': maxHeight() }}
         // A region that scrolls must be focusable, and a tab stop needs a name.
+        // A `group`, not a `region`: a landmark with the same role and name as the
+        // next block's ("ts code" twice) is a duplicate in the screen reader's
+        // landmark list, and a long answer would fill that list with code blocks.
         tabindex="0"
-        role="region"
-        aria-label={regionLabel()}
+        role="group"
+        aria-label={groupLabel()}
       >
         <Show
           when={highlighter()}

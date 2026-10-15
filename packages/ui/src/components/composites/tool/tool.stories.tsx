@@ -144,6 +144,22 @@ export const Denied: Story = {
   },
 }
 
+/**
+ * The run was stopped while this call was in flight. Not a failure and not a
+ * denial: the word says so, and what the call had produced is kept. Give a call
+ * this status only when the host knows it was the one stopped.
+ */
+export const Cancelled: Story = {
+  args: {
+    name: 'bun test',
+    description: 'packages/db',
+    status: 'cancelled',
+    defaultOpen: true,
+    input: { command: 'bun test packages/db' },
+    output: '(pass) applies every migration twice\n(pass) keeps the journal append-only',
+  },
+}
+
 /** No status: the producer did not say how it went, so there is no tick. */
 export const NoStatus: Story = {
   args: { name: 'read_file', icon: <FileText />, description: 'README.md' },

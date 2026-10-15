@@ -140,7 +140,7 @@ test('a hostile language is a label, and code stays text', async ({ page }) => {
   const labels = await page.locator('#hostile [data-slot="code-block"]').evaluateAll((blocks) =>
     blocks.map((block) => ({
       label: block.querySelector('span.truncate')?.textContent,
-      region: block.querySelector('[role="region"]')?.getAttribute('aria-label'),
+      region: block.querySelector('[role="group"]')?.getAttribute('aria-label'),
       code: block.querySelector('pre')?.textContent,
     }))
   )
@@ -309,8 +309,85 @@ test('the streaming caret trails prose, never a code block, and is hidden from a
   await expect(stream.locator('.streaming-caret')).toHaveCount(0)
 })
 
+test('citation markers become buttons only for sources the host supplied', async ({ page }) => {
+  const root = page.locator('#cited')
+  const badges = root.locator('[data-slot="inline-citation"]')
+  // [^1], [^2], [^1,2] and [^3] in the first paragraphs, then one in emphasis and one in the list.
+  await expect(badges).toHaveCount(6)
+  await expect(root.getByRole('button', { name: /Migration guide/ }).first()).toBeVisible()
+
+  const text = await root.innerText()
+  // A number beyond the list, an array index and a code span keep what was written.
+  expect(text).toContain('An unknown source [^4]')
+  expect(text).toContain('arr[1]')
+  expect(text).toContain('`code span [^1]`'.replaceAll('`', ''))
+  await expect(root.locator('code', { hasText: '[^1]' })).toHaveCount(1)
+
+  // With no sources supplied nothing is a citation.
+  const uncited = page.locator('#uncited')
+  await expect(uncited.locator('[data-slot="inline-citation"]')).toHaveCount(0)
+  expect(await uncited.innerText()).toContain('The order matters [^1], and the runbook agrees [^2]')
+})
+
+test('a citation opens its source from the keyboard and never links an unsafe address', async ({
+  page,
+}) => {
+  const root = page.locator('#cited')
+  const first = root.getByRole('button', { name: /Migration guide/ }).first()
+  await first.focus()
+  await page.keyboard.press('Enter')
+  const popover = page.getByRole('dialog')
+  await expect(popover).toContainText('Migration guide')
+  await expect(popover.getByRole('link')).toHaveAttribute('href', 'https://example.com/guide')
+  await page.keyboard.press('Escape')
+  await expect(popover).toBeHidden()
+  await expect(first).toBeFocused()
+
+  // The unsafe source is named, and its address is withheld, not linked.
+  await root.getByRole('button', { name: /Unsafe address/ }).click()
+  await expect(page.getByRole('dialog')).toContainText('Unsafe address')
+  await expect(page.getByRole('dialog').getByRole('link')).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toContainText('Address not linked')
+  expect(await page.evaluate(() => (window as StreamWindow).pwned)).toEqual([])
+  expect(dialogs).toEqual([])
+})
+
+test('a multi-source marker names every source it cites', async ({ page }) => {
+  const both = page.locator('#cited').getByRole('button', { name: 'Sources 1 and 1 more' })
+  await expect(both.first()).toBeVisible()
+  await both.first().click()
+  const popover = page.getByRole('dialog')
+  await expect(popover).toContainText('Source 1 of 2')
+  await popover.getByRole('button', { name: 'Next source' }).click()
+  await expect(popover).toContainText('Runbook')
+})
+
+test('line marks reach the block the host chose and no other', async ({ page }) => {
+  const blocks = page.locator('#marked [data-slot="code-block"]')
+  await expect(blocks).toHaveCount(2)
+  const marks = await blocks.evaluateAll((all) =>
+    all.map((block) =>
+      [...block.querySelectorAll('[data-mark]')].map((line) => ({
+        mark: line.getAttribute('data-mark'),
+        tag: line.tagName,
+        text: line.textContent,
+      }))
+    )
+  )
+  const strip = (value: string | null) => (value ?? '').replace(/[0-9+−!]/g, '').trim()
+  expect(marks[0]?.map((line) => [line.mark, line.tag, strip(line.text)])).toEqual([
+    ['add', 'INS', 'added'],
+    ['remove', 'DEL', 'removed'],
+  ])
+  expect(marks[1]?.map((line) => [line.mark, strip(line.text)])).toEqual([['error', 'broken(']])
+  // The first block alone is numbered.
+  await expect(blocks.nth(0).locator('code')).toContainText('1')
+  // Marks are decoration over the source: copying gives the code and nothing else.
+  await blocks.nth(0).getByRole('button', { name: 'Copy code' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('keep\nadded\nremoved')
+})
+
 test('has no accessibility violations in either theme or at 320px', async ({ page }) => {
   await setText(page, 'A paragraph with **bold**, `code` and a [link](https://example.com).')
-  // The two hostile fixtures repeat the same code-block labels, which is a fixture artefact.
-  await expectNoAxeViolations(page, { exclude: ['#hostile-streaming'] })
+  await expectNoAxeViolations(page)
 })

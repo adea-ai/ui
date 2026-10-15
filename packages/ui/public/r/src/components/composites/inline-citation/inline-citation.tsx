@@ -3,6 +3,7 @@ import { createSignal, onCleanup, Show, splitProps } from 'solid-js'
 import { cn } from '../../../lib/utils'
 import { ActionButton } from '../action-button'
 import { Button } from '../../ui/button'
+import type { MessageCitations } from '../../ui/message'
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '../../ui/popover'
 import { TextLink } from '../../ui/text-link'
 import {
@@ -81,6 +82,9 @@ export function InlineCitation(props: InlineCitationProps) {
   let timer: ReturnType<typeof setTimeout> | undefined
   let content: HTMLElement | undefined
   let pressing = false
+  // Focus handed back to the badge as the popover closes is not a request to
+  // peek again; without this, Escape from a pinned card reopens it as a preview.
+  let restoringFocus = false
 
   const count = () => local.sources.length
   const active = () => local.sources[wrapIndex(position(), count())]
@@ -141,6 +145,7 @@ export function InlineCitation(props: InlineCitationProps) {
           onPointerLeave={onPointerLeave}
           onFocus={(event: FocusEvent & { currentTarget: HTMLElement }) => {
             // Mouse focus follows the press; only keyboard focus peeks.
+            if (restoringFocus) return
             if (event.currentTarget.matches(':focus-visible')) dispatch('focus')
           }}
           onBlur={() => dispatch('blur')}
@@ -157,6 +162,13 @@ export function InlineCitation(props: InlineCitationProps) {
           class="w-72 max-w-full"
           onOpenAutoFocus={(event: Event) => {
             if (mode() === 'peek') event.preventDefault()
+          }}
+          onCloseAutoFocus={() => {
+            // The focus move that follows is synchronous; the microtask ends the window.
+            restoringFocus = true
+            queueMicrotask(() => {
+              restoringFocus = false
+            })
           }}
           onPointerEnter={(event: PointerEvent) => {
             if (event.pointerType !== 'touch') clear()
@@ -208,6 +220,31 @@ export function InlineCitation(props: InlineCitationProps) {
       </Popover>
     </Show>
   )
+}
+
+/**
+ * Citation markers for `MessageText`, from the sources a reply really used.
+ *
+ * `[^2]` in the text becomes the second source's badge; `[^1,3]` one badge for
+ * sources 1 and 3. A number beyond the list leaves the marker as written, and an
+ * empty list makes every marker literal, so text can never cite a source the host
+ * did not supply.
+ *
+ *     <MessageText text={reply} citations={messageCitations(sources)} />
+ */
+export function messageCitations(sources: readonly Source[]): MessageCitations {
+  return {
+    count: sources.length,
+    render: (numbers) => (
+      <InlineCitation
+        index={numbers[0]}
+        sources={numbers.flatMap((number) => {
+          const source = sources[number - 1]
+          return source ? [source] : []
+        })}
+      />
+    ),
+  }
 }
 
 function CitationDetails(props: { source: Source }) {

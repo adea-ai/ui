@@ -152,12 +152,45 @@ export function MessageFooter(props: ComponentProps<'footer'>) {
   )
 }
 
+/** The props of a fenced block the host may set. */
+export type MessageCodeBlockProps = Pick<
+  CodeBlockProps,
+  'loadHighlight' | 'maxHeight' | 'wrap' | 'showLineNumbers' | 'lineMarks' | 'lineLimit'
+>
+
+/** What the host is told about a fenced block when it chooses that block's props. */
+export type MessageCodeBlockInfo = Readonly<{
+  /** Position among the text's fenced blocks, from 0. */
+  index: number
+  language: string | undefined
+  code: string
+  complete: boolean
+}>
+
+/**
+ * How `MessageText` draws citation markers. `count` is how many sources the host
+ * has; a `[^n]` marker is a citation only when every `n` is within it. `render`
+ * receives the 1-based source numbers and draws the marker, so the host decides
+ * what a number means (`messageCitations` in the inline-citation composite does
+ * this for a `Source` list).
+ */
+export type MessageCitations = Readonly<{
+  count: number
+  render: (numbers: readonly number[]) => JSX.Element
+}>
+
 export type MessageTextProps = Omit<ComponentProps<'div'>, 'children'> & {
   text: string
   /** True while text may still arrive: a trailing open fence renders as partial code. */
   streaming?: boolean
-  /** Forwarded to each fenced block, e.g. to supply a lazy highlighter. */
-  codeBlockProps?: Pick<CodeBlockProps, 'loadHighlight' | 'maxHeight' | 'wrap' | 'showLineNumbers'>
+  /**
+   * Forwarded to each fenced block, e.g. to supply a lazy highlighter. A function
+   * chooses per block, which is how line marks reach a block: marks belong to the
+   * host's knowledge of the code (a diff, a failing line), never to the text.
+   */
+  codeBlockProps?: MessageCodeBlockProps | ((block: MessageCodeBlockInfo) => MessageCodeBlockProps)
+  /** Without it, `[^1]` stays the literal text it was written as. */
+  citations?: MessageCitations
 }
 
 function sameBlock(a: MessageBlock | undefined, b: MessageBlock): boolean {
@@ -180,15 +213,37 @@ function sameBlock(a: MessageBlock | undefined, b: MessageBlock): boolean {
  * inside them — untouched.
  */
 export function MessageText(props: MessageTextProps) {
-  const [local, rest] = splitProps(props, ['class', 'text', 'streaming', 'codeBlockProps'])
+  const [local, rest] = splitProps(props, [
+    'class',
+    'text',
+    'streaming',
+    'codeBlockProps',
+    'citations',
+  ])
   let previous: readonly MessageBlock[] = []
+  let previousCount = 0
+  // Only the number of sources reaches the parser, so a new `render` function
+  // does not reparse the text, and a changed count does.
+  const citationCount = () => local.citations?.count ?? 0
   const blocks = createMemo(() => {
-    const next = parseMessageText(local.text, { streaming: local.streaming })
+    const count = citationCount()
+    if (count !== previousCount) previous = []
+    previousCount = count
+    const next = parseMessageText(local.text, {
+      streaming: local.streaming,
+      citations: count || undefined,
+    })
     const merged = next.map((block, index) =>
       sameBlock(previous[index], block) ? previous[index]! : block
     )
     previous = merged
     return merged
+  })
+  // The nth fenced block, so a host can address it. Blocks keep their positions
+  // while text streams in after them, so an index stays attached to its block.
+  const codeIndexes = createMemo(() => {
+    let next = 0
+    return blocks().map((block) => (block.kind === 'code' ? next++ : -1))
   })
   const lastIsProse = () => {
     const last = blocks().at(-1)
@@ -197,7 +252,14 @@ export function MessageText(props: MessageTextProps) {
   return (
     <div data-slot="message-text" class={cn('flex min-w-0 flex-col gap-3', local.class)} {...rest}>
       <Index each={blocks()}>
-        {(block) => <BlockView block={block()} codeProps={local.codeBlockProps} />}
+        {(block, index) => (
+          <BlockView
+            block={block()}
+            codeProps={local.codeBlockProps}
+            codeIndex={() => codeIndexes()[index] ?? 0}
+            citations={local.citations}
+          />
+        )}
       </Index>
       <Show when={local.streaming && lastIsProse()}>
         <span class="streaming-caret" aria-hidden="true" />
@@ -206,18 +268,34 @@ export function MessageText(props: MessageTextProps) {
   )
 }
 
-function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['codeBlockProps'] }) {
+function BlockView(props: {
+  block: MessageBlock
+  codeProps?: MessageTextProps['codeBlockProps']
+  codeIndex: () => number
+  citations?: MessageCitations
+}) {
   return (
     <Switch>
       <Match when={props.block.kind === 'code' && props.block}>
         {(block) => {
           const code = () => block() as Extract<MessageBlock, { kind: 'code' }>
+          const chosen = () => {
+            const choice = props.codeProps
+            return typeof choice === 'function'
+              ? choice({
+                  index: props.codeIndex(),
+                  language: code().language,
+                  code: code().code,
+                  complete: code().complete,
+                })
+              : choice
+          }
           return (
             <CodeBlock
               code={code().code}
               language={code().language}
               complete={code().complete}
-              {...props.codeProps}
+              {...chosen()}
             />
           )
         }}
@@ -231,7 +309,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
               aria-level={heading().level + 2}
               class="font-semibold text-foreground [overflow-wrap:anywhere]"
             >
-              <Inline nodes={heading().inline} />
+              <Inline nodes={heading().inline} citations={props.citations} />
             </p>
           )
         }}
@@ -247,7 +325,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
                   <For each={list().items}>
                     {(item) => (
                       <li class="[overflow-wrap:anywhere]">
-                        <Inline nodes={item} />
+                        <Inline nodes={item} citations={props.citations} />
                       </li>
                     )}
                   </For>
@@ -261,7 +339,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
                 <For each={list().items}>
                   {(item) => (
                     <li class="[overflow-wrap:anywhere]">
-                      <Inline nodes={item} />
+                      <Inline nodes={item} citations={props.citations} />
                     </li>
                   )}
                 </For>
@@ -275,7 +353,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
           const quote = () => block() as Extract<MessageBlock, { kind: 'quote' }>
           return (
             <blockquote class="m-0 border-s-2 border-border ps-3 whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
-              <Inline nodes={quote().inline} />
+              <Inline nodes={quote().inline} citations={props.citations} />
             </blockquote>
           )
         }}
@@ -285,7 +363,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
           const paragraph = () => block() as Extract<MessageBlock, { kind: 'paragraph' }>
           return (
             <p class="m-0 whitespace-pre-wrap [overflow-wrap:anywhere]">
-              <Inline nodes={paragraph().inline} />
+              <Inline nodes={paragraph().inline} citations={props.citations} />
             </p>
           )
         }}
@@ -294,7 +372,7 @@ function BlockView(props: { block: MessageBlock; codeProps?: MessageTextProps['c
   )
 }
 
-function Inline(props: { nodes: readonly MessageInline[] }) {
+function Inline(props: { nodes: readonly MessageInline[]; citations?: MessageCitations }) {
   return (
     <For each={props.nodes}>
       {(node) => (
@@ -308,14 +386,20 @@ function Inline(props: { nodes: readonly MessageInline[] }) {
           <Match when={node.kind === 'strong' && node}>
             {(strong) => (
               <strong class="font-semibold">
-                <Inline nodes={(strong() as { children: readonly MessageInline[] }).children} />
+                <Inline
+                  nodes={(strong() as { children: readonly MessageInline[] }).children}
+                  citations={props.citations}
+                />
               </strong>
             )}
           </Match>
           <Match when={node.kind === 'em' && node}>
             {(em) => (
               <em>
-                <Inline nodes={(em() as { children: readonly MessageInline[] }).children} />
+                <Inline
+                  nodes={(em() as { children: readonly MessageInline[] }).children}
+                  citations={props.citations}
+                />
               </em>
             )}
           </Match>
@@ -330,6 +414,14 @@ function Inline(props: { nodes: readonly MessageInline[] }) {
                 <Inline nodes={(link() as { children: readonly MessageInline[] }).children} />
               </a>
             )}
+          </Match>
+          <Match when={node.kind === 'cite' && node}>
+            {(cite) => {
+              const marker = () => cite() as { numbers: readonly number[]; raw: string }
+              // The parser read this as a citation only while the host had sources;
+              // if they have gone since, the marker is the text it was written as.
+              return props.citations ? props.citations.render(marker().numbers) : marker().raw
+            }}
           </Match>
         </Switch>
       )}

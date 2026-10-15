@@ -80,3 +80,33 @@ Two rules these scenes keep, from the principles above: every status, citation
 and checkpoint is data the story supplies (a running tool has no duration, the
 unrestorable case has no Restore), and the only reasoning shown is a summary the
 host marked as visible.
+
+## Inside the prose: citations and line marks
+
+`MessageText` reads text, never data about the text, so the two things that need
+host knowledge reach it as props, and neither can be produced by the text alone.
+
+**Citations.** `citations={messageCitations(sources)}` (from
+`composites/inline-citation`) makes `[^2]` the second source's badge and `[^1,3]`
+one badge for sources 1 and 3. A marker is a citation only when the host supplied
+sources and every number is within them (at most six per marker): `[^9]`,
+`arr[1]`, a footnote the model invented, a marker in a code span or a fence, a
+marker still streaming (`[^1`) and a marker inside a link label all stay the text
+that was written. With no `citations` prop nothing is a citation. The parser takes
+only the source count, so replacing the render function does not reparse the text.
+
+**Line marks.** `codeBlockProps` is either one set of props for every fence or a
+function `(block) => props` called with the fence's position (`index` among the
+fences, from 0), `language`, `code` and `complete`. That is how a host marks the
+lines of one block as added, removed or failed: it is the only party that knows
+which lines changed. A fence cannot mark itself, so a `diff` block in model
+output is plain text unless the host says otherwise.
+
+A tool call the host knows was stopped uses `Tool`'s `cancelled` status, which is
+distinct from `denied` (a decision about the call) and `error` (it ran and
+failed). A run ending does not by itself say what became of each call, so do not
+give every open call `cancelled` when a run stops.
+
+Code blocks are named, focusable `group`s, not `region` landmarks: a transcript
+holds many blocks, often in one language, and repeated landmarks of the same name
+fill a screen reader's landmark list.

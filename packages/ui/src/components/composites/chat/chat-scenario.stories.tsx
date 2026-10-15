@@ -841,9 +841,9 @@ export const Cancelled: Story = {
                 model="haiku-4"
                 duration={9}
               >
-                <TraceLine
+                <Tool
+                  name="run_command"
                   icon={<TerminalIcon />}
-                  title="run_command"
                   description="bun test packages/db"
                   status="cancelled"
                 />

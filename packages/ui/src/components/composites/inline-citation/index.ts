@@ -1,4 +1,4 @@
-export { InlineCitation, type InlineCitationProps } from './inline-citation'
+export { InlineCitation, messageCitations, type InlineCitationProps } from './inline-citation'
 export {
   citationLabel,
   citationName,

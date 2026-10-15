@@ -46,7 +46,7 @@ test.describe('height and wrapping', () => {
     expect(length.height).toBeCloseTo(10 * rootFontSize, 0)
 
     // The capped region stays a named tab stop and scrolls from the keyboard.
-    const region = page.getByRole('region', { name: 'ts code' }).nth(1)
+    const region = page.getByRole('group', { name: 'ts code' }).nth(1)
     await expect(region).toHaveAttribute('tabindex', '0')
     await region.focus()
     await page.keyboard.press('End')
@@ -281,7 +281,7 @@ test.describe('output: copy, marks, lazy highlighting, bounds', () => {
   })
 
   test('a capped body scrolls from the keyboard', async ({ page }) => {
-    const region = page.locator('#scroll [role="region"]')
+    const region = page.locator('#scroll [role="group"]')
     await expect(region).toHaveAttribute('tabindex', '0')
     await region.focus()
     const top = () => region.evaluate((element) => element.scrollTop)
@@ -389,20 +389,25 @@ test.describe('output: copy, marks, lazy highlighting, bounds', () => {
   test('has no accessibility violations in either theme or at 320px', async ({ page }) => {
     await page.locator('#late').scrollIntoViewIfNeeded()
     await page.evaluate(() => (window as OutputWindow).fixture.resolveLate())
-    // `landmark-unique` is held back and tracked by the fixme below. The two large
-    // blocks are left out because axe walks every node and they hold thousands of rows.
-    await expectNoAxeViolations(page, {
-      disable: ['landmark-unique'],
-      exclude: ['#big', '#medium'],
-    })
+    // The two large blocks are left out because axe walks every node and they hold thousands of rows.
+    await expectNoAxeViolations(page, { exclude: ['#big', '#medium'] })
   })
 
-  // Every block is a named `region` landmark ("ts code"), so a transcript with two
-  // blocks in one language has two landmarks with the same role and name, and a
-  // long answer fills the screen reader's landmark list. Not fixed here: the role
-  // is part of the published contract (`getByRole('region', { name: 'ts code' })`).
-  test.fixme('blocks of one language are not duplicate landmarks', async ({ page }) => {
+  // Every block is a named, focusable `group`, not a `region` landmark: a
+  // transcript with two blocks in one language would otherwise list "ts code"
+  // twice as a landmark, and a long answer would fill the landmark list.
+  test('blocks of one language are not duplicate landmarks', async ({ page }) => {
+    const names = await page.locator('[data-slot="code-block-body"]').evaluateAll((bodies) =>
+      bodies.map((body) => body.getAttribute('aria-label'))
+    )
+    expect(names.filter((name) => name === 'ts code').length).toBeGreaterThan(1)
+    await expect(page.locator('[data-slot="code-block-body"][role="region"]')).toHaveCount(0)
     const result = await new AxeBuilder({ page }).withRules(['landmark-unique']).analyze()
     expect(result.violations).toEqual([])
+    // Still a named tab stop for the keyboard.
+    await expect(page.getByRole('group', { name: 'ts code' }).first()).toHaveAttribute(
+      'tabindex',
+      '0'
+    )
   })
 })

@@ -21,7 +21,11 @@ const codeBlocks = (blocks: readonly MessageBlock[]) =>
 function plain(nodes: readonly MessageInline[]): string {
   return nodes
     .map((node) =>
-      node.kind === 'text' || node.kind === 'code' ? node.text : plain(node.children)
+      node.kind === 'text' || node.kind === 'code'
+        ? node.text
+        : node.kind === 'cite'
+          ? node.raw
+          : plain(node.children)
     )
     .join('')
 }
@@ -203,11 +207,7 @@ describe('inline spans', () => {
     ])
   })
 
-  // Known gap: `findClosing` ends `*it **b** it*` at the first star of the inner
-  // `**`, so the emphasis closes early. Teaching it to skip a `**` pair makes a
-  // run of unclosed `**a ` quadratic (every opener rescans the pairs after it),
-  // so the fix is a delimiter stack, not a patch to the scan.
-  test.todo('nests strong in emphasis: *it **b** it*', () => {
+  test('nests strong in emphasis: *it **b** it*', () => {
     expect(parseInline('*it **b** it*')).toEqual([
       {
         kind: 'em',
@@ -218,6 +218,35 @@ describe('inline spans', () => {
         ],
       },
     ])
+  })
+
+  test('nests strong in emphasis with underscores, links and several spans', () => {
+    expect(parseInline('_it __b__ it_')).toEqual([
+      {
+        kind: 'em',
+        children: [
+          { kind: 'text', text: 'it ' },
+          { kind: 'strong', children: [{ kind: 'text', text: 'b' }] },
+          { kind: 'text', text: ' it' },
+        ],
+      },
+    ])
+    const nodes = parseInline('*a **b** c **d** e* and *f*')
+    expect(nodes.map((node) => node.kind)).toEqual(['em', 'text', 'em'])
+    const [first] = nodes as [Extract<MessageInline, { kind: 'em' }>]
+    expect(first.children.map((node) => node.kind)).toEqual([
+      'text',
+      'strong',
+      'text',
+      'strong',
+      'text',
+    ])
+  })
+
+  test('an unclosed strong before emphasis leaves both readable', () => {
+    const nodes = parseInline('**a *b*')
+    expect(plain(nodes)).toBe('**a b')
+    expect(nodes.map((node) => node.kind)).toEqual(['text', 'em'])
   })
 
   test('a misread nesting still shows every character and no markup', () => {
@@ -472,6 +501,9 @@ describe('robustness', () => {
       'links closed at the very end': '[a]('.repeat(MB / 4) + ')',
       'unclosed stars': '*a '.repeat(MB / 3),
       'unclosed strong': '**a '.repeat(MB / 4),
+      // A single opener skips strong pairs to find its close; each stops at the next odd run.
+      'emphasis over unclosed strong': '*a **b '.repeat(MB / 7),
+      'unclosed citations': '[^1 [^1] '.repeat(MB / 9),
       'unclosed underscores': '_a '.repeat(MB / 3),
       'unclosed backticks': '`a '.repeat(MB / 3),
       'nested emphasis': '*'.repeat(MB / 2) + 'x' + '*'.repeat(MB / 2),
@@ -481,7 +513,7 @@ describe('robustness', () => {
     }
     for (const [name, text] of Object.entries(cases)) {
       const start = performance.now()
-      parseMessageText(text)
+      parseMessageText(text, { citations: 3 })
       const elapsed = performance.now() - start
       // A linear parse takes a fraction of a second; a quadratic one takes minutes.
       expect(elapsed, `${name} took ${Math.round(elapsed)}ms`).toBeLessThan(5_000)
@@ -519,3 +551,82 @@ function prng(seed: number): () => number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
+
+const cites = (nodes: readonly MessageInline[]) =>
+  nodes.flatMap((node) => (node.kind === 'cite' ? [node.numbers] : []))
+
+/** Every citation's numbers, depth-first through emphasis and strong. */
+const deep = (nodes: readonly MessageInline[]): number[][] =>
+  nodes.flatMap((node) =>
+    node.kind === 'cite' ? [[...node.numbers]] : 'children' in node ? deep(node.children) : []
+  )
+
+describe('citation markers', () => {
+  test('a marker is a citation only when the host has sources', () => {
+    expect(cites(parseInline('claim [^1].'))).toEqual([])
+    expect(cites(parseInline('claim [^1].', 0, { citations: 0 }))).toEqual([])
+    expect(plain(parseInline('claim [^1].'))).toBe('claim [^1].')
+  })
+
+  test('numbers within the source count resolve, in order, without repeats', () => {
+    expect(cites(parseInline('a [^1] b [^2, 3] c [^2,2]', 0, { citations: 3 }))).toEqual([
+      [1],
+      [2, 3],
+      [2],
+    ])
+  })
+
+  test('a number beyond the sources, zero, or too many numbers stays literal', () => {
+    for (const source of ['[^4]', '[^0]', '[^1,4]', '[^1,2,3,4,5,6,7]', '[^]', '[^a]', '[^1']) {
+      const nodes = parseInline(`x ${source}`, 0, { citations: 3 })
+      expect(cites(nodes), source).toEqual([])
+      expect(plain(nodes), source).toBe(`x ${source}`)
+    }
+  })
+
+  test('ordinary brackets are never citations', () => {
+    const nodes = parseInline('arr[1] and [1] and [^note]', 0, { citations: 3 })
+    expect(cites(nodes)).toEqual([])
+    expect(plain(nodes)).toBe('arr[1] and [1] and [^note]')
+  })
+
+  test('a code span keeps its marker as code, and a link label cannot hold one', () => {
+    const [text, code] = parseInline('see `[^1]` here', 0, { citations: 2 })
+    expect(text).toMatchObject({ kind: 'text' })
+    expect(code).toEqual({ kind: 'code', text: '[^1]' })
+    const [link] = parseInline('[label [^1]](https://example.com)', 0, { citations: 2 })
+    expect(link).toMatchObject({ kind: 'link' })
+    expect(cites((link as Extract<MessageInline, { kind: 'link' }>).children)).toEqual([])
+  })
+
+  test('markers work inside emphasis, lists, headings and quotes', () => {
+    const blocks = parseMessageText(
+      '# Title [^1]\n\n*em [^2]* and **strong [^1]**\n\n- item [^2]\n\n> quote [^1]',
+      { citations: 2 }
+    )
+    const found = blocks.flatMap((block) => {
+      const spans =
+        block.kind === 'list' ? block.items.flat() : block.kind === 'code' ? [] : block.inline
+      return deep(spans)
+    })
+    expect(found).toEqual([[1], [2], [1], [2], [1]])
+  })
+
+  test('a streamed marker is literal until it closes', () => {
+    const open = parseMessageText('claim [^1', { streaming: true, citations: 2 })
+    expect(open[0]).toMatchObject({ raw: 'claim [^1' })
+    expect(cites((open[0] as Extract<MessageBlock, { kind: 'paragraph' }>).inline)).toEqual([])
+  })
+
+  test('a very long line of unclosed markers parses in bounded time', () => {
+    const text = '[^1'.repeat(300_000)
+    const start = performance.now()
+    parseMessageText(text, { citations: 3 })
+    expect(performance.now() - start).toBeLessThan(5_000)
+  })
+
+  test('code fences never hold citations', () => {
+    const [block] = parseMessageText('```\n[^1]\n```', { citations: 2 })
+    expect(block).toMatchObject({ kind: 'code', code: '[^1]' })
+  })
+})

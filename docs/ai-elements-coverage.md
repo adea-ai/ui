@@ -16,7 +16,7 @@ before it shows the pattern, and what to leave out when it cannot.
 | Pattern | Module | Stories | The host must supply |
 | --- | --- | --- | --- |
 | Message Scroller | `composites/message-scroller` | `Composites/Message Scroller` | Turns as children; `resetKey` per session; `onLoadOlder` + `hasOlder` only if earlier turns can really be loaded |
-| Message | `ui/message` | `UI/Message` | A role, a label, and the text. `streaming` marks a reply that is still arriving |
+| Message | `ui/message` | `UI/Message` | A role, a label, and the text. `streaming` marks a reply that is still arriving. `citations` and a per-block `codeBlockProps` function only when the host has sources or marked lines |
 | Bubble | `ui/bubble` | `UI/Bubble` | The person's text; `state` only for a send the host tracks |
 | Trace | `ui/trace` | `UI/Trace` | One `TraceLine` per thing done. `status` only when the host states one |
 | Code Block | `ui/code-block` | `UI/Code Block` | Source text and, optionally, a language and a lazy highlighter. `complete` is false only while the text is still growing |
@@ -34,7 +34,7 @@ before it shows the pattern, and what to leave out when it cannot.
 | Conversation | Suggestion | `composites/suggestion` | `Composites/Suggestion` | Prompt strings and `onSelect` |
 | Activity | Chain of Thought | `composites/chain-of-thought` | `Composites/Chain Of Thought` | A summary and the steps the host chose to show |
 | Activity | Reasoning | `composites/reasoning` | `Composites/Reasoning` | Text the host marked as user-visible. No text, no body |
-| Activity | Tool | `composites/tool` | `Composites/Tool` | Name, and `status`/`input`/`output` only if known |
+| Activity | Tool | `composites/tool` | `Composites/Tool` | Name, and `status` (`cancelled` only for a call the host knows was stopped)/`input`/`output` only if known |
 | Activity | Subagent | `composites/subagent` | `Composites/Subagent` | Name, task, status; its steps as children |
 | Activity | Task | `composites/task` | `Composites/Task` | Items with optional status and files |
 | Activity | Plan | `composites/plan` | `Composites/Plan` | Steps; actions only for handlers that exist |
@@ -44,7 +44,7 @@ before it shows the pattern, and what to leave out when it cannot.
 | Results | Test Results | `composites/test-results` | `Composites/Test Results` | A structured run: summary and/or suites |
 | Results | File Tree | `composites/file-tree` | `Composites/File Tree` | Paths and an optional change kind each |
 | Grounding | Sources | `composites/sources` | `Composites/Sources` | `{ title, url, snippet? }` the model really used |
-| Grounding | Inline Citation | `composites/inline-citation` | `Composites/Inline Citation` | Source references that resolve to those sources |
+| Grounding | Inline Citation | `composites/inline-citation` | `Composites/Inline Citation` | Source references that resolve to those sources; `messageCitations(sources)` binds `[^n]` markers in `MessageText` |
 | Controls | Confirmation | `composites/confirmation` | `Composites/Confirmation` | A request, `onApprove`/`onDeny` that reach the runtime, and the outcome only when known |
 | Controls | Checkpoint | `composites/checkpoint` | `Composites/Checkpoint` | A named point; `onRestore` only if restoring is real |
 | Controls | Context | `composites/context` | `Composites/Context` | Any of used/total/breakdown/cost. Nothing known, nothing drawn |

@@ -5,6 +5,9 @@ export {
   MessageFooter,
   MessageHeader,
   MessageText,
+  type MessageCitations,
+  type MessageCodeBlockInfo,
+  type MessageCodeBlockProps,
   type MessageProps,
   type MessageRole,
   type MessageTextProps,
@@ -15,4 +18,5 @@ export {
   safeHref,
   type MessageBlock,
   type MessageInline,
+  type ParseInlineOptions,
 } from './parse-message-text'
