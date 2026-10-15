@@ -75,7 +75,7 @@ import { cn } from '#lib/utils'
  *   text node and needs no limit.
  * - **comes in a small size** (`size="sm"`) for tool output inside a Trace line.
  */
-export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children'> & {
+export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children' | 'onCopy'> & {
   code: string
   /** The language, shown in the header and used as the region's label. */
   language?: string
@@ -182,6 +182,7 @@ export function CodeBlock(props: CodeBlockProps) {
 
   const [loaded, setLoaded] = createSignal<CodeHighlighter>()
   const [showAll, setShowAll] = createSignal(false)
+  let bodyElement: HTMLDivElement | undefined
 
   // A language string can come from untrusted model output. It is rendered as
   // text, so it cannot inject markup; the cap keeps a pathological one from
@@ -209,7 +210,10 @@ export function CodeBlock(props: CodeBlockProps) {
         if (!complete || !load || local.highlight) return
         let current = true
         onCleanup(() => (current = false))
-        load(lang).then(
+        // Wrapped, not called bare: a loader that throws before it returns a promise
+        // (a bad import path, a missing grammar table) must degrade to plain text
+        // like one that rejects, not tear down the tree from inside this effect.
+        new Promise<CodeHighlighter | undefined>((resolve) => resolve(load(lang))).then(
           (highlighter) => {
             if (current && highlighter) setLoaded(() => highlighter)
           },
@@ -277,6 +281,7 @@ export function CodeBlock(props: CodeBlockProps) {
         <Actions />
       </div>
       <div
+        ref={(element) => (bodyElement = element)}
         data-slot="code-block-body"
         data-wrap={local.wrap ? '' : undefined}
         class={cn('scroll-fade overflow-x-auto', {
@@ -326,7 +331,16 @@ export function CodeBlock(props: CodeBlockProps) {
               Showing the first {visibleLines().length.toLocaleString()} of{' '}
               {lines().length.toLocaleString()} lines.
             </span>
-            <Button variant="ghost" size="2xs" onClick={() => setShowAll(true)}>
+            <Button
+              variant="ghost"
+              size="2xs"
+              onClick={() => {
+                setShowAll(true)
+                // This button leaves the document with the click; the scroller
+                // is the nearest place focus can stay, so a keyboard user keeps their place.
+                bodyElement?.focus({ preventScroll: true })
+              }}
+            >
               Show all {lines().length.toLocaleString()} lines
             </Button>
           </div>

@@ -5,6 +5,7 @@ import {
   createSignal,
   createUniqueId,
   For,
+  on,
   Show,
   splitProps,
   type ComponentProps,
@@ -141,10 +142,40 @@ export function Questionnaire(props: QuestionnaireProps) {
   const canSubmit = () =>
     local.questions.every((question) => isQuestionAnswered(question, answers()[question.id]))
 
+  // A host that is slow to report `submitting` must not be handed the same answer
+  // twice by a second Ctrl+Enter or a double click.
+  let sending = false
   const submit = async () => {
-    if (locked() || !canSubmit()) return
-    await local.onSubmit?.(answers())
+    if (sending || locked() || !canSubmit()) return
+    sending = true
+    try {
+      await local.onSubmit?.(answers())
+    } finally {
+      sending = false
+    }
   }
+
+  // The control that had focus is removed when the exchange settles into its
+  // read-only record. Give focus to the record instead of dropping it on <body>,
+  // but only if it was inside this questionnaire to begin with.
+  let root: HTMLElement | undefined
+  let focusWithin = false
+  let wasSettled = settled()
+  createEffect(
+    on(
+      settled,
+      (done) => {
+        // `settled` is not memoised, so this also runs for open -> submitting.
+        if (done === wasSettled) return
+        wasSettled = done
+        if (done && focusWithin && document.activeElement === document.body) {
+          root?.focus({ preventScroll: true })
+        }
+        focusWithin = false
+      },
+      { defer: true }
+    )
+  )
 
   // Land on the new question when the step changes, not on the Next button that
   // has just been replaced by one for a different question.
@@ -180,14 +211,26 @@ export function Questionnaire(props: QuestionnaireProps) {
 
   return (
     <section
+      ref={(element) => (root = element)}
       data-slot="questionnaire"
       data-status={status()}
       aria-label={local.title ?? 'Question from the agent'}
-      class={cn('flex w-full max-w-xl min-w-0 flex-col gap-3 rounded-xl border bg-card p-4', {
-        'border-border': settled(),
-        'border-ring': !settled(),
-      })}
+      // Not a tab stop: only the landing place for focus when a control goes away.
+      tabindex="-1"
+      class={cn(
+        'flex w-full max-w-xl min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 outline-none focus-visible:ring-3 focus-visible:ring-primary-subtle',
+        {
+          'border-border': settled(),
+          'border-ring': !settled(),
+        }
+      )}
       onKeyDown={onKeyDown}
+      onFocusIn={() => (focusWithin = true)}
+      onFocusOut={(event) => {
+        // Moving to another element ends it; a control disappearing does not.
+        const next = event.relatedTarget
+        if (next instanceof Node && !event.currentTarget.contains(next)) focusWithin = false
+      }}
       {...rest}
     >
       <header class="flex items-start gap-2.5">
@@ -342,7 +385,7 @@ export function Questionnaire(props: QuestionnaireProps) {
               type="button"
               variant="ghost"
               size="sm"
-              disabled={step() === 0}
+              disabled={step() === 0 || locked()}
               onClick={() => setStep((value) => Math.max(0, value - 1))}
             >
               Back
@@ -355,6 +398,7 @@ export function Questionnaire(props: QuestionnaireProps) {
                 type="button"
                 size="sm"
                 disabled={locked() || !canAdvance()}
+                aria-describedby={local.disabledReason ? reasonId : undefined}
                 onClick={() => setStep((value) => Math.min(count() - 1, value + 1))}
               >
                 Next

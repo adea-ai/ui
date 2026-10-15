@@ -183,7 +183,7 @@ function LineHead(props: {
         <Show when={props.description}>
           <span
             data-slot="trace-description"
-            class="min-w-0 truncate text-xs text-muted-foreground/80"
+            class="min-w-0 truncate text-xs text-muted-foreground"
           >
             {props.description}
           </span>
