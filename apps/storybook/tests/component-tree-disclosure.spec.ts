@@ -611,11 +611,11 @@ test.describe('collapsing an ancestor', () => {
     expect(await logs(page, 'marker')).toEqual(['active:repo-a', 'expand:repo-b:true'])
   })
 
-  // Current behaviour, not a feature: `Tree` keeps the last row it saw focused
-  // and does not clear it when focus leaves, so hiding that row pulls focus back
-  // from whatever has it. It is the same on main, without the disclosure prop.
+  // Focus that has gone to a control outside the tree is not pulled back when the
+  // last row the tree saw focused is hidden. Only the roving stop moves. This holds
+  // with the prop omitted, as it does for `row` and `marker`.
   for (const mode of ['marker', 'omitted'] as const) {
-    test(`${mode}: hiding the last-focused row pulls focus back from a control outside the tree`, async ({
+    test(`${mode}: hiding the last-focused row leaves focus in a control outside the tree`, async ({
       page,
     }) => {
       await row(page, mode, 'repo-a-hint').focus()
@@ -624,7 +624,47 @@ test.describe('collapsing an ancestor', () => {
 
       await collapse(page, mode, 'sources')
 
+      expect(await focusOwner(page)).toBe('INPUT')
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+      expect((await activeCalls(page, mode)).at(-1)).toBe('sources')
+    })
+
+    test(`${mode}: the outside control keeps focus when it is reached by a pointer press`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+      await page.locator('#outside').click()
+
+      await collapse(page, mode, 'sources')
+
+      expect(await focusOwner(page)).toBe('INPUT')
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+    })
+
+    test(`${mode}: focus that fell to the body when the row was removed still recovers into the tree`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+      await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+      expect(await focusOwner(page)).toBe('BODY')
+
+      await collapse(page, mode, 'sources')
+
       await expect(row(page, mode, 'sources')).toBeFocused()
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+    })
+
+    test(`${mode}: moving focus out of the tree forgets the last row, so a later hide does not reclaim focus`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+      await page.locator('#outside').focus()
+      await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+      expect(await focusOwner(page)).toBe('BODY')
+
+      await collapse(page, mode, 'sources')
+
+      expect(await focusOwner(page)).toBe('BODY')
       expect(await tabStops(page, mode)).toEqual(['sources'])
     })
   }

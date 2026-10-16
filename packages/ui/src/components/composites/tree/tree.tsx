@@ -25,6 +25,7 @@ type TreeContextValue = {
   unregister: (id: string, element: HTMLDivElement | undefined) => void
   focusItem: (id: string) => void
   noteFocus: (id: string) => void
+  noteBlur: (next: EventTarget | null) => void
   activate: (id: string, event: Event) => void
   expand: (id: string, expanded: boolean) => void
   disclosure: () => TreeDisclosure
@@ -114,8 +115,12 @@ export type TreeProps = Omit<
  * the target row: when the active row leaves `visibleItems`, the first visible
  * row becomes the roving stop and `onActiveIdChange` is called with it. If the
  * removed row held focus, or was the last row the tree saw focused, focus moves
- * to that same row; if it had no focus, only the roving stop moves. This is the
- * same in both `disclosure` modes and for every way a host collapses a row.
+ * to that same row; if it had no focus, only the roving stop moves. Focus that
+ * has already gone to a control outside the tree is never pulled back: the tree
+ * forgets its last focused row when focus moves to an element outside it, and
+ * the roving stop alone moves if that control still has focus when the row is
+ * hidden. This is the same in both `disclosure` modes and for every way a host
+ * collapses a row.
  */
 export function Tree(props: TreeProps) {
   const [local, rest] = splitProps(props, [
@@ -146,6 +151,22 @@ export function Tree(props: TreeProps) {
   let requestedRevealId: string | null = null
   let focusedId: string | null = null
   let disposed = false
+  const isInsideTreeRow = (element: Element) => {
+    const row = element.closest('[role="treeitem"]')
+    return row instanceof HTMLDivElement && rowIdsByElement.has(row)
+  }
+  // True when a focusable control outside this tree owns focus. Nothing focused
+  // (`body`) is not outside: that is where focus falls when a focused row is removed.
+  const focusIsOutsideTree = () => {
+    if (typeof document === 'undefined') return false
+    const active = document.activeElement
+    return (
+      active instanceof Element &&
+      active !== document.body &&
+      active !== document.documentElement &&
+      !isInsideTreeRow(active)
+    )
+  }
   const rowSizeObserver =
     typeof ResizeObserver === 'undefined'
       ? undefined
@@ -225,6 +246,12 @@ export function Tree(props: TreeProps) {
     noteFocus: (id) => {
       focusedId = id
     },
+    noteBlur: (next) => {
+      // Focus moving to an element outside this tree ends the memory of the last
+      // focused row. A null target (focus to nothing, or the window losing focus)
+      // is ambiguous, so the memory stays for the recovery below.
+      if (next instanceof Element && !isInsideTreeRow(next)) focusedId = null
+    },
     activate: (id, event) => local.onActivate?.(id, event),
     expand: (id, expanded) => local.onExpand?.(id, expanded),
     disclosure: () => local.disclosure ?? 'row',
@@ -239,11 +266,15 @@ export function Tree(props: TreeProps) {
     if (activeId === null) return
     // If the projection removes the last row that took focus (a host filter, or
     // an ancestor collapsing), move focus to the same fallback that now owns the
-    // roving tab stop. `focusedId` is not cleared when focus leaves the tree, so
-    // this also reclaims focus from a control outside it; that long-standing
-    // behaviour is deliberately left as it was.
+    // roving tab stop, unless a control outside the tree has focus: that control
+    // keeps it, and only the roving stop moves.
     if (focusedId !== null && !index().byId.has(focusedId) && pendingFocusId !== activeId) {
-      focusItem(activeId)
+      if (focusIsOutsideTree()) {
+        focusedId = null
+        if (local.activeId !== activeId) local.onActiveIdChange(activeId)
+      } else {
+        focusItem(activeId)
+      }
     } else if (local.activeId !== activeId) {
       local.onActiveIdChange(activeId)
     }
@@ -354,12 +385,19 @@ export function TreeRow(props: TreeRowProps) {
   let registeredId: string | undefined
   const id = () => local.item.id
 
-  onCleanup(() => tree.unregister(registeredId ?? id(), row))
+  const handleFocusOut = (event: FocusEvent) => tree.noteBlur(event.relatedTarget)
+
+  onCleanup(() => {
+    row?.removeEventListener('focusout', handleFocusOut)
+    tree.unregister(registeredId ?? id(), row)
+  })
 
   const setRef = (element: HTMLDivElement) => {
     row = element
     registeredId = id()
     tree.register(registeredId, element)
+    // A listener, not an `onFocusOut` prop, so a host's own handler is untouched.
+    element.addEventListener('focusout', handleFocusOut)
   }
 
   createEffect(() => {

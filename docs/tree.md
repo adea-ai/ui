@@ -89,11 +89,13 @@ collapse came from Left, the marker chevron, or the host (for example from
 - If the focused row stays visible, nothing moves: Left on an open row collapses
   it and leaves focus on it, and a chevron press that hides only other rows
   leaves focus on its row, or on a control outside the tree.
-- `Tree` remembers the last row that took focus and does not forget it when focus
-  leaves the tree. If that row is later hidden, even by a press on a chevron while
-  focus is in a control outside the tree, focus is pulled back into the tree, onto
-  the first visible row. This is how `Tree` has always behaved; it is not specific
-  to `disclosure="marker"`.
+- `Tree` remembers the last row that took focus and forgets it when focus moves to
+  an element outside the tree. If a row is hidden while a control outside the tree
+  has focus (for example a search field, or after a chevron press), that control
+  keeps focus and only the roving stop moves to the first visible row. If focus
+  had already fallen to `document.body` when the row went away, or left the tree
+  without a target element, the recovery above still applies. This is the same in
+  both `disclosure` modes.
 
 The packed browser contract measures 320 CSS-pixel viewport bounds separately
 from a 200% root-font-size text-fit stress. The latter checks text and row
