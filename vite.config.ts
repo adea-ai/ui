@@ -1,4 +1,7 @@
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite-plus'
+import { expectedId } from './packages/ui/scripts/orch-toolchain.mjs'
 
 /**
  * Vite Task cache proof (additive, not a gate).
@@ -38,7 +41,11 @@ const bunLoaded = [
 // `auto` tracking sees what `node`, `tsc` and `vite` read. Files that `bun` or `oxlint` load
 // themselves are listed explicitly (see `bunLoaded` above), and so is everything a task reads
 // through a glob or a package boundary that a read-trace would otherwise have to discover.
-const toolchainEnv = toolchain
+// The actual Node, Bun and platform identity of this invocation's `orch:*` tasks, computed each time `vp`
+// loads this file and written into their command text, so it is part of every cache key. The uncached
+// `orch:toolchain` task checks it against the PATH the tasks really get, before any of them runs. See
+// packages/ui/scripts/orch-toolchain.mjs; nothing here is shared between invocations.
+const toolchainId = expectedId(dirname(fileURLToPath(import.meta.url)))
 const libSources = [
   'packages/ui/src/**',
   'packages/ui/tests/**',
@@ -60,37 +67,58 @@ const workshopSources = [
 ]
 const lintConfig = ['.oxlintrc.json']
 
+type OrchTask = {
+  command: string
+  dependsOn?: string[]
+  cache: { input: Array<string | { auto: boolean }>; output?: string[]; env?: string[] }
+}
+
+/**
+ * Adds the toolchain identity to a cached `orch:*` task: the id is part of its command text, and the task
+ * runs after `orch:toolchain` has checked it.
+ */
+const orch = (task: OrchTask) => ({
+  ...task,
+  command: `ORCH_TOOLCHAIN=${toolchainId} ${task.command}`,
+  dependsOn: ['orch:toolchain', ...(task.dependsOn ?? [])],
+})
+
 export default defineConfig({
   run: {
     tasks: {
-      'orch:ui:typecheck': {
-        command: 'bun run --cwd packages/ui typecheck',
-        cache: { input: [{ auto: true }, ...libSources], env: toolchainEnv },
+      // Not cached: it runs on every invocation, with the PATH the tasks get, and exits non-zero unless the
+      // `node`, `bun` and platform it finds are the ones named in the other tasks' commands (or if it cannot
+      // identify them). Then no dependent task runs or touches the cache.
+      'orch:toolchain': {
+        command: `node packages/ui/scripts/orch-toolchain.mjs --expect ${toolchainId}`,
+        cache: false,
       },
-      'orch:storybook:typecheck': {
+      'orch:ui:typecheck': orch({
+        command: 'bun run --cwd packages/ui typecheck',
+        cache: { input: [{ auto: true }, ...libSources] },
+      }),
+      'orch:storybook:typecheck': orch({
         command: 'bun run --cwd apps/storybook typecheck',
         dependsOn: ['orch:ui:build'],
         cache: {
           input: [{ auto: true }, ...libSources, ...workshopSources],
-          env: toolchainEnv,
         },
-      },
+      }),
       'orch:typecheck': { command: 'vp run orch:ui:typecheck && vp run orch:storybook:typecheck' },
-      'orch:ui:lint': {
+      'orch:ui:lint': orch({
         command: 'bun run --cwd packages/ui lint',
-        cache: { input: [{ auto: true }, ...libSources, ...lintConfig], env: toolchainEnv },
-      },
-      'orch:storybook:lint': {
+        cache: { input: [{ auto: true }, ...libSources, ...lintConfig] },
+      }),
+      'orch:storybook:lint': orch({
         command: 'bun run --cwd apps/storybook lint',
         // Auto tracking showed the workshop's `oxlint` resolving imports into
         // `packages/ui/dist`, which `turbo.json` does not declare for `lint`.
         dependsOn: ['orch:ui:build'],
         cache: {
           input: [{ auto: true }, ...workshopSources, ...lintConfig],
-          env: toolchainEnv,
         },
-      },
-      'orch:root:lint': {
+      }),
+      'orch:root:lint': orch({
         command: 'oxlint --deny-warnings',
         cache: {
           input: [
@@ -101,38 +129,36 @@ export default defineConfig({
             '!**/storybook-static/**',
             ...lintConfig,
           ],
-          env: toolchainEnv,
         },
-      },
+      }),
       'orch:lint': {
         command: 'vp run orch:ui:lint && vp run orch:storybook:lint && vp run orch:root:lint',
       },
-      'orch:ui:build': {
+      'orch:ui:build': orch({
         command: 'bun run --cwd packages/ui build',
         // The outputs `turbo.json` declares for `build`, so a hit restores `dist`.
         cache: {
           input: [{ auto: true }, ...bunLoaded, ...libSources],
           output: ['packages/ui/dist/**'],
-          env: ['NODE_ENV', ...toolchainEnv],
+          env: ['NODE_ENV'],
         },
-      },
+      }),
       'orch:build': { command: 'vp run orch:ui:build' },
-      'orch:ui:test': {
+      'orch:ui:test': orch({
         command: 'bun run --cwd packages/ui test',
-        cache: { input: [{ auto: true }, ...bunLoaded, ...libSources], env: toolchainEnv },
-      },
+        cache: { input: [{ auto: true }, ...bunLoaded, ...libSources] },
+      }),
       // `bun test tests/unit` in the workshop, after the library build (`^build`).
-      'orch:storybook:test': {
+      'orch:storybook:test': orch({
         command: 'bun run --cwd apps/storybook test',
         dependsOn: ['orch:ui:build'],
         cache: {
           // `bun test` reads and rewrites the root `coverage/` (bunfig.toml); it is a product
           // of `orch:test:coverage`, not an input, and tracking it made this task miss on order.
           input: [{ auto: true }, ...bunLoaded, ...libSources, ...workshopSources, '!coverage/**'],
-          env: toolchainEnv,
         },
-      },
-      'orch:test:coverage': {
+      }),
+      'orch:test:coverage': orch({
         // `bun` always creates the root `coverage/` (bunfig `coverageDir`; neither
         // `--coverage-dir` nor a text-only reporter avoids it in bun 1.4.0). `oxlint` lists the
         // workspace root, so that directory appearing or disappearing is one lint miss (a
@@ -142,9 +168,8 @@ export default defineConfig({
         cache: {
           input: [{ auto: true }, ...bunLoaded, ...libSources, 'bunfig.toml'],
           output: ['coverage/**'],
-          env: toolchainEnv,
         },
-      },
+      }),
       'orch:test': {
         command: 'vp run orch:ui:test && vp run orch:storybook:test && vp run orch:test:coverage',
       },
