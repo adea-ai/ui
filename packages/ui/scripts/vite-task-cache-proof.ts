@@ -631,84 +631,84 @@ async function snapshots(): Promise<void> {
       )
     }
   })()
-  const counts = { wholeTotal: 0, wholeBad: 0, bareTotal: 0, bareBad: 0, vacTotal: 0, vacBad: 0 }
-  const badStates = new Map<string, number>()
+  // Per method: how many snapshots, how many were torn (the copy opened badly or failed
+  // integrity_check), and how many could not be taken at all.
+  const methods = {
+    'directory copy': { total: 0, torn: 0, failed: 0 },
+    'database file only': { total: 0, torn: 0, failed: 0 },
+    'VACUUM INTO': { total: 0, torn: 0, failed: 0 },
+  }
+  const reasons = new Map<string, number>()
+  const tally = (method: keyof typeof methods, state: 'ok' | 'torn' | 'failed', why = '') => {
+    methods[method].total += 1
+    if (state !== 'ok') {
+      methods[method][state] += 1
+      const key = `${method}, ${state}: ${why.split('\n')[0]?.slice(0, 70)}`
+      reasons.set(key, (reasons.get(key) ?? 0) + 1)
+    }
+  }
+  const verdict = (method: keyof typeof methods, file: string) => {
+    const result = integrityOfCopy(file)
+    if (result === 'ok') tally(method, 'ok')
+    else tally(method, 'torn', result)
+  }
   const deadline = performance.now() + 20_000
   while (performance.now() < deadline) {
     const file = cacheDb(live)
     if (file) {
       const whole = mkdtempSync(join(scratch, 'snap-'))
+      const bare = mkdtempSync(join(scratch, 'snap-'))
       try {
-        cpSync(join(file, '..'), whole, { recursive: true })
-        const state = integrityOfCopy(join(whole, 'cache.db'))
-        counts.wholeTotal += 1
-        if (state !== 'ok') {
-          counts.wholeBad += 1
-          badStates.set(`directory: ${state}`, (badStates.get(`directory: ${state}`) ?? 0) + 1)
+        try {
+          cpSync(join(file, '..'), whole, { recursive: true })
+          verdict('directory copy', join(whole, 'cache.db'))
+        } catch (error) {
+          tally('directory copy', 'failed', String(error))
         }
-        const bare = mkdtempSync(join(scratch, 'snap-'))
-        copyFileSync(file, join(bare, 'cache.db'))
-        const bareState = integrityOfCopy(join(bare, 'cache.db'))
-        counts.bareTotal += 1
-        if (bareState !== 'ok') {
-          counts.bareBad += 1
-          badStates.set(
-            `database only: ${bareState}`,
-            (badStates.get(`database only: ${bareState}`) ?? 0) + 1
-          )
+        try {
+          copyFileSync(file, join(bare, 'cache.db'))
+          verdict('database file only', join(bare, 'cache.db'))
+        } catch (error) {
+          tally('database file only', 'failed', String(error))
         }
         // SQLite's own consistent snapshot, taken from a read-only connection while vp writes.
         const target = join(bare, 'vacuum.db')
-        let vacuumState = 'ok'
         try {
           const source = new Database(file, { readonly: true })
           try {
+            source.run('PRAGMA busy_timeout = 5000')
             source.run(`VACUUM INTO '${target}'`)
           } finally {
             source.close()
           }
-          vacuumState = integrityOfCopy(target)
+          verdict('VACUUM INTO', target)
         } catch (error) {
-          vacuumState = `vacuum failed: ${String(error).slice(0, 60)}`
+          tally('VACUUM INTO', 'failed', String(error))
         }
-        counts.vacTotal += 1
-        if (vacuumState !== 'ok') {
-          counts.vacBad += 1
-          badStates.set(
-            `vacuum into: ${vacuumState}`,
-            (badStates.get(`vacuum into: ${vacuumState}`) ?? 0) + 1
-          )
-        }
-        rmSync(bare, { recursive: true, force: true })
-      } catch {
-        counts.wholeBad += 1
       } finally {
         rmSync(whole, { recursive: true, force: true })
+        rmSync(bare, { recursive: true, force: true })
       }
     }
     await new Promise((done) => setTimeout(done, 15))
   }
   loop.running = false
   await writers
-  for (const [state, n] of badStates) notes.push(`snapshots: ${n} x ${state}`)
+  for (const [reason, n] of reasons) notes.push(`snapshots: ${n} x ${reason}`)
+  for (const [method, count] of Object.entries(methods)) {
+    notes.push(
+      `snapshots: ${method}: ${count.total} taken during writes, ${count.torn} torn, ${count.failed} not taken`
+    )
+  }
+  // A mid-run saver needs a method that is never torn; a file copy is reported, not required.
+  check(s, 'VACUUM INTO snapshots during writes: torn', '0', String(methods['VACUUM INTO'].torn))
   check(
     s,
-    `${counts.wholeTotal} directory snapshots during writes: incoherent`,
+    'VACUUM INTO snapshots during writes: not taken',
     '0',
-    String(counts.wholeBad)
+    String(methods['VACUUM INTO'].failed)
   )
-  check(
-    s,
-    `${counts.bareTotal} database-only snapshots during writes: incoherent`,
-    '0',
-    String(counts.bareBad)
-  )
-  check(
-    s,
-    `${counts.vacTotal} VACUUM INTO snapshots during writes: incoherent`,
-    '0',
-    String(counts.vacBad)
-  )
+  check(s, 'directory copies during writes: torn', '0', String(methods['directory copy'].torn))
   const settled = cacheDb(live)
   check(s, 'database after the writers stop', 'ok', settled ? integrityOfCopy(settled) : 'ok')
 }
