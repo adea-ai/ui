@@ -631,7 +631,8 @@ async function snapshots(): Promise<void> {
       )
     }
   })()
-  const counts = { wholeTotal: 0, wholeBad: 0, bareTotal: 0, bareBad: 0 }
+  const counts = { wholeTotal: 0, wholeBad: 0, bareTotal: 0, bareBad: 0, vacTotal: 0, vacBad: 0 }
+  const badStates = new Map<string, number>()
   const deadline = performance.now() + 20_000
   while (performance.now() < deadline) {
     const file = cacheDb(live)
@@ -641,12 +642,43 @@ async function snapshots(): Promise<void> {
         cpSync(join(file, '..'), whole, { recursive: true })
         const state = integrityOfCopy(join(whole, 'cache.db'))
         counts.wholeTotal += 1
-        if (state !== 'ok') counts.wholeBad += 1
+        if (state !== 'ok') {
+          counts.wholeBad += 1
+          badStates.set(`directory: ${state}`, (badStates.get(`directory: ${state}`) ?? 0) + 1)
+        }
         const bare = mkdtempSync(join(scratch, 'snap-'))
         copyFileSync(file, join(bare, 'cache.db'))
         const bareState = integrityOfCopy(join(bare, 'cache.db'))
         counts.bareTotal += 1
-        if (bareState !== 'ok') counts.bareBad += 1
+        if (bareState !== 'ok') {
+          counts.bareBad += 1
+          badStates.set(
+            `database only: ${bareState}`,
+            (badStates.get(`database only: ${bareState}`) ?? 0) + 1
+          )
+        }
+        // SQLite's own consistent snapshot, taken from a read-only connection while vp writes.
+        const target = join(bare, 'vacuum.db')
+        let vacuumState = 'ok'
+        try {
+          const source = new Database(file, { readonly: true })
+          try {
+            source.run(`VACUUM INTO '${target}'`)
+          } finally {
+            source.close()
+          }
+          vacuumState = integrityOfCopy(target)
+        } catch (error) {
+          vacuumState = `vacuum failed: ${String(error).slice(0, 60)}`
+        }
+        counts.vacTotal += 1
+        if (vacuumState !== 'ok') {
+          counts.vacBad += 1
+          badStates.set(
+            `vacuum into: ${vacuumState}`,
+            (badStates.get(`vacuum into: ${vacuumState}`) ?? 0) + 1
+          )
+        }
         rmSync(bare, { recursive: true, force: true })
       } catch {
         counts.wholeBad += 1
@@ -658,6 +690,7 @@ async function snapshots(): Promise<void> {
   }
   loop.running = false
   await writers
+  for (const [state, n] of badStates) notes.push(`snapshots: ${n} x ${state}`)
   check(
     s,
     `${counts.wholeTotal} directory snapshots during writes: incoherent`,
@@ -670,6 +703,12 @@ async function snapshots(): Promise<void> {
     '0',
     String(counts.bareBad)
   )
+  check(
+    s,
+    `${counts.vacTotal} VACUUM INTO snapshots during writes: incoherent`,
+    '0',
+    String(counts.vacBad)
+  )
   const settled = cacheDb(live)
   check(s, 'database after the writers stop', 'ok', settled ? integrityOfCopy(settled) : 'ok')
 }
@@ -679,6 +718,10 @@ function actions(): Promise<void> {
   const s = 'actions'
   const file = join(repo, '.github', 'workflows', 'vite-task-cache-proof.yml')
   const text = readFileSync(file, 'utf8')
+  const code = text
+    .split('\n')
+    .map((line) => line.replace(/(^|\s)#.*$/, ''))
+    .join('\n')
   const doc = Bun.YAML.parse(text) as {
     on: Record<string, unknown>
     permissions: Record<string, string>
@@ -714,7 +757,7 @@ function actions(): Promise<void> {
     s,
     'no pull_request_target, push or schedule',
     'false',
-    String(/pull_request_target|\bpush:|schedule:/.test(text))
+    String(/pull_request_target|\bpush:|schedule:/.test(code))
   )
   check(
     s,
@@ -727,7 +770,7 @@ function actions(): Promise<void> {
     s,
     'no secret, token or OIDC use',
     'false',
-    String(/secrets\.|GITHUB_TOKEN|id-token|CLOUDFLARE|NIFTY/i.test(text))
+    String(/secrets\.|GITHUB_TOKEN|id-token|CLOUDFLARE|NIFTY/i.test(code))
   )
   check(
     s,
@@ -763,7 +806,7 @@ function actions(): Promise<void> {
     s,
     'restore never saves and uses no save-always',
     'false',
-    String(/save-always|lookup-only/.test(text))
+    String(/save-always|lookup-only/.test(code))
   )
   check(
     s,
