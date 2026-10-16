@@ -29,9 +29,125 @@ const bunLoaded = [
   'bunfig.toml',
 ]
 
+// Orchestration tasks (`orch:*`). They mirror the Turbo graph in `turbo.json` for this repository
+// (`build`, `typecheck`, `lint`, `test`, with `test` after the library `build` the way
+// `dependsOn: ["^build"]` orders it) and run the same package scripts, so Bun keeps running the
+// tests. They are additive: nothing in CI or `verify` calls them yet, and the root `turbo` scripts
+// are unchanged. Names are prefixed because a task may not share a name with a root script.
+//
+// `auto` tracking sees what `node`, `tsc` and `vite` read. Files that `bun` or `oxlint` load
+// themselves are listed explicitly (see `bunLoaded` above), and so is everything a task reads
+// through a glob or a package boundary that a read-trace would otherwise have to discover.
+const toolchainEnv = toolchain
+const libSources = [
+  'packages/ui/src/**',
+  'packages/ui/tests/**',
+  'packages/ui/public/r/**',
+  'packages/ui/registry.json',
+  'packages/ui/design-system/**',
+  'packages/ui/tsconfig*.json',
+  'packages/ui/vite.config.ts',
+  'packages/ui/components.json',
+  'tsconfig.json',
+  'bun.lock',
+]
+const workshopSources = [
+  'apps/storybook/**',
+  '!apps/storybook/node_modules/**',
+  '!apps/storybook/storybook-static/**',
+  '!apps/storybook/test-results/**',
+  '!apps/storybook/playwright-report/**',
+]
+const lintConfig = ['.oxlintrc.json']
+
 export default defineConfig({
   run: {
     tasks: {
+      'orch:ui:typecheck': {
+        command: 'bun run --cwd packages/ui typecheck',
+        cache: { input: [{ auto: true }, ...libSources], env: toolchainEnv },
+      },
+      'orch:storybook:typecheck': {
+        command: 'bun run --cwd apps/storybook typecheck',
+        dependsOn: ['orch:ui:build'],
+        cache: {
+          input: [{ auto: true }, ...libSources, ...workshopSources],
+          env: toolchainEnv,
+        },
+      },
+      'orch:typecheck': { command: 'vp run orch:ui:typecheck && vp run orch:storybook:typecheck' },
+      'orch:ui:lint': {
+        command: 'bun run --cwd packages/ui lint',
+        cache: { input: [{ auto: true }, ...libSources, ...lintConfig], env: toolchainEnv },
+      },
+      'orch:storybook:lint': {
+        command: 'bun run --cwd apps/storybook lint',
+        // Auto tracking showed the workshop's `oxlint` resolving imports into
+        // `packages/ui/dist`, which `turbo.json` does not declare for `lint`.
+        dependsOn: ['orch:ui:build'],
+        cache: {
+          input: [{ auto: true }, ...workshopSources, ...lintConfig],
+          env: toolchainEnv,
+        },
+      },
+      'orch:root:lint': {
+        command: 'oxlint --deny-warnings',
+        cache: {
+          input: [
+            { auto: true },
+            '**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts}',
+            '!**/node_modules/**',
+            '!**/dist/**',
+            '!**/storybook-static/**',
+            ...lintConfig,
+          ],
+          env: toolchainEnv,
+        },
+      },
+      'orch:lint': {
+        command: 'vp run orch:ui:lint && vp run orch:storybook:lint && vp run orch:root:lint',
+      },
+      'orch:ui:build': {
+        command: 'bun run --cwd packages/ui build',
+        // The outputs `turbo.json` declares for `build`, so a hit restores `dist`.
+        cache: {
+          input: [{ auto: true }, ...bunLoaded, ...libSources],
+          output: ['packages/ui/dist/**'],
+          env: ['NODE_ENV', ...toolchainEnv],
+        },
+      },
+      'orch:build': { command: 'vp run orch:ui:build' },
+      'orch:ui:test': {
+        command: 'bun run --cwd packages/ui test',
+        cache: { input: [{ auto: true }, ...bunLoaded, ...libSources], env: toolchainEnv },
+      },
+      // `bun test tests/unit` in the workshop, after the library build (`^build`).
+      'orch:storybook:test': {
+        command: 'bun run --cwd apps/storybook test',
+        dependsOn: ['orch:ui:build'],
+        cache: {
+          // `bun test` reads and rewrites the root `coverage/` (bunfig.toml); it is a product
+          // of `orch:test:coverage`, not an input, and tracking it made this task miss on order.
+          input: [{ auto: true }, ...bunLoaded, ...libSources, ...workshopSources, '!coverage/**'],
+          env: toolchainEnv,
+        },
+      },
+      'orch:test:coverage': {
+        // `bun` always creates the root `coverage/` (bunfig `coverageDir`; neither
+        // `--coverage-dir` nor a text-only reporter avoids it in bun 1.4.0). `oxlint` lists the
+        // workspace root, so that directory appearing or disappearing is one lint miss (a
+        // negated glob does not hide a directory's existence). `vp:verify` therefore runs the
+        // tests before lint, so a cold and a warm run both lint with `coverage/` present.
+        command: 'bun test --conditions=browser packages/ui/tests --coverage',
+        cache: {
+          input: [{ auto: true }, ...bunLoaded, ...libSources, 'bunfig.toml'],
+          output: ['coverage/**'],
+          env: toolchainEnv,
+        },
+      },
+      'orch:test': {
+        command: 'vp run orch:ui:test && vp run orch:storybook:test && vp run orch:test:coverage',
+      },
       'proof:typecheck': {
         command: 'bun run --cwd packages/ui typecheck',
         cache: { env: toolchain },

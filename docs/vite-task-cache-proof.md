@@ -16,6 +16,9 @@ secret or a credential.
 | `packages/ui/scripts/vite-task-cache-proof-artifact.mjs` | Writes a small, seed-dependent output tree for `proof:artifact`, so a restored cache entry can be checked byte for byte.                                                                                     |
 | `.github/workflows/vite-task-cache-proof.yml`            | Opt-in, non-required Actions job. Runs on `workflow_dispatch` and when a ready pull request touches the proof's own files.                                                                                   |
 
+The `orch:*` tasks and `vp:*` scripts added to `vite.config.ts` and the root `package.json` are described under
+[Orchestration tasks](#orchestration-tasks-orch). They are additive and unrelated to the harness.
+
 `turbo.json` is untouched, so the production graph (`build` with `^build`, the declared
 outputs) is exactly what it was. The tasks wrap `packages/ui` scripts directly and do
 not reproduce Turbo's package graph.
@@ -170,6 +173,75 @@ itself: the script it is started on, its imports, a test file. Measured with the
 stale result. Every task that starts a `bun` script or `bun test` therefore declares explicit inputs
 (`{ auto: true }` plus the script, package and test globs). With them, editing a script or a test file is a miss
 that names the file.
+
+## Orchestration tasks (`orch:*`)
+
+The same `vp` runner now also orchestrates the ordinary checks, as an **additive** layer. Nothing in
+`validation.yml`, `verify` or any required lane calls it, `turbo.json` and `bun.lock` are unchanged, and the root
+`turbo` scripts (`build`, `lint`, `typecheck`, `test`, `test:unit`) still decide what is required. Bun still runs
+every test; there is no Vitest here.
+
+| Script (`bun run …`) | Runs (`vp run …`)                                                         | Mirrors in Turbo                           |
+| -------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
+| `vp:build`           | `orch:build` → `orch:ui:build`                                            | `turbo run build --filter=@adea-ai/ui`     |
+| `vp:typecheck`       | `orch:typecheck` → `orch:ui:typecheck`, `orch:storybook:typecheck`        | `turbo run typecheck`                      |
+| `vp:lint`            | `orch:lint` → `orch:ui:lint`, `orch:storybook:lint`, `orch:root:lint`     | `turbo run lint && oxlint --deny-warnings` |
+| `vp:test`            | `orch:test` → `orch:ui:test`, `orch:storybook:test`, `orch:test:coverage` | `turbo run test && bun run test:coverage`  |
+| `vp:verify`          | test, lint, typecheck, build in that order                                | the four above (not the rest of `verify`)  |
+
+Design, each point measured:
+
+- **Task names are prefixed.** A task and a root script may not share a name, so the scripts are `vp:*` and the
+  tasks `orch:*`. The `proof:*` tasks stay for the harness.
+- **Vite+ 1.3.0 has no command-less task.** A task that only lists `dependsOn` fails to load
+  ("data did not match any variant of untagged enum UserTaskDefinition"), so the aggregate tasks run their
+  children with `vp run … && vp run …`. Each child is still its own cached task and the aggregate is not.
+- **Ordering follows reads, not just Turbo's graph.** `orch:storybook:test` depends on `orch:ui:build`, as
+  `test` has `dependsOn: ["^build"]`. Auto tracking also showed the workshop's `oxlint` and `tsc` reading
+  `packages/ui/dist` (touching one dist file was a miss for the workshop lint only), which `turbo.json` does not
+  declare for `lint` or `typecheck`. Those two tasks therefore depend on `orch:ui:build` here.
+- **Bun-loaded files are explicit inputs** (`bunLoaded`, plus `libSources`), the finding above; the toolchain is
+  declared through `PROOF_TOOLCHAIN` in every task's `cache.env`. `orch:ui:build` declares
+  `packages/ui/dist/**` as output, as `turbo.json` does.
+- **`coverage/` and lint.** `bun test --coverage` always creates the root `coverage/` (`--coverage-dir` and a
+  text-only reporter did not avoid it in bun 1.4.0), `oxlint` lists the workspace root, and a directory appearing
+  or disappearing changes every lint fingerprint; a negated glob does not hide it. `vp:verify` therefore runs the
+  tests before lint so a cold and a warm run lint in the same state. Run on its own after a clean checkout, the
+  first `vp:lint` after the first `vp:test` is one extra miss.
+
+### Local qualification
+
+linux-x64, pinned `node` 24.18.0 and `bun` 1.4.0 (checksum-verified downloads), `vp` 1.3.0, base `ae730b0`, a
+scratch cache (`VITE_CACHE_PATH`, a temporary directory), `PROOF_TOOLCHAIN=node24.18.0-bun1.4.0-linux-x64`. Every
+exit code was 0.
+
+| Run                          | `orch:test`         | `orch:lint` | `orch:typecheck` | `orch:build` |
+| ---------------------------- | ------------------- | ----------- | ---------------- | ------------ |
+| Cold (wall time)             | 54.2 s, 0 of 4 hits | 6.3 s\*     | 41.2 s\*         | 0.4 s\*      |
+| Warm                         | 0.5 s, 4 of 4 hits  | 0.4 s, 4/4  | 0.4 s, 3/3       | 0.4 s        |
+| After `rm -rf dist coverage` | 0.4 s, 4 of 4 hits  | 0.6 s, 4/4  | 0.5 s, 3/3       | 0.3 s        |
+
+\* includes hits on `orch:ui:build`, which an earlier task in the same run had already executed.
+`packages/ui/dist` hashed identically cold, warm and restored (`b730e14a81500076`, a hash over the sorted file
+hashes). `bun run vp:verify` on the warm cache: 1.9 s, exit 0.
+
+Mutations on a clean tree (all reverted): appending a comment to `packages/ui/src/lib/version-notes.ts` missed
+every lint and typecheck task and the build, and the tests then failed for the right reason (the committed
+registry copy in `public/r` no longer matched, exit 1), not from a stale hit; appending to the bun-loaded
+`packages/ui/scripts/check-cn-tables.ts` missed all four test tasks; a `debugger` statement in `src` was a miss and
+`orch:ui:lint` exited 1; changing `PROOF_TOOLCHAIN` missed the build. Reverting the source edit re-executed
+(A→B→A: one entry per key, see above), so a branch that alternates with `main` keeps missing.
+
+### Not done, and not claimed
+
+- **No hosted proof.** No Actions run, cold, warm or restored, exists for `orch:*`; this was run locally only. The
+  trusted-writer pattern in `vite-task-cache-proof.yml` covers the `proof:*` tasks only.
+- **The required lanes still run Turbo.** Moving `validation.yml` (Code Foundry, pinned 1.44.3) to `vp run` needs
+  a Code Foundry change beyond this repository and is a separate decision.
+- **Coverage is not Turbo parity.** Turbo's `--filter`, `--affected`, remote cache, `verify:changed` and the
+  storybook, Playwright and `check:packed-*` lanes are not mirrored; `build-storybook` is not an `orch` task.
+- **Cache keys are per task, not per package.** A change to an unrelated file under `libSources` invalidates the
+  whole lane; the explicit globs are deliberately wide because narrower ones missed reads in the past.
 
 ## Gaps and what is not claimed
 
