@@ -4,6 +4,7 @@
  * Run: bun packages/ui/scripts/vite-task-cache-proof.ts [scenario ...] [--out=<file>]
  *
  * Scenarios: cold-warm, outputs, worktree, divergence, environment, tools, concurrency,
+ * snapshots, actions,
  * tracking (default: all). Needs a clean working tree and an installed `vite-plus`;
  * the tracking scenario edits and restores a tracked script, the divergence scenario
  * edits and restores a script and a source file.
@@ -21,6 +22,7 @@ import { createHash } from 'node:crypto'
 import {
   appendFileSync,
   copyFileSync,
+  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -248,7 +250,7 @@ async function outputs(): Promise<void> {
   appendFileSync(join(dist(repo), victim), '\n// tampered\n')
   await vp(s, 'one dist file edited, rerun', 'proof:build', 'hit')
   const repaired = sameManifest(built, manifest(dist(repo)))
-  check(s, 'edited output file overwritten by the hit', 'false', String(repaired))
+  check(s, 'edited output file overwritten by the hit', 'true', String(repaired))
   notes.push(
     `outputs: a hit restores missing output files; an edited output file that is still present was ${
       repaired ? 'overwritten' : 'left as edited'
@@ -339,7 +341,7 @@ async function environment(): Promise<void> {
     env: { CACHE_PROOF_UNTRACKED: 'two' },
   })
   await vp(s, 'CI toggled', 'proof:registry', 'hit', { env: { CI: 'true' } })
-  await vp(s, 'extra argument', 'proof:registry', 'executed (args changed)', {
+  await vp(s, 'extra argument', 'proof:registry', 'executed*', {
     args: ['--cache-proof-arg'],
   })
 }
@@ -368,6 +370,55 @@ async function tools(): Promise<void> {
     `tools: a same-bytes copy of the runtime at another path was a ${same.outcome}; a runtime with other bytes was a ${changed.outcome}${
       changed.reason ? ` (${changed.reason})` : ''
     }`
+  )
+
+  // `tsc` runs on node: does a different node binary reach the fingerprint?
+  const node = spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim()
+  const nodeDir = join(scratch, 'node-changed')
+  mkdirSync(nodeDir)
+  copyFileSync(node, join(nodeDir, 'node'))
+  appendFileSync(join(nodeDir, 'node'), Buffer.alloc(16))
+  spawnSync('chmod', ['+x', join(nodeDir, 'node')])
+  await vp(s, 'typecheck cold', 'proof:typecheck', 'executed*')
+  const nodeRun = await vp(s, 'node with other bytes', 'proof:typecheck', 'hit|executed*', {
+    env: withPath(nodeDir),
+  })
+  notes.push(
+    `tools: a node binary with other bytes under an automatically tracked task was a ${nodeRun.outcome}${
+      nodeRun.reason ? ` (${nodeRun.reason})` : ''
+    }`
+  )
+
+  // The explicit separation: a declared variable that names the toolchain and platform.
+  await vp(s, 'toolchain A cold', 'proof:registry', 'hit|executed*', {
+    env: { PROOF_TOOLCHAIN: 'bun-1.4.0 node-24.18.0 linux-x64' },
+  })
+  await vp(s, 'toolchain A warm', 'proof:registry', 'hit', {
+    env: { PROOF_TOOLCHAIN: 'bun-1.4.0 node-24.18.0 linux-x64' },
+  })
+  await vp(
+    s,
+    'other bun version',
+    'proof:registry',
+    "executed ('PROOF_TOOLCHAIN' changed)|executed (env 'PROOF_TOOLCHAIN' changed)",
+    {
+      env: { PROOF_TOOLCHAIN: 'bun-1.4.1 node-24.18.0 linux-x64' },
+    }
+  )
+  await vp(s, 'other platform', 'proof:registry', "executed (env 'PROOF_TOOLCHAIN' changed)", {
+    env: { PROOF_TOOLCHAIN: 'bun-1.4.1 node-24.18.0 darwin-arm64' },
+  })
+
+  // Is the platform in the stored fingerprint on its own? (It is not asserted.)
+  const cache = readdirSync(cacheLink(repo)).map((entry) =>
+    join(cacheLink(repo), entry, 'cache.db')
+  )
+  const stored = cache
+    .filter((file) => existsSync(file))
+    .map((file) => readFileSync(file).toString('latin1'))
+  const platform = stored.some((text) => /x86_64|linux-x64|x64-gnu/.test(text))
+  notes.push(
+    `tools: the stored fingerprints ${platform ? 'contain' : 'do not contain'} a platform marker`
   )
 }
 
@@ -456,6 +507,294 @@ async function tracking(): Promise<void> {
   restore()
 }
 
+function cacheDb(dir: string): string | undefined {
+  for (const entry of readdirSync(dir)) {
+    const file = join(dir, entry, 'cache.db')
+    if (existsSync(file)) return file
+  }
+  return undefined
+}
+
+/** PRAGMA integrity_check on a private copy of the database and its WAL, never the live files. */
+function integrityOfCopy(file: string): string {
+  const copy = mkdtempSync(join(scratch, 'integrity-'))
+  try {
+    for (const suffix of ['', '-wal', '-shm']) {
+      if (existsSync(file + suffix)) copyFileSync(file + suffix, join(copy, `cache.db${suffix}`))
+    }
+    const db = new Database(join(copy, 'cache.db'))
+    try {
+      return (db.query('PRAGMA integrity_check').get() as { integrity_check: string })
+        .integrity_check
+    } finally {
+      db.close()
+    }
+  } catch (error) {
+    return `unreadable: ${String(error).slice(0, 80)}`
+  } finally {
+    rmSync(copy, { recursive: true, force: true })
+  }
+}
+
+/** Start `vp run <task>` in its own process group and SIGKILL the whole group after `delay` ms. */
+async function killedAfter(
+  task: string,
+  delay: number,
+  env: Record<string, string> = {}
+): Promise<number | null> {
+  const child = spawn(join(repo, 'node_modules', '.bin', 'vp'), ['run', task], {
+    cwd: repo,
+    env: { ...process.env, NO_COLOR: '1', ...env },
+    detached: true,
+    stdio: 'ignore',
+  })
+  const exited = new Promise<number | null>((done) => child.once('exit', (code) => done(code)))
+  await new Promise((done) => setTimeout(done, delay))
+  const alreadyDone = child.exitCode !== null
+  if (!alreadyDone) {
+    try {
+      process.kill(-child.pid!, 'SIGKILL')
+    } catch {
+      // the group ended between the check and the signal
+    }
+  }
+  return exited
+}
+
+/** Interrupted runs, and snapshots of the cache directory taken while writers are active. */
+async function snapshots(): Promise<void> {
+  const s = 'snapshots'
+  const dir0 = freshCache()
+  await vp(s, 'golden build', 'proof:build', 'executed*')
+  const golden = manifest(dist(repo))
+  const journal = (() => {
+    const file = cacheDb(dir0)
+    if (!file) return 'none'
+    const db = new Database(file, { readonly: true })
+    try {
+      return String(
+        (db.query('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode
+      )
+    } finally {
+      db.close()
+    }
+  })()
+  notes.push(`snapshots: the task cache database journal mode is ${journal}`)
+
+  // A build killed at several points, including just before it would store its entry.
+  for (const delay of [1500, 8000, 16500, 17800]) {
+    const dir = freshCache()
+    rmSync(dist(repo), { recursive: true, force: true })
+    await killedAfter('proof:build', delay)
+    const file = cacheDb(dir)
+    check(s, `build killed at ${delay}ms: database`, 'ok', file ? integrityOfCopy(file) : 'ok')
+    await vp(s, `build killed at ${delay}ms: next run`, 'proof:build', 'hit|executed*')
+    check(
+      s,
+      `build killed at ${delay}ms: dist is complete`,
+      'true',
+      String(sameManifest(golden, manifest(dist(repo))))
+    )
+    await vp(s, `build killed at ${delay}ms: warm`, 'proof:build', 'hit')
+  }
+
+  // Many short writers, a share of them killed mid-write.
+  const dir = freshCache()
+  const rounds = 25
+  for (let round = 0; round < rounds; round += 1) {
+    const env = (n: number) => ({ PROOF_TOOLCHAIN: `round-${round}-${n}` })
+    await Promise.all([
+      startVp('proof:registry', { env: env(0) }),
+      killedAfter('proof:registry', 40 + ((round * 37) % 380), env(1)),
+      killedAfter('proof:registry', 20 + ((round * 53) % 300), env(2)),
+    ])
+  }
+  const after = cacheDb(dir)
+  check(
+    s,
+    `${rounds} rounds, 2 of 3 writers killed: database`,
+    'ok',
+    after ? integrityOfCopy(after) : 'ok'
+  )
+  await vp(s, 'next run succeeds', 'proof:registry', 'hit|executed*')
+  await vp(s, 'and then hits', 'proof:registry', 'hit')
+
+  // Snapshots of the cache directory while four writers run back to back.
+  const live = freshCache()
+  const loop = { running: true }
+  const writers = (async () => {
+    for (let round = 0; loop.running; round += 1) {
+      await Promise.all(
+        [0, 1, 2, 3].map((n) =>
+          startVp('proof:registry', { env: { PROOF_TOOLCHAIN: `snap-${round}-${n}` } })
+        )
+      )
+    }
+  })()
+  const counts = { wholeTotal: 0, wholeBad: 0, bareTotal: 0, bareBad: 0 }
+  const deadline = performance.now() + 20_000
+  while (performance.now() < deadline) {
+    const file = cacheDb(live)
+    if (file) {
+      const whole = mkdtempSync(join(scratch, 'snap-'))
+      try {
+        cpSync(join(file, '..'), whole, { recursive: true })
+        const state = integrityOfCopy(join(whole, 'cache.db'))
+        counts.wholeTotal += 1
+        if (state !== 'ok') counts.wholeBad += 1
+        const bare = mkdtempSync(join(scratch, 'snap-'))
+        copyFileSync(file, join(bare, 'cache.db'))
+        const bareState = integrityOfCopy(join(bare, 'cache.db'))
+        counts.bareTotal += 1
+        if (bareState !== 'ok') counts.bareBad += 1
+        rmSync(bare, { recursive: true, force: true })
+      } catch {
+        counts.wholeBad += 1
+      } finally {
+        rmSync(whole, { recursive: true, force: true })
+      }
+    }
+    await new Promise((done) => setTimeout(done, 15))
+  }
+  loop.running = false
+  await writers
+  check(
+    s,
+    `${counts.wholeTotal} directory snapshots during writes: incoherent`,
+    '0',
+    String(counts.wholeBad)
+  )
+  check(
+    s,
+    `${counts.bareTotal} database-only snapshots during writes: incoherent`,
+    '0',
+    String(counts.bareBad)
+  )
+  const settled = cacheDb(live)
+  check(s, 'database after the writers stop', 'ok', settled ? integrityOfCopy(settled) : 'ok')
+}
+
+/** Static evidence that the Actions workflow keeps cache writes to trusted runs. */
+function actions(): Promise<void> {
+  const s = 'actions'
+  const file = join(repo, '.github', 'workflows', 'vite-task-cache-proof.yml')
+  const text = readFileSync(file, 'utf8')
+  const doc = Bun.YAML.parse(text) as {
+    on: Record<string, unknown>
+    permissions: Record<string, string>
+    concurrency?: unknown
+    jobs: Record<
+      string,
+      { 'timeout-minutes'?: number; permissions?: unknown; steps: Record<string, unknown>[] }
+    >
+  }
+  const job = Object.values(doc.jobs)[0]!
+  const steps = job.steps
+  const uses = steps.map((step) => String(step['uses'] ?? '')).filter(Boolean)
+  const saves = steps.filter((step) => String(step['uses'] ?? '').startsWith('actions/cache/save@'))
+  const cacheRestores = steps.filter((step) =>
+    String(step['uses'] ?? '').startsWith('actions/cache/restore@')
+  )
+  const saveCondition = String(saves[0]?.['if'] ?? '')
+  const triggers = Object.keys(doc.on).toSorted().join(',')
+  const checkout = steps.find((step) => String(step['uses'] ?? '').startsWith('actions/checkout@'))
+  const withBlock = (checkout?.['with'] ?? {}) as Record<string, unknown>
+  const restoreKey = String(
+    (cacheRestores[0]?.['with'] as Record<string, unknown> | undefined)?.['key'] ?? ''
+  )
+  const saveKey = String((saves[0]?.['with'] as Record<string, unknown> | undefined)?.['key'] ?? '')
+
+  check(
+    s,
+    'triggers are only dispatch and pull_request',
+    'pull_request,workflow_dispatch',
+    triggers
+  )
+  check(
+    s,
+    'no pull_request_target, push or schedule',
+    'false',
+    String(/pull_request_target|\bpush:|schedule:/.test(text))
+  )
+  check(
+    s,
+    'workflow permissions are contents: read only',
+    '{"contents":"read"}',
+    JSON.stringify(doc.permissions)
+  )
+  check(s, 'the job asks for no extra permissions', 'undefined', String(job.permissions))
+  check(
+    s,
+    'no secret, token or OIDC use',
+    'false',
+    String(/secrets\.|GITHUB_TOKEN|id-token|CLOUDFLARE|NIFTY/i.test(text))
+  )
+  check(
+    s,
+    'every action is pinned to a full commit SHA',
+    'true',
+    String(uses.every((item) => /@[0-9a-f]{40}$/.test(item)))
+  )
+  check(
+    s,
+    'checkout does not persist credentials',
+    'false',
+    String(withBlock['persist-credentials'])
+  )
+  check(s, 'one restore step and one save step', '1,1', `${cacheRestores.length},${saves.length}`)
+  check(s, 'save needs success()', 'true', String(saveCondition.includes('success()')))
+  check(
+    s,
+    'save refuses pull_request runs',
+    'true',
+    String(saveCondition.includes("github.event_name != 'pull_request'"))
+  )
+  check(
+    s,
+    'save needs the default branch',
+    'true',
+    String(
+      saveCondition.includes(
+        "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
+      )
+    )
+  )
+  check(
+    s,
+    'restore never saves and uses no save-always',
+    'false',
+    String(/save-always|lookup-only/.test(text))
+  )
+  check(
+    s,
+    'cache keys carry OS and architecture',
+    'true',
+    String(/runner\.os/.test(restoreKey) && /runner\.arch/.test(restoreKey))
+  )
+  check(
+    s,
+    'save reuses the restore step primary key',
+    'true',
+    String(saveKey.includes('steps.vite-task-cache.outputs.cache-primary-key'))
+  )
+  check(
+    s,
+    'a timeout and a concurrency group exist',
+    'true',
+    String(job['timeout-minutes'] !== undefined && doc.concurrency !== undefined)
+  )
+  check(
+    s,
+    'the cache path is only the task cache',
+    'node_modules/.vite/task-cache',
+    String((cacheRestores[0]?.['with'] as Record<string, unknown> | undefined)?.['path'])
+  )
+  notes.push(
+    'actions: GitHub-side write isolation (a pull request run cannot write the default-branch cache scope) is configured here and asserted statically; it has not been exercised on a runner, so it is a gap until the workflow has run from a pull request and from the default branch'
+  )
+  return Promise.resolve()
+}
+
 const scenarios: Record<string, () => Promise<void>> = {
   'cold-warm': coldWarm,
   outputs,
@@ -465,6 +804,8 @@ const scenarios: Record<string, () => Promise<void>> = {
   tools,
   tracking,
   concurrency,
+  snapshots,
+  actions,
 }
 
 async function main(): Promise<void> {

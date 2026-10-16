@@ -17,6 +17,10 @@ import { defineConfig } from 'vite-plus'
  *
  * See docs/vite-task-cache-proof.md for what was measured and what is not claimed.
  */
+// Names the toolchain and platform, which the fingerprint cannot see (a `bun` or `node`
+// binary is not an input). CI sets it; locally it is empty.
+const toolchain = ['PROOF_TOOLCHAIN']
+
 const bunLoaded = [
   'packages/ui/scripts/**',
   'packages/ui/package.json',
@@ -29,10 +33,11 @@ export default defineConfig({
     tasks: {
       'proof:typecheck': {
         command: 'bun run --cwd packages/ui typecheck',
+        cache: { env: toolchain },
       },
       'proof:registry': {
         command: 'bun run --cwd packages/ui registry:validate',
-        cache: { input: [{ auto: true }, ...bunLoaded] },
+        cache: { input: [{ auto: true }, ...bunLoaded], env: toolchain },
       },
       'proof:cn-check:auto': {
         command: 'bun run --cwd packages/ui cn:check',
@@ -43,12 +48,13 @@ export default defineConfig({
         cache: {
           input: [{ auto: true }, ...bunLoaded],
           output: ['packages/ui/dist/**'],
-          env: ['NODE_ENV'],
+          env: ['NODE_ENV', ...toolchain],
         },
       },
       'proof:unit': {
         command: 'bun run --cwd packages/ui test',
         cache: {
+          env: toolchain,
           input: [
             { auto: true },
             ...bunLoaded,
