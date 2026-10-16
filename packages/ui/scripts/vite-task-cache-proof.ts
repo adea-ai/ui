@@ -4,15 +4,20 @@
  * Run: bun packages/ui/scripts/vite-task-cache-proof.ts [scenario ...] [--out=<file>]
  *
  * Scenarios: cold-warm, outputs, worktree, divergence, environment, tools, concurrency,
- * snapshots, actions,
- * tracking (default: all). Needs a clean working tree and an installed `vite-plus`;
- * the tracking scenario edits and restores a tracked script, the divergence scenario
- * edits and restores a script and a source file.
+ * snapshots, restore, actions, safety, tracking (default: all).
  *
- * Every run reads and writes a scratch cache directory under the OS temp directory, linked
- * in as `node_modules/.vite/task-cache` for the duration. No remote cache is configured, no
- * credential is read, and the Turbo production graph is never invoked. A pre-existing local
- * task cache is moved aside and put back at the end.
+ * The checkout the script is started from is never mutated. Every scenario runs in a
+ * disposable `git worktree` of that checkout's committed HEAD, created under the OS temp
+ * directory with its own `bun install`, and removed at the end. Uncommitted changes in the
+ * starting checkout are neither used nor touched, and its `node_modules/.vite/task-cache`
+ * (a real directory or a symlink) is never read, moved or removed. Edits to tracked files
+ * (the tracking and divergence scenarios) and the task-cache symlink happen only inside a
+ * disposable root; every mutation helper refuses a path outside the scratch directory and
+ * only undoes what the harness itself recorded. The `safety` scenario proves this against a
+ * dirty fixture, including a run that fails part way.
+ *
+ * No remote cache is configured, no credential is read, and the Turbo production graph is
+ * never invoked.
  *
  * The expectations pin vite-plus's behaviour at the pinned version, so an upgrade that
  * changes any of it fails here and is read before it is trusted in CI.
@@ -29,13 +34,15 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   renameSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, relative, resolve } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import { Database } from 'bun:sqlite'
 
 type Outcome = 'hit' | 'executed'
@@ -60,13 +67,18 @@ type Row = {
 const args = process.argv.slice(2)
 const outFile = args.find((arg) => arg.startsWith('--out='))?.slice('--out='.length)
 const chosen = args.filter((arg) => !arg.startsWith('--'))
-const repo = resolve(import.meta.dir, '..', '..', '..')
+/** The checkout the harness was started from. It is read, never mutated. */
+const source = resolve(import.meta.dir, '..', '..', '..')
 const scratch = mkdtempSync(join(tmpdir(), 'vite-task-cache-proof-'))
+/** The disposable worktree every scenario runs in. */
+const repo = join(scratch, 'work')
 const rows: Row[] = []
 const notes: string[] = []
 const restores: (() => void)[] = []
 const touched = new Set<string>()
 const roots: string[] = [repo]
+/** Set by the failure-path test: throw after the first tracked-file edit. */
+const injectFailure = process.env['PROOF_INJECT_FAILURE'] === '1'
 
 const ansi = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
 
@@ -76,24 +88,33 @@ function git(cwd: string, ...gitArgs: string[]): string {
   return result.stdout
 }
 
+/** A detached worktree of `from`'s HEAD at `path`, removed again by the cleanup. */
+function addWorktree(from: string, path: string): string {
+  git(from, 'worktree', 'add', '--detach', '--quiet', path, 'HEAD')
+  restores.push(() => {
+    git(from, 'worktree', 'remove', '--force', path)
+  })
+  if (!roots.includes(path)) roots.push(path)
+  return path
+}
+
+function install(root: string): number | null {
+  return spawnSync('bun', ['install', '--frozen-lockfile'], { cwd: root, stdio: 'ignore' }).status
+}
+
 function cacheLink(root: string): string {
   return join(root, 'node_modules', '.vite', 'task-cache')
 }
 
-/** Point `root`'s task cache at `dir`, moving a pre-existing real cache aside once. */
-function useCache(root: string, dir: string): void {
-  const link = cacheLink(root)
-  mkdirSync(join(root, 'node_modules', '.vite'), { recursive: true })
-  mkdirSync(dir, { recursive: true })
-  if (existsSync(link) || isLink(link)) {
-    if (isLink(link)) rmSync(link)
-    else {
-      const aside = `${link}.proof-backup`
-      if (!existsSync(aside)) renameSync(link, aside)
-      else rmSync(link, { recursive: true, force: true })
-    }
-  }
-  symlinkSync(dir, link)
+/** What `node_modules/.vite/task-cache` was before the harness first touched `root`. */
+type Original = { kind: 'none' } | { kind: 'link'; target: string } | { kind: 'dir'; aside: string }
+const originals = new Map<string, Original>()
+
+/** Refuse to mutate anything that is not inside the harness's own scratch directory. */
+function assertDisposable(root: string): void {
+  const rel = relative(scratch, resolve(root))
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel))
+    throw new Error(`refusing to mutate ${root}: it is not inside the scratch directory`)
 }
 
 function isLink(path: string): boolean {
@@ -104,11 +125,44 @@ function isLink(path: string): boolean {
   }
 }
 
+const present = (path: string) => existsSync(path) || isLink(path)
+
+/**
+ * Point `root`'s task cache at `dir`. What was there first is recorded once and put back by
+ * `restoreCache`: a symlink keeps its target, a real directory is renamed aside. A collision
+ * (the aside name is taken) throws before anything is removed.
+ */
+function useCache(root: string, dir: string): void {
+  assertDisposable(root)
+  const link = cacheLink(root)
+  mkdirSync(join(root, 'node_modules', '.vite'), { recursive: true })
+  mkdirSync(dir, { recursive: true })
+  if (!originals.has(root)) {
+    if (!present(link)) originals.set(root, { kind: 'none' })
+    else if (isLink(link)) {
+      originals.set(root, { kind: 'link', target: readlinkSync(link) })
+      rmSync(link)
+    } else {
+      const aside = `${link}.proof-backup`
+      if (present(aside)) throw new Error(`${aside} already exists; refusing to replace ${link}`)
+      renameSync(link, aside)
+      originals.set(root, { kind: 'dir', aside })
+    }
+  } else if (isLink(link)) rmSync(link)
+  else if (present(link)) throw new Error(`${link} is unexpectedly not the harness symlink`)
+  symlinkSync(dir, link)
+}
+
+/** Undo `useCache` for the roots it was applied to, and for no other root. */
 function restoreCache(root: string): void {
+  const original = originals.get(root)
+  if (!original) return
   const link = cacheLink(root)
   if (isLink(link)) rmSync(link)
-  const aside = `${link}.proof-backup`
-  if (existsSync(aside)) renameSync(aside, link)
+  else if (present(link)) throw new Error(`${link} is not the harness symlink; leaving it alone`)
+  if (original.kind === 'link') symlinkSync(original.target, link)
+  else if (original.kind === 'dir') renameSync(original.aside, link)
+  originals.delete(root)
 }
 
 function freshCache(...targets: string[]): string {
@@ -210,9 +264,11 @@ function sameManifest(a: Record<string, string>, b: Record<string, string>): boo
 
 /** Apply `edit` to a tracked file and return the function that puts it back. */
 function edit(root: string, file: string, text: string): () => void {
+  assertDisposable(root)
   const path = join(root, file)
-  appendFileSync(path, text)
   touched.add(`${root}\0${file}`)
+  appendFileSync(path, text)
+  if (injectFailure) throw new Error('injected failure after a tracked-file edit')
   return () => git(root, 'checkout', '--', file)
 }
 
@@ -260,16 +316,8 @@ async function outputs(): Promise<void> {
 
 async function worktree(): Promise<void> {
   const s = 'worktree'
-  if (git(repo, 'status', '--porcelain').trim()) {
-    notes.push('worktree: skipped, the working tree is not clean')
-    return
-  }
-  const other = join(scratch, 'wt-b')
-  git(repo, 'worktree', 'add', '--detach', other, 'HEAD')
-  restores.push(() => git(repo, 'worktree', 'remove', '--force', other))
-  roots.push(other)
-  const install = spawnSync('bun', ['install', '--frozen-lockfile'], { cwd: other })
-  check(s, 'second worktree installed', '0', String(install.status))
+  const other = addWorktree(repo, join(scratch, 'wt-b'))
+  check(s, 'second worktree installed', '0', String(install(other)))
 
   freshCache(repo, other)
   await vp(s, 'A cold build', 'proof:build', 'executed*')
@@ -587,7 +635,7 @@ async function snapshots(): Promise<void> {
     rmSync(dist(repo), { recursive: true, force: true })
     await killedAfter('proof:build', delay)
     const file = cacheDb(dir)
-    check(s, `build killed at ${delay}ms: database`, 'ok', file ? integrityOfCopy(file) : 'ok')
+    check(s, `build killed at ${delay}ms: database`, 'ok', file ? integrityOfCopy(file) : 'missing')
     await vp(s, `build killed at ${delay}ms: next run`, 'proof:build', 'hit|executed*')
     check(
       s,
@@ -601,20 +649,28 @@ async function snapshots(): Promise<void> {
   // Many short writers, a share of them killed mid-write.
   const dir = freshCache()
   const rounds = 25
+  const survivorExits: number[] = []
   for (let round = 0; round < rounds; round += 1) {
     const env = (n: number) => ({ PROOF_TOOLCHAIN: `round-${round}-${n}` })
-    await Promise.all([
+    const [survivor] = await Promise.all([
       startVp('proof:registry', { env: env(0) }),
       killedAfter('proof:registry', 40 + ((round * 37) % 380), env(1)),
       killedAfter('proof:registry', 20 + ((round * 53) % 300), env(2)),
     ])
+    survivorExits.push(survivor.exit)
   }
+  check(
+    s,
+    `${rounds} rounds: the writer that was not killed exited 0`,
+    String(rounds),
+    String(survivorExits.filter((code) => code === 0).length)
+  )
   const after = cacheDb(dir)
   check(
     s,
     `${rounds} rounds, 2 of 3 writers killed: database`,
     'ok',
-    after ? integrityOfCopy(after) : 'ok'
+    after ? integrityOfCopy(after) : 'missing'
   )
   await vp(s, 'next run succeeds', 'proof:registry', 'hit|executed*')
   await vp(s, 'and then hits', 'proof:registry', 'hit')
@@ -622,13 +678,15 @@ async function snapshots(): Promise<void> {
   // Snapshots of the cache directory while four writers run back to back.
   const live = freshCache()
   const loop = { running: true }
+  const writerExits: number[] = []
   const writers = (async () => {
     for (let round = 0; loop.running; round += 1) {
-      await Promise.all(
+      const runs = await Promise.all(
         [0, 1, 2, 3].map((n) =>
           startVp('proof:registry', { env: { PROOF_TOOLCHAIN: `snap-${round}-${n}` } })
         )
       )
+      writerExits.push(...runs.map((run) => run.exit))
     }
   })()
   // Per method: how many snapshots, how many were torn (the copy opened badly or failed
@@ -674,12 +732,12 @@ async function snapshots(): Promise<void> {
         // SQLite's own consistent snapshot, taken from a read-only connection while vp writes.
         const target = join(bare, 'vacuum.db')
         try {
-          const source = new Database(file, { readonly: true })
+          const reader = new Database(file, { readonly: true })
           try {
-            source.run('PRAGMA busy_timeout = 5000')
-            source.run(`VACUUM INTO '${target}'`)
+            reader.run('PRAGMA busy_timeout = 5000')
+            reader.run(`VACUUM INTO '${target}'`)
           } finally {
-            source.close()
+            reader.close()
           }
           verdict('VACUUM INTO', target)
         } catch (error) {
@@ -710,13 +768,477 @@ async function snapshots(): Promise<void> {
   )
   check(s, 'directory copies during writes: torn', '0', String(methods['directory copy'].torn))
   const settled = cacheDb(live)
-  check(s, 'database after the writers stop', 'ok', settled ? integrityOfCopy(settled) : 'ok')
+  check(s, 'database after the writers stop', 'ok', settled ? integrityOfCopy(settled) : 'missing')
+  // A run with no live writers or no snapshots proves nothing, so both must be positive.
+  check(s, 'live writers ran', 'true', String(writerExits.length >= 8))
+  check(
+    s,
+    'every live writer exited 0',
+    '0',
+    String(writerExits.filter((code) => code !== 0).length)
+  )
+  for (const [method, count] of Object.entries(methods)) {
+    check(
+      s,
+      `${method}: snapshots taken during writes (at least 50)`,
+      'true',
+      String(count.total - count.failed >= 50)
+    )
+  }
+}
+
+const artifactDir = (root: string) => join(root, 'packages', 'ui', '.proof-artifact')
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+const expectedArtifacts = new Map<string, Record<string, string>>()
+
+/** The output `proof:artifact` must produce for `token`, from a throwaway uncached run. */
+function expectedArtifact(token: string): Record<string, string> {
+  const known = expectedArtifacts.get(token)
+  if (known) return known
+  const cwd = mkdtempSync(join(scratch, 'expected-'))
+  spawnSync(
+    'node',
+    [join(repo, 'packages', 'ui', 'scripts', 'vite-task-cache-proof-artifact.mjs')],
+    { cwd, env: { ...process.env, PROOF_TOOLCHAIN: token } }
+  )
+  const result = manifest(artifactDir(cwd))
+  expectedArtifacts.set(token, result)
+  return result
+}
+
+type Verdict = 'hit' | 'miss' | 'wrong' | 'unusable'
+
+/** Run the artifact task for `token` in `root` and compare what it left with the expected bytes. */
+async function replayEntry(root: string, token: string): Promise<Verdict> {
+  rmSync(artifactDir(root), { recursive: true, force: true })
+  const run = await startVp('proof:artifact', { root, env: { PROOF_TOOLCHAIN: token } })
+  if (run.exit !== 0) return 'unusable'
+  if (!sameManifest(manifest(artifactDir(root)), expectedArtifact(token))) return 'wrong'
+  return run.outcome === 'hit' ? 'hit' : 'miss'
+}
+
+function versionDir(dir: string): string {
+  const found = readdirSync(dir).find((entry) => existsSync(join(dir, entry, 'cache.db')))
+  if (!found) throw new Error(`no cache.db under ${dir}`)
+  return found
+}
+
+const archives = (dir: string) => readdirSync(dir).filter((entry) => entry.endsWith('.tar.zst'))
+
+function vacuumInto(from: string, to: string): void {
+  const db = new Database(from, { readonly: true })
+  try {
+    db.run('PRAGMA busy_timeout = 5000')
+    db.run(`VACUUM INTO '${to}'`)
+  } finally {
+    db.close()
+  }
+}
+
+function copyArchives(from: string, to: string): void {
+  for (const name of archives(from)) copyFileSync(join(from, name), join(to, name))
+}
+
+/** The ways to take a copy of a live cache directory that this scenario tests. */
+const snapshotMethods: Record<string, (live: string, dest: string) => void> = {
+  'directory copy': (live, dest) => cpSync(live, dest, { recursive: true }),
+  'VACUUM INTO, then archives': (live, dest) => {
+    const v = versionDir(live)
+    mkdirSync(join(dest, v), { recursive: true })
+    vacuumInto(join(live, v, 'cache.db'), join(dest, v, 'cache.db'))
+    copyArchives(join(live, v), join(dest, v))
+  },
+  'archives, then VACUUM INTO': (live, dest) => {
+    const v = versionDir(live)
+    mkdirSync(join(dest, v), { recursive: true })
+    copyArchives(join(live, v), join(dest, v))
+    vacuumInto(join(live, v, 'cache.db'), join(dest, v, 'cache.db'))
+  },
+  'database file, then archives': (live, dest) => {
+    const v = versionDir(live)
+    mkdirSync(join(dest, v), { recursive: true })
+    copyFileSync(join(live, v, 'cache.db'), join(dest, v, 'cache.db'))
+    copyArchives(join(live, v), join(dest, v))
+  },
+}
+
+type Tally = Record<Verdict | 'snapshots' | 'failed', number>
+const emptyTally = (): Tally => ({
+  hit: 0,
+  miss: 0,
+  wrong: 0,
+  unusable: 0,
+  snapshots: 0,
+  failed: 0,
+})
+
+/**
+ * Restore a copied cache and replay it. SQLite integrity is not enough: a copy can open and
+ * still reference an archive that is missing or half written. Every entry that had finished
+ * before the copy started is replayed from the restored copy in a second worktree, and what
+ * it leaves is compared with the bytes a fresh run produces.
+ */
+async function restoreReplay(): Promise<void> {
+  const s = 'restore'
+  const live = freshCache()
+  const replayRoot = addWorktree(repo, join(scratch, 'wt-replay'))
+  check(s, 'replay worktree installed', '0', String(install(replayRoot)))
+
+  const completed: string[] = []
+  const writerExits: number[] = []
+  const state = { running: true }
+  const lanes = [0, 1, 2].map(async (lane) => {
+    for (let n = 0; state.running; n += 1) {
+      const token = `w${lane}-${n}`
+      const run = await startVp('proof:artifact', { env: { PROOF_TOOLCHAIN: token } })
+      writerExits.push(run.exit)
+      if (run.exit === 0) completed.push(token)
+    }
+  })
+  while (completed.length < 6) await sleep(50)
+
+  const tallies = Object.fromEntries(
+    Object.keys(snapshotMethods).map((name) => [name, emptyTally()])
+  ) as Record<string, Tally>
+  const rounds = 12
+  for (let round = 0; round < rounds; round += 1) {
+    await sleep(100 + ((round * 61) % 200))
+    const finished = completed.slice(-3)
+    for (const [name, take] of Object.entries(snapshotMethods)) {
+      const tally = tallies[name]!
+      const dest = mkdtempSync(join(scratch, 'restored-'))
+      try {
+        take(live, dest)
+      } catch {
+        tally.failed += 1
+        continue
+      }
+      tally.snapshots += 1
+      useCache(replayRoot, dest)
+      for (const token of finished) tally[await replayEntry(replayRoot, token)] += 1
+    }
+  }
+  state.running = false
+  await Promise.all(lanes)
+  check(s, 'live writers ran (at least 20)', 'true', String(writerExits.length >= 20))
+  check(
+    s,
+    'every live writer exited 0',
+    '0',
+    String(writerExits.filter((code) => code !== 0).length)
+  )
+
+  for (const [name, tally] of Object.entries(tallies)) {
+    notes.push(
+      `restore: ${name}: ${tally.snapshots} taken during writes (${tally.failed} not taken), replayed ${tally.hit} hit, ${tally.miss} miss, ${tally.wrong} wrong output, ${tally.unusable} unusable`
+    )
+    check(
+      s,
+      `${name}: snapshots taken during writes (at least 8)`,
+      'true',
+      String(tally.snapshots >= 8)
+    )
+    check(s, `${name}: restored entries that replayed wrong output`, '0', String(tally.wrong))
+  }
+
+  // The control: a copy taken once the writers have stopped is the Actions save situation.
+  const quiet = mkdtempSync(join(scratch, 'restored-'))
+  snapshotMethods['directory copy']!(live, quiet)
+  useCache(replayRoot, quiet)
+  const verdicts: Verdict[] = []
+  for (const token of completed.filter((_, index) => index % 7 === 0).slice(0, 12))
+    verdicts.push(await replayEntry(replayRoot, token))
+  check(s, 'quiescent copy: entries replayed', 'true', String(verdicts.length >= 6))
+  check(
+    s,
+    'quiescent copy: every entry replayed as a hit with the right bytes',
+    'true',
+    String(verdicts.every((verdict) => verdict === 'hit'))
+  )
+
+  // Interrupted writers: kill some mid-run, then copy once everything has stopped.
+  const killedLive = freshCache()
+  const killed = Array.from({ length: 8 }, (_, n) => `k${n}`)
+  const survivors = Array.from({ length: 4 }, (_, n) => `s${n}`)
+  const outcomes = await Promise.all([
+    ...killed.map((token, n) =>
+      killedAfter('proof:artifact', 25 + n * 40, { PROOF_TOOLCHAIN: token })
+    ),
+    ...survivors.map((token) =>
+      startVp('proof:artifact', { env: { PROOF_TOOLCHAIN: token } }).then((run) => run.exit)
+    ),
+  ])
+  check(
+    s,
+    'interrupted: the writers that were not killed exited 0',
+    '4',
+    String(outcomes.slice(killed.length).filter((code) => code === 0).length)
+  )
+  const killedDb = cacheDb(killedLive)
+  check(s, 'interrupted: database', 'ok', killedDb ? integrityOfCopy(killedDb) : 'missing')
+  const after = mkdtempSync(join(scratch, 'restored-'))
+  snapshotMethods['directory copy']!(killedLive, after)
+  useCache(replayRoot, after)
+  const results: Record<string, Verdict> = {}
+  for (const token of [...survivors, ...killed])
+    results[token] = await replayEntry(replayRoot, token)
+  check(
+    s,
+    'interrupted: survivors replayed as hits with the right bytes',
+    'true',
+    String(survivors.every((token) => results[token] === 'hit'))
+  )
+  check(
+    s,
+    'interrupted: killed entries never replayed wrong or unusable',
+    'true',
+    String(killed.every((token) => results[token] === 'hit' || results[token] === 'miss'))
+  )
+  notes.push(
+    `restore: after SIGKILL at staggered points: ${killed.map((token) => results[token]).join(', ')}`
+  )
+}
+
+/** A comparable description of a checkout's tracked changes, untracked files and cache entry. */
+function exactState(root: string): string {
+  const files = git(root, 'ls-files', '-m', '-o', '--exclude-standard').split('\n').filter(Boolean)
+  const parts = files.toSorted().map((file) => {
+    const path = join(root, file)
+    return `${file} ${statSync(path).mode.toString(8)} ${createHash('sha256').update(readFileSync(path)).digest('hex')}`
+  })
+  const cache = cacheLink(root)
+  const cacheKind = isLink(cache)
+    ? `link->${readlinkSync(cache)}`
+    : existsSync(cache)
+      ? `dir:${readdirSync(cache).toSorted().join(',')}`
+      : 'absent'
+  const aside = `${cache}.proof-backup`
+  const asideKind = present(aside) ? `dir:${readdirSync(aside).toSorted().join(',')}` : 'absent'
+  return [
+    git(root, 'status', '--porcelain'),
+    ...parts,
+    `cache ${cacheKind}`,
+    `aside ${asideKind}`,
+  ].join('\n')
+}
+
+function tracked(file: string, text: string): void {
+  writeFileSync(file, text)
+}
+
+/** Fixtures for the cache helpers, in the scratch directory, with sentinel files. */
+function fixtureRoot(name: string): string {
+  const root = join(scratch, name)
+  mkdirSync(join(root, 'node_modules', '.vite'), { recursive: true })
+  return root
+}
+
+function sentinelDir(path: string, text: string): string {
+  mkdirSync(path, { recursive: true })
+  tracked(join(path, 'sentinel'), text)
+  return path
+}
+
+const sentinel = (path: string) =>
+  existsSync(join(path, 'sentinel')) ? readFileSync(join(path, 'sentinel'), 'utf8') : 'missing'
+
+function throws(fn: () => void): boolean {
+  try {
+    fn()
+    return false
+  } catch {
+    return true
+  }
+}
+
+/**
+ * Regression tests for the harness's own data safety: pre-existing edits, cache symlinks and
+ * cache directories survive a normal run, an actions-only run and a run that fails part way.
+ */
+async function safety(): Promise<void> {
+  const s = 'safety'
+
+  // The helpers refuse a root outside the scratch directory (a stand-in for the user's checkout).
+  const foreign = mkdtempSync(join(tmpdir(), 'vite-task-cache-proof-foreign-'))
+  try {
+    const target = sentinelDir(join(foreign, 'target'), 'foreign target')
+    mkdirSync(join(foreign, 'node_modules', '.vite'), { recursive: true })
+    symlinkSync(target, cacheLink(foreign))
+    writeFileSync(join(foreign, 'tracked.txt'), 'user edit')
+    check(
+      s,
+      'useCache refuses a root outside the scratch directory',
+      'true',
+      String(throws(() => useCache(foreign, join(scratch, 'x'))))
+    )
+    check(
+      s,
+      'edit refuses a root outside the scratch directory',
+      'true',
+      String(throws(() => edit(foreign, 'tracked.txt', 'x')))
+    )
+    check(
+      s,
+      'the refused root is unchanged',
+      `link->${target}|user edit|foreign target`,
+      `${isLink(cacheLink(foreign)) ? `link->${readlinkSync(cacheLink(foreign))}` : 'changed'}|${readFileSync(join(foreign, 'tracked.txt'), 'utf8')}|${sentinel(target)}`
+    )
+    restoreCache(foreign)
+    check(
+      s,
+      'restoreCache on a root it never used leaves its symlink',
+      'true',
+      String(isLink(cacheLink(foreign)))
+    )
+  } finally {
+    rmSync(foreign, { recursive: true, force: true })
+  }
+
+  // A pre-existing symlink keeps its target.
+  const linked = fixtureRoot('fx-link')
+  const linkTarget = sentinelDir(join(scratch, 'fx-link-target'), 'link target')
+  symlinkSync(linkTarget, cacheLink(linked))
+  useCache(linked, join(scratch, 'fx-link-scratch'))
+  restoreCache(linked)
+  check(
+    s,
+    'a pre-existing symlink is restored to its own target',
+    linkTarget,
+    isLink(cacheLink(linked)) ? readlinkSync(cacheLink(linked)) : 'not a link'
+  )
+  check(s, 'the symlink target kept its contents', 'link target', sentinel(linkTarget))
+
+  // A pre-existing real directory is moved aside and put back.
+  const real = fixtureRoot('fx-dir')
+  sentinelDir(cacheLink(real), 'real cache')
+  useCache(real, join(scratch, 'fx-dir-scratch'))
+  restoreCache(real)
+  check(
+    s,
+    'a pre-existing cache directory is put back',
+    'real cache',
+    !isLink(cacheLink(real)) ? sentinel(cacheLink(real)) : 'a link'
+  )
+
+  // A name collision fails before anything is removed.
+  const collide = fixtureRoot('fx-collision')
+  sentinelDir(cacheLink(collide), 'current cache')
+  sentinelDir(`${cacheLink(collide)}.proof-backup`, 'older backup')
+  check(
+    s,
+    'a backup collision throws',
+    'true',
+    String(throws(() => useCache(collide, join(scratch, 'fx-col-scratch'))))
+  )
+  restoreCache(collide)
+  check(s, 'the collision kept the current cache', 'current cache', sentinel(cacheLink(collide)))
+  check(
+    s,
+    'the collision kept the older backup',
+    'older backup',
+    sentinel(`${cacheLink(collide)}.proof-backup`)
+  )
+
+  // A user checkout with edits, an untracked file, a changed mode and a cache symlink.
+  const user = addWorktree(repo, join(scratch, 'user'))
+  check(s, 'fixture checkout installed', '0', String(install(user)))
+  for (const file of [
+    'packages/ui/scripts/check-cn-tables.ts',
+    TRACKED_SCRIPT,
+    SOURCE_FILE,
+    'packages/ui/tests/font-zoom.test.ts',
+  ])
+    appendFileSync(join(user, file), `\n// user edit: ${file}\n`)
+  spawnSync('chmod', ['755', join(user, SOURCE_FILE)])
+  tracked(join(user, 'packages', 'ui', 'UNTRACKED_NOTE.txt'), 'untracked user file\n')
+  const harness = join(user, 'packages', 'ui', 'scripts', 'vite-task-cache-proof.ts')
+  const inner = (harnessArgs: string[], env: Record<string, string> = {}) =>
+    spawnSync('bun', [harness, ...harnessArgs], {
+      cwd: user,
+      env: { ...process.env, ...env },
+      encoding: 'utf8',
+      timeout: 600_000,
+    })
+
+  // 1: an actions-only run does not touch an existing cache symlink (it never used one).
+  const userCacheTarget = sentinelDir(join(scratch, 'user-cache-target'), 'user cache target')
+  mkdirSync(join(user, 'node_modules', '.vite'), { recursive: true })
+  symlinkSync(userCacheTarget, cacheLink(user))
+  const beforeActions = exactState(user)
+  const actionsOnly = inner(['actions', `--out=${join(scratch, 'inner-actions.json')}`])
+  check(s, 'actions-only run on a dirty checkout: exit', '0', String(actionsOnly.status))
+  check(
+    s,
+    'actions-only run: edits, untracked file, mode and cache symlink unchanged',
+    'true',
+    String(exactState(user) === beforeActions)
+  )
+
+  // 2: a full scenario run on the dirty checkout, with a symlinked cache.
+  const beforeRun = exactState(user)
+  const run = inner(['tracking', `--out=${join(scratch, 'inner-tracking.json')}`])
+  check(s, 'tracking run on a dirty checkout: exit', '0', String(run.status))
+  check(
+    s,
+    'tracking run: edits, untracked file, mode and cache symlink unchanged',
+    'true',
+    String(exactState(user) === beforeRun)
+  )
+  check(
+    s,
+    'tracking run: symlink target kept its contents',
+    'user cache target',
+    sentinel(userCacheTarget)
+  )
+
+  // 3: a run that fails right after its first edit, with a real cache and a backup already in place.
+  rmSync(cacheLink(user))
+  sentinelDir(cacheLink(user), 'user real cache')
+  sentinelDir(`${cacheLink(user)}.proof-backup`, 'user older backup')
+  const beforeFailure = exactState(user)
+  const failure = inner(['tracking', `--out=${join(scratch, 'inner-failure.json')}`], {
+    PROOF_INJECT_FAILURE: '1',
+  })
+  check(s, 'injected failure: the run exits non-zero', 'true', String(failure.status !== 0))
+  check(
+    s,
+    'injected failure: the failure came from the injection',
+    'true',
+    String(/injected failure/.test(failure.stderr))
+  )
+  check(
+    s,
+    'injected failure: edits, untracked file, mode, cache and backup unchanged',
+    'true',
+    String(exactState(user) === beforeFailure)
+  )
+  check(
+    s,
+    'injected failure: the cache kept its contents',
+    'user real cache',
+    sentinel(cacheLink(user))
+  )
+  check(
+    s,
+    'injected failure: the backup kept its contents',
+    'user older backup',
+    sentinel(`${cacheLink(user)}.proof-backup`)
+  )
+  notes.push(
+    'safety: the dirty fixture checkout is a worktree of the disposable one; the harness under test treated it as the user checkout'
+  )
 }
 
 /** Static evidence that the Actions workflow keeps cache writes to trusted runs. */
 function actions(): Promise<void> {
   const s = 'actions'
-  const file = join(repo, '.github', 'workflows', 'vite-task-cache-proof.yml')
+  const file = join(
+    existsSync(repo) ? repo : source,
+    '.github',
+    'workflows',
+    'vite-task-cache-proof.yml'
+  )
   const text = readFileSync(file, 'utf8')
   const code = text
     .split('\n')
@@ -848,28 +1370,38 @@ const scenarios: Record<string, () => Promise<void>> = {
   tracking,
   concurrency,
   snapshots,
+  restore: restoreReplay,
   actions,
+  safety,
 }
 
 async function main(): Promise<void> {
-  const version = spawnSync(join(repo, 'node_modules', '.bin', 'vp'), ['--version'], {
+  const version = spawnSync(join(source, 'node_modules', '.bin', 'vp'), ['--version'], {
     encoding: 'utf8',
   })
   notes.push(`vp: ${version.stdout.trim().split('\n')[0]}`)
   notes.push(
     `platform: ${process.platform}-${process.arch}, bun ${Bun.version}, node ${spawnSync('node', ['--version'], { encoding: 'utf8' }).stdout.trim()}`
   )
-  notes.push(`base: ${git(repo, 'rev-parse', 'HEAD').trim()}`)
-  if (git(repo, 'status', '--porcelain').trim())
-    notes.push('working tree was not clean at the start')
+  notes.push(`base: ${git(source, 'rev-parse', 'HEAD').trim()}`)
+  if (git(source, 'status', '--porcelain').trim())
+    notes.push(
+      'the starting checkout has uncommitted changes: they are not used and not touched, the run covers its committed HEAD'
+    )
 
   const names = chosen.length ? chosen : Object.keys(scenarios)
   for (const name of names) {
-    const run = scenarios[name]
-    if (!run)
+    if (!scenarios[name])
       throw new Error(`unknown scenario ${name}; known: ${Object.keys(scenarios).join(', ')}`)
+  }
+  // The static workflow check is the only scenario that needs no installed worktree.
+  if (names.some((name) => name !== 'actions')) {
+    addWorktree(source, repo)
+    check('setup', 'disposable worktree installed', '0', String(install(repo)))
+  }
+  for (const name of names) {
     console.error(`# ${name}`)
-    await run()
+    await scenarios[name]!()
   }
 }
 
@@ -880,10 +1412,19 @@ try {
   failed = true
   console.error(error)
 } finally {
+  // Undo only what the harness recorded, and only inside the scratch directory.
   for (const entry of touched) {
     const [root, file] = entry.split('\0') as [string, string]
     try {
+      assertDisposable(root)
       git(root, 'checkout', '--', file)
+    } catch (error) {
+      console.error('cleanup:', error)
+    }
+  }
+  for (const root of originals.keys()) {
+    try {
+      restoreCache(root)
     } catch (error) {
       console.error('cleanup:', error)
     }
@@ -895,7 +1436,11 @@ try {
       console.error('cleanup:', error)
     }
   }
-  for (const root of roots) restoreCache(root)
+  try {
+    git(source, 'worktree', 'prune')
+  } catch (error) {
+    console.error('cleanup:', error)
+  }
   writeFileSync(join(scratch, 'results.json'), JSON.stringify({ notes, rows }, null, 2))
 }
 
