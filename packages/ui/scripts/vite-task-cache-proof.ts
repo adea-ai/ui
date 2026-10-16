@@ -588,10 +588,11 @@ function integrityOfCopy(file: string): string {
 async function killedAfter(
   task: string,
   delay: number,
-  env: Record<string, string> = {}
+  env: Record<string, string> = {},
+  root = repo
 ): Promise<number | null> {
-  const child = spawn(join(repo, 'node_modules', '.bin', 'vp'), ['run', task], {
-    cwd: repo,
+  const child = spawn(join(root, 'node_modules', '.bin', 'vp'), ['run', task], {
+    cwd: root,
     env: { ...process.env, NO_COLOR: '1', ...env },
     detached: true,
     stdio: 'ignore',
@@ -884,11 +885,22 @@ const emptyTally = (): Tally => ({
  */
 async function restoreReplay(): Promise<void> {
   const s = 'restore'
-  const live = freshCache()
+  // Each concurrent writer needs its own worktree: the task's outputs are one fixed directory,
+  // and two runs writing it at once would archive each other's files.
+  const laneRoots = [
+    repo,
+    ...[1, 2, 3].map((lane) => addWorktree(repo, join(scratch, `wt-lane-${lane}`))),
+  ]
   const replayRoot = addWorktree(repo, join(scratch, 'wt-replay'))
-  check(s, 'replay worktree installed', '0', String(install(replayRoot)))
-  mkdirSync(artifactDir(repo), { recursive: true })
-  mkdirSync(artifactDir(replayRoot), { recursive: true })
+  const installs = [...laneRoots.slice(1), replayRoot].map((root) => install(root))
+  check(
+    s,
+    'lane and replay worktrees installed',
+    '0',
+    String(installs.find((code) => code !== 0) ?? 0)
+  )
+  for (const root of [...laneRoots, replayRoot]) mkdirSync(artifactDir(root), { recursive: true })
+  const live = freshCache(...laneRoots)
 
   const completed: string[] = []
   const writerExits: number[] = []
@@ -896,7 +908,10 @@ async function restoreReplay(): Promise<void> {
   const lanes = [0, 1, 2].map(async (lane) => {
     for (let n = 0; state.running; n += 1) {
       const token = `w${lane}-${n}`
-      const run = await startVp('proof:artifact', { env: { PROOF_TOOLCHAIN: token } })
+      const run = await startVp('proof:artifact', {
+        root: laneRoots[lane],
+        env: { PROOF_TOOLCHAIN: token },
+      })
       writerExits.push(run.exit)
       if (run.exit === 0) completed.push(token)
       await sleep(120)
@@ -964,23 +979,33 @@ async function restoreReplay(): Promise<void> {
     String(verdicts.every((verdict) => verdict === 'hit'))
   )
 
-  // Interrupted writers: kill some mid-run, then copy once everything has stopped.
-  const killedLive = freshCache()
+  // Interrupted writers: kill some mid-run in waves, one writer per worktree, then copy once
+  // everything has stopped.
+  const killedLive = freshCache(...laneRoots)
   const killed = Array.from({ length: 8 }, (_, n) => `k${n}`)
   const survivors = Array.from({ length: 4 }, (_, n) => `s${n}`)
-  const outcomes = await Promise.all([
-    ...killed.map((token, n) =>
-      killedAfter('proof:artifact', 25 + n * 40, { PROOF_TOOLCHAIN: token })
-    ),
-    ...survivors.map((token) =>
-      startVp('proof:artifact', { env: { PROOF_TOOLCHAIN: token } }).then((run) => run.exit)
-    ),
-  ])
+  const killedExits: (number | null)[] = []
+  for (const wave of [killed.slice(0, 4), killed.slice(4)]) {
+    killedExits.push(
+      ...(await Promise.all(
+        wave.map((token, n) =>
+          killedAfter('proof:artifact', 25 + n * 45, { PROOF_TOOLCHAIN: token }, laneRoots[n])
+        )
+      ))
+    )
+  }
+  const survivorExits = await Promise.all(
+    survivors.map((token, n) =>
+      startVp('proof:artifact', { root: laneRoots[n], env: { PROOF_TOOLCHAIN: token } }).then(
+        (run) => run.exit
+      )
+    )
+  )
   check(
     s,
     'interrupted: the writers that were not killed exited 0',
     '4',
-    String(outcomes.slice(killed.length).filter((code) => code === 0).length)
+    String(survivorExits.filter((code) => code === 0).length)
   )
   const killedDb = cacheDb(killedLive)
   check(s, 'interrupted: database', 'ok', killedDb ? integrityOfCopy(killedDb) : 'missing')
