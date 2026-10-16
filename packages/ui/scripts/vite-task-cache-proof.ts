@@ -22,7 +22,7 @@
  * The expectations pin vite-plus's behaviour at the pinned version, so an upgrade that
  * changes any of it fails here and is read before it is trusted in CI.
  */
-import { spawn, spawnSync } from 'node:child_process'
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
   appendFileSync,
@@ -79,6 +79,8 @@ const touched = new Set<string>()
 const roots: string[] = [repo]
 /** Set by the failure-path test: throw after the first tracked-file edit. */
 const injectFailure = process.env['PROOF_INJECT_FAILURE'] === '1'
+/** Set by the failure-path test: the restore scenario's writers run a task that does not exist. */
+const injectWriterFailure = process.env['PROOF_INJECT_WRITER_FAILURE'] === '1'
 
 const ansi = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
 
@@ -173,25 +175,64 @@ function freshCache(...targets: string[]): string {
 
 type RunOptions = { root?: string; env?: Record<string, string | undefined>; args?: string[] }
 
-/** Start `vp run <task>`; the promise settles when the process exits. */
-function startVp(task: string, options: RunOptions = {}): Promise<Run> {
-  const root = options.root ?? repo
-  const env = { ...process.env, NO_COLOR: '1' } as Record<string, string | undefined>
-  for (const [name, value] of Object.entries(options.env ?? {})) {
+/**
+ * Variables that relocate the task cache or switch on a remote one. Vite Task reads
+ * `VITE_CACHE_PATH` ahead of the `node_modules/.vite/task-cache` symlink, so an inherited value
+ * would send the proof to an external cache; a remote-cache variable would leave the machine.
+ * Every `vp` subprocess gets an environment without them.
+ */
+const CACHE_OVERRIDES = /^(VITE_CACHE_PATH|VP_REMOTE_CACHE(_[A-Z]+)*)$/
+
+/** The environment for a `vp` subprocess: the inherited one, minus cache overrides, plus `extra`. */
+function cleanEnv(extra: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
+  const env: Record<string, string | undefined> = { ...process.env, NO_COLOR: '1' }
+  for (const name of Object.keys(env)) if (CACHE_OVERRIDES.test(name)) delete env[name]
+  for (const [name, value] of Object.entries(extra)) {
+    if (CACHE_OVERRIDES.test(name)) continue
     if (value === undefined) delete env[name]
     else env[name] = value
   }
+  return env as NodeJS.ProcessEnv
+}
+
+/** Every `vp` child still running, so cleanup can stop them. Each leads its own process group. */
+const liveChildren = new Set<ChildProcess>()
+
+function killGroup(child: ChildProcess): void {
+  if (child.pid === undefined || child.exitCode !== null) return
+  try {
+    process.kill(-child.pid, 'SIGKILL')
+  } catch {
+    // the group ended between the check and the signal
+  }
+}
+
+function killLiveChildren(): void {
+  for (const child of liveChildren) killGroup(child)
+}
+
+/** A `vp` run that has not finished by now is stuck; it is killed and reported as exit -1. */
+const RUN_TIMEOUT_MS = 300_000
+
+/** Start `vp run <task>`; the promise settles when the process exits or the timeout kills it. */
+function startVp(task: string, options: RunOptions = {}): Promise<Run> {
+  const root = options.root ?? repo
+  const env = cleanEnv(options.env)
   const started = performance.now()
   return new Promise((done) => {
     const child = spawn(
       join(root, 'node_modules', '.bin', 'vp'),
       ['run', task, ...(options.args ?? [])],
-      { cwd: root, env: env as NodeJS.ProcessEnv }
+      { cwd: root, env, detached: true }
     )
+    liveChildren.add(child)
+    const timer = setTimeout(() => killGroup(child), RUN_TIMEOUT_MS)
     let raw = ''
     child.stdout.on('data', (chunk) => (raw += chunk))
     child.stderr.on('data', (chunk) => (raw += chunk))
     child.on('close', (code) => {
+      clearTimeout(timer)
+      liveChildren.delete(child)
       const text = raw.replace(ansi, '')
       const hit = /cache hit, replaying/.test(text)
       const reason = /cache miss: ([^\n]*?), executing/.exec(text)?.[1] ?? ''
@@ -593,20 +634,19 @@ async function killedAfter(
 ): Promise<number | null> {
   const child = spawn(join(root, 'node_modules', '.bin', 'vp'), ['run', task], {
     cwd: root,
-    env: { ...process.env, NO_COLOR: '1', ...env },
+    env: cleanEnv(env),
     detached: true,
     stdio: 'ignore',
   })
-  const exited = new Promise<number | null>((done) => child.once('exit', (code) => done(code)))
+  liveChildren.add(child)
+  const exited = new Promise<number | null>((done) =>
+    child.once('exit', (code) => {
+      liveChildren.delete(child)
+      done(code)
+    })
+  )
   await new Promise((done) => setTimeout(done, delay))
-  const alreadyDone = child.exitCode !== null
-  if (!alreadyDone) {
-    try {
-      process.kill(-child.pid!, 'SIGKILL')
-    } catch {
-      // the group ended between the check and the signal
-    }
-  }
+  killGroup(child)
   return exited
 }
 
@@ -711,48 +751,52 @@ async function snapshots(): Promise<void> {
     if (result === 'ok') tally(method, 'ok')
     else tally(method, 'torn', result)
   }
-  const deadline = performance.now() + 20_000
-  while (performance.now() < deadline) {
-    const file = cacheDb(live)
-    if (file) {
-      const whole = mkdtempSync(join(scratch, 'snap-'))
-      const bare = mkdtempSync(join(scratch, 'snap-'))
-      try {
+  try {
+    const deadline = performance.now() + 20_000
+    while (performance.now() < deadline) {
+      const file = cacheDb(live)
+      if (file) {
+        const whole = mkdtempSync(join(scratch, 'snap-'))
+        const bare = mkdtempSync(join(scratch, 'snap-'))
         try {
-          cpSync(join(file, '..'), whole, { recursive: true })
-          verdict('directory copy', join(whole, 'cache.db'))
-        } catch (error) {
-          tally('directory copy', 'failed', String(error))
-        }
-        try {
-          copyFileSync(file, join(bare, 'cache.db'))
-          verdict('database file only', join(bare, 'cache.db'))
-        } catch (error) {
-          tally('database file only', 'failed', String(error))
-        }
-        // SQLite's own consistent snapshot, taken from a read-only connection while vp writes.
-        const target = join(bare, 'vacuum.db')
-        try {
-          const reader = new Database(file, { readonly: true })
           try {
-            reader.run('PRAGMA busy_timeout = 5000')
-            reader.run(`VACUUM INTO '${target}'`)
-          } finally {
-            reader.close()
+            cpSync(join(file, '..'), whole, { recursive: true })
+            verdict('directory copy', join(whole, 'cache.db'))
+          } catch (error) {
+            tally('directory copy', 'failed', String(error))
           }
-          verdict('VACUUM INTO', target)
-        } catch (error) {
-          tally('VACUUM INTO', 'failed', String(error))
+          try {
+            copyFileSync(file, join(bare, 'cache.db'))
+            verdict('database file only', join(bare, 'cache.db'))
+          } catch (error) {
+            tally('database file only', 'failed', String(error))
+          }
+          // SQLite's own consistent snapshot, taken from a read-only connection while vp writes.
+          const target = join(bare, 'vacuum.db')
+          try {
+            const reader = new Database(file, { readonly: true })
+            try {
+              reader.run('PRAGMA busy_timeout = 5000')
+              reader.run(`VACUUM INTO '${target}'`)
+            } finally {
+              reader.close()
+            }
+            verdict('VACUUM INTO', target)
+          } catch (error) {
+            tally('VACUUM INTO', 'failed', String(error))
+          }
+        } finally {
+          rmSync(whole, { recursive: true, force: true })
+          rmSync(bare, { recursive: true, force: true })
         }
-      } finally {
-        rmSync(whole, { recursive: true, force: true })
-        rmSync(bare, { recursive: true, force: true })
       }
+      await new Promise((done) => setTimeout(done, 15))
     }
-    await new Promise((done) => setTimeout(done, 15))
+  } finally {
+    loop.running = false
+    killLiveChildren()
+    await Promise.allSettled([writers])
   }
-  loop.running = false
-  await writers
   for (const [reason, n] of reasons) notes.push(`snapshots: ${n} x ${reason}`)
   for (const [method, count] of Object.entries(methods)) {
     notes.push(
@@ -904,132 +948,170 @@ async function restoreReplay(): Promise<void> {
 
   const completed: string[] = []
   const writerExits: number[] = []
-  const state = { running: true }
+  const state = { running: true, stopped: 0 }
   const lanes = [0, 1, 2].map(async (lane) => {
-    for (let n = 0; state.running; n += 1) {
+    let consecutiveFailures = 0
+    for (let n = 0; state.running && consecutiveFailures < 3; n += 1) {
       const token = `w${lane}-${n}`
-      const run = await startVp('proof:artifact', {
+      const run = await startVp(injectWriterFailure ? 'proof:does-not-exist' : 'proof:artifact', {
         root: laneRoots[lane],
         env: { PROOF_TOOLCHAIN: token },
       })
       writerExits.push(run.exit)
-      if (run.exit === 0) completed.push(token)
+      if (run.exit === 0) {
+        completed.push(token)
+        consecutiveFailures = 0
+      } else consecutiveFailures += 1
       await sleep(120)
     }
+    state.stopped += 1
   })
-  while (completed.length < 6) await sleep(50)
-
-  const tallies = Object.fromEntries(
-    Object.keys(snapshotMethods).map((name) => [name, emptyTally()])
-  ) as Record<string, Tally>
-  const rounds = 12
-  for (let round = 0; round < rounds; round += 1) {
-    await sleep(100 + ((round * 61) % 200))
-    const finished = completed.slice(-3)
-    for (const [name, take] of Object.entries(snapshotMethods)) {
-      const tally = tallies[name]!
-      const dest = mkdtempSync(join(scratch, 'restored-'))
-      try {
-        take(live, dest)
-      } catch {
-        tally.failed += 1
-        continue
+  try {
+    // Startup is bounded: writers that keep failing, or never finish, fail the scenario.
+    const startupDeadline = performance.now() + 120_000
+    while (completed.length < 6) {
+      if (state.stopped === lanes.length || performance.now() > startupDeadline) {
+        check(
+          s,
+          'writers produced entries (at least 6)',
+          'true',
+          `false (${completed.length} finished; exits ${JSON.stringify(writerExits.slice(0, 12))})`
+        )
+        return
       }
-      tally.snapshots += 1
-      useCache(replayRoot, dest)
-      for (const token of finished) tally[await replayEntry(replayRoot, token)] += 1
-      rmSync(dest, { recursive: true, force: true })
+      await sleep(50)
     }
-  }
-  state.running = false
-  await Promise.all(lanes)
-  check(s, 'live writers ran (at least 20)', 'true', String(writerExits.length >= 20))
-  check(
-    s,
-    'every live writer exited 0',
-    '0',
-    String(writerExits.filter((code) => code !== 0).length)
-  )
 
-  for (const [name, tally] of Object.entries(tallies)) {
-    notes.push(
-      `restore: ${name}: ${tally.snapshots} taken during writes (${tally.failed} not taken), replayed ${tally.hit} hit, ${tally.miss} miss, ${tally.wrong} wrong output, ${tally.unusable} unusable`
+    const tallies = Object.fromEntries(
+      Object.keys(snapshotMethods).map((name) => [name, emptyTally()])
+    ) as Record<string, Tally>
+    const rounds = 12
+    for (let round = 0; round < rounds; round += 1) {
+      await sleep(100 + ((round * 61) % 200))
+      const finished = completed.slice(-3)
+      for (const [name, take] of Object.entries(snapshotMethods)) {
+        const tally = tallies[name]!
+        const dest = mkdtempSync(join(scratch, 'restored-'))
+        try {
+          take(live, dest)
+        } catch {
+          tally.failed += 1
+          continue
+        }
+        tally.snapshots += 1
+        useCache(replayRoot, dest)
+        for (const token of finished) tally[await replayEntry(replayRoot, token)] += 1
+        rmSync(dest, { recursive: true, force: true })
+      }
+    }
+    state.running = false
+    await Promise.all(lanes)
+    check(s, 'live writers ran (at least 20)', 'true', String(writerExits.length >= 20))
+    check(
+      s,
+      'every live writer exited 0',
+      '0',
+      String(writerExits.filter((code) => code !== 0).length)
+    )
+
+    // Only `VACUUM INTO` then archives is documented as a transport for a live cache. For it,
+    // every entry finished before the copy must replay as a hit with the right bytes. The other
+    // methods are reported, and are held only to never serving wrong bytes.
+    const supported = new Set(['VACUUM INTO, then archives'])
+    for (const [name, tally] of Object.entries(tallies)) {
+      const isSupported = supported.has(name)
+      notes.push(
+        `restore: ${name} (${isSupported ? 'supported transport' : 'not a supported transport, reported only'}): ${tally.snapshots} taken during writes (${tally.failed} not taken), replayed ${tally.hit} hit, ${tally.miss} miss, ${tally.wrong} wrong output, ${tally.unusable} unusable`
+      )
+      check(s, `${name}: restored entries that replayed wrong output`, '0', String(tally.wrong))
+      if (!isSupported) continue
+      check(
+        s,
+        `${name}: copies taken during writes (at least 8)`,
+        'true',
+        String(tally.snapshots >= 8)
+      )
+      check(s, `${name}: every replay was a hit`, String(tally.snapshots * 3), String(tally.hit))
+      check(
+        s,
+        `${name}: replays that were misses or unusable`,
+        '0',
+        String(tally.miss + tally.unusable)
+      )
+    }
+
+    // The control: a copy taken once the writers have stopped is the Actions save situation.
+    const quiet = mkdtempSync(join(scratch, 'restored-'))
+    snapshotMethods['directory copy']!(live, quiet)
+    useCache(replayRoot, quiet)
+    const verdicts: Verdict[] = []
+    for (const token of completed.filter((_, index) => index % 7 === 0).slice(0, 12))
+      verdicts.push(await replayEntry(replayRoot, token))
+    check(s, 'quiescent copy: entries replayed', 'true', String(verdicts.length >= 6))
+    check(
+      s,
+      'quiescent copy: every entry replayed as a hit with the right bytes',
+      'true',
+      String(verdicts.every((verdict) => verdict === 'hit'))
+    )
+
+    // Interrupted writers: kill some mid-run in waves, one writer per worktree, then copy once
+    // everything has stopped.
+    const killedLive = freshCache(...laneRoots)
+    const killed = Array.from({ length: 8 }, (_, n) => `k${n}`)
+    const survivors = Array.from({ length: 4 }, (_, n) => `s${n}`)
+    const killedExits: (number | null)[] = []
+    for (const wave of [killed.slice(0, 4), killed.slice(4)]) {
+      killedExits.push(
+        ...(await Promise.all(
+          wave.map((token, n) =>
+            killedAfter('proof:artifact', 25 + n * 45, { PROOF_TOOLCHAIN: token }, laneRoots[n])
+          )
+        ))
+      )
+    }
+    const survivorExits = await Promise.all(
+      survivors.map((token, n) =>
+        startVp('proof:artifact', { root: laneRoots[n], env: { PROOF_TOOLCHAIN: token } }).then(
+          (run) => run.exit
+        )
+      )
     )
     check(
       s,
-      `${name}: snapshots taken during writes (at least 8)`,
+      'interrupted: the writers that were not killed exited 0',
+      '4',
+      String(survivorExits.filter((code) => code === 0).length)
+    )
+    const killedDb = cacheDb(killedLive)
+    check(s, 'interrupted: database', 'ok', killedDb ? integrityOfCopy(killedDb) : 'missing')
+    const after = mkdtempSync(join(scratch, 'restored-'))
+    snapshotMethods['directory copy']!(killedLive, after)
+    useCache(replayRoot, after)
+    const results: Record<string, Verdict> = {}
+    for (const token of [...survivors, ...killed])
+      results[token] = await replayEntry(replayRoot, token)
+    check(
+      s,
+      'interrupted: survivors replayed as hits with the right bytes',
       'true',
-      String(tally.snapshots >= 8)
+      String(survivors.every((token) => results[token] === 'hit'))
     )
-    check(s, `${name}: restored entries that replayed wrong output`, '0', String(tally.wrong))
+    check(
+      s,
+      'interrupted: killed entries never replayed wrong or unusable',
+      'true',
+      String(killed.every((token) => results[token] === 'hit' || results[token] === 'miss'))
+    )
+    notes.push(
+      `restore: after SIGKILL at staggered points: ${killed.map((token) => results[token]).join(', ')}`
+    )
+  } finally {
+    // Stop and await the writers and any child still running, whether the scenario passed or threw.
+    state.running = false
+    killLiveChildren()
+    await Promise.allSettled(lanes)
   }
-
-  // The control: a copy taken once the writers have stopped is the Actions save situation.
-  const quiet = mkdtempSync(join(scratch, 'restored-'))
-  snapshotMethods['directory copy']!(live, quiet)
-  useCache(replayRoot, quiet)
-  const verdicts: Verdict[] = []
-  for (const token of completed.filter((_, index) => index % 7 === 0).slice(0, 12))
-    verdicts.push(await replayEntry(replayRoot, token))
-  check(s, 'quiescent copy: entries replayed', 'true', String(verdicts.length >= 6))
-  check(
-    s,
-    'quiescent copy: every entry replayed as a hit with the right bytes',
-    'true',
-    String(verdicts.every((verdict) => verdict === 'hit'))
-  )
-
-  // Interrupted writers: kill some mid-run in waves, one writer per worktree, then copy once
-  // everything has stopped.
-  const killedLive = freshCache(...laneRoots)
-  const killed = Array.from({ length: 8 }, (_, n) => `k${n}`)
-  const survivors = Array.from({ length: 4 }, (_, n) => `s${n}`)
-  const killedExits: (number | null)[] = []
-  for (const wave of [killed.slice(0, 4), killed.slice(4)]) {
-    killedExits.push(
-      ...(await Promise.all(
-        wave.map((token, n) =>
-          killedAfter('proof:artifact', 25 + n * 45, { PROOF_TOOLCHAIN: token }, laneRoots[n])
-        )
-      ))
-    )
-  }
-  const survivorExits = await Promise.all(
-    survivors.map((token, n) =>
-      startVp('proof:artifact', { root: laneRoots[n], env: { PROOF_TOOLCHAIN: token } }).then(
-        (run) => run.exit
-      )
-    )
-  )
-  check(
-    s,
-    'interrupted: the writers that were not killed exited 0',
-    '4',
-    String(survivorExits.filter((code) => code === 0).length)
-  )
-  const killedDb = cacheDb(killedLive)
-  check(s, 'interrupted: database', 'ok', killedDb ? integrityOfCopy(killedDb) : 'missing')
-  const after = mkdtempSync(join(scratch, 'restored-'))
-  snapshotMethods['directory copy']!(killedLive, after)
-  useCache(replayRoot, after)
-  const results: Record<string, Verdict> = {}
-  for (const token of [...survivors, ...killed])
-    results[token] = await replayEntry(replayRoot, token)
-  check(
-    s,
-    'interrupted: survivors replayed as hits with the right bytes',
-    'true',
-    String(survivors.every((token) => results[token] === 'hit'))
-  )
-  check(
-    s,
-    'interrupted: killed entries never replayed wrong or unusable',
-    'true',
-    String(killed.every((token) => results[token] === 'hit' || results[token] === 'miss'))
-  )
-  notes.push(
-    `restore: after SIGKILL at staggered points: ${killed.map((token) => results[token]).join(', ')}`
-  )
 }
 
 /** A comparable description of a checkout's tracked changes, untracked files and cache entry. */
@@ -1172,6 +1254,56 @@ async function safety(): Promise<void> {
     sentinel(`${cacheLink(collide)}.proof-backup`)
   )
 
+  // An inherited cache override must not reach `vp`: Vite Task reads VITE_CACHE_PATH ahead of
+  // the scratch symlink, so an external cache would be used and mutated.
+  const external = sentinelDir(join(scratch, 'external-cache'), 'external cache')
+  const inherited = {
+    VITE_CACHE_PATH: process.env['VITE_CACHE_PATH'],
+    VP_REMOTE_CACHE: process.env['VP_REMOTE_CACHE'],
+    VP_REMOTE_CACHE_URL: process.env['VP_REMOTE_CACHE_URL'],
+  }
+  process.env['VITE_CACHE_PATH'] = external
+  process.env['VP_REMOTE_CACHE'] = 'write'
+  process.env['VP_REMOTE_CACHE_URL'] = 'http://127.0.0.1:9'
+  try {
+    const sanitized = cleanEnv({ VITE_CACHE_PATH: external })
+    const leaked = ['VITE_CACHE_PATH', 'VP_REMOTE_CACHE', 'VP_REMOTE_CACHE_URL'].filter(
+      (name) => name in sanitized
+    )
+    check(
+      s,
+      'the child environment has no cache override or remote-cache variable',
+      'none',
+      leaked.join() || 'none'
+    )
+    const scratchCache = freshCache()
+    mkdirSync(artifactDir(repo), { recursive: true })
+    await vp(s, 'with VITE_CACHE_PATH inherited: cold', 'proof:artifact', 'executed*', {
+      env: { PROOF_TOOLCHAIN: 'override-probe', VITE_CACHE_PATH: external },
+    })
+    await vp(s, 'with VITE_CACHE_PATH inherited: warm', 'proof:artifact', 'hit', {
+      env: { PROOF_TOOLCHAIN: 'override-probe' },
+    })
+    await killedAfter('proof:artifact', 5, { PROOF_TOOLCHAIN: 'override-kill' })
+    check(
+      s,
+      'the external cache received nothing',
+      'external cache|sentinel',
+      `${sentinel(external)}|${readdirSync(external).join()}`
+    )
+    check(
+      s,
+      'the scratch cache received the entries',
+      'true',
+      String(cacheDb(scratchCache) !== undefined)
+    )
+  } finally {
+    for (const [name, value] of Object.entries(inherited)) {
+      if (value === undefined) delete process.env[name]
+      else process.env[name] = value
+    }
+  }
+
   // A user checkout with edits, an untracked file, a changed mode and a cache symlink.
   const user = addWorktree(repo, join(scratch, 'user'))
   check(s, 'fixture checkout installed', '0', String(install(user)))
@@ -1191,6 +1323,7 @@ async function safety(): Promise<void> {
       env: { ...process.env, ...env },
       encoding: 'utf8',
       timeout: 600_000,
+      killSignal: 'SIGKILL',
     })
 
   // 1: an actions-only run does not touch an existing cache symlink (it never used one).
@@ -1209,7 +1342,16 @@ async function safety(): Promise<void> {
 
   // 2: a full scenario run on the dirty checkout, with a symlinked cache.
   const beforeRun = exactState(user)
-  const run = inner(['tracking', `--out=${join(scratch, 'inner-tracking.json')}`])
+  const innerExternal = sentinelDir(join(scratch, 'inner-external-cache'), 'inner external cache')
+  const run = inner(['tracking', `--out=${join(scratch, 'inner-tracking.json')}`], {
+    VITE_CACHE_PATH: innerExternal,
+  })
+  check(
+    s,
+    'tracking run with VITE_CACHE_PATH set: the external cache is untouched',
+    'inner external cache|sentinel',
+    `${sentinel(innerExternal)}|${readdirSync(innerExternal).join()}`
+  )
   check(s, 'tracking run on a dirty checkout: exit', '0', String(run.status))
   check(
     s,
@@ -1256,6 +1398,39 @@ async function safety(): Promise<void> {
     'injected failure: the backup kept its contents',
     'user older backup',
     sentinel(`${cacheLink(user)}.proof-backup`)
+  )
+
+  // 4: writers that always fail: the restore scenario ends promptly, reports the failed exits and
+  // leaves nothing behind.
+  const writersStarted = performance.now()
+  const writersFail = inner(['restore', `--out=${join(scratch, 'inner-writers.json')}`], {
+    PROOF_INJECT_WRITER_FAILURE: '1',
+  })
+  check(s, 'failing writers: the run ends non-zero', 'true', String(writersFail.status !== 0))
+  check(
+    s,
+    'failing writers: the run ended within 5 minutes',
+    'true',
+    String(performance.now() - writersStarted < 300_000)
+  )
+  const writersReport = existsSync(join(scratch, 'inner-writers.json'))
+    ? readFileSync(join(scratch, 'inner-writers.json'), 'utf8')
+    : ''
+  check(
+    s,
+    'failing writers: the failed exits are reported',
+    'true',
+    String(/writers produced entries/.test(writersReport) && /finished; exits/.test(writersReport))
+  )
+  const leftovers = git(user, 'worktree', 'list')
+    .split('\n')
+    .filter((line) => /vite-task-cache-proof-/.test(line) && !line.startsWith(scratch))
+  check(s, 'failing writers: no disposable worktree is left behind', '0', String(leftovers.length))
+  check(
+    s,
+    'failing writers: the dirty checkout is unchanged',
+    'true',
+    String(exactState(user) === beforeFailure)
   )
   notes.push(
     'safety: the dirty fixture checkout is a worktree of the disposable one; the harness under test treated it as the user checkout'
@@ -1410,6 +1585,7 @@ const scenarios: Record<string, () => Promise<void>> = {
 async function main(): Promise<void> {
   const version = spawnSync(join(source, 'node_modules', '.bin', 'vp'), ['--version'], {
     encoding: 'utf8',
+    env: cleanEnv(),
   })
   notes.push(`vp: ${version.stdout.trim().split('\n')[0]}`)
   notes.push(
@@ -1437,13 +1613,13 @@ async function main(): Promise<void> {
   }
 }
 
-let failed = false
-try {
-  await main()
-} catch (error) {
-  failed = true
-  console.error(error)
-} finally {
+let cleanedUp = false
+
+/** Stop children, undo recorded mutations, remove the disposable worktrees and the scratch files. */
+function cleanup(): void {
+  if (cleanedUp) return
+  cleanedUp = true
+  killLiveChildren()
   // Undo only what the harness recorded, and only inside the scratch directory.
   for (const entry of touched) {
     const [root, file] = entry.split('\0') as [string, string]
@@ -1478,6 +1654,27 @@ try {
   for (const entry of readdirSync(scratch)) {
     if (entry !== 'results.json') rmSync(join(scratch, entry), { recursive: true, force: true })
   }
+}
+
+// The whole run is bounded, and an interrupt cleans up too.
+const RUN_BUDGET_MS = 60 * 60_000
+const giveUp = (reason: string, code: number) => () => {
+  console.error(`# ${reason}; cleaning up`)
+  cleanup()
+  process.exit(code)
+}
+setTimeout(giveUp(`the run exceeded ${RUN_BUDGET_MS / 60_000} minutes`, 124), RUN_BUDGET_MS).unref()
+process.once('SIGINT', giveUp('interrupted', 130))
+process.once('SIGTERM', giveUp('terminated', 143))
+
+let failed = false
+try {
+  await main()
+} catch (error) {
+  failed = true
+  console.error(error)
+} finally {
+  cleanup()
 }
 
 const pad = (text: string, width: number) => text.padEnd(width).slice(0, width)
