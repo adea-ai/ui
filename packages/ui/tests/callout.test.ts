@@ -84,6 +84,12 @@ describe('Callout source contract', () => {
     expect(callout.indexOf('role="note"')).toBeLessThan(callout.indexOf('{...rest}'))
   })
 
+  test('marks a title-only callout from its rendered children', () => {
+    expect(callout).toContain('children(() => local.children)')
+    expect(callout).toContain("data-title-only={titleOnly() ? '' : undefined}")
+    expect(source).toContain("getAttribute('data-slot') === 'callout-title'")
+  })
+
   test('has no alert or live-region behaviour', () => {
     // Checked on the code, not the doc comment, which names these on purpose.
     const code = `${callout}${body('CalloutTitle')}${source.slice(source.indexOf('export const calloutVariants'))}`
@@ -94,7 +100,7 @@ describe('Callout source contract', () => {
   })
 
   test('merges the caller class last and forwards everything else, including ref', () => {
-    expect(callout).toContain("splitProps(props, ['class', 'variant', 'size'])")
+    expect(callout).toContain("splitProps(props, ['class', 'variant', 'size', 'children'])")
     expect(callout).toContain(
       'cn(calloutVariants({ variant: local.variant, size: local.size }), local.class)'
     )
@@ -106,9 +112,12 @@ describe('Callout source contract', () => {
     const title = body('CalloutTitle')
     expect(title).toContain('data-slot="callout-title"')
     expect(title).toContain('local.class')
-    // Unconditional: `not-last:` ignores text nodes and dropped the gap before bare text.
+    // The gap is the default: `not-last:` ignores text nodes and dropped it before bare text.
     expect(title).toContain("'mb-1 ")
     expect(title).not.toContain('not-last')
+    // Only a callout that renders nothing but its title takes the gap away, by a mark
+    // the callout sets, so no caller has to pass `mb-0`.
+    expect(title).toContain('in-data-title-only:mb-0')
     expect(title).toContain('{...rest}')
   })
 })
