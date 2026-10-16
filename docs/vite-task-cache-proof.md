@@ -245,19 +245,21 @@ Design, each point measured:
 
 linux-x64, `node` 24.18.0 first on the shell PATH, `vp` 1.3.0, base `ae730b0`, repair head as recorded in the
 receipts, a scratch cache (`VITE_CACHE_PATH`, a temporary directory). **`PROOF_TOOLCHAIN` was unset** (the script
-prints `PROOF_TOOLCHAIN=unset`), so this is the ordinary workflow. The recorded identity was
-`linux-x64 glibc-2.39 node v24.18.0 41a74efb34cb… bun 1.4.0 ec3dacd9560f…` (the managed `bun`, see above). Every
-exit code was 0.
+prints `PROOF_TOOLCHAIN=unset`), so this is the ordinary workflow. The id in the commands was
+`linux-x64.glibc2.39.node24.18.0-41a74efb34cb.bun1.4.0-ec3dacd9560f` (the managed `bun`, see above). Every exit
+code was 0. The figures below, and the full harness result further down, were measured on commit `49930a6` with
+a clean worktree (the receipts record the commit, its tree and `git status --porcelain`); the commits after it
+change only this file.
 
 | Run                          | `orch:test`         | `orch:lint` | `orch:typecheck` | `orch:build` |
 | ---------------------------- | ------------------- | ----------- | ---------------- | ------------ |
-| Cold (wall time)             | 58.2 s, 0 of 4 hits | 6.5 s\*     | 42.3 s\*         | 0.5 s\*      |
-| Warm                         | 0.7 s, 4 of 4 hits  | 0.7 s, 4/4  | 0.6 s, 3/3       | 0.5 s        |
-| After `rm -rf dist coverage` | 0.8 s, 4 of 4 hits  | 0.7 s, 4/4  | 0.7 s, 3/3       | 0.5 s        |
+| Cold (wall time)             | 57.0 s, 0 of 4 hits | 6.3 s\*     | 42.9 s\*         | 0.5 s\*      |
+| Warm                         | 0.8 s, 4 of 4 hits  | 0.7 s, 4/4  | 0.6 s, 3/3       | 0.5 s        |
+| After `rm -rf dist coverage` | 0.8 s, 4 of 4 hits  | 0.8 s, 4/4  | 0.6 s, 3/3       | 0.5 s        |
 
 \* includes hits on `orch:ui:build`, which an earlier task in the same run had already executed.
 `packages/ui/dist` hashed identically cold, warm and restored (`b730e14a81500076`, a hash over the sorted file
-hashes). `bun run vp:verify` on the warm cache: 2.7 s, exit 0. (The counts include the uncached `orch:toolchain`
+hashes). `bun run vp:verify` on the warm cache: 2.9 s, exit 0. (The counts include the uncached `orch:toolchain`
 run that precedes each lane.)
 
 Mutations on a clean tree (all reverted): appending a comment to `packages/ui/src/lib/version-notes.ts` missed
@@ -280,6 +282,11 @@ its own entry (hit) while the first does not reuse the second's. Run against the
 (`'node_modules/.cache/orch-toolchain.json' modified`), because its result had been stored under the other
 toolchain's identity. With the id removed from the commands, the same-path `bun` version change would be a
 stale hit, which is the defect the repair began from.
+
+The full harness, started on `49930a6` with `PROOF_TOOLCHAIN` unset and `node` 24.18.0 first on the PATH, has 197
+assertions (the 175 above plus 22 for `orch-toolchain` and `orch-concurrent`): 197 ok, 0 FAIL, exit 0. The `proof:*`
+negative controls are unchanged: in the `tools` scenario a `bun` or `node` with other bytes is still a stale hit
+under the `proof:*` tasks, and a changed `PROOF_TOOLCHAIN` is still a miss.
 
 ### Not done, and not claimed
 
