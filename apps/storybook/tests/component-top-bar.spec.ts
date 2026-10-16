@@ -213,6 +213,44 @@ test('toolbar actions remain reachable without document overflow at narrow width
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
+test('centerWidth="wide" widens the centre track only above 1280px and never overflows', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+  const tracks = (label: string) =>
+    page.locator(`[data-slot="top-bar"][aria-label="${label}"]`).evaluate((element) =>
+      getComputedStyle(element)
+        .gridTemplateColumns.split(' ')
+        .map((value) => Number.parseFloat(value))
+    )
+
+  // 1440px: the default centre is clamp(240px, 22vw, 480px) and the wide one
+  // is clamp(240px, 32vw, 672px), with equal side tracks either way.
+  await page.setViewportSize({ width: 1440, height: 844 })
+  const field = await tracks('Workspace toolbar')
+  const wide = await tracks('Wide centre toolbar')
+  expect(field[1]).toBeCloseTo(1440 * 0.22, 0)
+  expect(wide[1]).toBeCloseTo(1440 * 0.32, 0)
+  expect(Math.abs(wide[0]! - wide[2]!)).toBeLessThanOrEqual(1)
+
+  // Between 768px and 1280px the wide bar keeps a fluid centre between
+  // content-sized side tracks instead of the field bar's fixed 22vw.
+  await page.setViewportSize({ width: 1000, height: 844 })
+  const mid = await tracks('Wide centre toolbar')
+  expect(mid[1]).toBeGreaterThan(1000 * 0.22)
+
+  for (const width of [1440, 1000, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true)
+  }
+})
+
 test('the search chord stays out of the button accessible name', async ({ page }) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
