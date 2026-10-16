@@ -211,6 +211,19 @@ function killLiveChildren(): void {
   for (const child of liveChildren) killGroup(child)
 }
 
+/**
+ * Ask background writers to stop and wait for the round they are in to finish, so their exits
+ * still count. Only writers that outlast the grace period are killed. Runs from `finally`, so
+ * it also covers a scenario that threw.
+ */
+async function stopWriters(stop: () => void, writers: Promise<void>[]): Promise<void> {
+  stop()
+  const finished = Promise.allSettled(writers).then(() => true)
+  const timedOut = new Promise<boolean>((done) => setTimeout(() => done(false), 120_000).unref())
+  if (!(await Promise.race([finished, timedOut]))) killLiveChildren()
+  await finished
+}
+
 /** A `vp` run that has not finished by now is stuck; it is killed and reported as exit -1. */
 const RUN_TIMEOUT_MS = 300_000
 
@@ -793,9 +806,7 @@ async function snapshots(): Promise<void> {
       await new Promise((done) => setTimeout(done, 15))
     }
   } finally {
-    loop.running = false
-    killLiveChildren()
-    await Promise.allSettled([writers])
+    await stopWriters(() => (loop.running = false), [writers])
   }
   for (const [reason, n] of reasons) notes.push(`snapshots: ${n} x ${reason}`)
   for (const [method, count] of Object.entries(methods)) {
@@ -1108,9 +1119,7 @@ async function restoreReplay(): Promise<void> {
     )
   } finally {
     // Stop and await the writers and any child still running, whether the scenario passed or threw.
-    state.running = false
-    killLiveChildren()
-    await Promise.allSettled(lanes)
+    await stopWriters(() => (state.running = false), lanes)
   }
 }
 
