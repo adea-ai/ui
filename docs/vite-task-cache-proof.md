@@ -8,26 +8,52 @@ secret or a credential.
 
 ## What is in the change
 
-| File                                           | Role                                                                                                                                                                  |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `package.json`, `bun.lock`                     | `vite-plus` pinned exactly at `1.3.0` (the `latest` dist-tag on the official npm registry, published 2026-10-16).                                                     |
-| `vite.config.ts`                               | Five `vp` tasks that wrap existing package scripts: `proof:typecheck`, `proof:registry`, `proof:build`, `proof:unit`, and the negative control `proof:cn-check:auto`. |
-| `packages/ui/scripts/vite-task-cache-proof.ts` | The harness. Every claim below is an assertion in it; run it with `bun packages/ui/scripts/vite-task-cache-proof.ts [scenario ...]`.                                  |
-| `.github/workflows/vite-task-cache-proof.yml`  | Opt-in, non-required Actions job. Runs on `workflow_dispatch` and when a ready pull request touches the proof's own files.                                            |
+| File                                                     | Role                                                                                                                                                                                                         |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `package.json`, `bun.lock`                               | `vite-plus` pinned exactly at `1.3.0` (the `latest` dist-tag on the official npm registry, published 2026-10-16).                                                                                            |
+| `vite.config.ts`                                         | Six `vp` tasks: `proof:typecheck`, `proof:registry`, `proof:build`, `proof:unit` wrap existing package scripts; `proof:artifact` is used only by the harness; `proof:cn-check:auto` is the negative control. |
+| `packages/ui/scripts/vite-task-cache-proof.ts`           | The harness. Every claim below is an assertion in it; run it with `bun packages/ui/scripts/vite-task-cache-proof.ts [scenario ...]`.                                                                         |
+| `packages/ui/scripts/vite-task-cache-proof-artifact.mjs` | Writes a small, seed-dependent output tree for `proof:artifact`, so a restored cache entry can be checked byte for byte.                                                                                     |
+| `.github/workflows/vite-task-cache-proof.yml`            | Opt-in, non-required Actions job. Runs on `workflow_dispatch` and when a ready pull request touches the proof's own files.                                                                                   |
 
 `turbo.json` is untouched, so the production graph (`build` with `^build`, the declared
 outputs) is exactly what it was. The tasks wrap `packages/ui` scripts directly and do
 not reproduce Turbo's package graph.
 
-Run it: `bun install --frozen-lockfile`, then the harness from a clean working tree.
-It moves any existing local task cache aside, points `node_modules/.vite/task-cache`
-at a temporary directory, and puts everything back.
+Run it: `bun install --frozen-lockfile`, then the harness from any checkout.
+
+### What the harness does to your checkout: nothing
+
+The checkout it is started from is read and never mutated. Every scenario runs in a
+disposable `git worktree` of that checkout's committed HEAD, created under the OS temp
+directory with its own `bun install` and removed at the end. Uncommitted changes are not used
+and not touched, and the starting checkout's `node_modules/.vite/task-cache` (a real directory
+or a symlink) is never read, moved or removed. Edits to tracked files and the task-cache
+symlink happen only inside a disposable root, and:
+
+- every mutating helper refuses a path outside the harness's scratch directory;
+- what `useCache` replaces is recorded per root: a symlink keeps its target, a real directory
+  is renamed aside, and a name collision throws before anything is removed;
+- cleanup undoes only recorded mutations, so a run that never called `useCache` (the static
+  `actions` check) removes nothing.
+
+The `safety` scenario proves it against a dirty fixture checkout (tracked edits, a changed
+file mode, an untracked file, and a pre-existing task cache as a symlink, and as a real
+directory with an older backup beside it): a normal run, an `actions`-only run and a run that
+fails right after its first edit (`PROOF_INJECT_FAILURE=1`) all leave every edit, mode,
+untracked file, symlink target, cache directory and backup byte for byte as they were.
+Before this change the harness ran `git checkout --` on the checkout it was started from and
+removed an existing cache symlink without restoring it; the earlier head `e75aebb` was run
+against a throwaway dirty worktree and confirmed to wipe a pre-existing edit and the symlink.
 
 ## Results
 
 Run on linux-x64, bun 1.4.2, node 22.22.0 (the sandbox's node; the repository pins 24.18.0, see the
-gaps), `vp` 1.3.0, harness head `12f6e3e`. **120 assertions, 0 failures.** The expectations pin
+gaps), `vp` 1.3.0, harness head `cc24039`, started from a disposable copy of that commit so the
+real checkout was never involved. **165 assertions, 0 failures**, about 12 minutes. The expectations pin
 vite-plus's behaviour at this version, so an upgrade that changes any of it fails the harness.
+The figures in the evidence below that quote counts come from the earlier 120-assertion run unless
+they are restated here.
 
 ### Cold and warm, with outputs restored
 
@@ -74,18 +100,40 @@ Vite Task warm build (0.3 to 1.2 s across runs).
      fingerprints contain no platform marker. The proof therefore declares one variable, `PROOF_TOOLCHAIN`
      (`bun-<v> node-<v> <os>-<arch>`), in every task's `cache.env`: changing the bun version or the platform
      in it is a miss ("env `PROOF_TOOLCHAIN` changed"). CI sets it from the real versions.
-6. **SQLite snapshots under concurrent and interrupted runs: proven for the supported method, with one
-   unsafe method found.** The database is `journal_mode=wal`.
+6. **SQLite snapshots under concurrent and interrupted runs: database integrity proven, restored replay
+   proven on a small sample.** The database is `journal_mode=wal`.
    - Builds killed with SIGKILL (process group) at 1.5 s, 8 s, 16.5 s and 17.8 s, and 25 rounds of three
      concurrent writers with two of the three killed at staggered points: `integrity_check` was `ok` every time,
      the next run succeeded, `dist` was complete, and the run after that was a hit. A partial build was never
-     replayed.
+     replayed. The writer that was not killed in each round must exit 0, and the harness fails if it does not.
    - Snapshots of the live cache taken every 15 ms for 20 s while four writers ran back to back
-     (263 snapshots per method): `VACUUM INTO` from a read-only connection, 0 torn and 0 failed; a copy of
-     the whole directory, 0 torn (earlier runs of the harness saw 2 of 266 fail because a file vanished
-     during the copy); **a copy of `cache.db` alone, 2 torn** (`database disk image is malformed`). So a snapshot taken
-     while writers are active must use `VACUUM INTO` (with a busy timeout) or wait for the writers to stop.
-     The Actions save step runs after every `vp run` has exited.
+     (250 snapshots per method, at least 50 required, every writer required to exit 0): `VACUUM INTO` from a
+     read-only connection, 0 torn and 0 failed; a copy of the whole directory, 0 torn; **a copy of `cache.db`
+     alone, 1 torn** (`database disk image is malformed`). Counts vary run to run: earlier runs tore the bare
+     copy 2 to 3 times of about 263, and 2 of 266 directory copies could not be taken because a file vanished
+     mid-copy. A run with no database, no live writers or too few snapshots now fails instead of passing.
+   - **Restored-cache replay (`restore` scenario).** SQLite integrity says nothing about the archives a
+     database row points at, so each copy is restored into a fresh cache directory and replayed in a second
+     worktree: every entry that had finished before the copy started is run again and what it leaves is compared
+     with the bytes a fresh uncached run produces. Three writers in three worktrees (a shared output directory
+     would let concurrent runs archive each other's files, which the first draft of this scenario did), 12
+     copies per method taken during writes, 36 replays per method:
+
+     | Copy method                                | Replayed hits | Wrong output | Unusable |
+     | ------------------------------------------ | ------------- | ------------ | -------- |
+     | directory copy                             | 36            | 0            | 0        |
+     | `VACUUM INTO`, then archives               | 36            | 0            | 0        |
+     | archives, then `VACUUM INTO`               | 36            | 0            | 0        |
+     | `cache.db` file, then archives (no `-wal`) | 36            | 0            | 0        |
+
+     A copy taken after the writers stopped replayed every sampled entry as a hit with identical bytes. After
+     eight writers killed at staggered points (four at a time, one per worktree) and four that finished, a copy
+     of the stopped cache replayed all four finished entries as hits with identical bytes, and none of the eight
+     killed entries was stored (all were misses, none wrong or unusable). **This is a 12-copy sample per
+     method, not a rate**: it shows no case of a restored entry serving wrong bytes and none of an unreadable
+     database, but the earlier 250-copy run did tear a bare `cache.db` copy, so copying the database file
+     alone while writers are active stays unsupported. The supported transports are a copy after every
+     `vp run` has exited (what the Actions save step does) or `VACUUM INTO` plus the archives.
 7. **Actions trusted-writer isolation: configured and asserted statically, not exercised.** The workflow
    restores in every run and saves only when the run is not a pull request and the ref is the default branch,
    so a pull request's code cannot write state a later run restores. The harness's `actions` scenario asserts:
@@ -113,8 +161,8 @@ that names the file.
   equivalent) is set. Nothing here ran on macOS or Windows.
 - **One entry per key.** No A to B to A reuse for file changes; alternating source states keep missing.
 - **No deduplication of concurrent identical runs.**
-- **File-copy snapshots of the database can be torn while writers are active.** Only `VACUUM INTO` was
-  never torn. The kills at 16.5 s and 17.8 s landed before the build finished, so a kill inside the final
+- **File-copy snapshots of the database can be torn while writers are active.** `VACUUM INTO` was
+  never torn in either run; a bare `cache.db` copy was. The kills at 16.5 s and 17.8 s landed before the build finished, so a kill inside the final
   store step was not observed.
 - **Actions isolation is unexercised.** GitHub's side (a pull request run cannot write the default branch's cache
   scope) is relied on, not tested. No run of this workflow has happened yet, and a `workflow_dispatch` workflow
@@ -128,4 +176,10 @@ that names the file.
   consumers (`@vitest/browser`, `@vitest/ui`, `storybook`, `oxc-parser`). The root `vite`, `oxfmt` (0.71.0) and
   `oxlint` (1.86.0) are unchanged; `vp` carries its own `oxfmt` 0.73.0 and `oxlint` 1.88.0, which production does
   not use.
+- **Restore coverage is a sample.** 12 copies per method and one interrupted-writer round; it does not
+  bound the rate of a bad restore, and it exercises `proof:artifact`, not a multi-archive build entry.
+- **What CI runs.** The workflow runs `proof:registry`, `proof:build` and `proof:typecheck`, each twice, and
+  checks that the second run hits. It does **not** run the harness: the 165 assertions, the safety, restore,
+  snapshot and divergence scenarios, and the static `actions` check are a local command. Nothing in CI proves
+  any claim in this document beyond "a second identical run hits". The workflow also has not run yet.
 - **Remote cache.** None configured. Cloudflare is deferred; no infrastructure, access or credential exists.
