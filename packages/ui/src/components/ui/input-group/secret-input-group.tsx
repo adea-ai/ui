@@ -1,4 +1,4 @@
-import { splitProps, useContext, type ComponentProps, type JSX } from 'solid-js'
+import { Show, splitProps, useContext, type ComponentProps, type JSX } from 'solid-js'
 import { ActionButton } from '../../composites/action-button'
 import { FormFieldContext } from '#lib/form-field'
 import { InputGroup, InputGroupInput } from './input-group'
@@ -56,28 +56,31 @@ export function SecretInputGroup(props: SecretInputGroupProps) {
     />
   )
 
-  if (!local.onClear) return <InputGroup class={local.class}>{input}</InputGroup>
-
+  // One group for both cases: `onClear` may appear or disappear after setup
+  // (a stored secret is cleared, or a configured one arrives), and the input
+  // must keep its element, value and focus while the action comes and goes.
   return (
     <InputGroup class={local.class}>
       {input}
-      <ActionButton
-        data-slot="input-group-button"
-        variant="ghost"
-        size="xs"
-        class="-me-1 h-6 min-w-0 shrink-0 px-2"
-        disabled={local.disabled}
-        tooltip={
-          local.disabled
-            ? (local.disabledReason ?? 'This API key is managed by policy')
-            : (local.clearLabel ?? 'Clear API key')
-        }
-        tooltipSide="top"
-        aria-label={local.clearLabel ?? 'Clear API key'}
-        onClick={() => local.onClear?.()}
-      >
-        Clear
-      </ActionButton>
+      <Show when={local.onClear}>
+        <ActionButton
+          data-slot="input-group-button"
+          variant="ghost"
+          size="xs"
+          class="-me-1 h-6 min-w-0 shrink-0 px-2"
+          disabled={local.disabled}
+          tooltip={
+            local.disabled
+              ? (local.disabledReason ?? 'This API key is managed by policy')
+              : (local.clearLabel ?? 'Clear API key')
+          }
+          tooltipSide="top"
+          aria-label={local.clearLabel ?? 'Clear API key'}
+          onClick={() => local.onClear?.()}
+        >
+          Clear
+        </ActionButton>
+      </Show>
     </InputGroup>
   )
 }
