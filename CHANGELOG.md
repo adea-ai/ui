@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.138.1](https://github.com/adea-ai/ui/compare/v0.138.0...v0.138.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **callout:** drop the title's bottom margin when it is the only child ([#442](https://github.com/adea-ai/ui/issues/442)) ([a3b7367](https://github.com/adea-ai/ui/commit/a3b73676be82ef82dd664637cf4af2fff9342f33))
+* **tree:** leave focus alone when a control outside the tree has it ([#440](https://github.com/adea-ai/ui/issues/440)) ([ad56eb9](https://github.com/adea-ai/ui/commit/ad56eb977c0898c7748a7e98b6504aaf69550405))
+
 ## [0.138.0](https://github.com/adea-ai/ui/compare/v0.137.0...v0.138.0) (2026-10-16)
 
 
