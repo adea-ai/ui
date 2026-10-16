@@ -68,6 +68,36 @@ export const Default: Story = {
 }
 
 /**
+ * A centre that holds more than a lone search field.
+ *
+ * `centerWidth="wide"` gives the centre track room for a search plus an action
+ * beside it: fluid below 1280px, a wider fixed clamp above.
+ */
+export const WideCenter: Story = {
+  render: () => (
+    <div class="h-32 bg-background">
+      <TopBar centerWidth="wide">
+        <TopBarSection>
+          <TopBarTitle>adea</TopBarTitle>
+        </TopBarSection>
+        <div class="flex w-full min-w-0 items-center gap-2 justify-self-center">
+          <TopBarSearch
+            class="min-w-0 flex-1"
+            placeholder="Search your knowledge"
+            shortcut="⌘K"
+            keyshortcuts="Meta+K"
+          />
+          <Button size="sm" variant="outline">
+            Reflect
+          </Button>
+        </div>
+        <TopBarSection align="end" />
+      </TopBar>
+    </div>
+  ),
+}
+
+/**
  * A breadcrumb instead of a title, for a view that is nested.
  *
  * The last crumb is the current page and carries `aria-current` rather than being
