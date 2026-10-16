@@ -811,7 +811,10 @@ type Verdict = 'hit' | 'miss' | 'wrong' | 'unusable'
 
 /** Run the artifact task for `token` in `root` and compare what it left with the expected bytes. */
 async function replayEntry(root: string, token: string): Promise<Verdict> {
+  // Empty the directory but keep it: the fingerprint sees whether it exists, so removing it
+  // would be a miss for a reason that has nothing to do with the restored cache.
   rmSync(artifactDir(root), { recursive: true, force: true })
+  mkdirSync(artifactDir(root), { recursive: true })
   const run = await startVp('proof:artifact', { root, env: { PROOF_TOOLCHAIN: token } })
   if (run.exit !== 0) return 'unusable'
   if (!sameManifest(manifest(artifactDir(root)), expectedArtifact(token))) return 'wrong'
@@ -884,6 +887,8 @@ async function restoreReplay(): Promise<void> {
   const live = freshCache()
   const replayRoot = addWorktree(repo, join(scratch, 'wt-replay'))
   check(s, 'replay worktree installed', '0', String(install(replayRoot)))
+  mkdirSync(artifactDir(repo), { recursive: true })
+  mkdirSync(artifactDir(replayRoot), { recursive: true })
 
   const completed: string[] = []
   const writerExits: number[] = []
