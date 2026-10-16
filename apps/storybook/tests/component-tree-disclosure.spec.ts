@@ -654,6 +654,23 @@ test.describe('collapsing an ancestor', () => {
       expect(await tabStops(page, mode)).toEqual(['sources'])
     })
 
+    test(`${mode}: focus handed to an outside control in the same turn the row is hidden is not reclaimed`, async ({
+      page,
+    }) => {
+      await row(page, mode, 'repo-a-hint').focus()
+
+      // The host hides the focused row and focus goes to a control outside the tree
+      // before any queued recovery has run.
+      await page.evaluate((m) => {
+        window.treeDisclosureHost[m]!.setExpanded('repo-a', false)
+        document.getElementById('outside')!.focus()
+      }, mode)
+      await page.evaluate(() => new Promise<void>((done) => setTimeout(done, 50)))
+
+      expect(await focusOwner(page)).toBe('INPUT')
+      expect(await tabStops(page, mode)).toEqual(['sources'])
+    })
+
     test(`${mode}: moving focus out of the tree forgets the last row, so a later hide does not reclaim focus`, async ({
       page,
     }) => {
