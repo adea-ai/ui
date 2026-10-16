@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.138.0](https://github.com/adea-ai/ui/compare/v0.137.0...v0.138.0) (2026-10-16)
+
+
+### Features
+
+* **alert-dialog:** let Escape cancel a confirmation ([#441](https://github.com/adea-ai/ui/issues/441)) ([e4d4cf7](https://github.com/adea-ai/ui/commit/e4d4cf7589b17ada9c2772dc3f9670c1a7c9dd86))
+
 ## [0.137.0](https://github.com/adea-ai/ui/compare/v0.136.0...v0.137.0) (2026-10-15)
 
 
