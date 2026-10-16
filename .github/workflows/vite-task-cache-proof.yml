@@ -10,6 +10,12 @@ name: Vite Task cache proof (opt-in)
 # reads trusted state and cannot plant state a later run restores. The check in
 # `packages/ui/scripts/vite-task-cache-proof.ts actions` asserts this file keeps that shape.
 #
+# What this job runs: `proof:registry`, `proof:build` and `proof:typecheck`, each twice, and it
+# fails if the second run is not a cache hit. It does NOT run the proof harness
+# (`vite-task-cache-proof.ts`: cold/warm, worktree, divergence, environment, concurrency,
+# snapshot, restore and safety scenarios); that is a local command, and the only part of it
+# CI repeats is the static `actions` check of this file's shape, which nothing here invokes.
+#
 # The runner's Vite Task cache is the local directory only. No remote cache, no Cloudflare,
 # no secret and no OIDC token is used.
 on:
