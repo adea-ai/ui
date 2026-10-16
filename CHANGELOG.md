@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.140.0](https://github.com/adea-ai/ui/compare/v0.139.1...v0.140.0) (2026-10-16)
+
+
+### Features
+
+* **tooling:** add vp run orchestration tasks alongside Turbo ([#451](https://github.com/adea-ai/ui/issues/451)) ([fa97569](https://github.com/adea-ai/ui/commit/fa97569f53e621a517d82b372e43d2d084c8922a))
+
 ## [0.139.1](https://github.com/adea-ai/ui/compare/v0.139.0...v0.139.1) (2026-10-16)
 
 
