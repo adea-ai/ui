@@ -25,6 +25,7 @@ type TreeContextValue = {
   unregister: (id: string, element: HTMLDivElement | undefined) => void
   focusItem: (id: string) => void
   noteFocus: (id: string) => void
+  noteBlur: (next: EventTarget | null) => void
   activate: (id: string, event: Event) => void
   expand: (id: string, expanded: boolean) => void
   disclosure: () => TreeDisclosure
@@ -114,8 +115,14 @@ export type TreeProps = Omit<
  * the target row: when the active row leaves `visibleItems`, the first visible
  * row becomes the roving stop and `onActiveIdChange` is called with it. If the
  * removed row held focus, or was the last row the tree saw focused, focus moves
- * to that same row; if it had no focus, only the roving stop moves. This is the
- * same in both `disclosure` modes and for every way a host collapses a row.
+ * to that same row; if it had no focus, only the roving stop moves. Focus that
+ * has already gone to a control outside the tree is never pulled back: the tree
+ * forgets its last focused row when focus moves to an element outside it, and
+ * the roving stop alone moves if that control still has focus when the row is
+ * hidden. Focus the tree has asked for but not yet moved (a queued recovery, or a
+ * keyboard move to a row the host has not mounted) is withdrawn when focus lands
+ * outside the tree, and is checked again when a row mounts. This is the same in
+ * both `disclosure` modes and for every way a host collapses a row.
  */
 export function Tree(props: TreeProps) {
   const [local, rest] = splitProps(props, [
@@ -143,9 +150,26 @@ export function Tree(props: TreeProps) {
   const rows = new Map<string, HTMLDivElement>()
   const rowIdsByElement = new WeakMap<HTMLDivElement, string>()
   let pendingFocusId: string | null = null
+  let pendingFocusGuard: ((event: FocusEvent) => void) | undefined
   let requestedRevealId: string | null = null
   let focusedId: string | null = null
   let disposed = false
+  const isInsideTreeRow = (element: Element) => {
+    const row = element.closest('[role="treeitem"]')
+    return row instanceof HTMLDivElement && rowIdsByElement.has(row)
+  }
+  // True when a focusable control outside this tree owns focus. Nothing focused
+  // (`body`) is not outside: that is where focus falls when a focused row is removed.
+  const focusIsOutsideTree = () => {
+    if (typeof document === 'undefined') return false
+    const active = document.activeElement
+    return (
+      active instanceof Element &&
+      active !== document.body &&
+      active !== document.documentElement &&
+      !isInsideTreeRow(active)
+    )
+  }
   const rowSizeObserver =
     typeof ResizeObserver === 'undefined'
       ? undefined
@@ -160,8 +184,33 @@ export function Tree(props: TreeProps) {
           }
         })
 
+  // Focus the tree has asked for but not yet moved (a microtask away, or waiting for a
+  // virtualised row to mount) is only a request. While one is pending, focus arriving
+  // on a control outside the tree withdraws it, so a row mounting later cannot take
+  // focus back from a control the user, or the host, has since chosen.
+  const setPendingFocus = (id: string | null) => {
+    pendingFocusId = id
+    if (typeof document === 'undefined') return
+    if (id === null) {
+      if (pendingFocusGuard) document.removeEventListener('focusin', pendingFocusGuard, true)
+      pendingFocusGuard = undefined
+    } else if (!pendingFocusGuard) {
+      pendingFocusGuard = (event) => {
+        if (event.target instanceof Element && !isInsideTreeRow(event.target)) cancelPendingFocus()
+      }
+      document.addEventListener('focusin', pendingFocusGuard, true)
+    }
+  }
+  // Withdrawing a request also drops the memory of the row it was recovering for:
+  // nothing is left to recover.
+  const cancelPendingFocus = () => {
+    setPendingFocus(null)
+    focusedId = null
+  }
+
   onCleanup(() => {
     disposed = true
+    setPendingFocus(null)
     rowSizeObserver?.disconnect()
   })
 
@@ -176,13 +225,19 @@ export function Tree(props: TreeProps) {
       if (pendingFocusId !== id || effectiveActiveId() !== id) return
       const row = rows.get(id)
       if (!row || typeof document === 'undefined') return
+      // Ownership is checked when focus would move, not when it was requested: a
+      // control outside the tree may have taken focus since, and keeps it.
+      if (focusIsOutsideTree()) {
+        cancelPendingFocus()
+        return
+      }
       row.focus()
-      if (document.activeElement === row) pendingFocusId = null
+      if (document.activeElement === row) setPendingFocus(null)
     })
   }
 
   const focusItem = (id: string) => {
-    pendingFocusId = id
+    setPendingFocus(id)
     local.onActiveIdChange(id)
     if (rows.has(id)) requestedRevealId = null
     else requestReveal(id)
@@ -216,14 +271,27 @@ export function Tree(props: TreeProps) {
       if (focusWasInside) {
         queueMicrotask(() => {
           const fallbackId = effectiveActiveId()
-          if (!disposed && fallbackId !== null && pendingFocusId !== fallbackId)
-            focusItem(fallbackId)
+          if (disposed || fallbackId === null || pendingFocusId === fallbackId) return
+          // Focus fell out of the removed row, but it may have been given to a control
+          // outside the tree before this ran. Only nothing-focused (body) recovers.
+          if (focusIsOutsideTree()) {
+            focusedId = null
+            return
+          }
+          focusItem(fallbackId)
         })
       }
     },
     focusItem,
     noteFocus: (id) => {
       focusedId = id
+    },
+    noteBlur: (next) => {
+      // Focus moving to an element outside this tree ends the memory of the last
+      // focused row and withdraws any focus the tree was still waiting to give a
+      // row. A null target (focus to nothing, or the window losing focus) is
+      // ambiguous, so both stay for the recovery below.
+      if (next instanceof Element && !isInsideTreeRow(next)) cancelPendingFocus()
     },
     activate: (id, event) => local.onActivate?.(id, event),
     expand: (id, expanded) => local.onExpand?.(id, expanded),
@@ -239,11 +307,15 @@ export function Tree(props: TreeProps) {
     if (activeId === null) return
     // If the projection removes the last row that took focus (a host filter, or
     // an ancestor collapsing), move focus to the same fallback that now owns the
-    // roving tab stop. `focusedId` is not cleared when focus leaves the tree, so
-    // this also reclaims focus from a control outside it; that long-standing
-    // behaviour is deliberately left as it was.
+    // roving tab stop, unless a control outside the tree has focus: that control
+    // keeps it, and only the roving stop moves.
     if (focusedId !== null && !index().byId.has(focusedId) && pendingFocusId !== activeId) {
-      focusItem(activeId)
+      if (focusIsOutsideTree()) {
+        focusedId = null
+        if (local.activeId !== activeId) local.onActiveIdChange(activeId)
+      } else {
+        focusItem(activeId)
+      }
     } else if (local.activeId !== activeId) {
       local.onActiveIdChange(activeId)
     }
@@ -354,12 +426,19 @@ export function TreeRow(props: TreeRowProps) {
   let registeredId: string | undefined
   const id = () => local.item.id
 
-  onCleanup(() => tree.unregister(registeredId ?? id(), row))
+  const handleFocusOut = (event: FocusEvent) => tree.noteBlur(event.relatedTarget)
+
+  onCleanup(() => {
+    row?.removeEventListener('focusout', handleFocusOut)
+    tree.unregister(registeredId ?? id(), row)
+  })
 
   const setRef = (element: HTMLDivElement) => {
     row = element
     registeredId = id()
     tree.register(registeredId, element)
+    // A listener, not an `onFocusOut` prop, so a host's own handler is untouched.
+    element.addEventListener('focusout', handleFocusOut)
   }
 
   createEffect(() => {
