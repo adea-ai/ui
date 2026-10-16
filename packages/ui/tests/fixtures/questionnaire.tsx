@@ -87,6 +87,12 @@ render(
         disabledReason="Another window already answered."
       />
       <Questionnaire
+        id="no-submit"
+        title="No submit handler"
+        questions={[{ id: 'answer', prompt: 'What should happen next?' }]}
+        defaultAnswers={{ answer: { optionIds: [], text: 'Keep going' } }}
+      />
+      <Questionnaire
         id="answered"
         title="Settled question"
         status="answered"

@@ -35,6 +35,9 @@ const append = (page: Page, name: 'appendParked' | 'appendRetained', count: numb
     [name, count] as const
   )
 
+const invoke = (page: Page, name: 'appendUnfinished' | 'advanceProgress') =>
+  page.evaluate((fn) => (window as unknown as Record<string, () => void>)[fn as string]?.(), name)
+
 test('following the tail shows the newest lines', async ({ page }) => {
   const body = page.getByRole('region', { name: 'Output of parked' })
   await expect(body).toContainText('line 99')
@@ -80,6 +83,42 @@ test('a parked view keeps its lines while output arrives until Jump to latest', 
   // Following again: the next lines are shown as they arrive.
   await append(page, 'appendParked', 5)
   await expect(body).toContainText('line 204')
+})
+
+test('a newly unfinished line stays out of the parked view', async ({ page }) => {
+  const body = page.getByRole('region', { name: 'Output of parked' })
+  await scrollAway(page, body)
+
+  await invoke(page, 'appendUnfinished')
+
+  await expect(body).not.toContainText('building layer')
+  const jump = page.getByRole('button', { name: /Jump to latest/ })
+  await expect(jump).toContainText('1 newer line')
+  await jump.click()
+  await expect(body).toContainText('building layer')
+})
+
+test('a carriage-return redraw does not rewrite a parked unfinished line', async ({ page }) => {
+  const body = page.getByRole('region', { name: 'Output of progress' })
+  await expect(body).toContainText('Downloading 10%')
+  await scrollAway(page, body)
+
+  await invoke(page, 'advanceProgress')
+
+  await expect(body).toContainText('Downloading 10%')
+  await expect(body).not.toContainText('Downloading 20%')
+  const jump = page.getByRole('button', { name: /Jump to latest/ })
+  await expect(jump).toContainText('1 newer line')
+  await body.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await frames(page)
+  await expect(body).toContainText('Downloading 10%')
+  await expect(body).not.toContainText('Downloading 20%')
+  await expect(jump).toBeVisible()
+  await jump.click()
+  await expect(body).toContainText('Downloading 20%')
+  await expect(body).not.toContainText('Downloading 10%')
 })
 
 test('returning to the end of a parked view with nothing newer resumes following', async ({

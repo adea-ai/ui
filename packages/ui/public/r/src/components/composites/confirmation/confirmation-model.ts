@@ -75,7 +75,8 @@ export function decisionReason(options: {
   unavailableFallback: string
   missingFallback: string
 }): string | undefined {
-  if (options.disabledReason) return boundText(options.disabledReason, 240)
+  const hostReason = options.disabledReason ? boundText(options.disabledReason, 240) : ''
+  if (hostReason) return hostReason
   if (options.state === 'unavailable') return options.unavailableFallback
   if (!options.hasHandler) return options.missingFallback
   return undefined

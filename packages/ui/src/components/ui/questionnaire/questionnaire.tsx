@@ -121,11 +121,17 @@ export function Questionnaire(props: QuestionnaireProps) {
   const answers = () => local.answers ?? internal()
   const status = () => local.status ?? 'open'
   const settled = () => status() === 'answered' || status() === 'expired'
-  const locked = () => status() !== 'open' || local.disabledReason !== undefined
+  const hostDisabledReason = () => (local.disabledReason?.trim() ? local.disabledReason : undefined)
+  const locked = () => status() !== 'open' || hostDisabledReason() !== undefined
   const count = () => local.questions.length
   const current = () => local.questions[Math.min(step(), count() - 1)]
   const last = () => step() >= count() - 1
   const reasonId = `${uid}-reason`
+  const submitReason = () =>
+    hostDisabledReason() ??
+    (status() === 'open' && last() && local.onSubmit === undefined
+      ? 'Sending answers is not available here.'
+      : undefined)
   let questionHeading: HTMLHeadingElement | undefined
 
   const answerOf = (question: QuestionnaireQuestion) => answers()[question.id] ?? EMPTY
@@ -146,7 +152,7 @@ export function Questionnaire(props: QuestionnaireProps) {
   // twice by a second Ctrl+Enter or a double click.
   let sending = false
   const submit = async () => {
-    if (sending || locked() || !canSubmit()) return
+    if (sending || locked() || !canSubmit() || local.onSubmit === undefined) return
     sending = true
     try {
       await local.onSubmit?.(answers())
@@ -357,7 +363,7 @@ export function Questionnaire(props: QuestionnaireProps) {
                     placeholder={question.textPlaceholder}
                     value={answerOf(question).text}
                     disabled={locked()}
-                    aria-describedby={locked() && local.disabledReason ? reasonId : undefined}
+                    aria-describedby={locked() && hostDisabledReason() ? reasonId : undefined}
                     onInput={(event) =>
                       change(question, { ...answerOf(question), text: event.currentTarget.value })
                     }
@@ -368,9 +374,9 @@ export function Questionnaire(props: QuestionnaireProps) {
           )}
         </Show>
 
-        <Show when={local.disabledReason}>
+        <Show when={submitReason()}>
           <p id={reasonId} role="status" class="m-0 text-xs text-muted-foreground">
-            {local.disabledReason}
+            {submitReason()}
           </p>
         </Show>
         <Show when={local.error}>
@@ -398,7 +404,7 @@ export function Questionnaire(props: QuestionnaireProps) {
                 type="button"
                 size="sm"
                 disabled={locked() || !canAdvance()}
-                aria-describedby={local.disabledReason ? reasonId : undefined}
+                aria-describedby={hostDisabledReason() ? reasonId : undefined}
                 onClick={() => setStep((value) => Math.min(count() - 1, value + 1))}
               >
                 Next
@@ -408,8 +414,8 @@ export function Questionnaire(props: QuestionnaireProps) {
             <Button
               type="button"
               size="sm"
-              disabled={locked() || !canSubmit()}
-              aria-describedby={local.disabledReason ? reasonId : undefined}
+              disabled={locked() || !canSubmit() || local.onSubmit === undefined}
+              aria-describedby={submitReason() ? reasonId : undefined}
               onClick={() => void submit()}
             >
               <Show when={status() === 'submitting'}>

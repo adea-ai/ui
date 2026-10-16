@@ -88,6 +88,10 @@ describe('decisionReason', () => {
     )
   })
 
+  test('a blank host reason does not disable a choice without explanation', () => {
+    expect(decisionReason({ ...base, disabledReason: '   ' })).toBeUndefined()
+  })
+
   test('a missing handler is stated, never hidden', () => {
     expect(decisionReason({ ...base, hasHandler: false })).toBe('Not connected.')
   })

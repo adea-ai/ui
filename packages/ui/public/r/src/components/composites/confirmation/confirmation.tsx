@@ -115,14 +115,16 @@ export function Confirmation(props: ConfirmationProps) {
   let root: HTMLElement | undefined
   let outcome: HTMLParagraphElement | undefined
 
-  const reasonFor = (handler: (() => void | Promise<void>) | undefined, missing: string) =>
-    decisionReason({
+  const reasonFor = (handler: (() => void | Promise<void>) | undefined, missing: string) => {
+    if (pending() !== undefined) return 'Your answer is being sent.'
+    return decisionReason({
       state: state(),
       disabledReason: local.disabledReason,
       hasHandler: handler !== undefined,
       unavailableFallback: 'This request cannot be answered right now.',
       missingFallback: missing,
     })
+  }
   const approveReason = () => reasonFor(local.onApprove, 'Approving is not available here.')
   const denyReason = () => reasonFor(local.onDeny, 'Denying is not available here.')
   // One sentence per distinct reason, so two identical reasons are not read twice.

@@ -208,6 +208,18 @@ function LineView(props: { line: AnsiLine; wrap: boolean }) {
   )
 }
 
+function sameAnsiLine(left: AnsiLine, right: AnsiLine): boolean {
+  return (
+    left.truncated === right.truncated &&
+    left.segments.length === right.segments.length &&
+    left.segments.every(
+      (segment, index) =>
+        segment.text === right.segments[index]?.text &&
+        segment.style === right.segments[index]?.style
+    )
+  )
+}
+
 function StatusReadout(props: { status: TerminalStatus }) {
   return (
     // A live region, so a command that finishes while the reader is elsewhere is
@@ -306,9 +318,22 @@ export function Terminal(props: TerminalProps) {
     )
   )
 
-  // Where the reader parked, as a count of lines since the output began.
-  const [parked, setParked] = createSignal<{ epoch: number; end: number }>()
-  const total = () => parser.droppedLines + parser.lines.length
+  const outputRows = createMemo(
+    () => {
+      revision()
+      const rows = parser.lines.slice()
+      const open = parser.openLine()
+      if (open) rows.push(open)
+      return rows
+    },
+    [],
+    { equals: false }
+  )
+  // Where the reader parked, as a count of lines since the output began. An open
+  // line is a row too: freeze its snapshot so streamed characters and CR redraws
+  // do not rewrite the text under a parked reader.
+  const [parked, setParked] = createSignal<{ epoch: number; end: number; open?: AnsiLine }>()
+  const total = () => parser.droppedLines + outputRows().length
   const anchorEnd = () => {
     const current = revision()
     const position = parked()
@@ -316,27 +341,36 @@ export function Terminal(props: TerminalProps) {
   }
   const lineWindow = createMemo(() => {
     revision()
-    return terminalWindow(parser.lines.length, parser.droppedLines, limit(), anchorEnd())
+    return terminalWindow(outputRows().length, parser.droppedLines, limit(), anchorEnd())
   })
-  // Sliced fresh each time, but the lines inside are the parser's own immutable
-  // objects, so `For` keeps every finished line's DOM and only adds and removes
-  // at the ends.
-  const finished = createMemo(
+  // Finished rows keep their parser identity. If an open row existed when the
+  // reader parked, substitute its immutable snapshot until they jump to latest.
+  const visibleRows = createMemo(
     () => {
       revision()
-      return parser.lines.slice(lineWindow().start, lineWindow().end)
+      const start = lineWindow().start
+      const end = lineWindow().end
+      const rows = outputRows().slice(start, end)
+      const position = parked()
+      if (position?.epoch === revision() && position.open) {
+        const retainedIndex = position.end - 1 - parser.droppedLines
+        if (retainedIndex >= start && retainedIndex < end) {
+          rows[retainedIndex - start] = position.open
+        }
+      }
+      return rows
     },
     [],
     { equals: false }
   )
-  const open = createMemo(
-    () => {
-      revision()
-      return parser.openLine()
-    },
-    undefined,
-    { equals: false }
-  )
+  const changedParkedLine = () => {
+    const position = parked()
+    if (position?.epoch !== revision() || !position.open) return false
+    const retainedIndex = position.end - 1 - parser.droppedLines
+    const current = outputRows()[retainedIndex]
+    return current !== undefined && !sameAnsiLine(position.open, current)
+  }
+  const newerRows = () => lineWindow().later + (changedParkedLine() ? 1 : 0)
 
   let scroller: HTMLDivElement | undefined
   const following = () => anchorEnd() === undefined
@@ -346,8 +380,11 @@ export function Terminal(props: TerminalProps) {
     const atEnd = isAtBottom(scroller.scrollHeight, scroller.scrollTop, scroller.clientHeight)
     const position = anchorEnd()
     if (!atEnd) {
-      if (position === undefined) setParked({ epoch: revision(), end: total() })
-    } else if (position !== undefined && position >= total()) {
+      if (position === undefined) {
+        const currentEpoch = revision()
+        setParked({ epoch: currentEpoch, end: total(), open: parser.openLine() })
+      }
+    } else if (position !== undefined && position >= total() && !changedParkedLine()) {
       // Back at the end of a view with nothing newer: nothing was missed.
       setParked(undefined)
     }
@@ -475,7 +512,7 @@ export function Terminal(props: TerminalProps) {
             <Button
               variant="ghost"
               size="2xs"
-              onClick={() => setLimit(revealEarlier(limit(), pageSize(), parser.lines.length))}
+              onClick={() => setLimit(revealEarlier(limit(), pageSize(), outputRows().length))}
             >
               Show {Math.min(pageSize(), lineWindow().revealable).toLocaleString()} earlier
             </Button>
@@ -511,18 +548,13 @@ export function Terminal(props: TerminalProps) {
                 small() ? 'px-2 py-1.5' : 'px-3 py-2'
               )}
             >
-              <For each={finished()}>
+              <For each={visibleRows()}>
                 {(line) => <LineView line={line} wrap={local.wrap === true} />}
               </For>
-              {/* A half-written line is drawn only where the finished lines above
-                  reach the end; after a parked window it would not follow them. */}
-              <Show when={lineWindow().later === 0 ? open() : undefined}>
-                {(line) => <LineView line={line()} wrap={local.wrap === true} />}
-              </Show>
             </pre>
           </Show>
         </div>
-        <Show when={lineWindow().later > 0}>
+        <Show when={newerRows() > 0}>
           <Button
             variant="secondary"
             size="2xs"
@@ -532,8 +564,7 @@ export function Terminal(props: TerminalProps) {
             <ArrowDown aria-hidden="true" />
             Jump to latest
             <span class="text-muted-foreground tabular-nums">
-              ({lineWindow().later.toLocaleString()} newer{' '}
-              {lineWindow().later === 1 ? 'line' : 'lines'})
+              ({newerRows().toLocaleString()} newer {newerRows() === 1 ? 'line' : 'lines'})
             </span>
           </Button>
         </Show>

@@ -229,6 +229,17 @@ test('a locked questionnaire says why, and the reason describes the controls', a
   expect(await submissions(page)).toEqual([])
 })
 
+test('Send is disabled with a reason when the host has no submit handler', async ({ page }) => {
+  const questionnaire = page.locator('#no-submit')
+  const send = questionnaire.getByRole('button', { name: 'Send answer' })
+  const reason = 'Sending answers is not available here.'
+
+  await expect(send).toBeDisabled()
+  await expect(questionnaire.getByText(reason, { exact: true })).toBeVisible()
+  await expect(send).toHaveAccessibleDescription(reason)
+  await expect(questionnaire.getByRole('textbox', { name: 'Your answer' })).toBeEnabled()
+})
+
 test('answered and expired questionnaires are a record, not a form', async ({ page }) => {
   const answered = page.locator('#answered')
   const rows = await answered.evaluate((section) =>
