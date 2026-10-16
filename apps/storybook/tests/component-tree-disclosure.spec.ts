@@ -16,6 +16,7 @@ import { bundleFixture } from './fixture-bundle'
 declare global {
   interface Window {
     treeDisclosureLogs: Record<string, string[]>
+    treeDisclosureHost: Record<string, Record<string, (...values: unknown[]) => void>>
   }
 }
 
@@ -367,12 +368,7 @@ const host = (
   ...args: unknown[]
 ) =>
   page.evaluate(
-    ({ target, name, values }) =>
-      (
-        window as unknown as {
-          treeDisclosureHost: Record<string, Record<string, (...values: unknown[]) => void>>
-        }
-      ).treeDisclosureHost[target]![name]!(...values),
+    ({ target, name, values }) => window.treeDisclosureHost[target]![name]!(...values),
     { target: mode, name: call, values: args }
   )
 
@@ -662,7 +658,7 @@ test.describe('collapsing an ancestor', () => {
       // The host hides the focused row and focus goes to a control outside the tree
       // before any queued recovery has run.
       await page.evaluate((m) => {
-        window.treeDisclosureHost[m]!.setExpanded('repo-a', false)
+        window.treeDisclosureHost[m]!.setExpanded!('repo-a', false)
         document.getElementById('outside')!.focus()
       }, mode)
       await page.evaluate(() => new Promise<void>((done) => setTimeout(done, 50)))
