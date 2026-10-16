@@ -471,9 +471,9 @@ async function main(): Promise<void> {
   const version = spawnSync(join(repo, 'node_modules', '.bin', 'vp'), ['--version'], {
     encoding: 'utf8',
   })
-  notes.push(`vp: ${version.stdout.trim().split('\n').filter(Boolean).join(' | ')}`)
+  notes.push(`vp: ${version.stdout.trim().split('\n')[0]}`)
   notes.push(
-    `platform: ${process.platform}-${process.arch}, bun ${Bun.version}, node ${process.version}`
+    `platform: ${process.platform}-${process.arch}, bun ${Bun.version}, node ${spawnSync('node', ['--version'], { encoding: 'utf8' }).stdout.trim()}`
   )
   notes.push(`base: ${git(repo, 'rev-parse', 'HEAD').trim()}`)
   if (git(repo, 'status', '--porcelain').trim())
