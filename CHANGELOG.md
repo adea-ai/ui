@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.139.1](https://github.com/adea-ai/ui/compare/v0.139.0...v0.139.1) (2026-10-16)
+
+
+### Maintenance
+
+* **ci:** add an opt-in Vite Task cache proof beside Turbo ([#449](https://github.com/adea-ai/ui/issues/449)) ([d661be7](https://github.com/adea-ai/ui/commit/d661be7ac6a0cb29ef40bda535da294380374c8e))
+
 ## [0.139.0](https://github.com/adea-ai/ui/compare/v0.138.1...v0.139.0) (2026-10-16)
 
 
