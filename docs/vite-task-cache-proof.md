@@ -36,12 +36,26 @@ symlink happen only inside a disposable root, and:
   is renamed aside, and a name collision throws before anything is removed;
 - cleanup undoes only recorded mutations, so a run that never called `useCache` (the static
   `actions` check) removes nothing.
+- every `vp` subprocess gets a sanitized environment. Vite Task reads an undocumented
+  `VITE_CACHE_PATH` (found in the binary and confirmed: with it set, entries went to that directory and
+  the scratch symlink stayed empty) ahead of the `node_modules/.vite/task-cache` symlink, so an inherited
+  value would have sent the proof to an external cache. `VITE_CACHE_PATH` and `VP_REMOTE_CACHE*` are removed
+  centrally, for tasks, killed runs and the nested harness alike;
+- the run is bounded: a single `vp` run is killed after 5 minutes, the whole harness after 60, writers that keep
+  failing end their scenario instead of being waited on forever, and `finally` stops and awaits background
+  writers (letting a writer finish its round so its exit still counts, killing only one that outlasts a grace
+  period) before the worktrees and scratch files are removed. SIGINT and SIGTERM run the same cleanup.
 
 The `safety` scenario proves it against a dirty fixture checkout (tracked edits, a changed
 file mode, an untracked file, and a pre-existing task cache as a symlink, and as a real
 directory with an older backup beside it): a normal run, an `actions`-only run and a run that
 fails right after its first edit (`PROOF_INJECT_FAILURE=1`) all leave every edit, mode,
 untracked file, symlink target, cache directory and backup byte for byte as they were.
+The same scenario sets `VITE_CACHE_PATH`, `VP_REMOTE_CACHE` and `VP_REMOTE_CACHE_URL` in the harness's
+environment and checks that an external sentinel cache stays untouched while the scratch cache receives the
+entries (cold run executes, warm run hits). With the sanitizing disabled, that check fails. A restore run whose
+writers always fail (`PROOF_INJECT_WRITER_FAILURE=1`) must end non-zero, report the failed exits, and leave no
+worktree behind.
 Before this change the harness ran `git checkout --` on the checkout it was started from and
 removed an existing cache symlink without restoring it; the earlier head `e75aebb` was run
 against a throwaway dirty worktree and confirmed to wipe a pre-existing edit and the symlink.
@@ -119,12 +133,18 @@ Vite Task warm build (0.3 to 1.2 s across runs).
      would let concurrent runs archive each other's files, which the first draft of this scenario did), 12
      copies per method taken during writes, 36 replays per method:
 
-     | Copy method                                | Replayed hits | Wrong output | Unusable |
-     | ------------------------------------------ | ------------- | ------------ | -------- |
-     | directory copy                             | 36            | 0            | 0        |
-     | `VACUUM INTO`, then archives               | 36            | 0            | 0        |
-     | archives, then `VACUUM INTO`               | 36            | 0            | 0        |
-     | `cache.db` file, then archives (no `-wal`) | 36            | 0            | 0        |
+     | Copy method                                | Status        | Replayed hits                 | Wrong | Unusable |
+     | ------------------------------------------ | ------------- | ----------------------------- | ----- | -------- |
+     | `VACUUM INTO`, then archives               | supported     | 36 of 36                      | 0     | 0        |
+     | archives, then `VACUUM INTO`               | reported only | 36 of 36                      | 0     | 0        |
+     | `cache.db` file, then archives (no `-wal`) | reported only | 36 of 36                      | 0     | 0        |
+     | directory copy during writes               | reported only | 27 of 27 (3 copies not taken) | 0     | 0        |
+
+     Only `VACUUM INTO` then archives is held to a full result: every entry that had finished before the copy must
+     replay as a hit with identical bytes (at least 8 copies, zero misses, zero unusable). The other methods are
+     only held to never serving wrong bytes; their hits, misses and unusable replays are reported, not required,
+     because they are not documented transports for a live cache (a bare database copy was torn in the snapshot
+     run). A directory copy is supported after the writers stop, which the next paragraph covers.
 
      A copy taken after the writers stopped replayed every sampled entry as a hit with identical bytes. After
      eight writers killed at staggered points (four at a time, one per worktree) and four that finished, a copy
