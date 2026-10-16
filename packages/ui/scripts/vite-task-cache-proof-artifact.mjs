@@ -1,6 +1,6 @@
 // Writes a deterministic, seed-dependent output tree for the `proof:artifact` task, so the
 // cache proof can tell a correct restored output from a stale or truncated one. The seed is
-// the declared `PROOF_TOOLCHAIN` variable. About 3 MB across nine files, no network, no input.
+// the declared `PROOF_TOOLCHAIN` variable. About 0.5 MB across nine files, no network, no input.
 import { createHash } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
@@ -10,7 +10,7 @@ mkdirSync(dir, { recursive: true })
 
 let block = createHash('sha256').update(seed).digest()
 const chunks = []
-for (let index = 0; index < 96_000; index += 1) {
+for (let index = 0; index < 16_000; index += 1) {
   block = createHash('sha256').update(block).digest()
   chunks.push(block)
 }

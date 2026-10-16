@@ -894,6 +894,7 @@ async function restoreReplay(): Promise<void> {
       const run = await startVp('proof:artifact', { env: { PROOF_TOOLCHAIN: token } })
       writerExits.push(run.exit)
       if (run.exit === 0) completed.push(token)
+      await sleep(120)
     }
   })
   while (completed.length < 6) await sleep(50)
@@ -917,6 +918,7 @@ async function restoreReplay(): Promise<void> {
       tally.snapshots += 1
       useCache(replayRoot, dest)
       for (const token of finished) tally[await replayEntry(replayRoot, token)] += 1
+      rmSync(dest, { recursive: true, force: true })
     }
   }
   state.running = false
@@ -1442,6 +1444,10 @@ try {
     console.error('cleanup:', error)
   }
   writeFileSync(join(scratch, 'results.json'), JSON.stringify({ notes, rows }, null, 2))
+  // Everything else in the scratch directory is disposable, caches and replayed outputs included.
+  for (const entry of readdirSync(scratch)) {
+    if (entry !== 'results.json') rmSync(join(scratch, entry), { recursive: true, force: true })
+  }
 }
 
 const pad = (text: string, width: number) => text.padEnd(width).slice(0, width)
