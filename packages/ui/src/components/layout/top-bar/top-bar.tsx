@@ -14,8 +14,9 @@ import { cn } from '#lib/utils'
  *
  * The centre track is sized for a lone search field. A bar whose centre holds
  * more than that, such as a search plus an action beside it, passes
- * `centerWidth="wide"`: the centre then stays fluid below 1280px and takes a
- * wider fixed track above it.
+ * `centerWidth="wide"`: the centre then stays fluid below 1280px, never
+ * narrower than 7rem so its controls are not squeezed out by a long leading
+ * group (which scrolls instead), and takes a wider fixed track above it.
  *
  * On a frameless desktop window this row is also the drag region, so it carries
  * `window-drag` and the controls inside it opt back out. `macos-inset` and
@@ -34,8 +35,9 @@ export type TopBarProps = ComponentProps<'header'> & {
   glass?: boolean
   /**
    * How wide the centre track is. `field` (default) suits a lone search field.
-   * `wide` suits a centre that also holds an action: fluid below 1280px, then
-   * a clamp of 32vw up to 672px between equal side tracks.
+   * `wide` suits a centre that also holds an action: fluid below 1280px and
+   * never narrower than 7rem (the side groups scroll to make room), then a
+   * clamp of 32vw up to 672px between equal side tracks.
    */
   centerWidth?: 'field' | 'wide'
 }
@@ -56,7 +58,7 @@ export function TopBar(props: TopBarProps) {
       class={cn(
         'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-card text-card-foreground md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
         local.centerWidth === 'wide' &&
-          'grid-cols-[auto_minmax(0,1fr)_auto] gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_clamp(240px,32vw,672px)_minmax(0,1fr)]',
+          'grid-cols-[auto_minmax(7rem,1fr)_auto] gap-2 md:grid-cols-[auto_minmax(7rem,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_clamp(240px,32vw,672px)_minmax(0,1fr)]',
         local.glass && 'glass-panel',
         local.draggable && 'window-drag',
         /* Each edge gets exactly one inline-padding utility. A window inset

@@ -243,11 +243,41 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
   const mid = await tracks('Wide centre toolbar')
   expect(mid[1]).toBeGreaterThan(1000 * 0.22)
 
+  // The leading title is wide at 200% text. The centre must keep its controls
+  // inside its own track (the side groups scroll instead of squeezing it), and
+  // the document must not overflow.
   for (const width of [1440, 1000, 390, 320]) {
     await page.setViewportSize({ width, height: 844 })
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
-      .toBe(true)
+    for (const factor of [1, 2]) {
+      await page.evaluate((scale) => {
+        document.documentElement.style.fontSize = `${16 * scale}px`
+      }, factor)
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+        .toBe(true)
+      const centre = await page
+        .locator('[data-slot="top-bar"][aria-label="Wide centre toolbar"]')
+        .evaluate((bar) => {
+          const cluster = bar.children[1] as HTMLElement
+          const track = cluster.getBoundingClientRect()
+          const controls = [...cluster.children].map((child) => child.getBoundingClientRect())
+          return {
+            width: track.width,
+            fits: cluster.scrollWidth <= cluster.clientWidth + 1,
+            controlsInside: controls.every(
+              (rect) => rect.left >= track.left - 1 && rect.right <= track.right + 1
+            ),
+            documentFits: track.right <= window.innerWidth,
+          }
+        })
+      expect(centre.fits, `${width}px at ${factor}x text: centre content fits its track`).toBe(true)
+      expect(centre.controlsInside, `${width}px at ${factor}x text: controls inside`).toBe(true)
+      expect(centre.documentFits).toBe(true)
+      expect(
+        centre.width,
+        `${width}px at ${factor}x text: centre keeps 7rem`
+      ).toBeGreaterThanOrEqual(7 * 16 * factor - 1)
+    }
   }
 })
 
