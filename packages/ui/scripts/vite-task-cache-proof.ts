@@ -3,7 +3,7 @@
  *
  * Run: bun packages/ui/scripts/vite-task-cache-proof.ts [scenario ...] [--out=<file>]
  *
- * Scenarios: cold-warm, outputs, worktree, divergence, environment, tools, concurrency,
+ * Scenarios: cold-warm, outputs, worktree, divergence, environment, tools, orch-toolchain, orch-concurrent, concurrency,
  * snapshots, restore, actions, safety, tracking (default: all).
  *
  * The checkout the script is started from is never mutated. Every scenario runs in a
@@ -521,6 +521,158 @@ async function tools(): Promise<void> {
   const platform = stored.some((text) => /x86_64|linux-x64|x64-gnu/.test(text))
   notes.push(
     `tools: the stored fingerprints ${platform ? 'contain' : 'do not contain'} a platform marker`
+  )
+}
+
+/** The toolchain id a run's commands carried, read from the command lines `vp` prints. */
+const idOf = (run: Run) => /ORCH_TOOLCHAIN=(\S+)/.exec(run.raw)?.[1] ?? ''
+
+/**
+ * The ordinary `orch:*` tasks must separate toolchains on their own. This scenario never sets
+ * `PROOF_TOOLCHAIN` (it is removed from the environment), so it exercises the normal workflow, and
+ * checks that the id `vite.config.ts` computes from the real `node`, `bun` and platform and writes into
+ * each command is what invalidates, and that a run whose toolchain cannot be identified does not touch the
+ * cache.
+ *
+ * `vp` puts the workspace `node_modules/.bin` first on a task's PATH, so a wrapper placed there in the
+ * disposable worktree is the `node` or `bun` the tasks see.
+ */
+async function orchToolchain(): Promise<void> {
+  const s = 'orch-toolchain'
+  const task = 'orch:ui:lint'
+  const dir = join(repo, 'node_modules', '.bin')
+  assertDisposable(dir)
+  const noLabel = { PROOF_TOOLCHAIN: undefined }
+  freshCache()
+  const nodePath = spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim()
+  const bunPath = process.execPath
+  const wrapper = (name: string, body: string) => {
+    const file = join(dir, name)
+    writeFileSync(file, `#!/bin/sh\n${body}\n`, { mode: 0o755 })
+    return () => rmSync(file, { force: true })
+  }
+
+  const cold = await vp(s, 'cold, no label', task, 'executed*', { env: noLabel })
+  const base = idOf(cold)
+  check(
+    s,
+    'the id names the platform, node and bun',
+    'true',
+    String(
+      base.startsWith(`${process.platform}-${process.arch}.`) &&
+        /\.node[\d.]+-/.test(base) &&
+        /\.bun[\d.]+-/.test(base)
+    )
+  )
+  await vp(s, 'warm, same toolchain', task, 'hit', { env: noLabel })
+  await vp(s, 'an unrelated label is ignored', task, 'hit', {
+    env: { PROOF_TOOLCHAIN: 'anything-at-all' },
+  })
+
+  // The same version with other bytes: a wrapper script is a different binary.
+  const dropNode = wrapper('node', `exec "${nodePath}" "$@"`)
+  try {
+    const run = await vp(s, 'node with other bytes, same version', task, 'executed*', {
+      env: noLabel,
+    })
+    check(s, 'the id changed (node)', 'true', String(idOf(run) !== '' && idOf(run) !== base))
+  } finally {
+    dropNode()
+  }
+  // The id is a command-line environment value, so each toolchain keeps its own entry (item 5 above).
+  await vp(s, 'back on the original node, its own entry', task, 'hit', { env: noLabel })
+
+  // A different Bun. A wrapper in `node_modules/.bin` is also a different program path, which vp
+  // fingerprints on its own. The second step replaces the wrapper at the same path with another
+  // version, the way an in-place `bun upgrade` would: only the id can tell those apart.
+  const bunWrapper = (version: string) =>
+    wrapper(
+      'bun',
+      `if [ "$1" = "--version" ]; then echo ${version}; exit 0; fi\nexec "${bunPath}" "$@"`
+    )
+  let dropBun = bunWrapper('1.4.98')
+  try {
+    const first = await vp(s, 'bun wrapper, another program path', task, 'executed*', {
+      env: noLabel,
+    })
+    check(s, 'the id changed (bun)', 'true', String(idOf(first) !== '' && idOf(first) !== base))
+    await vp(s, 'bun wrapper warm', task, 'hit', { env: noLabel })
+    dropBun()
+    dropBun = bunWrapper('1.4.99')
+    const second = await vp(s, 'same path, another bun version', task, 'executed*', {
+      env: noLabel,
+    })
+    check(
+      s,
+      'the id changed again (bun, same path)',
+      'true',
+      String(idOf(second) !== '' && idOf(second) !== idOf(first))
+    )
+  } finally {
+    dropBun()
+  }
+  await vp(s, 'back on the original bun', task, 'hit|executed*', { env: noLabel })
+  await vp(s, 'warm again', task, 'hit', { env: noLabel })
+
+  // An identity that cannot be established fails before any cached task runs.
+  const dropBroken = wrapper('bun', 'exit 1')
+  try {
+    const broken = await startVp(task, { env: noLabel })
+    const ranTask = /Found \d+ warnings? and \d+ errors?/.test(broken.raw)
+    const complained = /orch-toolchain:/.test(broken.raw)
+    rows.push({
+      scenario: s,
+      step: 'unidentifiable bun stops the run before the cache',
+      task,
+      expected: 'non-zero exit, orch-toolchain error, task not run',
+      observed: `exit ${broken.exit}, ${complained ? 'error' : 'no error'}, ${ranTask ? 'task ran' : 'task not run'}`,
+      ms: broken.ms,
+      ok: broken.exit !== 0 && complained && !ranTask && broken.outcome !== 'hit',
+    })
+  } finally {
+    dropBroken()
+  }
+  await vp(s, 'recovers on the original toolchain', task, 'hit|executed*', { env: noLabel })
+  notes.push(
+    'orch-toolchain: the ordinary orch:* tasks separated Node/Bun content and version without PROOF_TOOLCHAIN; each toolchain keeps its own entry'
+  )
+}
+
+/**
+ * Two `vp` invocations in one checkout on different toolchains, overlapping. The id is written into each
+ * invocation's own task graph, so neither may take the other's, and each must find its own entry
+ * afterwards. A shared identity file (the first version of this repair) failed this: the second
+ * invocation's `orch:toolchain` replaced the file while the first was still building, and the first
+ * stored its result under the second's identity.
+ *
+ * Toolchain B is a `node` wrapper in a directory outside the checkout, put first on B's PATH only.
+ */
+async function orchConcurrent(): Promise<void> {
+  const s = 'orch-concurrent'
+  const noLabel = { PROOF_TOOLCHAIN: undefined }
+  freshCache()
+  const nodePath = spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim()
+  const wrapDir = join(scratch, 'toolchain-b')
+  mkdirSync(wrapDir)
+  writeFileSync(join(wrapDir, 'node'), `#!/bin/sh\nexec "${nodePath}" "$@"\n`, { mode: 0o755 })
+  const inB = { ...noLabel, PATH: `${wrapDir}:${process.env['PATH'] ?? ''}` }
+  const slow = 'orch:ui:typecheck' // about 20 s: a window of many seconds
+  const fast = 'orch:ui:lint'
+
+  // A starts the build; B starts, runs and finishes while A is still building.
+  const a = startVp(slow, { env: noLabel })
+  await new Promise((done) => setTimeout(done, 6_000))
+  const b = startVp(fast, { env: inB })
+  const [ra, rb] = await Promise.all([a, b])
+  record(s, 'A (default toolchain) while B ran', slow, 'executed*', ra)
+  record(s, 'B (other node) while A built', fast, 'executed*', rb)
+  check(s, 'the two invocations used different ids', 'true', String(idOf(ra) !== idOf(rb)))
+
+  await vp(s, 'A warm finds its own entry', slow, 'hit', { env: noLabel })
+  await vp(s, 'B warm finds its own entry', fast, 'hit', { env: inB })
+  await vp(s, "A does not reuse B's entry", fast, 'executed*', { env: noLabel })
+  notes.push(
+    'orch-concurrent: two overlapping invocations on different toolchains each stored and found their own entry'
   )
 }
 
@@ -1583,6 +1735,8 @@ const scenarios: Record<string, () => Promise<void>> = {
   divergence,
   environment,
   tools,
+  'orch-toolchain': orchToolchain,
+  'orch-concurrent': orchConcurrent,
   tracking,
   concurrency,
   snapshots,

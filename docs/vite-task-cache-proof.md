@@ -16,6 +16,9 @@ secret or a credential.
 | `packages/ui/scripts/vite-task-cache-proof-artifact.mjs` | Writes a small, seed-dependent output tree for `proof:artifact`, so a restored cache entry can be checked byte for byte.                                                                                     |
 | `.github/workflows/vite-task-cache-proof.yml`            | Opt-in, non-required Actions job. Runs on `workflow_dispatch` and when a ready pull request touches the proof's own files.                                                                                   |
 
+The `orch:*` tasks and `vp:*` scripts added to `vite.config.ts` and the root `package.json` are described under
+[Orchestration tasks](#orchestration-tasks-orch). They are additive and unrelated to the harness.
+
 `turbo.json` is untouched, so the production graph (`build` with `^build`, the declared
 outputs) is exactly what it was. The tasks wrap `packages/ui` scripts directly and do
 not reproduce Turbo's package graph.
@@ -171,14 +174,153 @@ stale result. Every task that starts a `bun` script or `bun test` therefore decl
 (`{ auto: true }` plus the script, package and test globs). With them, editing a script or a test file is a miss
 that names the file.
 
+## Orchestration tasks (`orch:*`)
+
+The same `vp` runner now also orchestrates the ordinary checks, as an **additive** layer. Nothing in
+`validation.yml`, `verify` or any required lane calls it, `turbo.json` and `bun.lock` are unchanged, and the root
+`turbo` scripts (`build`, `lint`, `typecheck`, `test`, `test:unit`) still decide what is required. Bun still runs
+every test; there is no Vitest here.
+
+| Script (`bun run …`) | Runs (`vp run …`)                                                          | Mirrors in Turbo                           |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------ |
+| `vp:build`           | `orch:build` → `orch:ui:build`                                             | `turbo run build --filter=@adea-ai/ui`     |
+| `vp:typecheck`       | `orch:typecheck` ⇒ `orch:ui:typecheck`, `orch:storybook:typecheck`         | `turbo run typecheck`                      |
+| `vp:lint`            | `orch:lint` ⇒ `orch:ui:lint`, `orch:storybook:lint`, `orch:root:lint`      | `turbo run lint && oxlint --deny-warnings` |
+| `vp:test`            | `orch:test` ⇒ `orch:test:coverage` ⇒ `orch:ui:test`, `orch:storybook:test` | `turbo run test && bun run test:coverage`  |
+| `vp:verify`          | test, lint, typecheck, build in that order                                 | the four above (not the rest of `verify`)  |
+
+Design, each point measured:
+
+- **Task names are prefixed.** A task and a root script may not share a name, so the scripts are `vp:*` and the
+  tasks `orch:*`. The `proof:*` tasks stay for the harness.
+- **Aggregates are uncached no-op tasks that depend on the real checks (⇒ above).** Vite+ 1.3.0 has no
+  command-less task (a task that only lists `dependsOn` fails to load: "data did not match any variant of
+  untagged enum UserTaskDefinition"), so `orch:test`, `orch:lint` and `orch:typecheck` are `node -e 0` with
+  `cache: false` and `dependsOn`. `vp` runs independent `dependsOn` tasks concurrently (limit 4, its default,
+  left unchanged), like Turbo's package graph; an earlier version chained them with `vp run … && vp run …`,
+  which serialised the library and workshop checks (cold `vp:typecheck` 42.9 s against Turbo's 22 s). Each real
+  check is still its own cached task. `orch:build` is still one nested `vp run orch:ui:build`.
+- **Ordering follows Turbo's graph, not extra reads.** `orch:storybook:test` depends on `orch:ui:build`, as
+  `test` has `dependsOn: ["^build"]`, and `orch:test:coverage` waits for both package tests, as the root `test`
+  script runs it after `turbo run test`. `lint` and `typecheck` have no `dependsOn` in `turbo.json`, so neither
+  workshop task waits for the build here. Auto tracking had shown the workshop's `oxlint` and `tsc` reading
+  `packages/ui/dist`; both tasks now exclude it (`'!packages/ui/dist/**'`) and declare the library and
+  Bun-loaded sources instead. The workshop resolves `@adea-ai/ui` to `packages/ui/src/index.ts`
+  (`apps/storybook/tsconfig.json`), so its type check does not need `dist`; touching a `dist` file no longer
+  invalidates either task, and a library source edit still does.
+- **Bun-loaded files are explicit inputs** (`bunLoaded`, plus `libSources`), the finding above.
+  `orch:ui:build` declares `packages/ui/dist/**` as output, as `turbo.json` does.
+- **The toolchain is detected, not labelled, and held per invocation.** The `proof:*` tasks separate toolchains
+  only where `PROOF_TOOLCHAIN` is set (finding 5 above). The `orch:*` tasks do not use it. Each time `vp` loads
+  `vite.config.ts`, `packages/ui/scripts/orch-toolchain.mjs` finds the `node` and `bun` on the PATH the tasks
+  will get (the workspace `node_modules/.bin`, then the package-manager `bun`, then the shell's) and builds an
+  id from the platform, the glibc version, and each binary's `--version` output and sha256 (no path, so the same
+  bytes elsewhere keep their entries), for example `linux-x64.glibc2.39.node24.18.0-41a74efb34cb.bun1.4.0-ec3dacd9560f`.
+  The id is written into the text of every cached `orch:*` command as `ORCH_TOOLCHAIN=<id> bun run …`, which
+  Vite Task fingerprints as an environment value, so a different Node, Bun or platform is a miss
+  (`env 'ORCH_TOOLCHAIN' changed`) and each toolchain keeps its own entry. Nothing is shared between
+  invocations: the id is part of that invocation's own task graph. (A first version wrote it to one file in
+  `node_modules/.cache`; a second `vp` invocation on another toolchain could replace that file between the first
+  one's prerequisite and its cache lookup, so the first stored its result under the second's identity. The
+  `orch-concurrent` scenario reproduces that on the first version and passes now.)
+  Every invocation also runs the uncached `orch:toolchain` task first, with the PATH the tasks really get. It
+  recomputes the id and exits non-zero unless it equals the one in the commands, or if either binary is
+  missing, prints no version or fails; then no dependent task runs or touches the cache. Things worth knowing:
+  - `vp` puts `node_modules/.bin` first on a task's PATH, then a package-manager `bun` it manages from the
+    `packageManager` field (`~/.local/share/vite-plus/package_manager/bun/1.4.0`), then the shell's PATH. The
+    `bun` that runs the tasks is therefore not necessarily the one a shell prints; the id is built where the
+    tasks look. (The first local qualification put a separately downloaded `bun` first in the shell PATH; the
+    tasks ran on the managed one.)
+  - The hash of each binary is remembered by path, size and modification time in
+    `node_modules/.cache/orch-toolchain-memo.json` (written atomically; a hash is not remembered if the file
+    changed while it was read), which makes a warm run cost well under a second instead of 5 s. A binary
+    replaced with different bytes of the same size and the same modification time would not be noticed. This
+    file only caches hashes; it is not an identity and no task reads it.
+  - The check runs once per invocation, before the first dependent task. A binary replaced after it and before a
+    task starts is not noticed, and a cache **hit** is never re-verified. `vp run --ignore-depends-on` skips the
+    check (and the ordering above); the id in the commands is still per invocation, but do not use the flag for
+    qualification.
+  - Vite Task also fingerprints the resolved program path of a command, so a different `bun` at a different path
+    is a miss for that reason too; the id is what separates two toolchains at the same path, as an in-place
+    upgrade would.
+- **`coverage/` and lint.** `bun test --coverage` always creates the root `coverage/` (`--coverage-dir` and a
+  text-only reporter did not avoid it in bun 1.4.0), `oxlint` lists the workspace root, and a directory appearing
+  or disappearing changes every lint fingerprint; a negated glob does not hide it. `vp:verify` therefore runs the
+  tests before lint so a cold and a warm run lint in the same state. Run on its own after a clean checkout, the
+  first `vp:lint` after the first `vp:test` is one extra miss.
+
+### Local qualification
+
+linux-x64, `node` 24.18.0 first on the shell PATH, `vp` 1.3.0, base `ae730b0`, repair head as recorded in the
+receipts, a scratch cache (`VITE_CACHE_PATH`, a temporary directory). **`PROOF_TOOLCHAIN` was unset** (the script
+prints `PROOF_TOOLCHAIN=unset`), so this is the ordinary workflow. The id in the commands was
+`linux-x64.glibc2.39.node24.18.0-41a74efb34cb.bun1.4.0-ec3dacd9560f` (the managed `bun`, see above). Every exit
+code was 0. The figures below were measured at `262045da` plus the parallel-graph change (a scratch worktree, the
+change uncommitted); the mutation paragraph and the toolchain scenarios that follow were first recorded on
+`49930a6` and the harness (197 assertions) was rerun on the new graph.
+
+| Run (wall time, median of 4) | `orch:test`         | `orch:lint`   | `orch:typecheck`  | `orch:build`    |
+| ---------------------------- | ------------------- | ------------- | ----------------- | --------------- |
+| Cold, in sequence            | 37.1 s, 0 of 4 hits | 3.6 s, 0 of 3 | 22.6 s, 0 of 2    | 0.8 s\*, 1 of 1 |
+| Warm                         | 0.7-0.8 s, 4 of 4   | 0.5 s, 3 of 3 | 0.5-0.6 s, 2 of 2 | 0.6 s, 1 of 1   |
+| After `rm -rf dist coverage` | 0.7 s, 4 of 4       | 0.5 s, 3 of 3 | 0.5 s, 2 of 2     | 0.6 s, 1 of 1   |
+
+\* a hit on `orch:ui:build`, which an earlier task in the same run had already executed.
+Matched against Turbo at `262045da` (8 replicates in ABBA order, fresh empty caches, the same `node` and `bun`),
+cached core only: cold `test` 22.0 s against 20.8 s, `lint` 2.5 s against 2.4 s, `typecheck` 22.3 s against
+22.1 s; warm, `vp` costs 0.4-0.8 s per command against Turbo's 0.1 s. `packages/ui/dist` was identical in all 24
+cold and restored builds (1446 files, 5,492,818 bytes, a sha256 over the sorted path and file hashes of
+`8609c044336ae162...`). The counts include the build that `orch:test` depends on, not the two uncached nodes.
+
+Mutations on a clean tree (all reverted): appending a comment to `packages/ui/src/lib/version-notes.ts` missed
+every lint and typecheck task and the build, and the tests then failed for the right reason (the committed
+registry copy in `public/r` no longer matched, exit 1), not from a stale hit; appending to the bun-loaded
+`packages/ui/scripts/check-cn-tables.ts` missed all four test tasks; a `debugger` statement in `src` was a miss and
+`orch:ui:lint` exited 1. Reverting the source edit re-executed (A→B→A: one entry per key, see above), so a
+branch that alternates with `main` keeps missing.
+
+The `orch-toolchain` harness scenario (`bun packages/ui/scripts/vite-task-cache-proof.ts orch-toolchain`, in a
+disposable worktree, `PROOF_TOOLCHAIN` removed from the environment) covers the toolchain: a cold run executes
+and a warm run on the same toolchain hits; setting `PROOF_TOOLCHAIN` to any value is still a hit; a `node`
+wrapper (same version, other bytes) misses (`env 'ORCH_TOOLCHAIN' changed`) and returning to the original `node`
+hits its own entry; a `bun` wrapper at a new path misses, and the same path reporting another version misses
+again; a `bun` that exits 1 stops the run with the `orch-toolchain:` error before the cached task runs.
+The `orch-concurrent` scenario starts a slow invocation (`orch:ui:typecheck`, about 20 s) and, six
+seconds in, a second one on another `node` (a wrapper first on its PATH only); both finish, and then each finds
+its own entry (hit) while the first does not reuse the second's. Run against the first version of this repair
+(one shared identity file) the same scenario fails: the first invocation's warm run is a miss
+(`'node_modules/.cache/orch-toolchain.json' modified`), because its result had been stored under the other
+toolchain's identity. With the id removed from the commands, the same-path `bun` version change would be a
+stale hit, which is the defect the repair began from.
+
+The full harness, run on a local commit of this graph (a throwaway clone; it runs only committed `HEAD`) with
+`PROOF_TOOLCHAIN` unset and `node` 24.18.0 first on the PATH, has 197 assertions (the 175 above plus 22 for
+`orch-toolchain` and `orch-concurrent`): 197 ok, 0 FAIL. The `proof:*` negative controls are unchanged: in the
+`tools` scenario a `bun` or `node` with other bytes is still a stale hit under the `proof:*` tasks, and a changed
+`PROOF_TOOLCHAIN` is still a miss.
+
+### Not done, and not claimed
+
+- **No hosted proof.** No Actions run, cold, warm or restored, exists for `orch:*`; this was run locally only. The
+  trusted-writer pattern in `vite-task-cache-proof.yml` covers the `proof:*` tasks only.
+- **The required lanes still run Turbo.** Code Foundry v1.48.1 is already published with Vite+ support, but
+  `validation.yml` is still pinned to 1.44.3. What remains before a required lane can use `vp run` is
+  consumer synchronization (updating this repository's pin and its workflows to the published version) and
+  qualification of the resulting lanes. That is separate from this change; no lane is moved here.
+- **Coverage is not Turbo parity.** Turbo's `--filter`, `--affected`, remote cache, `verify:changed` and the
+  storybook, Playwright and `check:packed-*` lanes are not mirrored; `build-storybook` is not an `orch` task.
+- **Cache keys are per task, not per package.** A change to an unrelated file under `libSources` invalidates the
+  whole lane; the explicit globs are deliberately wide because narrower ones missed reads in the past.
+
 ## Gaps and what is not claimed
 
 - **Not parity with Turbo.** Turbo's warm path is faster, there is no affected-package selection, and the
   tasks wrap `packages/ui` scripts instead of reproducing the workspace graph (`dependsOn: ["^build"]`).
 - **Stale-hit risk is structural.** Any task whose tool reads files outside automatic tracking can replay a
   stale result until its inputs are declared. A new task needs a negative control before it is trusted.
-- **Toolchain and platform separation is declared, not detected.** It holds only where `PROOF_TOOLCHAIN` (or an
-  equivalent) is set. Nothing here ran on macOS or Windows.
+- **Toolchain and platform separation.** For `orch:*` it is detected (see above). For the `proof:*` tasks it is
+  still declared: it holds only where `PROOF_TOOLCHAIN` is set, and the `tools` scenario keeps their negative
+  controls (a `bun` or `node` with other bytes is a stale hit there). Nothing here ran on macOS or Windows.
 - **One entry per key.** No A to B to A reuse for file changes; alternating source states keep missing.
 - **No deduplication of concurrent identical runs.**
 - **File-copy snapshots of the database can be torn while writers are active.** `VACUUM INTO` was
