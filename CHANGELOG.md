@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.139.0](https://github.com/adea-ai/ui/compare/v0.138.1...v0.139.0) (2026-10-16)
+
+
+### Features
+
+* **top-bar:** add centerWidth wide for a centre that holds more than a search field ([#446](https://github.com/adea-ai/ui/issues/446)) ([7e51633](https://github.com/adea-ai/ui/commit/7e5163399830ee7bf0401661c5ed85649dc64feb))
+
+
+### Bug Fixes
+
+* **secret-input-group:** add and remove the clear action as onClear changes ([#447](https://github.com/adea-ai/ui/issues/447)) ([cb7caaf](https://github.com/adea-ai/ui/commit/cb7caaf840303d0e58b16064650817aadb48d2b4))
+
 ## [0.138.1](https://github.com/adea-ai/ui/compare/v0.138.0...v0.138.1) (2026-10-16)
 
 
