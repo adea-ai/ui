@@ -101,7 +101,9 @@ into markers with `placeCitationMarkers(text, [{ end, numbers }], sourceCount)`.
 It never reads the text for citations: it inserts `[^n]` at each span end, one
 marker per position (at most six numbers, chained beyond that), and uses
 `parseMessageText` as the oracle, so a marker that would land inside a code span,
-a fence, a link label or split emphasis is skipped and counted in `skipped`. If the
+a fence, a link label or split emphasis is skipped and counted in `skipped`. `ends` lists the positions that did get a
+marker, so a host counts its own spans against it (two spans that end together
+share one marker and both are represented). If the
 text already contains something that reads as a marker (`[^1`), it places nothing
 and reports `collision`, because the host's offsets could no longer be trusted to
 mean what the producer meant. Spans the host cannot place are the host's to state.

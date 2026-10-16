@@ -34,6 +34,8 @@ export type PlacedCitations = Readonly<{
   text: string
   /** Distinct end positions that received a marker. */
   placed: number
+  /** Those positions, ascending: a span is represented exactly when its end is among them. */
+  ends: readonly number[]
   /** Distinct end positions left without one, for any reason. */
   skipped: number
   /** The text had footnote marks of its own, so nothing was placed. */
@@ -99,9 +101,9 @@ export function placeCitationMarkers(
   const candidates = [...byEnd.entries()]
     .toSorted(([left], [right]) => left - right)
     .map(([end, numbers]) => ({ end, marker: marker([...numbers].toSorted((a, b) => a - b)) }))
-  if (candidates.length === 0) return { text, placed: 0, skipped: 0, collision: false }
+  if (candidates.length === 0) return { text, placed: 0, ends: [], skipped: 0, collision: false }
   if (FOOTNOTE.test(text)) {
-    return { text, placed: 0, skipped: candidates.length, collision: true }
+    return { text, placed: 0, ends: [], skipped: candidates.length, collision: true }
   }
 
   const insert = (chosen: readonly { end: number; marker: string }[]): string => {
@@ -120,7 +122,13 @@ export function placeCitationMarkers(
 
   // Usual case: every position is prose, one check covers all of them.
   if (holds(candidates)) {
-    return { text: insert(candidates), placed: candidates.length, skipped: 0, collision: false }
+    return {
+      text: insert(candidates),
+      placed: candidates.length,
+      ends: candidates.map((candidate) => candidate.end),
+      skipped: 0,
+      collision: false,
+    }
   }
   const accepted: { end: number; marker: string }[] = []
   for (const candidate of candidates) {
@@ -129,6 +137,7 @@ export function placeCitationMarkers(
   return {
     text: insert(accepted),
     placed: accepted.length,
+    ends: accepted.map((candidate) => candidate.end),
     skipped: candidates.length - accepted.length,
     collision: false,
   }

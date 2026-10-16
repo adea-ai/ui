@@ -56,6 +56,8 @@ describe('placeCitationMarkers', () => {
     )
     expect(out.text).toBe('Use `npm i` now.[^2]\n\n```ts\nconst a = 1\n```\n\nDone.[^1]')
     expect(out).toMatchObject({ placed: 2, skipped: 2 })
+    // `ends` names exactly the positions that got a marker, so a host can count its own spans.
+    expect(out.ends).toEqual([at(text, 'now.'), at(text, 'Done.')])
   })
 
   test('a position that would change how the prose reads is dropped', () => {
@@ -69,13 +71,14 @@ describe('placeCitationMarkers', () => {
   test('footnote marks the text already has mean no markers at all', () => {
     const text = 'Typed by a model[^1] and cited.'
     const out = placeCitationMarkers(text, [{ end: text.length, numbers: [1] }], 1)
-    expect(out).toEqual({ text, placed: 0, skipped: 1, collision: true })
+    expect(out).toEqual({ text, placed: 0, ends: [], skipped: 1, collision: true })
   })
 
   test('no citations is the text untouched', () => {
     expect(placeCitationMarkers('plain', [], 3)).toEqual({
       text: 'plain',
       placed: 0,
+      ends: [],
       skipped: 0,
       collision: false,
     })
