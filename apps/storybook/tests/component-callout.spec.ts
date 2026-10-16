@@ -251,6 +251,20 @@ const titleGap = (page: Page, calloutId: string) =>
     }
   })
 
+/** Where the title sits in its callout, and whether the callout marked itself title-only. */
+const rendered = (page: Page, id: string) =>
+  page.getByTestId(id).evaluate((callout) => {
+    const title = callout.querySelector('[data-slot="callout-title"]')!
+    const box = callout.getBoundingClientRect()
+    const text = title.getBoundingClientRect()
+    return {
+      above: text.top - box.top,
+      below: box.bottom - text.bottom,
+      margin: getComputedStyle(title).marginBottom,
+      titleOnly: callout.hasAttribute('data-title-only'),
+    }
+  })
+
 test.describe('title spacing', () => {
   const cases = [
     ['a bare text node', 'spacing-text'],
@@ -273,27 +287,49 @@ test.describe('title spacing', () => {
     for (const gap of gaps) expect(gap.withMargin).toBeCloseTo(gaps[0]!.withMargin, 0)
   })
 
-  test('a title-only callout keeps the same padding above and below with mb-0', async ({
-    page,
-  }) => {
-    const only = await page.getByTestId('spacing-only').evaluate((callout) => {
-      const title = callout.querySelector('[data-slot="callout-title"]')!
-      const box = callout.getBoundingClientRect()
-      const text = title.getBoundingClientRect()
-      return { above: text.top - box.top, below: box.bottom - text.bottom }
-    })
-    expect(only.above).toBe(12)
-    expect(only.below).toBe(12)
+  test('a title-only callout ends at its own padding, with no caller class', async ({ page }) => {
+    const only = await rendered(page, 'spacing-only')
+    expect(only).toMatchObject({ above: 12, below: 12, margin: '0px', titleOnly: true })
   })
 
-  test('a title-only callout without mb-0 keeps the 4px margin (documented trade-off)', async ({
+  test('a caller mb-0 on a title-only callout still works and changes nothing', async ({
     page,
   }) => {
-    const below = await page.getByTestId('spacing-only-default').evaluate((callout) => {
-      const title = callout.querySelector('[data-slot="callout-title"]')!
-      return callout.getBoundingClientRect().bottom - title.getBoundingClientRect().bottom
+    const legacy = await rendered(page, 'spacing-only-legacy')
+    expect(legacy).toMatchObject({ above: 12, below: 12, margin: '0px', titleOnly: true })
+  })
+
+  test('empty slots after the title do not count as content', async ({ page }) => {
+    const falsy = await rendered(page, 'spacing-only-falsy')
+    expect(falsy).toMatchObject({ above: 12, below: 12, margin: '0px', titleOnly: true })
+  })
+
+  test('the margin follows the content: it returns when a body arrives and leaves when it goes', async ({
+    page,
+  }) => {
+    expect(await rendered(page, 'spacing-reactive')).toMatchObject({
+      below: 12,
+      margin: '0px',
+      titleOnly: true,
     })
-    expect(below).toBe(16)
+    await page.getByTestId('spacing-toggle').click()
+    expect(await rendered(page, 'spacing-reactive')).toMatchObject({
+      margin: '4px',
+      titleOnly: false,
+    })
+    await page.getByTestId('spacing-toggle').click()
+    expect(await rendered(page, 'spacing-reactive')).toMatchObject({
+      below: 12,
+      margin: '0px',
+      titleOnly: true,
+    })
+  })
+
+  test('a title followed by a body keeps its 4px and is not marked title-only', async ({
+    page,
+  }) => {
+    for (const [, id] of cases)
+      await expect(page.getByTestId(id)).not.toHaveAttribute('data-title-only', /.*/)
   })
 })
 

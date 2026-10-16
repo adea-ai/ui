@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'solid-js'
-import { splitProps } from 'solid-js'
+import { children, createMemo, splitProps } from 'solid-js'
 import { cva, type VariantProps } from '#lib/variants'
 import { cn } from '#lib/utils'
 
@@ -75,15 +75,35 @@ export const calloutVariants = cva(
 
 export type CalloutProps = ComponentProps<'div'> & VariantProps<typeof calloutVariants>
 
+const isRendered = (node: unknown) =>
+  node != null && typeof node !== 'boolean' && (typeof node !== 'string' || node.trim() !== '')
+
+const isCalloutTitle = (node: unknown) =>
+  typeof node === 'object' &&
+  node !== null &&
+  'getAttribute' in node &&
+  typeof node.getAttribute === 'function' &&
+  node.getAttribute('data-slot') === 'callout-title'
+
 export function Callout(props: CalloutProps) {
-  const [local, rest] = splitProps(props, ['class', 'variant', 'size'])
+  const [local, rest] = splitProps(props, ['class', 'variant', 'size', 'children'])
+  const resolved = children(() => local.children)
+  // CSS cannot see text nodes, so the callout looks at what it renders and marks a
+  // title with nothing after it. The title reads the mark to drop its bottom margin.
+  const titleOnly = createMemo(() => {
+    const nodes = resolved.toArray().filter(isRendered)
+    return nodes.length === 1 && isCalloutTitle(nodes[0])
+  })
   return (
     <div
       data-slot="callout"
+      data-title-only={titleOnly() ? '' : undefined}
       role="note"
       class={cn(calloutVariants({ variant: local.variant, size: local.size }), local.class)}
       {...rest}
-    />
+    >
+      {resolved()}
+    </div>
   )
 }
 
@@ -93,22 +113,23 @@ export function Callout(props: CalloutProps) {
  * level would break it. Pass `role="heading"` with `aria-level` where the
  * content does belong in the outline.
  *
- * The title always carries a 4px (`mb-1`) margin below it, whatever follows: a
+ * The title carries a 4px (`mb-1`) margin below it, whatever follows: a
  * paragraph, a list, or bare text. CSS cannot see text nodes, so a selector such
  * as `:last-child` or `:only-child` cannot tell `<Title/>text` (needs the gap)
  * from `<Title/>` (needs none), and `not-last:mb-1` silently dropped the gap for
- * bare text, the most common body. The unconditional margin is the less
- * surprising failure: it is never missing where text follows. The price is the
- * title-only callout, which would end 4px taller than its padding says. Pass
- * `class="mb-0"` there (`cn` lets the caller's margin win); the `WithTitle` story
- * shows it.
+ * bare text, the most common body. So the gap stays the default and the one case
+ * that does not want it is detected by `Callout`, which sees its rendered
+ * children: a callout whose only child is a title carries `data-title-only`, and
+ * the title drops its margin so the block ends at its own padding. A caller never
+ * passes `mb-0` for this. Anything else after the title, text included, keeps the
+ * gap.
  */
 export function CalloutTitle(props: ComponentProps<'div'>) {
   const [local, rest] = splitProps(props, ['class'])
   return (
     <div
       data-slot="callout-title"
-      class={cn('mb-1 font-medium tracking-tight', local.class)}
+      class={cn('mb-1 font-medium tracking-tight in-data-title-only:mb-0', local.class)}
       {...rest}
     />
   )

@@ -1,3 +1,4 @@
+import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import { Callout, CalloutTitle } from '../../src/components/ui/callout/callout'
 import { TextLink } from '../../src/components/ui/text-link/text-link'
@@ -16,6 +17,7 @@ const path =
   '/home/user/projects/adea-ai/ui/packages/ui/src/components/ui/callout/callout.stories.tsx.snapshot'
 
 function Fixture() {
+  const [showBody, setShowBody] = createSignal(false)
   return (
     <main>
       <Callout data-testid="default">Default note</Callout>
@@ -76,13 +78,27 @@ function Fixture() {
           comes first in this body.
         </Callout>
         <Callout data-testid="spacing-only" size="sm">
-          <CalloutTitle data-testid="spacing-only-title" class="mb-0">
-            Title only
+          <CalloutTitle data-testid="spacing-only-title">Title only</CalloutTitle>
+        </Callout>
+        <Callout data-testid="spacing-only-legacy" size="sm">
+          <CalloutTitle data-testid="spacing-only-legacy-title" class="mb-0">
+            Title only, caller margin
           </CalloutTitle>
         </Callout>
-        <Callout data-testid="spacing-only-default" size="sm">
-          <CalloutTitle data-testid="spacing-only-default-title">Title only, default</CalloutTitle>
+        <Callout data-testid="spacing-only-falsy" size="sm">
+          <CalloutTitle>Title only, empty slots</CalloutTitle>
+          {false}
+          {null}
+          {undefined}
+          {''}
         </Callout>
+        <Callout data-testid="spacing-reactive" size="sm">
+          <CalloutTitle>Title, then a body that comes and goes</CalloutTitle>
+          <Show when={showBody()}>Body that arrives later.</Show>
+        </Callout>
+        <button type="button" data-testid="spacing-toggle" onClick={() => setShowBody((on) => !on)}>
+          Toggle body
+        </button>
       </div>
       <div class="mt-4 w-48" data-testid="unbroken-block">
         <Callout data-testid="unbroken-block-token" size="sm">

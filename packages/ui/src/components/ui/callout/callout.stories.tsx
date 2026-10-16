@@ -82,8 +82,8 @@ export const Matrix: Story = {
 }
 
 /**
- * A title line above the body. The title always leaves 4px below it; a title with
- * nothing after it passes `class="mb-0"` so the block ends at its own padding.
+ * A title line above the body. The title leaves 4px below it; a callout with nothing
+ * after the title ends at its own padding, with no class from the caller.
  */
 export const WithTitle: Story = {
   render: () => (
@@ -93,7 +93,7 @@ export const WithTitle: Story = {
         This workspace deploys from the main branch, and releases are cut by Release Please.
       </Callout>
       <Callout variant="info">
-        <CalloutTitle class="mb-0">Title only</CalloutTitle>
+        <CalloutTitle>Title only</CalloutTitle>
       </Callout>
     </div>
   ),
@@ -102,7 +102,8 @@ export const WithTitle: Story = {
 /**
  * Whatever follows the title sits the same 4px below it: bare text, a mix of text
  * with inline code and a link, a link that comes first, and a block child. CSS
- * cannot see text nodes, so the margin is unconditional rather than `:last-child`.
+ * cannot see text nodes, so the margin is the default rather than `:last-child`;
+ * the callout removes it only when the title is all it renders.
  */
 export const TitleSpacing: Story = {
   render: () => (
@@ -125,7 +126,7 @@ export const TitleSpacing: Story = {
         <p>The body is a paragraph element.</p>
       </Callout>
       <Callout size="sm">
-        <CalloutTitle class="mb-0">Title only</CalloutTitle>
+        <CalloutTitle>Title only</CalloutTitle>
       </Callout>
     </div>
   ),
