@@ -141,7 +141,7 @@ control is correct, and the comment is what makes it reviewable.
 
 The list of things a primitive genuinely did not cover is short and worth knowing,
 because each one is a defect that would otherwise be reintroduced: `AlertDialog`
-does not block Escape (Kobalte's is a `Dialog` with a role), `ModalDialog` unmounts
+does not block an outside click (Kobalte's is a `Dialog` with a role), `ModalDialog` unmounts
 while closed and marks the background `inert` (an async close otherwise leaves
 Kobalte's `aria-hidden` bookkeeping behind), and corvu's `CalendarCellTrigger`
 renders **no children of its own** — the day number is the caller's, and omitting it
