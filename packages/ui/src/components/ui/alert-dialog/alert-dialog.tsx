@@ -17,10 +17,11 @@ import { cn } from '#lib/utils'
 /**
  * AlertDialog.
  *
- * A dialog that cannot be dismissed by accident: Escape and a click on the scrim
- * do nothing, and the user must choose one of the actions. That is the whole
- * difference from Dialog, and it is why this exists as its own component rather
- * than a prop — a caller has to reach for it deliberately.
+ * A dialog that cannot be dismissed by accident: a click on the scrim does nothing,
+ * and the user must choose one of the actions. Escape is the keyboard's Cancel: it
+ * closes the dialog exactly as the cancel action does, so nothing is confirmed. That
+ * is the whole difference from Dialog, and it is why this exists as its own
+ * component rather than a prop — a caller has to reach for it deliberately.
  *
  * The consequence is a rule of use: this is for confirming a destructive or
  * irreversible step. Wrapping an ordinary form in an AlertDialog traps someone who
@@ -59,22 +60,26 @@ export function AlertDialogOverlay(props: ComponentProps<typeof KobalteAlertDial
  * The panel.
  *
  * Kobalte's `AlertDialog.Content` is `Dialog.Content` with `role="alertdialog"`
- * and nothing else — Escape and an outside click dismiss it exactly as they
- * dismiss a Dialog. That is a real gap in the primitive, so the blocking is
- * implemented here, and it is the whole difference between this component and a
- * Dialog:
+ * and nothing else — an outside click dismisses it exactly as it dismisses a
+ * Dialog. That is a real gap in the primitive, so the blocking is implemented
+ * here, and it is the whole difference between this component and a Dialog:
  *
- *   - Escape is prevented, because a key that closes a confirmation is a key that
- *     makes "confirm" meaningless.
  *   - Pointer and focus interactions outside are prevented, including the scrim
- *     click, for the same reason.
+ *     click, because a stray click that closes a confirmation is a click that
+ *     makes "confirm" meaningless.
  *
- * There is deliberately no prop to turn this off. A surface that can be escaped
+ * Escape is deliberately left to the primitive. It can only ever cancel, never
+ * confirm, so it is not an accident that matters; refusing it traps a keyboard
+ * user who has changed their mind, and the WAI-ARIA alertdialog pattern says
+ * Escape closes. It reports `onOpenChange(false)` and restores focus to the
+ * trigger, which is what the cancel action does, and as the topmost layer it
+ * closes only the confirmation, not a dialog underneath it.
+ *
+ * There is deliberately no prop to turn the scrim blocking off. A surface that can be escaped
  * accidentally does not need to be an AlertDialog; it is a Dialog, and using this
  * one would be a claim about the flow that is not true.
  */
 const blockDismissal = {
-  onEscapeKeyDown: (event: KeyboardEvent) => event.preventDefault(),
   onPointerDownOutside: (event: Event) => event.preventDefault(),
   onFocusOutside: (event: Event) => event.preventDefault(),
   onInteractOutside: (event: Event) => event.preventDefault(),

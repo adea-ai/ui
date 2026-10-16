@@ -114,7 +114,7 @@ for (const order of ['root-first', 'ui-first'] as const) {
       await expect(trigger).toBeFocused()
     })
 
-    test(`${order}: keeps AlertDialog blocking Escape and restores focus after a choice`, async ({
+    test(`${order}: lets Escape cancel an AlertDialog and restores focus after a choice`, async ({
       page,
     }) => {
       const trigger = page.getByRole('button', { name: 'Open confirmation' })
@@ -126,6 +126,10 @@ for (const order of ['root-first', 'ui-first'] as const) {
       })
       await expect(alertDialog).toBeVisible()
       await page.keyboard.press('Escape')
+      await expect(alertDialog).toHaveCount(0)
+      await expect(trigger).toBeFocused()
+
+      await trigger.press('Enter')
       await expect(alertDialog).toBeVisible()
       await alertDialog.getByRole('button', { name: 'Keep item' }).click()
       await expect(alertDialog).toHaveCount(0)

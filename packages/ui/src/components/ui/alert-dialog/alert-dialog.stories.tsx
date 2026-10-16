@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { Button } from '../button/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../dialog/dialog'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,9 +23,9 @@ import {
 /**
  * AlertDialog.
  *
- * A dialog that cannot be dismissed by accident: Escape and a click on the scrim
- * do nothing, and the user must choose one of the actions. That is the whole
- * difference from Dialog, and the content uses the `alertdialog` role to make
+ * A dialog that cannot be dismissed by accident: a click on the scrim does nothing,
+ * and the user must choose one of the actions. Escape is the keyboard's Cancel and
+ * closes it without confirming. That is the whole difference from Dialog, and the content uses the `alertdialog` role to make
  * that consequence clear to assistive technology. It is why this exists as its
  * own component rather than a prop — a caller has to reach for it deliberately.
  *
@@ -90,5 +98,45 @@ export const Consequential: Story = {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  ),
+}
+
+/**
+ * A confirmation opened from inside another dialog. Escape closes only the
+ * confirmation, the topmost layer, and leaves the dialog beneath it open; a second
+ * Escape closes that one. A click on the confirmation's scrim still does nothing.
+ */
+export const InsideDialog: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger as={Button}>Manage workspace</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Manage workspace</DialogTitle>
+          <DialogDescription>Settings for everyone who has access.</DialogDescription>
+        </DialogHeader>
+        <AlertDialog>
+          <AlertDialogTrigger as={Button} variant="destructive">
+            Remove all members
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove every member?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Everyone loses access immediately, including you.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel as={Button} variant="ghost">
+                Keep members
+              </AlertDialogCancel>
+              <AlertDialogAction as={Button} variant="destructive">
+                Remove all
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DialogContent>
+    </Dialog>
   ),
 }
