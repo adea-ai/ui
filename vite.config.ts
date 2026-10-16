@@ -83,6 +83,13 @@ const orch = (task: OrchTask) => ({
   dependsOn: ['orch:toolchain', ...(task.dependsOn ?? [])],
 })
 
+/**
+ * A task that only orders others: it runs after every task in `dependsOn`, which `vp` schedules
+ * concurrently (up to its concurrency limit) like Turbo schedules a package graph. `vp` has no
+ * command-less tasks, so the command is a no-op that is never cached.
+ */
+const group = (dependsOn: string[]) => ({ command: 'node -e 0', cache: false, dependsOn })
+
 export default defineConfig({
   run: {
     tasks: {
@@ -99,23 +106,32 @@ export default defineConfig({
       }),
       'orch:storybook:typecheck': orch({
         command: 'bun run --cwd apps/storybook typecheck',
-        dependsOn: ['orch:ui:build'],
         cache: {
-          input: [{ auto: true }, ...libSources, ...workshopSources],
+          input: [
+            { auto: true },
+            ...bunLoaded,
+            ...libSources,
+            ...workshopSources,
+            '!packages/ui/dist/**',
+          ],
         },
       }),
-      'orch:typecheck': { command: 'vp run orch:ui:typecheck && vp run orch:storybook:typecheck' },
+      'orch:typecheck': group(['orch:ui:typecheck', 'orch:storybook:typecheck']),
       'orch:ui:lint': orch({
         command: 'bun run --cwd packages/ui lint',
         cache: { input: [{ auto: true }, ...libSources, ...lintConfig] },
       }),
       'orch:storybook:lint': orch({
         command: 'bun run --cwd apps/storybook lint',
-        // Auto tracking showed the workshop's `oxlint` resolving imports into
-        // `packages/ui/dist`, which `turbo.json` does not declare for `lint`.
-        dependsOn: ['orch:ui:build'],
         cache: {
-          input: [{ auto: true }, ...workshopSources, ...lintConfig],
+          input: [
+            { auto: true },
+            ...bunLoaded,
+            ...libSources,
+            ...workshopSources,
+            ...lintConfig,
+            '!packages/ui/dist/**',
+          ],
         },
       }),
       'orch:root:lint': orch({
@@ -131,9 +147,7 @@ export default defineConfig({
           ],
         },
       }),
-      'orch:lint': {
-        command: 'vp run orch:ui:lint && vp run orch:storybook:lint && vp run orch:root:lint',
-      },
+      'orch:lint': group(['orch:ui:lint', 'orch:storybook:lint', 'orch:root:lint']),
       'orch:ui:build': orch({
         command: 'bun run --cwd packages/ui build',
         // The outputs `turbo.json` declares for `build`, so a hit restores `dist`.
@@ -165,14 +179,14 @@ export default defineConfig({
         // negated glob does not hide a directory's existence). `vp:verify` therefore runs the
         // tests before lint, so a cold and a warm run both lint with `coverage/` present.
         command: 'bun test --conditions=browser packages/ui/tests --coverage',
+        // After the package tests, as the root `test` script runs it after `turbo run test`.
+        dependsOn: ['orch:ui:test', 'orch:storybook:test'],
         cache: {
           input: [{ auto: true }, ...bunLoaded, ...libSources, 'bunfig.toml'],
           output: ['coverage/**'],
         },
       }),
-      'orch:test': {
-        command: 'vp run orch:ui:test && vp run orch:storybook:test && vp run orch:test:coverage',
-      },
+      'orch:test': group(['orch:test:coverage']),
       'proof:typecheck': {
         command: 'bun run --cwd packages/ui typecheck',
         cache: { env: toolchain },

@@ -181,25 +181,33 @@ The same `vp` runner now also orchestrates the ordinary checks, as an **additive
 `turbo` scripts (`build`, `lint`, `typecheck`, `test`, `test:unit`) still decide what is required. Bun still runs
 every test; there is no Vitest here.
 
-| Script (`bun run …`) | Runs (`vp run …`)                                                         | Mirrors in Turbo                           |
-| -------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
-| `vp:build`           | `orch:build` → `orch:ui:build`                                            | `turbo run build --filter=@adea-ai/ui`     |
-| `vp:typecheck`       | `orch:typecheck` → `orch:ui:typecheck`, `orch:storybook:typecheck`        | `turbo run typecheck`                      |
-| `vp:lint`            | `orch:lint` → `orch:ui:lint`, `orch:storybook:lint`, `orch:root:lint`     | `turbo run lint && oxlint --deny-warnings` |
-| `vp:test`            | `orch:test` → `orch:ui:test`, `orch:storybook:test`, `orch:test:coverage` | `turbo run test && bun run test:coverage`  |
-| `vp:verify`          | test, lint, typecheck, build in that order                                | the four above (not the rest of `verify`)  |
+| Script (`bun run …`) | Runs (`vp run …`)                                                          | Mirrors in Turbo                           |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------ |
+| `vp:build`           | `orch:build` → `orch:ui:build`                                             | `turbo run build --filter=@adea-ai/ui`     |
+| `vp:typecheck`       | `orch:typecheck` ⇒ `orch:ui:typecheck`, `orch:storybook:typecheck`         | `turbo run typecheck`                      |
+| `vp:lint`            | `orch:lint` ⇒ `orch:ui:lint`, `orch:storybook:lint`, `orch:root:lint`      | `turbo run lint && oxlint --deny-warnings` |
+| `vp:test`            | `orch:test` ⇒ `orch:test:coverage` ⇒ `orch:ui:test`, `orch:storybook:test` | `turbo run test && bun run test:coverage`  |
+| `vp:verify`          | test, lint, typecheck, build in that order                                 | the four above (not the rest of `verify`)  |
 
 Design, each point measured:
 
 - **Task names are prefixed.** A task and a root script may not share a name, so the scripts are `vp:*` and the
   tasks `orch:*`. The `proof:*` tasks stay for the harness.
-- **Vite+ 1.3.0 has no command-less task.** A task that only lists `dependsOn` fails to load
-  ("data did not match any variant of untagged enum UserTaskDefinition"), so the aggregate tasks run their
-  children with `vp run … && vp run …`. Each child is still its own cached task and the aggregate is not.
-- **Ordering follows reads, not just Turbo's graph.** `orch:storybook:test` depends on `orch:ui:build`, as
-  `test` has `dependsOn: ["^build"]`. Auto tracking also showed the workshop's `oxlint` and `tsc` reading
-  `packages/ui/dist` (touching one dist file was a miss for the workshop lint only), which `turbo.json` does not
-  declare for `lint` or `typecheck`. Those two tasks therefore depend on `orch:ui:build` here.
+- **Aggregates are uncached no-op tasks that depend on the real checks (⇒ above).** Vite+ 1.3.0 has no
+  command-less task (a task that only lists `dependsOn` fails to load: "data did not match any variant of
+  untagged enum UserTaskDefinition"), so `orch:test`, `orch:lint` and `orch:typecheck` are `node -e 0` with
+  `cache: false` and `dependsOn`. `vp` runs independent `dependsOn` tasks concurrently (limit 4, its default,
+  left unchanged), like Turbo's package graph; an earlier version chained them with `vp run … && vp run …`,
+  which serialised the library and workshop checks (cold `vp:typecheck` 42.9 s against Turbo's 22 s). Each real
+  check is still its own cached task. `orch:build` is still one nested `vp run orch:ui:build`.
+- **Ordering follows Turbo's graph, not extra reads.** `orch:storybook:test` depends on `orch:ui:build`, as
+  `test` has `dependsOn: ["^build"]`, and `orch:test:coverage` waits for both package tests, as the root `test`
+  script runs it after `turbo run test`. `lint` and `typecheck` have no `dependsOn` in `turbo.json`, so neither
+  workshop task waits for the build here. Auto tracking had shown the workshop's `oxlint` and `tsc` reading
+  `packages/ui/dist`; both tasks now exclude it (`'!packages/ui/dist/**'`) and declare the library and
+  Bun-loaded sources instead. The workshop resolves `@adea-ai/ui` to `packages/ui/src/index.ts`
+  (`apps/storybook/tsconfig.json`), so its type check does not need `dist`; touching a `dist` file no longer
+  invalidates either task, and a library source edit still does.
 - **Bun-loaded files are explicit inputs** (`bunLoaded`, plus `libSources`), the finding above.
   `orch:ui:build` declares `packages/ui/dist/**` as output, as `turbo.json` does.
 - **The toolchain is detected, not labelled, and held per invocation.** The `proof:*` tasks separate toolchains
@@ -247,20 +255,22 @@ linux-x64, `node` 24.18.0 first on the shell PATH, `vp` 1.3.0, base `ae730b0`, r
 receipts, a scratch cache (`VITE_CACHE_PATH`, a temporary directory). **`PROOF_TOOLCHAIN` was unset** (the script
 prints `PROOF_TOOLCHAIN=unset`), so this is the ordinary workflow. The id in the commands was
 `linux-x64.glibc2.39.node24.18.0-41a74efb34cb.bun1.4.0-ec3dacd9560f` (the managed `bun`, see above). Every exit
-code was 0. The figures below, and the full harness result further down, were measured on commit `49930a6` with
-a clean worktree (the receipts record the commit, its tree and `git status --porcelain`); the commits after it
-change only this file.
+code was 0. The figures below were measured at `262045da` plus the parallel-graph change (a scratch worktree, the
+change uncommitted); the mutation paragraph and the toolchain scenarios that follow were first recorded on
+`49930a6` and the harness (197 assertions) was rerun on the new graph.
 
-| Run                          | `orch:test`         | `orch:lint` | `orch:typecheck` | `orch:build` |
-| ---------------------------- | ------------------- | ----------- | ---------------- | ------------ |
-| Cold (wall time)             | 57.0 s, 0 of 4 hits | 6.3 s\*     | 42.9 s\*         | 0.5 s\*      |
-| Warm                         | 0.8 s, 4 of 4 hits  | 0.7 s, 4/4  | 0.6 s, 3/3       | 0.5 s        |
-| After `rm -rf dist coverage` | 0.8 s, 4 of 4 hits  | 0.8 s, 4/4  | 0.6 s, 3/3       | 0.5 s        |
+| Run (wall time, median of 4) | `orch:test`         | `orch:lint`   | `orch:typecheck`  | `orch:build`    |
+| ---------------------------- | ------------------- | ------------- | ----------------- | --------------- |
+| Cold, in sequence            | 37.1 s, 0 of 4 hits | 3.6 s, 0 of 3 | 22.6 s, 0 of 2    | 0.8 s\*, 1 of 1 |
+| Warm                         | 0.7-0.8 s, 4 of 4   | 0.5 s, 3 of 3 | 0.5-0.6 s, 2 of 2 | 0.6 s, 1 of 1   |
+| After `rm -rf dist coverage` | 0.7 s, 4 of 4       | 0.5 s, 3 of 3 | 0.5 s, 2 of 2     | 0.6 s, 1 of 1   |
 
-\* includes hits on `orch:ui:build`, which an earlier task in the same run had already executed.
-`packages/ui/dist` hashed identically cold, warm and restored (`b730e14a81500076`, a hash over the sorted file
-hashes). `bun run vp:verify` on the warm cache: 2.9 s, exit 0. (The counts include the uncached `orch:toolchain`
-run that precedes each lane.)
+\* a hit on `orch:ui:build`, which an earlier task in the same run had already executed.
+Matched against Turbo at `262045da` (8 replicates in ABBA order, fresh empty caches, the same `node` and `bun`),
+cached core only: cold `test` 22.0 s against 20.8 s, `lint` 2.5 s against 2.4 s, `typecheck` 22.3 s against
+22.1 s; warm, `vp` costs 0.4-0.8 s per command against Turbo's 0.1 s. `packages/ui/dist` was identical in all 24
+cold and restored builds (1446 files, 5,492,818 bytes, a sha256 over the sorted path and file hashes of
+`8609c044336ae162...`). The counts include the build that `orch:test` depends on, not the two uncached nodes.
 
 Mutations on a clean tree (all reverted): appending a comment to `packages/ui/src/lib/version-notes.ts` missed
 every lint and typecheck task and the build, and the tests then failed for the right reason (the committed
@@ -275,7 +285,7 @@ and a warm run on the same toolchain hits; setting `PROOF_TOOLCHAIN` to any valu
 wrapper (same version, other bytes) misses (`env 'ORCH_TOOLCHAIN' changed`) and returning to the original `node`
 hits its own entry; a `bun` wrapper at a new path misses, and the same path reporting another version misses
 again; a `bun` that exits 1 stops the run with the `orch-toolchain:` error before the cached task runs.
-The `orch-concurrent` scenario starts a slow invocation (`orch:storybook:lint`, which builds first) and, six
+The `orch-concurrent` scenario starts a slow invocation (`orch:ui:typecheck`, about 20 s) and, six
 seconds in, a second one on another `node` (a wrapper first on its PATH only); both finish, and then each finds
 its own entry (hit) while the first does not reuse the second's. Run against the first version of this repair
 (one shared identity file) the same scenario fails: the first invocation's warm run is a miss
@@ -283,10 +293,11 @@ its own entry (hit) while the first does not reuse the second's. Run against the
 toolchain's identity. With the id removed from the commands, the same-path `bun` version change would be a
 stale hit, which is the defect the repair began from.
 
-The full harness, started on `49930a6` with `PROOF_TOOLCHAIN` unset and `node` 24.18.0 first on the PATH, has 197
-assertions (the 175 above plus 22 for `orch-toolchain` and `orch-concurrent`): 197 ok, 0 FAIL, exit 0. The `proof:*`
-negative controls are unchanged: in the `tools` scenario a `bun` or `node` with other bytes is still a stale hit
-under the `proof:*` tasks, and a changed `PROOF_TOOLCHAIN` is still a miss.
+The full harness, run on a local commit of this graph (a throwaway clone; it runs only committed `HEAD`) with
+`PROOF_TOOLCHAIN` unset and `node` 24.18.0 first on the PATH, has 197 assertions (the 175 above plus 22 for
+`orch-toolchain` and `orch-concurrent`): 197 ok, 0 FAIL. The `proof:*` negative controls are unchanged: in the
+`tools` scenario a `bun` or `node` with other bytes is still a stale hit under the `proof:*` tasks, and a changed
+`PROOF_TOOLCHAIN` is still a miss.
 
 ### Not done, and not claimed
 

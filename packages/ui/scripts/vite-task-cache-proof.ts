@@ -656,7 +656,7 @@ async function orchConcurrent(): Promise<void> {
   mkdirSync(wrapDir)
   writeFileSync(join(wrapDir, 'node'), `#!/bin/sh\nexec "${nodePath}" "$@"\n`, { mode: 0o755 })
   const inB = { ...noLabel, PATH: `${wrapDir}:${process.env['PATH'] ?? ''}` }
-  const slow = 'orch:storybook:lint' // depends on the library build: a window of many seconds
+  const slow = 'orch:ui:typecheck' // about 20 s: a window of many seconds
   const fast = 'orch:ui:lint'
 
   // A starts the build; B starts, runs and finishes while A is still building.
