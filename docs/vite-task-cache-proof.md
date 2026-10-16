@@ -63,8 +63,8 @@ against a throwaway dirty worktree and confirmed to wipe a pre-existing edit and
 ## Results
 
 Run on linux-x64, bun 1.4.2, node 22.22.0 (the sandbox's node; the repository pins 24.18.0, see the
-gaps), `vp` 1.3.0, harness head `cc24039`, started from a disposable copy of that commit so the
-real checkout was never involved. **165 assertions, 0 failures**, about 12 minutes. The expectations pin
+gaps), `vp` 1.3.0, harness head `41244ac`, started from a disposable copy of that commit so the
+real checkout was never involved. **175 assertions, 0 failures**, about 12 minutes. The expectations pin
 vite-plus's behaviour at this version, so an upgrade that changes any of it fails the harness.
 The figures in the evidence below that quote counts come from the earlier 120-assertion run unless
 they are restated here.
@@ -121,9 +121,9 @@ Vite Task warm build (0.3 to 1.2 s across runs).
      the next run succeeded, `dist` was complete, and the run after that was a hit. A partial build was never
      replayed. The writer that was not killed in each round must exit 0, and the harness fails if it does not.
    - Snapshots of the live cache taken every 15 ms for 20 s while four writers ran back to back
-     (250 snapshots per method, at least 50 required, every writer required to exit 0): `VACUUM INTO` from a
+     (253 snapshots per method, at least 50 required, every writer required to exit 0): `VACUUM INTO` from a
      read-only connection, 0 torn and 0 failed; a copy of the whole directory, 0 torn; **a copy of `cache.db`
-     alone, 1 torn** (`database disk image is malformed`). Counts vary run to run: earlier runs tore the bare
+     alone, 2 torn** (`database disk image is malformed`). Counts vary run to run: earlier runs tore the bare
      copy 2 to 3 times of about 263, and 2 of 266 directory copies could not be taken because a file vanished
      mid-copy. A run with no database, no live writers or too few snapshots now fails instead of passing.
    - **Restored-cache replay (`restore` scenario).** SQLite integrity says nothing about the archives a
@@ -131,14 +131,14 @@ Vite Task warm build (0.3 to 1.2 s across runs).
      worktree: every entry that had finished before the copy started is run again and what it leaves is compared
      with the bytes a fresh uncached run produces. Three writers in three worktrees (a shared output directory
      would let concurrent runs archive each other's files, which the first draft of this scenario did), 12
-     copies per method taken during writes, 36 replays per method:
+     copies per method taken during writes (11 for the directory copy), 3 replays per copy:
 
-     | Copy method                                | Status        | Replayed hits                 | Wrong | Unusable |
-     | ------------------------------------------ | ------------- | ----------------------------- | ----- | -------- |
-     | `VACUUM INTO`, then archives               | supported     | 36 of 36                      | 0     | 0        |
-     | archives, then `VACUUM INTO`               | reported only | 36 of 36                      | 0     | 0        |
-     | `cache.db` file, then archives (no `-wal`) | reported only | 36 of 36                      | 0     | 0        |
-     | directory copy during writes               | reported only | 27 of 27 (3 copies not taken) | 0     | 0        |
+     | Copy method                                | Status        | Replayed hits               | Wrong | Unusable |
+     | ------------------------------------------ | ------------- | --------------------------- | ----- | -------- |
+     | `VACUUM INTO`, then archives               | supported     | 36 of 36                    | 0     | 0        |
+     | archives, then `VACUUM INTO`               | reported only | 36 of 36                    | 0     | 0        |
+     | `cache.db` file, then archives (no `-wal`) | reported only | 36 of 36                    | 0     | 0        |
+     | directory copy during writes               | reported only | 33 of 33 (1 copy not taken) | 0     | 0        |
 
      Only `VACUUM INTO` then archives is held to a full result: every entry that had finished before the copy must
      replay as a hit with identical bytes (at least 8 copies, zero misses, zero unusable). The other methods are
@@ -151,7 +151,7 @@ Vite Task warm build (0.3 to 1.2 s across runs).
      of the stopped cache replayed all four finished entries as hits with identical bytes, and none of the eight
      killed entries was stored (all were misses, none wrong or unusable). **This is a 12-copy sample per
      method, not a rate**: it shows no case of a restored entry serving wrong bytes and none of an unreadable
-     database, but the earlier 250-copy run did tear a bare `cache.db` copy, so copying the database file
+     database, but the 253-copy snapshot run tore a bare `cache.db` copy twice, so copying the database file
      alone while writers are active stays unsupported. The supported transports are a copy after every
      `vp run` has exited (what the Actions save step does) or `VACUUM INTO` plus the archives.
 7. **Actions trusted-writer isolation: configured and asserted statically, not exercised.** The workflow
@@ -199,7 +199,7 @@ that names the file.
 - **Restore coverage is a sample.** 12 copies per method and one interrupted-writer round; it does not
   bound the rate of a bad restore, and it exercises `proof:artifact`, not a multi-archive build entry.
 - **What CI runs.** The workflow runs `proof:registry`, `proof:build` and `proof:typecheck`, each twice, and
-  checks that the second run hits. It does **not** run the harness: the 165 assertions, the safety, restore,
+  checks that the second run hits. It does **not** run the harness: the 175 assertions, the safety, restore,
   snapshot and divergence scenarios, and the static `actions` check are a local command. Nothing in CI proves
   any claim in this document beyond "a second identical run hits". The workflow also has not run yet.
 - **Remote cache.** None configured. Cloudflare is deferred; no infrastructure, access or credential exists.
