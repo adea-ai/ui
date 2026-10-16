@@ -1,0 +1,113 @@
+name: Vite Task cache proof (opt-in)
+
+# Opt-in and not a required check. It does not replace or feed any existing gate:
+# Turbo and `bun test` keep running exactly as they do, and nothing here is listed in a
+# ruleset. It runs on request (workflow_dispatch) and when a ready pull request touches
+# the proof's own files; it never runs on push, schedule or pull_request_target.
+#
+# Cache writer isolation: every run may RESTORE the task cache, but only a run on the
+# default branch that is not a pull request may SAVE it. A pull request's code therefore
+# reads trusted state and cannot plant state a later run restores. The check in
+# `packages/ui/scripts/vite-task-cache-proof.ts actions` asserts this file keeps that shape.
+#
+# What this job runs: `proof:registry`, `proof:build` and `proof:typecheck`, each twice, and it
+# fails if the second run is not a cache hit. It does NOT run the proof harness
+# (`vite-task-cache-proof.ts`: cold/warm, worktree, divergence, environment, concurrency,
+# snapshot, restore and safety scenarios); that is a local command, and the only part of it
+# CI repeats is the static `actions` check of this file's shape, which nothing here invokes.
+#
+# The runner's Vite Task cache is the local directory only. No remote cache, no Cloudflare,
+# no secret and no OIDC token is used.
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - ready_for_review
+      - synchronize
+    paths:
+      - .github/workflows/vite-task-cache-proof.yml
+      - vite.config.ts
+      - packages/ui/scripts/vite-task-cache-proof.ts
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vite-task-cache-proof-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  vite-task-cache-proof:
+    name: Vite Task cache proof (opt-in)
+    if: vars.CI_BILLING_PAUSED != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # A `bun` or `node` binary is not a task input, so the fingerprint cannot see a
+      # toolchain or platform change. Naming them in a declared variable makes either one
+      # a cache miss.
+      - name: Name the toolchain and platform
+        run: echo "PROOF_TOOLCHAIN=bun-$(bun --version) node-$(node --version) ${RUNNER_OS}-${RUNNER_ARCH}" >> "$GITHUB_ENV"
+
+      # The key is unique per run and the prefix finds the newest cache for this OS and
+      # architecture. Source files and the lockfile stay out of it: Vite Task fingerprints them.
+      - name: Restore the Vite Task cache
+        id: vite-task-cache
+        uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: node_modules/.vite/task-cache
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vite-task-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Run each proof task twice
+        env:
+          RESTORED_KEY: ${{ steps.vite-task-cache.outputs.cache-matched-key }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Vite Task cache proof"
+            echo "Restored cache entry: \`${RESTORED_KEY:-none}\`"
+            echo "Toolchain: \`${PROOF_TOOLCHAIN}\`"
+            echo
+            echo "| task | first run | immediate second run |"
+            echo "| --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for task in proof:registry proof:build proof:typecheck; do
+            node_modules/.bin/vp run "$task" > "$RUNNER_TEMP/first.log" 2>&1
+            node_modules/.bin/vp run "$task" > "$RUNNER_TEMP/second.log" 2>&1
+            first=executed
+            if grep -q 'cache hit, replaying' "$RUNNER_TEMP/first.log"; then first=hit; fi
+            if ! grep -q 'cache hit, replaying' "$RUNNER_TEMP/second.log"; then
+              echo "::error title=Vite Task miss::$task did not hit on the immediate second run"
+              cat "$RUNNER_TEMP/second.log"
+              exit 1
+            fi
+            echo "| \`$task\` | $first | hit |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      # Only a non-pull-request run on the default branch writes the cache.
+      - name: Save the Vite Task cache
+        if: success() && github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: node_modules/.vite/task-cache
+          key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
