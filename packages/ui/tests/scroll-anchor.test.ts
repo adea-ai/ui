@@ -128,3 +128,47 @@ describe('restoreAnchor with anchor ids', () => {
     expect(state.scrollTop).toBe(330)
   })
 })
+
+describe('restoreAnchor while the reader keeps scrolling', () => {
+  test('a scroll that happens during the load is kept, with or without anchor ids', () => {
+    const withIds = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(withIds.scroller)
+    withIds.state.scrollTop = 120 // a fling carries the reader up 130px
+    expect(restoreAnchor(withIds.scroller, anchor)).toBe(0)
+    expect(withIds.state.scrollTop).toBe(120)
+
+    const plain = fakeScroller({ scrollTop: 300, scrollHeight: 1000 })
+    const bare = captureAnchor(plain.scroller)
+    plain.state.scrollTop = 0
+    expect(restoreAnchor(plain.scroller, bare)).toBe(0)
+    expect(plain.state.scrollTop).toBe(0)
+  })
+
+  test('history landing while the reader scrolls moves the view by the insert, not the scroll', () => {
+    const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(scroller) // 'b' sits 50px above the viewport top
+
+    state.scrollTop = 150 // the reader scrolls up 100px...
+    for (const turn of state.turns) turn.top += 600 // ...and 600px of history lands above
+    state.scrollHeight = 1400
+    // 'b' has moved down the viewport by the insert and up by nothing: it is now 600 + 100
+    // lower than the 50px above the top it was. The view follows the insert and keeps the scroll.
+    expect(restoreAnchor(scroller, anchor)).toBe(600)
+    expect(state.scrollTop).toBe(750)
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+
+    state.scrollTop = 700 // and the reader goes on scrolling afterwards
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+    expect(state.scrollTop).toBe(700)
+  })
+
+  test('without anchor ids the scroll is kept and only the growth is added', () => {
+    const { scroller, state } = fakeScroller({ scrollTop: 300, scrollHeight: 1000 })
+    const anchor = captureAnchor(scroller)
+    state.scrollTop = 180
+    state.scrollHeight = 1600
+    expect(restoreAnchor(scroller, anchor)).toBe(600)
+    expect(state.scrollTop).toBe(780)
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+  })
+})

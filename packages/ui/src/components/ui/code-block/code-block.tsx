@@ -5,6 +5,7 @@ import {
   For,
   on,
   onCleanup,
+  onMount,
   Show,
   splitProps,
   type ComponentProps,
@@ -280,10 +281,22 @@ export function CodeBlock(props: CodeBlockProps) {
         else if (local.ref) local.ref = element
         // Measured rather than assumed: the caller controls the content, so only
         // the rendered box can say whether the action row has scrolled away.
+        // The body is what is watched, not the block: the repeated action row is
+        // added to the block, so watching the block made this callback resize the
+        // very element it observes, which is a ResizeObserver loop (WebKit reports
+        // it as an uncaught "loop completed with undelivered notifications" error).
+        // The footer's own height is left out of the measure for the same reason: a
+        // block is tall by its content, not by the row that tallness adds.
         const observer = new ResizeObserver(() => {
-          setTall(element.offsetHeight > (local.tallThreshold ?? TALL_CODE_BLOCK_PX))
+          const footer = element.querySelector<HTMLElement>('[data-code-block-footer]')
+          setTall(
+            element.offsetHeight - (footer?.offsetHeight ?? 0) >
+              (local.tallThreshold ?? TALL_CODE_BLOCK_PX)
+          )
         })
-        observer.observe(element)
+        onMount(() => {
+          if (bodyElement) observer.observe(bodyElement)
+        })
         onCleanup(() => observer.disconnect())
       }}
     >

@@ -6,7 +6,7 @@ import { expect, type Page } from '@playwright/test'
  *
  * The page is served from `http://localhost` rather than `about:blank` so the
  * clipboard behaves as it does in an application: `navigator.clipboard` exists,
- * Chromium specs are granted `clipboard-read`/`clipboard-write`, and a copy reaches the
+ * every engine is granted `clipboard-read` (Chromium also `clipboard-write`), and a copy reaches the
  * real clipboard instead of a stub that would pass whatever the component wrote.
  */
 const ORIGIN = 'http://localhost:4173'
@@ -23,12 +23,16 @@ export async function mountFixture(
       body: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title></head><body></body></html>`,
     })
   )
-  // Only Chromium has `clipboard-read` and `clipboard-write` permissions to grant. WebKit
-  // rejects them as unknown and fails the setup before the fixture mounts, so it runs with
-  // the clipboard it has: its own `navigator.clipboard`, with no permission granted. A spec
-  // that reads the clipboard back still reads the real one, and fails if WebKit refuses it.
-  if (page.context().browser()?.browserType().name() === 'chromium')
-    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN })
+  // Chromium has both `clipboard-read` and `clipboard-write` to grant. WebKit knows only
+  // `clipboard-read` and rejects `clipboard-write` as unknown, which fails the setup before the
+  // fixture mounts, so it is granted the read permission alone. Either way a spec that copies
+  // and reads the clipboard back reads the real one, and fails if the engine refuses it.
+  const chromium = page.context().browser()?.browserType().name() === 'chromium'
+  await page
+    .context()
+    .grantPermissions(chromium ? ['clipboard-read', 'clipboard-write'] : ['clipboard-read'], {
+      origin: ORIGIN,
+    })
   await page.goto(`${ORIGIN}/${search}`)
   await page.addStyleTag({ content: bundle.css })
   await page.addScriptTag({ content: bundle.script })

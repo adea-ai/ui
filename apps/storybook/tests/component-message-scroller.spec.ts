@@ -73,6 +73,83 @@ const wheel = async (page: Page, delta: number) => {
   await page.mouse.wheel(0, delta)
 }
 const jump = (page: Page) => page.getByRole('button', { name: 'Jump to latest' })
+/**
+ * Return once the opening transcript has stopped changing size, with the reader at its end.
+ *
+ * The rows are `content-visibility: auto`: they are laid out at an estimate and take their
+ * real height as they come into range, so for a few frames after mounting the thread keeps
+ * shrinking and the browser keeps clamping the scroll offset down with it. Content that
+ * arrives in that window lands on a scroller whose last scroll event is still being
+ * delivered, and the follow controller cannot tell that clamp from a reader scrolling up.
+ * A test about what streaming does to a settled thread starts from a settled thread.
+ */
+const settled = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const element = document.querySelector<HTMLElement>('#scroller')!
+        let height = -1
+        let steady = 0
+        const frame = () => {
+          const fromBottom = element.scrollHeight - element.clientHeight - element.scrollTop
+          steady = element.scrollHeight === height && fromBottom <= 1 ? steady + 1 : 0
+          height = element.scrollHeight
+          if (steady >= 5) resolve()
+          else requestAnimationFrame(frame)
+        }
+        requestAnimationFrame(frame)
+      })
+  )
+/**
+ * Scroll the thread by `delta` with the wheel and return once it has travelled all of it.
+ *
+ * Engines that animate a wheel notch keep scrolling after the event is dispatched, so
+ * "the view moved" is not "the view has stopped". The thread is settled first so the
+ * distance is measured from where it really rests, and the stop is the offset the gesture
+ * was asked to reach.
+ */
+const wheelBy = async (page: Page, delta: number) => {
+  await settled(page)
+  const target = Math.max(0, (await metrics(page)).top + delta)
+  await wheel(page, delta)
+  await expect.poll(async () => Math.abs((await metrics(page)).top - target) <= 1).toBe(true)
+}
+/** Return once the offset and the height have both held still for several frames. */
+const atRest = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const element = document.querySelector<HTMLElement>('#scroller')!
+        let last = ''
+        let steady = 0
+        const frame = () => {
+          const now = `${element.scrollTop}/${element.scrollHeight}`
+          steady = now === last ? steady + 1 : 0
+          last = now
+          if (steady >= 5) resolve()
+          else requestAnimationFrame(frame)
+        }
+        requestAnimationFrame(frame)
+      })
+  )
+/**
+ * Leave the reader idle just inside the top margin, where the next load starts.
+ *
+ * A wheel fling that is still running when the load starts moves the first visible turn
+ * by the fling's own distance, which the insert-stability probe cannot tell from the
+ * insert moving it. So the reader gets there in steps that each end at rest: out of the
+ * bottom to well clear of the margin, then a short jump into it. (The rows are
+ * `content-visibility: auto`, so a long scroll lands where the rows it passed end up
+ * sized, not where it was aimed; each stop is awaited by what the thread does.)
+ */
+const approachTop = async (page: Page) => {
+  for (const top of [1200, 600, 100]) {
+    await scroller(page).evaluate((element, next) => {
+      element.scrollTop = next
+    }, top)
+    if (top > 100) await atRest(page)
+  }
+}
 const probe = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.probe)
 const calls = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.calls)
 const turnCount = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.turnCount())
@@ -108,7 +185,7 @@ test.describe('follow', () => {
   test('after scrolling up, new content does not move the view and "Jump to latest" returns', async ({
     page,
   }) => {
-    await wheel(page, -700)
+    await wheelBy(page, -700)
     await expect(jump(page)).toBeVisible()
     const parked = (await metrics(page)).top
     expect(parked).toBeGreaterThan(0)
@@ -169,8 +246,8 @@ test.describe('history', () => {
   ] as const) {
     test(`keeps the first visible turn in place when ${label}`, async ({ page }) => {
       await setMode(page, mode)
-      // Park a few hundred px down, so the anchor is a real turn mid-thread.
-      await wheel(page, -100_000)
+      // Park near the top, so the anchor is a real turn mid-thread.
+      await approachTop(page)
       await expect.poll(() => calls(page)).toBeGreaterThanOrEqual(1)
       await expect.poll(() => turnCount(page)).toBe(40)
       await frames(page, 8)
@@ -197,12 +274,27 @@ test.describe('history', () => {
     page,
   }) => {
     await setMode(page, 'render-after-settle', 350)
-    await wheel(page, -100_000)
+    await approachTop(page)
     await expect.poll(() => turnCount(page), { timeout: 5_000 }).toBe(40)
     await frames(page, 8)
     const result = await probe(page)
     expect(result!.max, `anchor ${result!.id} moved by ${result!.max}px`).toBeLessThanOrEqual(1)
     expect((await metrics(page)).top).toBeGreaterThan(300)
+  })
+
+  test('a scroll that is still running when the load starts carries on to the top', async ({
+    page,
+  }) => {
+    // The reader is mid-fling toward the top (an animated scroll, as a wheel or touch
+    // momentum is) when the sentinel comes into range and the load begins. The load has
+    // nothing to add, and restoring the anchor must not cancel the rest of the fling.
+    await setMode(page, 'noop')
+    await settled(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 1500, behavior: 'instant' }))
+    await expect.poll(async () => Math.abs((await metrics(page)).top - 1500) <= 1).toBe(true)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 0, behavior: 'smooth' }))
+    await expect.poll(async () => (await metrics(page)).top).toBe(0)
+    expect(await calls(page)).toBeGreaterThanOrEqual(1)
   })
 
   test('never starts a second load while one is in flight', async ({ page }) => {
@@ -354,6 +446,7 @@ test.describe('motion', () => {
 test.describe('narrow screens', () => {
   test('a 320px viewport has no horizontal overflow, with long unbroken text', async ({ page }) => {
     await open(page, '', 320)
+    await settled(page)
     await page.evaluate(() =>
       (window as FixtureWindow).fixture.stream(
         `${'unbrokenidentifier'.repeat(20)} https://example.com/${'a'.repeat(200)}\n\n\`\`\`\n${'x'.repeat(300)}\n\`\`\``

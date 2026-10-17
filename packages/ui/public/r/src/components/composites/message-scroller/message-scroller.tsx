@@ -85,11 +85,26 @@ export function MessageScroller(props: MessageScrollerProps) {
   let epoch = 0
   const [inFlight, setInFlight] = createSignal(false)
 
+  // While a load holds the reader's place, the browser's own scroll anchoring is
+  // switched off: it moves the offset by the same insert, and the two corrections
+  // would be added together.
+  let nativeAnchoring: string | undefined
+  const holdNativeAnchoring = () => {
+    if (!scroller || nativeAnchoring !== undefined) return
+    nativeAnchoring = scroller.style.overflowAnchor
+    scroller.style.overflowAnchor = 'none'
+  }
+  const releaseNativeAnchoring = () => {
+    if (scroller && nativeAnchoring !== undefined) scroller.style.overflowAnchor = nativeAnchoring
+    nativeAnchoring = undefined
+  }
+
   // A session switch invalidates a load that was started for the previous one.
   createEffect(() => {
     void local.resetKey
     epoch += 1
     setInFlight(false)
+    releaseNativeAnchoring()
   })
 
   const settle = (
@@ -101,7 +116,8 @@ export function MessageScroller(props: MessageScrollerProps) {
     const finish = () => {
       if (run !== epoch) return
       if (scroller) restoreAnchor(scroller, anchor)
-      observer?.disconnect()
+      stopWatching()
+      releaseNativeAnchoring()
       setInFlight(false)
       // The control that started the load was replaced by the loading line, which
       // takes focus with it. Put it back on the control (or the thread), so a
@@ -137,6 +153,11 @@ export function MessageScroller(props: MessageScrollerProps) {
   }
 
   let observer: MutationObserver | undefined
+  let resizer: ResizeObserver | undefined
+  const stopWatching = () => {
+    observer?.disconnect()
+    resizer?.disconnect()
+  }
   const load = async (fromControl = false) => {
     if (!scroller || !local.onLoadOlder || !local.hasOlder || local.loadingOlder || inFlight())
       return
@@ -146,13 +167,24 @@ export function MessageScroller(props: MessageScrollerProps) {
     const restoreFocus =
       fromControl && document.activeElement?.closest('[data-slot="message-scroller-older"]') != null
     setInFlight(true)
+    holdNativeAnchoring()
     // Every layout change while the load is open re-pins the anchor *before
     // paint*, which is what makes the insert invisible.
-    observer?.disconnect()
+    stopWatching()
     observer = new MutationObserver(() => {
       if (run === epoch && scroller) restoreAnchor(scroller, anchor)
     })
     observer.observe(scroller, { childList: true, subtree: true })
+    // Turns that size themselves late (`content-visibility`, images, highlighted code)
+    // move the anchor without adding or removing a node, and with the browser's own
+    // anchoring held off nothing else would carry the reader through that.
+    const content = scroller.querySelector('[data-slot="conversation-content"]')
+    if (content && typeof ResizeObserver !== 'undefined') {
+      resizer = new ResizeObserver(() => {
+        if (run === epoch && scroller) restoreAnchor(scroller, anchor)
+      })
+      resizer.observe(content)
+    }
     try {
       await local.onLoadOlder()
     } catch {
@@ -163,7 +195,8 @@ export function MessageScroller(props: MessageScrollerProps) {
 
   onCleanup(() => {
     epoch += 1
-    observer?.disconnect()
+    stopWatching()
+    releaseNativeAnchoring()
   })
 
   const watchTop = (element: HTMLDivElement) => {
