@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.142.1](https://github.com/adea-ai/ui/compare/v0.142.0...v0.142.1) (2026-10-17)
+
+
+### Maintenance
+
+* **tooling:** replace UI Turbo commands with Vite+ tasks ([#459](https://github.com/adea-ai/ui/issues/459)) ([638f736](https://github.com/adea-ai/ui/commit/638f73622bed3b9e2d3a6ffa80f3ef82f0d9c0aa))
+
 ## [0.142.0](https://github.com/adea-ai/ui/compare/v0.141.1...v0.142.0) (2026-10-17)
 
 

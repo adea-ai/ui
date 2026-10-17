@@ -1,5 +1,9 @@
 # Vite Task cache proof
 
+The sections below record the historical additive proof. The current cutover and
+its limits are documented in [Workspace task orchestration](task-orchestration.md).
+Statements below that production still runs Turbo describe that earlier snapshot.
+
 Whether Vite+ (`vp run`, Vite Task) can cache this repository's production tasks as
 safely as Turbo does, measured on a scratch local cache. It is a proof, not a
 migration: **Turbo and `bun test` are unchanged, no existing gate reads any of this,

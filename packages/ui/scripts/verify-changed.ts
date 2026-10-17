@@ -19,7 +19,13 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, posix } from 'node:path'
-import { isGraphSource, planChecks, type Plan, type Workspace } from './verify-changed-plan'
+import {
+  isGraphSource,
+  planChecks,
+  typecheckTasks,
+  type Plan,
+  type Workspace,
+} from './verify-changed-plan'
 
 const args = process.argv.slice(2)
 const baseRef =
@@ -203,16 +209,13 @@ if (plan.libExports.length > 0) {
   skip('lib exports', 'no lib module, library entry or exports map changed')
 }
 
-// --- typecheck: turbo-cached, the changed workspaces and their dependents ----
-// `typecheck` has no turbo dependencies — the typecheck configs resolve workspace
-// packages to source, so a library build would be wasted work. `--only` keeps it
-// that way should one be added.
+// --- typecheck: named cached tasks, with dependency consumers included --------
+// Configs resolve workspaces to source, so no declaration build is needed here.
 const { workspaces: typed, uncovered } = plan.typecheck
 if (typed === 'all' || typed.length > 0) {
-  const filters = typed === 'all' ? [] : typed.map((name) => `--filter=...${name}`)
   record(
     'typecheck',
-    run([bin('turbo'), 'run', 'typecheck', '--only', ...filters]),
+    typecheckTasks(typed).every((task) => run([bin('vp'), 'run', task])),
     typed === 'all'
       ? 'every workspace (a root tsconfig changed)'
       : `${typed.join(', ')} + dependents`

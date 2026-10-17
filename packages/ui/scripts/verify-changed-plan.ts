@@ -14,7 +14,7 @@
 
 import { posix } from 'node:path'
 
-/** A workspace package: its directory and its name for `turbo --filter`. */
+/** A workspace package: its directory and its workspace name. */
 export type Workspace = { dir: string; name: string }
 
 /**
@@ -333,4 +333,21 @@ export function planChecks(
     format: present,
     lint: present.filter(isLinted),
   }
+}
+
+/** Named Vite+ checks, including the workshop when its UI dependency changes. */
+export function typecheckTasks(workspaces: string[] | 'all'): string[] {
+  if (workspaces === 'all') return ['orch:typecheck']
+  const tasks = new Set<string>()
+  for (const workspace of workspaces) {
+    if (workspace === '@adea-ai/ui') {
+      tasks.add('orch:ui:typecheck')
+      tasks.add('orch:storybook:typecheck')
+    } else if (workspace === '@adea-ai/storybook') {
+      tasks.add('orch:storybook:typecheck')
+    } else {
+      throw new Error(`No Vite+ typecheck task is mapped for ${workspace}`)
+    }
+  }
+  return [...tasks].toSorted()
 }
