@@ -207,13 +207,13 @@ export default defineConfig({
         command: 'bun run --cwd packages/ui typecheck',
         // `bun check` reads its sources itself, so list them (see `orch:ui:typecheck`).
         cache: {
-          input: [{ auto: true }, ...bunLoaded, ...libSources],
+          input: [{ auto: true }, ...bunLoaded, ...libSources, ...volatileInputs],
           env: toolchain,
         },
       },
       'proof:registry': {
         command: 'bun run --cwd packages/ui registry:validate',
-        cache: { input: [{ auto: true }, ...bunLoaded], env: toolchain },
+        cache: { input: [{ auto: true }, ...bunLoaded, ...volatileInputs], env: toolchain },
       },
       'proof:cn-check:auto': {
         command: 'bun run --cwd packages/ui cn:check',
@@ -243,6 +243,7 @@ export default defineConfig({
             'packages/ui/src/**',
             'packages/ui/tests/**',
             'packages/ui/public/r/**',
+            ...volatileInputs,
           ],
         },
       },
