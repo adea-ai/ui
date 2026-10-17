@@ -7,7 +7,8 @@
  * (interfaces, type aliases) are excluded from the declared side: they have no
  * runtime presence, so their absence from the compiled module is correct.
  */
-import ts from 'typescript'
+// Export parity needs the classic checker API; the native compiler emits declarations.
+import ts from 'typescript6'
 
 export type ModuleExports = {
   /** Export names of a `.d.ts` that exist at runtime (values, classes, enums, functions). */
