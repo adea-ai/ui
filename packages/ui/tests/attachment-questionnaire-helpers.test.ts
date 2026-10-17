@@ -1,10 +1,17 @@
 import { describe, expect, test } from 'bun:test'
-import { formatAttachmentSize, safePreviewSrc } from '../src/components/ui/attachment/attachment'
-import {
-  answerFor,
-  isQuestionAnswered,
-  type QuestionnaireQuestion,
-} from '../src/components/ui/questionnaire/questionnaire'
+import type { QuestionnaireQuestion } from '../src/components/ui/questionnaire/questionnaire'
+
+// The Solid DOM transform that tests load components with registers delegated events as
+// a module loads, which wants a document. These tests only call the pure helpers, so give
+// the load a stand-in for as long as it takes and take it away again.
+const scope = globalThis as { window?: unknown }
+const hadWindow = 'window' in scope
+if (!hadWindow) scope.window = { document: { addEventListener: () => {} } }
+const { formatAttachmentSize, safePreviewSrc } =
+  await import('../src/components/ui/attachment/attachment')
+const { answerFor, isQuestionAnswered } =
+  await import('../src/components/ui/questionnaire/questionnaire')
+if (!hadWindow) delete scope.window
 
 describe('formatAttachmentSize', () => {
   test('formats bytes, kilobytes, megabytes and beyond', () => {

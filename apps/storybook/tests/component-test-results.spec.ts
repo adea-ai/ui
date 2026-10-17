@@ -172,7 +172,7 @@ test('a large failure message is bounded, scrolls, and can be shown or copied in
   await expect(message).toHaveAttribute('tabindex', '0')
 
   const total = await page.evaluate(
-    () => (window as Window & { bigMessage: string }).bigMessage.length
+    () => (window as unknown as { bigMessage: string }).bigMessage.length
   )
   await expect(results.getByText(/copy has all of it/)).toBeVisible()
   await expect(results.getByText(`Showing the first`, { exact: false })).toContainText(
@@ -191,7 +191,7 @@ test('a large failure message is bounded, scrolls, and can be shown or copied in
   await results.getByRole('button', { name: /Copy message/ }).click()
   await expect
     .poll(() => page.evaluate(() => (window as Window & { copied?: string[] }).copied!.at(-1)))
-    .toBe(await page.evaluate(() => (window as Window & { bigMessage: string }).bigMessage))
+    .toBe(await page.evaluate(() => (window as unknown as { bigMessage: string }).bigMessage))
 
   // Showing all keeps the box bounded and draws every character.
   await results.getByRole('button', { name: /Show all .* characters/ }).click()

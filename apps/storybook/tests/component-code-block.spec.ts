@@ -83,6 +83,7 @@ type OutputFixture = {
   calls: Record<string, (string | undefined)[]>
   renderMs: number
   resolveLate: () => void
+  resolveLateLimited: () => void
   rejectLate: () => void
   setComplete: (complete: boolean) => void
   appendStreamed: () => void
