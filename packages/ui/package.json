@@ -116,7 +116,7 @@
     "dev": "bun run cn:build && vite build --watch",
     "lint": "oxlint",
     "test": "bun run cn:check && bun test --conditions=browser --preload ./tests/helpers/solid-transform.ts tests",
-    "typecheck": "tsc -p tsconfig.check.json --noEmit",
+    "typecheck": "bun check -p tsconfig.check.json",
     "cn:build": "bun scripts/build-cn-tables.ts",
     "cn:check": "bun scripts/check-cn-tables.ts",
     "registry:build": "bun run cn:build && bun scripts/build-registry.ts",

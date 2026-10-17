@@ -11,7 +11,7 @@
     "dev": "storybook dev -p 6006 --host 127.0.0.1 --no-open",
     "build": "storybook build -o storybook-static",
     "lint": "oxlint",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.layout.json --noEmit && tsc -p tsconfig.components.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json && bun check -p tsconfig.layout.json && bun check -p tsconfig.components.json",
     "serve": "bun scripts/serve-workshop.ts",
     "test": "bun test tests/unit",
     "test:e2e": "playwright test",
