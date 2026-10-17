@@ -3,18 +3,26 @@ import {
   boundedEntries,
   describeCount,
   firstFailureKey,
-  firstFailureRenderKey,
   firstFailureRenderPath,
   formatDuration,
   listedCounts,
   reconcileCounts,
   repeatedKey,
+  sameFailure,
+  siblingKey,
   suiteKey,
   suiteState,
   testKey,
   type ListedCounts,
   type TestSuite,
 } from './test-results-model'
+
+const chain = (depth: number, leaf: TestSuite): TestSuite => {
+  let node = leaf
+  for (let level = depth; level > 0; level -= 1)
+    node = { id: 'same', name: `level ${level}`, suites: [node] }
+  return node
+}
 
 const suites: TestSuite[] = [
   {
@@ -244,11 +252,9 @@ describe('keys and the first failure', () => {
         ],
       },
     ]
-    const outerKey = repeatedKey('/outer', 0)
-    const innerKey = repeatedKey(`${outerKey}/inner`, 0)
     expect(firstFailureRenderPath(values)).toEqual({
-      suites: [outerKey, innerKey],
-      test: repeatedKey(testKey(innerKey, values[0]!.suites![0]!.tests![0]!, 0), 0),
+      suites: [repeatedKey('iouter', 0), repeatedKey('iinner', 0)],
+      test: repeatedKey('ibroken', 0),
     })
   })
 
@@ -280,15 +286,15 @@ describe('keys and the first failure', () => {
         tests: [{ name: 'second', id: 'test', status: 'failed' as const }],
       },
     ]
-    const secondSuite = repeatedKey('/suite', 1)
-    expect(firstFailureRenderKey(values)).toBe(
-      repeatedKey(testKey(secondSuite, values[1]!.tests![0]!, 0), 0)
-    )
+    expect(firstFailureRenderPath(values)).toEqual({
+      suites: [repeatedKey('isuite', 1)],
+      test: repeatedKey('itest', 0),
+    })
     expect(
-      firstFailureRenderKey([
+      firstFailureRenderPath([
         { ...values[1]!, tests: [{ ...values[1]!.tests![0]!, status: 'failed' }] },
       ])
-    ).toBe(repeatedKey(testKey(repeatedKey('/suite', 0), values[1]!.tests![0]!, 0), 0))
+    ).toEqual({ suites: [repeatedKey('isuite', 0)], test: repeatedKey('itest', 0) })
     expect(firstFailureKey(values)).toBe('/suite:test')
   })
 
@@ -310,5 +316,82 @@ describe('keys and the first failure', () => {
     expect(expandedPage.entries[0]!.key).toBe(firstPage.entries[0]!.key)
     expect(expandedPage.entries[1]!.key).toBe(repeatedKey('/same', 1))
     expect(expandedPage.byKey.get(repeatedKey('/same', 1))?.item).toBe(items[1])
+  })
+
+  describe('rendering keys stay linear and collision safe', () => {
+    const failing: TestSuite = {
+      id: 'leaf',
+      name: 'leaf',
+      tests: [{ id: 'broken', name: 'broken', status: 'failed' }],
+    }
+
+    test('a deep chain of suites keeps every key the size of its own id', () => {
+      const path = firstFailureRenderPath([chain(5_000, failing)])
+      expect(path?.suites).toHaveLength(5_001)
+      const longest = Math.max(...path!.suites.map((key) => key.length))
+      expect(longest).toBeLessThan(32)
+      expect(path?.suites.at(-1)).toBe(repeatedKey('ileaf', 0))
+      expect(path?.test).toBe(repeatedKey('ibroken', 0))
+    })
+
+    test('a deep chain is searched in linear time', () => {
+      const started = performance.now()
+      firstFailureRenderPath([chain(20_000, failing)])
+      expect(performance.now() - started).toBeLessThan(1_000)
+    })
+
+    test('duplicate ids at every depth are told apart by occurrence', () => {
+      const duplicated: TestSuite = {
+        id: 'dup',
+        name: 'outer',
+        suites: [
+          { id: 'dup', name: 'first', tests: [{ id: 't', name: 'ok', status: 'passed' }] },
+          {
+            id: 'dup',
+            name: 'second',
+            tests: [
+              { id: 't', name: 'a', status: 'passed' },
+              { id: 't', name: 'b', status: 'failed' },
+            ],
+          },
+        ],
+      }
+      expect(firstFailureRenderPath([duplicated, { ...duplicated }])).toEqual({
+        suites: [repeatedKey('idup', 0), repeatedKey('idup', 1)],
+        test: repeatedKey('it', 1),
+      })
+    })
+
+    test('an id that looks like a position or contains a separator never collides', () => {
+      const keys = [
+        siblingKey({ id: 'p0' }, 0),
+        siblingKey({}, 0),
+        siblingKey({ id: '/a' }, 0),
+        siblingKey({ id: 'a/' }, 0),
+        siblingKey({ id: '' }, 0),
+        siblingKey({ id: '"],0,["' }, 0),
+      ]
+      expect(new Set(keys).size).toBe(keys.length)
+      const nested = firstFailureRenderPath([
+        {
+          id: 'a',
+          name: 'a',
+          suites: [{ id: 'b', name: 'b', tests: [{ name: 'x', status: 'failed' }] }],
+        },
+      ])
+      const flat = firstFailureRenderPath([
+        { id: 'a/b', name: 'a/b', tests: [{ name: 'x', status: 'failed' }] },
+      ])
+      expect(sameFailure(nested, flat)).toBe(false)
+    })
+
+    test('sameFailure compares the whole path, not just the test key', () => {
+      const one = { suites: ['a', 'b'], test: 't' }
+      expect(sameFailure(one, { suites: ['a', 'b'], test: 't' })).toBe(true)
+      expect(sameFailure(one, { suites: ['a', 'c'], test: 't' })).toBe(false)
+      expect(sameFailure(one, { suites: ['a'], test: 't' })).toBe(false)
+      expect(sameFailure(one, undefined)).toBe(false)
+      expect(sameFailure(undefined, undefined)).toBe(true)
+    })
   })
 })

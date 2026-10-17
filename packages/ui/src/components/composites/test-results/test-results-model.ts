@@ -229,6 +229,17 @@ export function repeatedKey(key: string, occurrence: number): string {
   return JSON.stringify([key, occurrence])
 }
 
+/**
+ * A row's identity among its siblings only: the host id verbatim, or its
+ * position when it has none. The leading letter keeps the two apart, so an id
+ * that looks like a position never collides with one. A row's place in the tree
+ * is the list of these keys from the root, never one string that nests its
+ * parent's, so a key stays as long as its own id however deep the row sits.
+ */
+export function siblingKey(item: Readonly<{ id?: string }>, index: number): string {
+  return item.id === undefined ? `p${index}` : `i${item.id}`
+}
+
 export type BoundedEntry<T> = Readonly<{
   key: string
   item: T
@@ -284,24 +295,46 @@ export function firstFailureKey(suites: readonly TestSuite[]): string | undefine
 }
 
 export type FirstFailureRenderPath = Readonly<{
-  /** Suite rendering keys from the root through the suite containing the failure. */
+  /**
+   * The rendering key of each suite from the root through the suite containing
+   * the failure, one entry per level. A key is unique among its siblings, so
+   * a suite is on the path when its entry at its own depth is its key and its
+   * parent was on the path.
+   */
   suites: readonly string[]
-  /** The unique rendering key for the first failed test, including repeated host ids. */
+  /** The failed test's rendering key among the tests of the last suite on the path. */
   test: string
 }>
 
-/** The first failure's unique rendering keys, including its ancestor suites. */
+/** True when both describe the same failure at the same place in the tree. */
+export function sameFailure(
+  left: FirstFailureRenderPath | undefined,
+  right: FirstFailureRenderPath | undefined
+): boolean {
+  if (left === right) return true
+  if (!left || !right) return false
+  if (left.test !== right.test || left.suites.length !== right.suites.length) return false
+  for (let index = 0; index < left.suites.length; index += 1)
+    if (left.suites[index] !== right.suites[index]) return false
+  return true
+}
+
+/**
+ * The first failure's unique rendering keys, including its ancestor suites. The
+ * work is linear in the suites visited and the path it returns is linear in the
+ * depth, so a long chain of nested suites costs no more than a wide list.
+ */
 export function firstFailureRenderPath(
   suites: readonly TestSuite[]
 ): FirstFailureRenderPath | undefined {
   type Frame = {
     suites: readonly TestSuite[]
-    parent: string
     index: number
     occurrences: Map<string, number>
-    path: readonly string[]
+    /** The rendering key of the suite these are the children of; absent at the root. */
+    key?: string
   }
-  const stack: Frame[] = [{ suites, parent: '', index: 0, occurrences: new Map(), path: [] }]
+  const stack: Frame[] = [{ suites, index: 0, occurrences: new Map() }]
   while (stack.length > 0) {
     const frame = stack[stack.length - 1]!
     const suite = frame.suites[frame.index]
@@ -310,29 +343,26 @@ export function firstFailureRenderPath(
       continue
     }
     frame.index += 1
-    const baseKey = suiteKey(frame.parent, suite, frame.index - 1)
-    const suiteOccurrence = frame.occurrences.get(baseKey) ?? 0
-    frame.occurrences.set(baseKey, suiteOccurrence + 1)
-    const key = repeatedKey(baseKey, suiteOccurrence)
-    const path = [...frame.path, key]
+    const base = siblingKey(suite, frame.index - 1)
+    const occurrence = frame.occurrences.get(base) ?? 0
+    frame.occurrences.set(base, occurrence + 1)
+    const key = repeatedKey(base, occurrence)
     const tests = suite.tests ?? []
     const testOccurrences = new Map<string, number>()
     for (let i = 0; i < tests.length; i += 1) {
-      const baseTestKey = testKey(key, tests[i]!, i)
-      const testOccurrence = testOccurrences.get(baseTestKey) ?? 0
-      testOccurrences.set(baseTestKey, testOccurrence + 1)
+      const testBase = siblingKey(tests[i]!, i)
+      const testOccurrence = testOccurrences.get(testBase) ?? 0
+      testOccurrences.set(testBase, testOccurrence + 1)
       if (tests[i]!.status === 'failed') {
-        return { suites: path, test: repeatedKey(baseTestKey, testOccurrence) }
+        const path: string[] = []
+        for (let depth = 1; depth < stack.length; depth += 1) path.push(stack[depth]!.key!)
+        path.push(key)
+        return { suites: path, test: repeatedKey(testBase, testOccurrence) }
       }
     }
     if (suite.suites?.length) {
-      stack.push({ suites: suite.suites, parent: key, index: 0, occurrences: new Map(), path })
+      stack.push({ suites: suite.suites, index: 0, occurrences: new Map(), key })
     }
   }
   return undefined
-}
-
-/** The unique rendering key for the first failure, including repeated host ids. */
-export function firstFailureRenderKey(suites: readonly TestSuite[]): string | undefined {
-  return firstFailureRenderPath(suites)?.test
 }
