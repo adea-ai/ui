@@ -239,6 +239,22 @@ describe('restoreAnchor follows the reader', () => {
     expect(state.scrollTop).toBe(60)
   })
 
+  test('a row above a reader at rest that grows into the view does not become the turn they are on', () => {
+    // 'a' ends at 200, above the view at 250; 'b' (200 to 500) is the turn in view, 50px up.
+    // 'a' grows by 100: its bottom is now 300, inside the view, and 'b' has moved to 300.
+    const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(scroller)
+    expect(anchor.id).toBe('b')
+
+    state.turns[0]!.height += 100
+    for (const turn of state.turns.slice(1)) turn.top += 100
+    state.scrollHeight = 900
+    expect(restoreAnchor(scroller, anchor)).toBe(100)
+    expect(state.scrollTop).toBe(350)
+    expect(anchor.id).toBe('b')
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+  })
+
   test('the scroll event a restore causes keeps the anchor', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)

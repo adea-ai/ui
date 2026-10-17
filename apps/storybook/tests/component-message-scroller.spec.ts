@@ -424,13 +424,20 @@ test.describe('history', () => {
     const anchorId = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
     expect(anchorId).toBe('turn-1002')
 
-    await scroller(page).evaluate((element) => {
+    // The offset turn-1000 has at the top is read in the same task, before the row grows,
+    // so the expectation is measured on this engine and not carried over from another.
+    const baseline = await scroller(page).evaluate((element) => {
       element.scrollTo({ top: 0, behavior: 'instant' })
+      const offset = () =>
+        element.querySelector('[data-anchor-id="turn-1000"]')!.getBoundingClientRect().top -
+        element.getBoundingClientRect().top
+      const before = offset()
       element.querySelector<HTMLElement>('[data-anchor-id="turn-1001"]')!.style.paddingBottom =
         '30px'
       element
         .querySelector('[data-slot="conversation-content"]')!
         .append(document.createElement('span'))
+      return before
     })
     await atRest(page)
 
@@ -439,9 +446,57 @@ test.describe('history', () => {
       const element = surface.querySelector('[data-anchor-id="turn-1000"]')!
       return element.getBoundingClientRect().top - surface.getBoundingClientRect().top
     })
-    // Turn-1000 sat 65.59 px from the top at rest before anything moved; it is the turn in view.
-    expect(Math.abs(offset - 65.59375), `turn-1000 is at ${offset}px`).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(offset - baseline),
+      `turn-1000 is at ${offset}px, was ${baseline}px`
+    ).toBeLessThanOrEqual(1)
     expect((await metrics(page)).top).toBe(0)
+  })
+
+  test('a row above a reader at rest that grows moves the reader down by the growth', async ({
+    page,
+  }) => {
+    // The reader is parked on a turn, with the row before it just out of view. That row
+    // grows (an image, highlighted code, a row leaving `content-visibility`) far enough
+    // that its bottom edge is now inside the view. The turn the reader was on has moved
+    // down by the growth and the view must follow it: the growing row is not the turn the
+    // reader was reading, even though some of it is now in view.
+    await setMode(page, 'gated')
+    await settled(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 300, behavior: 'instant' }))
+    await expect.poll(() => calls(page)).toBe(1)
+    await atRest(page)
+    const anchorId = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
+    expect(anchorId).toBe('turn-1002')
+
+    const geometry = await scroller(page).evaluate((element) => {
+      const top = element.getBoundingClientRect().top
+      const turn = (id: string) =>
+        element.querySelector<HTMLElement>(`[data-anchor-id="${id}"]`)!.getBoundingClientRect()
+      const before = { reader: turn('turn-1002').top - top, above: turn('turn-1001').bottom - top }
+      const row = element.querySelector<HTMLElement>('[data-anchor-id="turn-1001"]')!
+      // Enough to bring the row's bottom edge 100 px into the view.
+      const padding = parseFloat(getComputedStyle(row).paddingBottom)
+      row.style.paddingBottom = `${padding + Math.ceil(100 - before.above)}px`
+      return { before, scrollTop: element.scrollTop }
+    })
+    expect(
+      geometry.before.above,
+      'the row before the reader starts out of view'
+    ).toBeLessThanOrEqual(0)
+    await atRest(page)
+
+    const after = await scroller(page).evaluate((element) => {
+      const top = element.getBoundingClientRect().top
+      const turn = (id: string) =>
+        element.querySelector<HTMLElement>(`[data-anchor-id="${id}"]`)!.getBoundingClientRect()
+      return { reader: turn('turn-1002').top - top, scrollTop: element.scrollTop }
+    })
+    expect(
+      Math.abs(after.reader - geometry.before.reader),
+      `turn-1002 is at ${after.reader}px, was ${geometry.before.reader}px`
+    ).toBeLessThanOrEqual(1)
+    expect(after.scrollTop).toBeGreaterThan(geometry.scrollTop)
   })
 
   test('never starts a second load while one is in flight', async ({ page }) => {

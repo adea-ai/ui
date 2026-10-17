@@ -14,8 +14,11 @@
  * fling or touch momentum that was still running when the load began) keeps the
  * scroll: nothing is restored to an offset captured earlier.
  *
- * It is the turn the reader is on that is measured, not the one the load began on,
- * and nothing below that turn counts: a row further down that sizes itself late (an
+ * It is the turn the reader was on that is measured, found from where the turns sat
+ * when the marks were taken and not from where the change has left them: a row above
+ * the reader that grows far enough to reach into the view has not become the turn they
+ * are reading, and the turn they are reading has moved down by the growth. Nothing
+ * below that turn counts: a row further down that sizes itself late (an
  * image, highlighted code, a row leaving `content-visibility`) moves rows below the
  * reader, not the reader. The turns above the reader count, because they are what
  * an insert or a late resize above pushes the view down by.
@@ -29,6 +32,8 @@ export type ScrollAnchor = {
    * some below. Empty when no turn carries an id.
    */
   marks: Map<string, number>
+  /** The document position of the bottom edge of each marked turn, when the marks were taken. */
+  ends: Map<string, number>
   /** Fallback when no turn carries an id: the scroll height at the last restore. */
   scrollHeight: number
   /** The scroll offset at the last restore. */
@@ -60,7 +65,8 @@ export function captureAnchor(scroller: HTMLElement, known?: ReadonlySet<string>
   const box = scroller.getBoundingClientRect()
   const scrollTop = scroller.scrollTop
   const marks = new Map<string, number>()
-  const above: Array<[string, number]> = []
+  const ends = new Map<string, number>()
+  const above: Array<[string, number, number]> = []
   let id: string | undefined
   let below = 0
   for (const element of scroller.querySelectorAll<HTMLElement>(`[${ANCHOR_ATTRIBUTE}]`)) {
@@ -68,41 +74,54 @@ export function captureAnchor(scroller: HTMLElement, known?: ReadonlySet<string>
     if (known && !known.has(turn)) continue
     const rect = element.getBoundingClientRect()
     const position = rect.top - box.top + scrollTop
+    const end = rect.bottom - box.top + scrollTop
     if (id === undefined) {
       if (rect.bottom > box.top) {
         id = turn
-        for (const [earlier, where] of above) marks.set(earlier, where)
+        for (const [earlier, where, bottom] of above) {
+          marks.set(earlier, where)
+          ends.set(earlier, bottom)
+        }
         marks.set(turn, position)
+        ends.set(turn, end)
       } else {
-        above.push([turn, position])
+        above.push([turn, position, end])
         if (above.length > MARKS_ABOVE) above.shift()
       }
     } else {
       marks.set(turn, position)
+      ends.set(turn, end)
       below += 1
       if (below >= MARKS_BELOW) break
     }
   }
-  return { id, marks, scrollHeight: scroller.scrollHeight, scrollTop }
+  return { id, marks, ends, scrollHeight: scroller.scrollHeight, scrollTop }
 }
 
 /**
- * The marked turn the reader is on now (the first one with any of it in view, or the
- * last one if every marked turn is above the view) and where it sits in the document.
+ * The marked turn the reader is on and where it sits in the document now. The turn is
+ * chosen by where the marked turns were (the first one that reached into the view at the
+ * scroll offset now, or the last one if every marked turn was above it), among those still
+ * in the scroller; its position is read from where the content has put it.
  */
 function turnInView(
   scroller: HTMLElement,
-  marks: ReadonlyMap<string, number>
+  anchor: ScrollAnchor
 ): { id: string; position: number } | undefined {
   const box = scroller.getBoundingClientRect()
   const scrollTop = scroller.scrollTop
-  let last: { id: string; position: number } | undefined
+  const present = new Map<string, number>()
   for (const element of scroller.querySelectorAll<HTMLElement>(`[${ANCHOR_ATTRIBUTE}]`)) {
     const id = element.getAttribute(ANCHOR_ATTRIBUTE)!
-    if (!marks.has(id)) continue
-    const rect = element.getBoundingClientRect()
-    last = { id, position: rect.top - box.top + scrollTop }
-    if (rect.bottom > box.top) return last
+    if (anchor.marks.has(id))
+      present.set(id, element.getBoundingClientRect().top - box.top + scrollTop)
+  }
+  let last: { id: string; position: number } | undefined
+  for (const id of anchor.marks.keys()) {
+    const position = present.get(id)
+    if (position === undefined) continue
+    last = { id, position }
+    if ((anchor.ends.get(id) ?? Infinity) > scrollTop) return last
   }
   return last
 }
@@ -124,7 +143,7 @@ export function restoreAnchor(scroller: HTMLElement, anchor: ScrollAnchor | unde
   if (!anchor) return 0
   let correction = 0
   if (anchor.marks.size > 0) {
-    const turn = turnInView(scroller, anchor.marks)
+    const turn = turnInView(scroller, anchor)
     if (turn) correction = turn.position - anchor.marks.get(turn.id)!
   } else if (anchor.id === undefined) {
     // No turn carries an id: the growth since the last restore is added to where the
@@ -138,10 +157,12 @@ export function restoreAnchor(scroller: HTMLElement, anchor: ScrollAnchor | unde
   if (next.marks.size > 0 || anchor.marks.size === 0) {
     anchor.id = next.id
     anchor.marks = next.marks
+    anchor.ends = next.ends
   } else {
     // None of the turns that were there before the load is in view (the reader is among
     // the rows that landed): keep the old marks, moved by what the content did.
     for (const [id, position] of anchor.marks) anchor.marks.set(id, position + correction)
+    for (const [id, end] of anchor.ends) anchor.ends.set(id, end + correction)
   }
   anchor.scrollTop = scroller.scrollTop
   anchor.scrollHeight = scroller.scrollHeight
