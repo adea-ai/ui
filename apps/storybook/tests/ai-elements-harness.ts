@@ -6,7 +6,7 @@ import { expect, type Page } from '@playwright/test'
  *
  * The page is served from `http://localhost` rather than `about:blank` so the
  * clipboard behaves as it does in an application: `navigator.clipboard` exists,
- * the specs can grant `clipboard-read`/`clipboard-write`, and a copy reaches the
+ * Chromium specs are granted `clipboard-read`/`clipboard-write`, and a copy reaches the
  * real clipboard instead of a stub that would pass whatever the component wrote.
  */
 const ORIGIN = 'http://localhost:4173'
@@ -23,15 +23,41 @@ export async function mountFixture(
       body: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title></head><body></body></html>`,
     })
   )
-  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN })
+  // Only Chromium has `clipboard-read` and `clipboard-write` permissions to grant. WebKit
+  // rejects them as unknown and fails the setup before the fixture mounts, so it runs with
+  // the clipboard it has: its own `navigator.clipboard`, with no permission granted. A spec
+  // that reads the clipboard back still reads the real one, and fails if WebKit refuses it.
+  if (page.context().browser()?.browserType().name() === 'chromium')
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN })
   await page.goto(`${ORIGIN}/${search}`)
   await page.addStyleTag({ content: bundle.css })
   await page.addScriptTag({ content: bundle.script })
 }
 
+/**
+ * Switch the theme and return once the page has finished changing colour.
+ *
+ * The base styles transition text, background and border colours over 200 ms, so
+ * for that long after the class changes an element's computed colour is a blend of
+ * the two themes. Axe reads those blends, and a half-way mix of two themes fails
+ * contrast that neither theme does (frozen at 20 ms and 60 ms into a dark-to-light
+ * change, a message page reports 54 and 7 failing nodes; at 100 ms and later, none).
+ * The components keep their transitions: this waits for the ones the change started
+ * rather than turning them off. Only finite transitions are awaited, so a running
+ * spinner or caret does not hold the page up.
+ */
 export async function setTheme(page: Page, theme: 'light' | 'dark') {
-  await page.evaluate((next) => {
+  await page.evaluate(async (next) => {
     document.documentElement.classList.toggle('dark', next === 'dark')
+    // Reading a computed style makes the browser recalculate styles now, which is when
+    // the transitions this class change causes are created.
+    void getComputedStyle(document.body).color
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation instanceof CSSTransition)
+        .map((animation) => animation.finished.catch(() => undefined))
+    )
   }, theme)
 }
 
