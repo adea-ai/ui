@@ -16,6 +16,8 @@ type FixtureWindow = Window & {
   growPagedResults?: () => void
   reportStreamingFailure?: () => void
   updateStreamingFailure?: () => void
+  lazyReads?: { diff: number; stack: number }
+  updateLazyResults?: () => void
 }
 
 const initial: TestSuite[] = [
@@ -87,6 +89,40 @@ const streamingSuite = (status: 'running' | 'failed', message?: string): TestSui
 ]
 const [streamingSuites, setStreamingSuites] = createSignal(streamingSuite('running'))
 
+// A suite that opens itself (its first test failed) with a second, collapsed test whose
+// diff and stack count every read, so a body built for a closed test shows as reads
+// and not only as nodes in the page.
+const lazyReads = { diff: 0, stack: 0 }
+;(window as FixtureWindow).lazyReads = lazyReads
+const lazyDiff = '--- a/file.ts\n+++ b/file.ts\n@@ -1 +1 @@\n-expected\n+received\n'
+const lazySuite = (revision: number): TestSuite[] => [
+  {
+    id: 'lazy-suite',
+    name: 'Lazy suite',
+    tests: [
+      { id: 'open-failure', name: 'Open failure', status: 'failed', message: 'Opens itself' },
+      {
+        id: 'hidden',
+        name: `Hidden diff r${revision}`,
+        status: 'failed',
+        get diff() {
+          lazyReads.diff += 1
+          return lazyDiff
+        },
+        get stack() {
+          lazyReads.stack += 1
+          return 'Error: hidden\n    at hidden (/app/src/hidden.ts:1:1)'
+        },
+      },
+    ],
+  },
+]
+const [lazySuites, setLazySuites] = createSignal(lazySuite(1))
+;(window as FixtureWindow).updateLazyResults = () => {
+  // Returns nothing: a returned suite would be serialised by the test driver, reading every getter.
+  setLazySuites(lazySuite(2))
+}
+
 ;(window as FixtureWindow).replaceResults = () => {
   setSuites([
     {
@@ -122,6 +158,7 @@ render(
       <TestResults suites={suites()} summary={summary()} />
       <TestResults label="Paged test results" suites={pagedSuites()} listLimit={2} />
       <TestResults label="Streaming test results" suites={streamingSuites()} running />
+      <TestResults label="Lazy detail test results" suites={lazySuites()} />
       <TestResults label="Deeply nested test results" suites={[deepChain(40)]} />
       <TestResults
         label="Large failure test results"

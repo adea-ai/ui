@@ -206,3 +206,45 @@ test('a large failure message is bounded, scrolls, and can be shown or copied in
   await quiet.click()
   await expect(results.getByText('Short failure')).toBeVisible()
 })
+
+test('a closed test in an open suite builds no detail, however often it is updated', async ({
+  page,
+}) => {
+  const results = page.getByRole('region', { name: 'Lazy detail test results' })
+  const reads = () =>
+    page.evaluate(() => {
+      const counted = (window as unknown as { lazyReads: { diff: number; stack: number } })
+        .lazyReads
+      return { diff: counted.diff, stack: counted.stack }
+    })
+
+  // The suite opened itself on its first failure; the second test is closed.
+  await expect(results.getByRole('button', { name: 'Open failure' })).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
+  const hidden = results.getByRole('button', { name: /Hidden diff r1/ })
+  await expect(hidden).toHaveAttribute('aria-expanded', 'false')
+
+  // The one read of `diff` is the check that there is something to disclose. The old body also
+  // read it to test it and to hand it to the diff, and read `stack` to build the trace.
+  expect(await reads()).toEqual({ diff: 1, stack: 0 })
+
+  // A hidden immutable update replaces the test and reads its diff once, to find it still has one.
+  await page.evaluate(() =>
+    (window as unknown as { updateLazyResults: () => void }).updateLazyResults()
+  )
+  await expect(results.getByRole('button', { name: /Hidden diff r2/ })).toHaveAttribute(
+    'aria-expanded',
+    'false'
+  )
+  expect(await reads()).toEqual({ diff: 2, stack: 0 })
+
+  // Opening it builds the detail, and the diff and stack are drawn from the same values.
+  await results.getByRole('button', { name: /Hidden diff r2/ }).click()
+  await expect(results.getByText('Error: hidden')).toBeVisible()
+  await expect(results.getByRole('region', { name: /^Diff for / })).toHaveCount(1)
+  const opened = await reads()
+  expect(opened.diff).toBeGreaterThan(2)
+  expect(opened.stack).toBeGreaterThan(0)
+})

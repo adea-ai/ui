@@ -306,7 +306,9 @@ function TestLine(props: {
 }) {
   const test = () => props.test()
   const state = () => (test().status ? TRACE_STATUS[test().status as TestCaseStatus] : undefined)
-  const hasDetail = () => Boolean(test().message || test().diff || test().stack)
+  // Whether there is anything to disclose. Read once per change, so the disclosure
+  // exists while closed without anything below it being built.
+  const hasDetail = createMemo(() => Boolean(test().message || test().diff || test().stack))
   // Only the last suite on the failure's path is given it, so a key among
   // this suite's tests is enough to know the failure is this test.
   const failureKey = createMemo(
@@ -346,17 +348,21 @@ function TestLine(props: {
       onOpenChange={handleOpenChange}
     >
       {hasDetail() ? (
-        <TraceDetail class="flex flex-col gap-2">
-          <Show when={test().message}>
-            <FailureMessage text={test().message!} />
-          </Show>
-          <Show when={test().diff}>
-            <DiffBlock patch={test().diff!} complete title="Expected and received" />
-          </Show>
-          <Show when={test().stack}>
-            <StackTrace text={test().stack!} onOpenFrame={props.onOpenFrame} />
-          </Show>
-        </TraceDetail>
+        // A closed test builds nothing: the body is made when it is opened, so a diff or
+        // stack is not parsed for every test of an open suite.
+        <Show when={open()}>
+          <TraceDetail class="flex flex-col gap-2">
+            <Show when={test().message}>
+              <FailureMessage text={test().message!} />
+            </Show>
+            <Show when={test().diff}>
+              <DiffBlock patch={test().diff!} complete title="Expected and received" />
+            </Show>
+            <Show when={test().stack}>
+              <StackTrace text={test().stack!} onOpenFrame={props.onOpenFrame} />
+            </Show>
+          </TraceDetail>
+        </Show>
       ) : undefined}
     </TraceLine>
   )
