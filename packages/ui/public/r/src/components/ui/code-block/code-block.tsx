@@ -70,10 +70,13 @@ import { cn } from '../../../lib/utils'
  * - **copies the source exactly.** The copy button writes `code` as given: no
  *   trailing-newline trimming, no line numbers, no gutter glyphs, and the whole
  *   block even when only part of it is rendered (`lineLimit`).
- * - **bounds a large render.** Past `lineLimit` lines the per-line renderer shows
- *   the first lines and a control to show the rest, because tens of thousands of
- *   row elements are a freeze, not a transcript. The plain renderer is a single
- *   text node and needs no limit.
+ * - **bounds a large render.** Past `lineLimit` lines the per-line renderer and a
+ *   highlighted render show the first lines and a control to show the rest,
+ *   because tens of thousands of row elements, or a tokenizer run over all of
+ *   them, are a freeze, not a transcript. Which renderer is in use is decided
+ *   at the time, so a highlighter that loads late takes over the bound from the
+ *   per-line rows and the note below the block always describes what is drawn.
+ *   The plain renderer is a single text node and needs no limit.
  * - **comes in a small size** (`size="sm"`) for tool output inside a Trace line.
  */
 export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children' | 'onCopy'> & {
@@ -114,7 +117,9 @@ export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children' | 'onCopy'> 
   size?: 'default' | 'sm'
   /**
    * Marks on 1-based line numbers. Applies to the per-line renderer, which is
-   * used whenever marks or line numbers are present and no `highlight` is given.
+   * used whenever marks or line numbers are present and no highlighter is in use,
+   * given as `highlight` or loaded by `loadHighlight`: a highlighter replaces the
+   * rows, so the marks and the gutter go with them.
    */
   lineMarks?: Readonly<Record<number, CodeLineMark>>
   /**
@@ -122,7 +127,10 @@ export type CodeBlockProps = Omit<ComponentProps<'div'>, 'children' | 'onCopy'> 
    * complete; resolving to `undefined` (or rejecting) keeps the plain rendering.
    */
   loadHighlight?: (language: string | undefined) => Promise<CodeHighlighter | undefined>
-  /** Lines the per-line renderer shows before offering the rest. Default 2000. */
+  /**
+   * Lines the per-line and the highlighted renderer show before offering the
+   * rest. Default 2000. The plain renderer is one text node and is not limited.
+   */
   lineLimit?: number
   /** Called after each copy attempt with whether the clipboard accepted it. */
   onCopy?: (ok: boolean) => void
@@ -196,9 +204,6 @@ export function CodeBlock(props: CodeBlockProps) {
   const lineLimit = () => local.lineLimit ?? CODE_BLOCK_LINE_LIMIT
   const visibleLines = createMemo(() => (showAll() ? lines() : lines().slice(0, lineLimit())))
   const hiddenLines = () => lines().length - visibleLines().length
-  const perLine = () =>
-    local.highlight === undefined &&
-    (local.showLineNumbers === true || local.lineMarks !== undefined)
 
   // Load once the block has stopped changing. `on` keys the effect to the
   // language and completion, not to every streamed character, and a stale
@@ -224,6 +229,12 @@ export function CodeBlock(props: CodeBlockProps) {
     )
   )
   const highlighter = (): CodeHighlighter | undefined => local.highlight ?? loaded()
+  // The renderer in use decides everything about the limit, not the props alone:
+  // a highlighter that has loaded since the first render replaces the per-line
+  // rows, so what is drawn, and what the footer may say, follows `highlighter()`.
+  const perLine = () =>
+    highlighter() === undefined && (local.showLineNumbers === true || local.lineMarks !== undefined)
+  const truncated = () => hiddenLines() > 0 && (highlighter() !== undefined || perLine())
   const maxHeight = () =>
     typeof local.maxHeight === 'number' ? `${local.maxHeight}px` : local.maxHeight
 
@@ -327,10 +338,12 @@ export function CodeBlock(props: CodeBlockProps) {
           }
         >
           {(highlight) => (
-            <div class={small() ? 'px-2 py-1.5' : 'px-3 py-2'}>{highlight()(local.code)}</div>
+            <div class={small() ? 'px-2 py-1.5' : 'px-3 py-2'}>
+              {highlight()(hiddenLines() > 0 ? visibleLines().join('\n') : local.code)}
+            </div>
           )}
         </Show>
-        <Show when={perLine() && hiddenLines() > 0}>
+        <Show when={truncated()}>
           <div class="flex items-center gap-2 border-t border-border px-3 py-1 text-xs text-muted-foreground">
             <span>
               Showing the first {visibleLines().length.toLocaleString()} of{' '}

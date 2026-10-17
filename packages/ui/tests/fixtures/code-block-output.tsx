@@ -15,6 +15,7 @@ type Controls = {
   calls: Record<string, (string | undefined)[]>
   renderMs: number
   resolveLate: () => void
+  resolveLateLimited: () => void
   rejectLate: () => void
   setComplete: (complete: boolean) => void
   appendStreamed: () => void
@@ -26,6 +27,7 @@ const controls: Controls = {
   calls: {},
   renderMs: 0,
   resolveLate: () => undefined,
+  resolveLateLimited: () => undefined,
   rejectLate: () => undefined,
   setComplete: () => undefined,
   appendStreamed: () => undefined,
@@ -44,6 +46,7 @@ controls.sources = {
   unicode: 'héllo wörld 😀 日本語 👩‍👩‍👧\r\nsecond line\r\n\ttabbed ☃​end',
   selection: 'first line\nsecond line\nthird line\nfourth line\nfifth line',
   late: lines(12, 'const value ='),
+  lateLimited: lines(30, 'limited row'),
   big: lines(20_000, 'output line'),
   medium: lines(1_500, 'medium line'),
   scroll: lines(100, 'scrolling line'),
@@ -70,6 +73,11 @@ const late = new Promise<CodeHighlighter | undefined>((resolve, reject) => {
   rejectLate = reject
 })
 late.catch(() => undefined)
+let resolveLateLimited: (value: CodeHighlighter | undefined) => void = () => undefined
+const lateLimited = new Promise<CodeHighlighter | undefined>((resolve) => {
+  resolveLateLimited = resolve
+})
+controls.resolveLateLimited = () => resolveLateLimited(highlighter)
 controls.resolveLate = () => resolveLate(highlighter)
 controls.rejectLate = () => rejectLate(new Error('grammar failed to load'))
 
@@ -140,6 +148,17 @@ render(
         complete
         code={controls.sources['late']!}
         loadHighlight={(language) => (record('late', language), late)}
+      />
+      <CodeBlock
+        id="late-limited"
+        language="ts"
+        complete
+        showLineNumbers
+        lineLimit={10}
+        lineMarks={{ 2: 'add', 3: 'remove' }}
+        code={controls.sources['lateLimited']!}
+        loadHighlight={() => lateLimited}
+        onCopy={onCopy('late-limited')}
       />
       <CodeBlock
         id="rejected"

@@ -331,6 +331,49 @@ test.describe('output: copy, marks, lazy highlighting, bounds', () => {
     ])
   })
 
+  test('a block cut at its line limit says so only while the rows it describes are drawn', async ({
+    page,
+  }) => {
+    const block = page.locator('#late-limited')
+    await block.scrollIntoViewIfNeeded()
+    const note = block.getByText('Showing the first 10 of 30 lines.')
+    const first = Array.from({ length: 10 }, (_, index) => `limited row ${index + 1}`)
+    const everything = Array.from({ length: 30 }, (_, index) => `limited row ${index + 1}`)
+
+    // Before the highlighter arrives: ten numbered, marked rows and the note.
+    await expect(note).toBeVisible()
+    await expect(block.locator('[data-mark="add"]')).toHaveCount(1)
+    await expect(block.locator('pre')).toContainText('limited row 10')
+    await expect(block.locator('pre')).not.toContainText('limited row 11')
+
+    // After: the highlighter draws the same ten lines, so the note is still true.
+    await page.evaluate(() => (window as OutputWindow).fixture.resolveLateLimited())
+    await expect(block.locator('[data-highlighted]')).toHaveCount(1)
+    await expect(note).toBeVisible()
+    expect(
+      await block.locator('[data-highlighted]').evaluate((element) => element.textContent)
+    ).toBe(first.join('\n'))
+
+    // Showing everything draws everything, and the note goes with the cut.
+    await block.getByRole('button', { name: 'Show all 30 lines' }).click()
+    await expect(block.getByText(/Showing the first/)).toHaveCount(0)
+    expect(
+      await block.locator('[data-highlighted]').evaluate((element) => element.textContent)
+    ).toBe(everything.join('\n'))
+
+    // Copy writes the source whatever was drawn.
+    await copyButton(page, 'late-limited').click()
+    await expect.poll(async () => (await written(page)).at(-1)).toBe(everything.join('\n'))
+  })
+
+  test('a highlighted block within its limit has no note', async ({ page }) => {
+    const block = page.locator('#late')
+    await block.scrollIntoViewIfNeeded()
+    await page.evaluate(() => (window as OutputWindow).fixture.resolveLate())
+    await expect(block.locator('[data-highlighted]')).toHaveCount(1)
+    await expect(block.getByText(/Showing the first/)).toHaveCount(0)
+  })
+
   test('a failing, empty or badly behaved loader leaves plain text and no error', async ({
     page,
   }) => {
