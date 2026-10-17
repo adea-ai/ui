@@ -6,6 +6,7 @@ import '../../src/styles/globals.css'
 function NumberFieldOptionalFixture() {
   const [limit, setLimit] = createSignal<number | null>(null)
   const [locked, setLocked] = createSignal<number | null>(500)
+  const [count, setCount] = createSignal(3)
   const [changes, setChanges] = createSignal('')
 
   return (
@@ -30,6 +31,16 @@ function NumberFieldOptionalFixture() {
         min={1}
         max={1000}
         onChange={setLocked}
+      />
+      <NumberField
+        label="Required count"
+        value={count()}
+        min={1}
+        max={10}
+        onChange={(value) => {
+          setCount(value)
+          setChanges((current) => `${current}count=${value};`)
+        }}
       />
       <button type="button" onClick={() => setLimit(250)}>
         Set limit

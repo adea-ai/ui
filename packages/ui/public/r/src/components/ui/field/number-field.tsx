@@ -72,7 +72,11 @@ export function NumberField(props: NumberFieldProps) {
     setDraft(text(props.value))
   })
 
-  const validate = (raw: string) => {
+  // A number input reports '' both when it is empty and when it holds text it cannot parse
+  // ("abc", "-", "1e"); only `validity.badInput` tells them apart, and a bad draft must never
+  // count as blank (it would report `null` and clear the limit).
+  const validate = (raw: string, badInput: boolean) => {
+    if (badInput) return `${props.label} must be a valid number.`
     if (!raw) return props.optional ? '' : `${props.label} is required.`
     const next = Number(raw)
     if (!Number.isFinite(next)) return `${props.label} must be a valid number.`
@@ -107,18 +111,25 @@ export function NumberField(props: NumberFieldProps) {
         disabled={props.disabled}
         onInput={(event) => {
           const raw = event.currentTarget.value
-          setDraft(raw)
-          const nextError = validate(raw)
+          // Read before touching the draft: writing '' back to the input would clear the entry and
+          // with it `badInput`. An unparsable entry keeps the last draft and the text on screen, so
+          // the user can correct it; blur restores the last good value.
+          const badInput = event.currentTarget.validity.badInput
+          if (!badInput) setDraft(raw)
+          const nextError = validate(raw, badInput)
           setError(nextError)
           if (nextError) return
           // `optional` narrows the callback to `number | null`; a required field never sees `''`.
           ;(props.onChange as (value: number | null) => void)(raw ? Number(raw) : null)
         }}
         onBlur={(event) => {
-          const nextError = validate(draft())
+          const nextError = validate(draft(), event.currentTarget.validity.badInput)
           if (nextError) {
             setDraft(text(props.value))
             setError('')
+            // The draft of an unparsable entry is '' and so is the restored blank value: the signal
+            // does not change, so the DOM has to be reset by hand to drop the leftover text.
+            event.currentTarget.value = text(props.value)
           }
           props.onBlur?.(event)
         }}
