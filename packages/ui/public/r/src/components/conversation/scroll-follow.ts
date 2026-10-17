@@ -19,6 +19,7 @@ import {
   bottomTarget,
   computeAtBottom,
   evaluateAutoPin,
+  isContentDrivenDrop,
   isSelfScroll,
   resolveUserScrollStick,
 } from './scroll-follow-core'
@@ -44,6 +45,8 @@ export function createScrollFollow(options: {
   let stick = true
   let lastWriteTop = -1
   let lastWriteClientHeight = -1
+  let lastWriteHeight = -1
+  let readerInput = false
   let previousTop = -1
   let lastScrollClientHeight = 0
   let pendingRestore: { frame: number; fromTop: number; target: number } | undefined
@@ -66,11 +69,25 @@ export function createScrollFollow(options: {
     element.scrollTop = target
     lastWriteTop = element.scrollTop
     lastWriteClientHeight = element.clientHeight
+    lastWriteHeight = element.scrollHeight
+    readerInput = false
     previousTop = element.scrollTop
+  }
+  // Anything the reader does to the scroller counts as intent, so only a move with no
+  // input behind it can be read as the content's.
+  const markInput = () => {
+    readerInput = true
   }
   const pinAuto = () => {
     if (!scroller || !options.enabled() || pendingRestore) return
     const geom = geometry(scroller)
+    if (isContentDrivenDrop({ stick, readerInput, geom, lastWriteTop, lastWriteHeight })) {
+      // The content clamped the offset and then grew: the reader did not leave the end.
+      writePin(scroller, bottomTarget(geom))
+      setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
+      reportPosition()
+      return
+    }
     const result = evaluateAutoPin({
       stick,
       geom,
@@ -82,6 +99,7 @@ export function createScrollFollow(options: {
     else if (result.stick) {
       lastWriteTop = result.target
       lastWriteClientHeight = geom.clientHeight
+      lastWriteHeight = geom.scrollHeight
     }
     setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
     reportPosition()
@@ -114,6 +132,13 @@ export function createScrollFollow(options: {
     }
     const geom = geometry(scroller)
     setAtBottom(computeAtBottom(geom, options.threshold()))
+    if (isContentDrivenDrop({ stick, readerInput, geom, lastWriteTop, lastWriteHeight })) {
+      writePin(scroller, bottomTarget(geom))
+      setAtBottom(true)
+      lastScrollClientHeight = scroller.clientHeight
+      reportPosition()
+      return
+    }
     if (!isSelfScroll(geom.scrollTop, lastWriteTop)) {
       stick = resolveUserScrollStick({
         stick,
@@ -167,6 +192,8 @@ export function createScrollFollow(options: {
     stick = true
     lastWriteTop = -1
     lastWriteClientHeight = -1
+    lastWriteHeight = -1
+    readerInput = false
     previousTop = -1
     lastScrollClientHeight = 0
     setAtBottom(true)
@@ -250,6 +277,8 @@ export function createScrollFollow(options: {
     jump,
     bindScroller: (element: HTMLDivElement) => {
       scroller = element
+      for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'])
+        element.addEventListener(type, markInput, { passive: true })
     },
     bindContent: (element: HTMLDivElement) => {
       content = element

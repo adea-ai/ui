@@ -21,6 +21,7 @@ import {
   isSelfScroll,
   resolveUserScrollStick,
   evaluateAutoPin,
+  isContentDrivenDrop,
   atBottomEpsilon,
   SELF_SCROLL_EPSILON,
   DEFAULT_BOTTOM_THRESHOLD,
@@ -659,5 +660,75 @@ describe('resolveUserScrollStick — a clamp only ever lowers scrollTop', () => 
       viewportGrowth: 50,
     })
     expect(armed).toBe(false)
+  })
+})
+
+describe('isContentDrivenDrop — a clamp the content made is not the reader scrolling up', () => {
+  // We last put the reader at the bottom of 1000px of content in a 400px viewport (offset 600).
+  // The content then shrank (offset clamped to 480) and 900px landed above them.
+  const clampedThenGrown = { scrollTop: 480, scrollHeight: 1780, clientHeight: 400 }
+  const base = {
+    stick: true,
+    readerInput: false,
+    geom: clampedThenGrown,
+    lastWriteTop: 600,
+    lastWriteHeight: 1000,
+  }
+
+  it('reads an offset below our write, with the height changed and no input, as the content', () => {
+    expect(isContentDrivenDrop(base)).toBe(true)
+  })
+
+  it('also reads it so when the content ended up shorter than it was', () => {
+    expect(isContentDrivenDrop({ ...base, geom: { ...clampedThenGrown, scrollHeight: 700 } })).toBe(
+      true
+    )
+  })
+
+  it('leaves any scroll with input behind it to the reader (wheel, touch, key, scrollbar)', () => {
+    expect(isContentDrivenDrop({ ...base, readerInput: true })).toBe(false)
+  })
+
+  it('leaves a move with the content unchanged to the reader (a reveal, not a clamp)', () => {
+    expect(
+      isContentDrivenDrop({ ...base, geom: { ...clampedThenGrown, scrollHeight: 1000 } })
+    ).toBe(false)
+    expect(
+      isContentDrivenDrop({ ...base, geom: { ...clampedThenGrown, scrollHeight: 1001 } })
+    ).toBe(false)
+  })
+
+  it('needs the offset to be below our write by more than the self-scroll epsilon', () => {
+    expect(isContentDrivenDrop({ ...base, geom: { ...clampedThenGrown, scrollTop: 599 } })).toBe(
+      false
+    )
+    expect(isContentDrivenDrop({ ...base, geom: { ...clampedThenGrown, scrollTop: 700 } })).toBe(
+      false
+    )
+  })
+
+  it('does nothing when follow is not armed or nothing was written this session', () => {
+    expect(isContentDrivenDrop({ ...base, stick: false })).toBe(false)
+    expect(isContentDrivenDrop({ ...base, lastWriteTop: -1 })).toBe(false)
+    expect(isContentDrivenDrop({ ...base, lastWriteHeight: -1 })).toBe(false)
+  })
+
+  it('the old rules would have released this reader, which is what the guard is for', () => {
+    expect(
+      evaluateAutoPin({
+        stick: true,
+        geom: clampedThenGrown,
+        lastWriteTop: 600,
+      }).stick
+    ).toBe(false)
+    expect(
+      resolveUserScrollStick({
+        stick: true,
+        followOutput: true,
+        scrollTop: 480,
+        prevScrollTop: 600,
+        geom: clampedThenGrown,
+      })
+    ).toBe(false)
   })
 })

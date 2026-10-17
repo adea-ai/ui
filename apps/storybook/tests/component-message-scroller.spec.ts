@@ -211,6 +211,39 @@ const parkAndLoad = async (page: Page, id: string) => {
 const probe = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.probe)
 const calls = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.calls)
 const turnCount = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.turnCount())
+
+// The new thread's rows are still taking their real height when a stale load lands: the
+// engine clamps the offset down with them, and the rows the load inserts above the reader
+// arrive before the clamp's scroll event is read. Native scroll anchoring would carry the
+// reader through the insert by itself, which is not the case in every engine (WebKit has
+// none), so it is switched off here to test the follow logic and not the engine.
+const clampWithStaleInsert = async (page: Page) => {
+  await page.addStyleTag({ content: '#scroller { overflow-anchor: none !important; }' })
+  await setMode(page, 'gated')
+  await wheel(page, -100_000)
+  await expect.poll(() => calls(page)).toBe(1)
+  await expect(page.getByText('Loading earlier messages…')).toBeVisible()
+  await page.evaluate(() => (window as FixtureWindow).fixture.switchTo('B'))
+  await expect(page.getByText('Loading earlier messages…')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Load earlier messages' })).toBeVisible()
+  await expect.poll(async () => (await metrics(page)).fromBottom).toBeLessThanOrEqual(1)
+  await settled(page)
+}
+const collapseTailAndRelease = (page: Page) =>
+  page.evaluate(() => {
+    // One task: the last rows lose height and the layout is forced, so the offset clamps
+    // down; the stale load then commits its rows above the reader before any frame runs.
+    const content = document.querySelector<HTMLElement>(
+      '#scroller [data-slot="conversation-content"]'
+    )!
+    for (const row of Array.from(content.children).slice(-3) as HTMLElement[]) {
+      row.style.height = '0px'
+      row.style.minHeight = '0'
+      row.style.overflow = 'hidden'
+    }
+    void content.scrollHeight
+    ;(window as FixtureWindow).fixture.release()
+  })
 const toTop = async (page: Page) => {
   await wheel(page, -100_000)
   await expect.poll(async () => (await metrics(page)).top).toBe(0)
@@ -637,6 +670,42 @@ test.describe('history', () => {
     expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
     expect(await calls(page)).toBe(1)
   })
+
+  test('a layout clamp that lands with a stale insert does not release following', async ({
+    page,
+  }) => {
+    await clampWithStaleInsert(page)
+    await collapseTailAndRelease(page)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    // The reader never touched the thread, so they are still at its end.
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
+    expect(await calls(page)).toBe(1)
+  })
+
+  for (const input of ['wheel', 'keyboard'] as const) {
+    test(`the same clamp and insert still leave a reader who scrolled up by ${input} where they are`, async ({
+      page,
+    }) => {
+      await clampWithStaleInsert(page)
+      if (input === 'wheel') {
+        await wheelBy(page, -400)
+      } else {
+        await scroller(page).focus()
+        const start = (await metrics(page)).top
+        await page.keyboard.press('PageUp')
+        await expect.poll(async () => (await metrics(page)).top).toBeLessThan(start)
+        await atRest(page)
+      }
+      const before = (await metrics(page)).fromBottom
+      expect(before).toBeGreaterThan(100)
+      await collapseTailAndRelease(page)
+      await expect.poll(() => turnCount(page)).toBe(40)
+      await frames(page, 8)
+      // Following was released by the reader, so nothing carries them back to the end.
+      expect((await metrics(page)).fromBottom).toBeGreaterThan(100)
+    })
+  }
 
   test('a new load can start straight after a reset', async ({ page }) => {
     await setMode(page, 'gated')
