@@ -1,0 +1,22 @@
+{
+  "name": "marker",
+  "type": "registry:ui",
+  "title": "Marker",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/marker/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/marker/index.ts"
+    },
+    {
+      "path": "src/components/ui/marker/marker.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/marker/marker.tsx"
+    }
+  ]
+}

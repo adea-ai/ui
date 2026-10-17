@@ -4,6 +4,7 @@ import { Show, splitProps } from 'solid-js'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button/button'
 import { createScrollFollow } from './scroll-follow'
+import type { ScrollFollowHold } from './scroll-follow'
 
 /**
  * ConversationSurface.
@@ -44,6 +45,12 @@ export type ConversationSurfaceProps = ComponentProps<'div'> & {
    * frame around the surface is `ConversationPane`'s job.
    */
   gutter?: boolean
+  /**
+   * Receives the surface's `hold`, once, when it is created. A host that moves content
+   * under a reader who is following (a history load that lands after the conversation
+   * changed) opens a hold around it, so the move is not read as the reader scrolling away.
+   */
+  onFollowHold?: (hold: ScrollFollowHold) => void
 }
 
 export function ConversationSurface(props: ConversationSurfaceProps) {
@@ -57,6 +64,7 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
     'empty',
     'header',
     'gutter',
+    'onFollowHold',
     'children',
     'onScroll',
     'ref',
@@ -72,6 +80,7 @@ export function ConversationSurface(props: ConversationSurfaceProps) {
     initialPosition: () => local.initialReadingPosition,
     onPositionChange: (position) => local.onReadingPositionChange?.(position),
   })
+  local.onFollowHold?.(follow.hold)
   const onScroll: JSX.EventHandlerUnion<HTMLDivElement, Event> = (event) => {
     follow.onScroll()
     const handler = local.onScroll

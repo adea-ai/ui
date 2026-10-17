@@ -1,0 +1,29 @@
+<!-- @dsCard group="Conversation" height=420 -->
+<div id="root" style="padding:16px;max-width:640px"></div>
+<script>
+  const { render, html, MessageScroller, Message, MessageContent, MessageText, Bubble } = window.AdeaUI
+  const tick = String.fromCharCode(96)
+  const reply = 'The release is cut from ' + tick + 'main' + tick + '. Release Please opens a pull request with the changelog, and merging it tags the version.'
+  const turns = [
+    { id: 'turn-1', user: 'Which branch is the release cut from?', reply },
+    { id: 'turn-2', user: 'And where does the changelog come from?', reply: 'It is generated from the conventional commit messages since the last tag.' },
+  ]
+  const noop = (_event) => {}
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;height:380px;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden">
+        <${MessageScroller} aria-label="Conversation" hasOlder=${true} onLoadOlder=${noop}>
+          ${() => turns.map((turn) => html`
+            <${Message} role="user" label="You" anchorId=${turn.id + '-user'}>
+              <${Bubble}>${turn.user}<//>
+            <//>
+            <${Message} role="assistant" label="Assistant" anchorId=${turn.id + '-reply'}>
+              <${MessageContent}><${MessageText} text=${turn.reply} /><//>
+            <//>
+          `)}
+        <//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

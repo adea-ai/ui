@@ -603,6 +603,162 @@
         "group": "Layout",
         "source": "layout/pixel-resize-handle/pixel-resize-handle.tsx"
       }
+    ],
+    "attachment": [
+      {
+        "card": "Attachment",
+        "group": "Conversation"
+      }
+    ],
+    "bubble": [
+      {
+        "card": "Bubble",
+        "group": "Conversation"
+      }
+    ],
+    "chain-of-thought": [
+      {
+        "card": "ChainOfThought",
+        "group": "Conversation"
+      }
+    ],
+    "chat": [
+      {
+        "card": "Chat",
+        "group": "Conversation"
+      }
+    ],
+    "checkpoint": [
+      {
+        "card": "Checkpoint",
+        "group": "Conversation"
+      }
+    ],
+    "confirmation": [
+      {
+        "card": "Confirmation",
+        "group": "Conversation"
+      }
+    ],
+    "context": [
+      {
+        "card": "Context",
+        "group": "Conversation"
+      }
+    ],
+    "file-tree": [
+      {
+        "card": "FileTree",
+        "group": "Code"
+      }
+    ],
+    "inline-citation": [
+      {
+        "card": "InlineCitation",
+        "group": "Conversation"
+      }
+    ],
+    "marker": [
+      {
+        "card": "Marker",
+        "group": "Conversation"
+      }
+    ],
+    "message": [
+      {
+        "card": "Message",
+        "group": "Conversation"
+      }
+    ],
+    "message-scroller": [
+      {
+        "card": "MessageScroller",
+        "group": "Conversation"
+      }
+    ],
+    "model-selector": [
+      {
+        "card": "ModelSelector",
+        "group": "Conversation"
+      }
+    ],
+    "plan": [
+      {
+        "card": "Plan",
+        "group": "Conversation"
+      }
+    ],
+    "questionnaire": [
+      {
+        "card": "Questionnaire",
+        "group": "Conversation"
+      }
+    ],
+    "queue": [
+      {
+        "card": "Queue",
+        "group": "Conversation"
+      }
+    ],
+    "reasoning": [
+      {
+        "card": "Reasoning",
+        "group": "Conversation"
+      }
+    ],
+    "sources": [
+      {
+        "card": "Sources",
+        "group": "Conversation"
+      }
+    ],
+    "stack-trace": [
+      {
+        "card": "StackTrace",
+        "group": "Code"
+      }
+    ],
+    "subagent": [
+      {
+        "card": "Subagent",
+        "group": "Conversation"
+      }
+    ],
+    "suggestion": [
+      {
+        "card": "Suggestion",
+        "group": "Conversation"
+      }
+    ],
+    "task": [
+      {
+        "card": "Task",
+        "group": "Conversation"
+      }
+    ],
+    "terminal": [
+      {
+        "card": "Terminal",
+        "group": "Code"
+      }
+    ],
+    "test-results": [
+      {
+        "card": "TestResults",
+        "group": "Code"
+      }
+    ],
+    "tool": [
+      {
+        "card": "Tool",
+        "group": "Conversation"
+      }
+    ],
+    "trace": [
+      {
+        "card": "Trace",
+        "group": "Conversation"
+      }
     ]
   }
 }

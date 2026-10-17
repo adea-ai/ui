@@ -1,0 +1,30 @@
+<!-- @dsCard group="Conversation" height=400 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, InlineCitation } = window.AdeaUI
+  const solid = { title: 'Solid reactivity, explained', url: 'https://docs.solidjs.com/concepts/intro-to-reactivity', snippet: 'Signals are the building block of reactivity. They track and notify subscribers.' }
+  const kobalte = { title: 'Kobalte popover', url: 'https://kobalte.dev/docs/core/components/popover', snippet: 'A popover is a non-modal dialog that floats near its trigger.' }
+  const notes = { title: 'docs/conventions.md' }
+  const root = document.getElementById('root')
+  render(
+    () => html`
+      <p style="margin:0 0 16px;line-height:1.6">
+        Signals notify only the computations that read them<${InlineCitation} index=${1} sources=${[solid]} /> which is why components run once and updates are fine-grained. A popover is non-modal by default<${InlineCitation} index=${2} sources=${[kobalte]} /> so focus is not trapped unless asked for, and the conventions file says the same about primitives<${InlineCitation} index=${3} sources=${[notes]} />.
+      </p>
+      <p style="margin:0 0 16px;line-height:1.6">
+        Without a number the badge shows the host<${InlineCitation} sources=${[kobalte]} />.
+      </p>
+      <p style="margin:0;line-height:1.6">
+        Both agree that updates are fine-grained<${InlineCitation} index=${4} sources=${[solid, kobalte, notes]} />.
+      </p>
+    `,
+    root
+  )
+  // A press pins the source card, so the card opens the last badge the way a pointer would.
+  const badges = root.querySelectorAll('button')
+  const trigger = badges[badges.length - 1]
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }))
+  setTimeout(() => document.activeElement?.blur(), 80)
+</script>

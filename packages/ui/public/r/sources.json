@@ -1,0 +1,32 @@
+{
+  "name": "sources",
+  "type": "registry:ui",
+  "title": "Sources",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/message",
+    "@adea-ai/ui/text-link",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/sources/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/sources/index.ts"
+    },
+    {
+      "path": "src/components/composites/sources/source.ts",
+      "type": "registry:ui",
+      "target": "components/composites/sources/source.ts"
+    },
+    {
+      "path": "src/components/composites/sources/sources.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/sources/sources.tsx"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "file-tree",
+  "type": "registry:ui",
+  "title": "File Tree",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/badge",
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/tree",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/file-tree/build-file-tree.ts",
+      "type": "registry:ui",
+      "target": "components/composites/file-tree/build-file-tree.ts"
+    },
+    {
+      "path": "src/components/composites/file-tree/file-tree.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/file-tree/file-tree.tsx"
+    },
+    {
+      "path": "src/components/composites/file-tree/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/file-tree/index.ts"
+    }
+  ]
+}

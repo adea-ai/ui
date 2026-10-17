@@ -1,0 +1,15 @@
+<!-- @dsCard group="Conversation" height=300 -->
+<div id="root" style="padding:16px;max-width:520px;display:flex;flex-direction:column;align-items:flex-end;gap:12px"></div>
+<script>
+  const { render, html, Bubble, Button } = window.AdeaUI
+  const retry = (_event) => {}
+  render(
+    () => html`
+      <${Bubble}>Summarise the risks in the deployment plan.<//>
+      <${Bubble} state="pending" status="Sending…">Summarise the risks in the deployment plan.<//>
+      <${Bubble} state="queued" status="Queued: sent when the agent finishes">Then open a draft PR.<//>
+      <${Bubble} state="failed" status="Not sent" statusAction=${html`<${Button} size="2xs" variant="outline" onClick=${retry}>Retry<//>`}>Summarise the risks in the deployment plan.<//>
+    `,
+    document.getElementById('root')
+  )
+</script>

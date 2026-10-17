@@ -1,0 +1,36 @@
+<!-- @dsCard group="Conversation" height=710 -->
+<div id="root" style="padding:16px;max-width:680px"></div>
+<script>
+  const { render, html, createSignal, Icons, Chat, ChatHeader, ChatNotice, ChatEmpty, MessageScroller, Message, MessageContent, MessageText, Bubble, ChatComposer, StatusChip, Button, Suggestions, Suggestion } = window.AdeaUI
+  const tick = String.fromCharCode(96)
+  const reply = 'The release is cut from ' + tick + 'main' + tick + '. Release Please opens a pull request with the changelog, and merging it tags the version.'
+  const reconnect = (_event) => {}
+  render(() => {
+    const [draft, setDraft] = createSignal('')
+    return html`
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="height:440px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl)">
+          <${Chat}
+            header=${html`<${ChatHeader} title="Release process" subtitle="adea-ai/ui · main" status=${html`<${StatusChip} tone="warning" label="Offline" />`} />`}
+            notices=${html`<${ChatNotice} tone="warning" live="polite" title="Reconnecting…" description="The connection dropped. New messages are held until it is back."
+              action=${html`<${Button} size="xs" variant="outline" onClick=${reconnect}>Retry now<//>`} />`}
+            composer=${html`<${ChatComposer} value=${() => draft()} onValueChange=${(next) => setDraft(next)} onSubmit=${(_input) => setDraft('')} blockedReason="Reconnect to send" />`}
+          >
+            <${MessageScroller} gutter=${true} announcement="">
+              <${Message} role="user" label="You" anchorId="chat-user"><${Bubble}>Which branch is the release cut from?<//><//>
+              <${Message} role="assistant" label="Assistant" anchorId="chat-reply">
+                <${MessageContent}><${MessageText} text=${reply} /><//>
+              <//>
+            <//>
+          <//>
+        </div>
+        <div style="height:210px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-xl)">
+          <${Chat}>
+            <${ChatEmpty} title="Ask about this repository" description="Questions, reviews and small changes all start here."
+              suggestions=${html`<${Suggestions} onSelect=${(_text) => {}}><${Suggestion} text="Summarise the open risks" /><${Suggestion} text="Explain this stack trace" /><//>`} />
+          <//>
+        </div>
+      </div>
+    `
+  }, document.getElementById('root'))
+</script>
