@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.141.0](https://github.com/adea-ai/ui/compare/v0.140.0...v0.141.0) (2026-10-17)
+
+
+### Features
+
+* **field:** let NumberField be optional and disabled ([#444](https://github.com/adea-ai/ui/issues/444)) ([71abd24](https://github.com/adea-ai/ui/commit/71abd242979e7934ec8ce8c6d1ad716f6dd00bd8))
+
 ## [0.140.0](https://github.com/adea-ai/ui/compare/v0.139.1...v0.140.0) (2026-10-16)
 
 
