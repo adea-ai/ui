@@ -183,6 +183,26 @@ test('keeps composite inputs inside the shared field and clear tooltip contracts
   await page.keyboard.press('Tab')
   const enabledClear = page.getByRole('button', { name: 'Clear API key', exact: true }).first()
   await expect(enabledClear).toBeFocused()
+  // This Tab must only move focus. A scroll that contains an open tooltip's trigger
+  // dismisses the tooltip, and an engine that has to scroll the page to show the focused
+  // control makes that scroll itself: WebKit moved the page 112 px on this Tab (Chromium
+  // had already brought both controls into view on the one before), so the tip opened and
+  // closed again. The control is brought into view, and the page left at rest, first.
+  await lockedClear.scrollIntoViewIfNeeded()
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let last = -1
+        let steady = 0
+        const frame = () => {
+          steady = window.scrollY === last ? steady + 1 : 0
+          last = window.scrollY
+          if (steady >= 5) resolve()
+          else requestAnimationFrame(frame)
+        }
+        requestAnimationFrame(frame)
+      })
+  )
   await page.mouse.move(0, 0)
   await page.keyboard.press('Tab')
   await expect(lockedClear).toBeFocused()
