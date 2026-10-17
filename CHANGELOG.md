@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.142.0](https://github.com/adea-ai/ui/compare/v0.141.1...v0.142.0) (2026-10-17)
+
+
+### Features
+
+* **ai-elements:** Solid port of the AI Elements foundation and suite ([#416](https://github.com/adea-ai/ui/issues/416)) ([678192b](https://github.com/adea-ai/ui/commit/678192bd8d13b88328dde5665b1d56d3dac2250a))
+
+
+### Maintenance
+
+* **tooling:** type-check with bun check ([#456](https://github.com/adea-ai/ui/issues/456)) ([d1f38d1](https://github.com/adea-ai/ui/commit/d1f38d1fef38eb32dfa7e4c7c0261d157ca54b76))
+
 ## [0.141.1](https://github.com/adea-ai/ui/compare/v0.141.0...v0.141.1) (2026-10-17)
 
 
