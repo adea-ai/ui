@@ -6,7 +6,7 @@ import {
   ConversationSurface,
   type ConversationSurfaceProps,
 } from '../../conversation/conversation-surface'
-import { captureAnchor, restoreAnchor, type ScrollAnchor } from './scroll-anchor'
+import { captureAnchor, followReader, restoreAnchor, type ScrollAnchor } from './scroll-anchor'
 
 /**
  * MessageScroller.
@@ -155,9 +155,12 @@ export function MessageScroller(props: MessageScrollerProps) {
 
   let observer: MutationObserver | undefined
   let resizer: ResizeObserver | undefined
+  let unfollow: (() => void) | undefined
   const stopWatching = () => {
     observer?.disconnect()
     resizer?.disconnect()
+    unfollow?.()
+    unfollow = undefined
   }
   const load = async (fromControl = false) => {
     if (!scroller || !local.onLoadOlder || !local.hasOlder || local.loadingOlder || inFlight())
@@ -186,6 +189,14 @@ export function MessageScroller(props: MessageScrollerProps) {
       })
       resizer.observe(content)
     }
+    // The reader may carry on scrolling while the host answers. Keep the anchor on the
+    // turn they are looking at, not on the one that was first in view when the load began.
+    const follow = () => {
+      if (run === epoch && scroller) followReader(scroller, anchor)
+    }
+    scroller.addEventListener('scroll', follow, { passive: true })
+    const watched = scroller
+    unfollow = () => watched.removeEventListener('scroll', follow)
     try {
       await local.onLoadOlder()
     } catch {

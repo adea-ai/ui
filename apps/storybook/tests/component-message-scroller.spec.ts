@@ -329,6 +329,44 @@ test.describe('history', () => {
     expect((await metrics(page)).top).toBeGreaterThan(300)
   })
 
+  test('a row that sizes itself late below the turn the reader came to rest on does not move the view', async ({
+    page,
+  }) => {
+    // The turn that was first in view when the load began is not the one the reader
+    // comes to rest on: they scrolled on to the top while the host was answering. A
+    // row between the two (an image, highlighted code, a row leaving
+    // `content-visibility`) that changes size moves the first turn, and with it an
+    // anchor left there, without moving anything the reader is looking at.
+    await setMode(page, 'gated')
+    await settled(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 1500, behavior: 'instant' }))
+    await atRest(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 0, behavior: 'smooth' }))
+    await expect.poll(async () => (await metrics(page)).top).toBe(0)
+    await atRest(page)
+    await expect.poll(() => calls(page)).toBe(1)
+
+    const offsetOf = (id: string) =>
+      page.evaluate((anchorId) => {
+        const surface = document.querySelector('#scroller')!
+        const element = surface.querySelector(`[data-anchor-id="${anchorId}"]`)!
+        return element.getBoundingClientRect().top - surface.getBoundingClientRect().top
+      }, id)
+    const before = await offsetOf('turn-1000')
+    await page.evaluate(() => {
+      const row = document.querySelector<HTMLElement>('[data-anchor-id="turn-1001"]')!
+      row.style.paddingBottom = '40px'
+    })
+    await atRest(page)
+    expect(Math.abs((await offsetOf('turn-1000')) - before)).toBeLessThanOrEqual(1)
+
+    await page.evaluate(() => (window as FixtureWindow).fixture.release())
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await atRest(page)
+    expect(Math.abs((await offsetOf('turn-1000')) - before)).toBeLessThanOrEqual(1)
+    expect((await metrics(page)).top).toBeGreaterThan(300)
+  })
+
   test('never starts a second load while one is in flight', async ({ page }) => {
     await setMode(page, 'gated')
     await wheel(page, -100_000)
