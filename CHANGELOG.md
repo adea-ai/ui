@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.141.1](https://github.com/adea-ai/ui/compare/v0.141.0...v0.141.1) (2026-10-17)
+
+
+### Maintenance
+
+* **bun:** align pins to Bun 1.4.3 and compile .tsx tests with the Solid transform ([#454](https://github.com/adea-ai/ui/issues/454)) ([06002d3](https://github.com/adea-ai/ui/commit/06002d3d349719c1612769d93f158437be492e6a))
+
 ## [0.141.0](https://github.com/adea-ai/ui/compare/v0.140.0...v0.141.0) (2026-10-17)
 
 
