@@ -103,8 +103,9 @@ export default defineConfig({
       'orch:ui:typecheck': orch({
         command: 'bun run --cwd packages/ui typecheck',
         // `bun check` is a `bun` process: automatic tracking does not see what it reads, and the script text
-        // it runs lives in package.json. `libSources` lists the sources and configs; add the manifest.
-        cache: { input: [{ auto: true }, ...libSources, 'packages/ui/package.json'] },
+        // it runs lives in package.json. `tsconfig.check.json` also includes `packages/ui/scripts`, which
+        // `libSources` does not list; `bunLoaded` adds those scripts and the manifest.
+        cache: { input: [{ auto: true }, ...bunLoaded, ...libSources] },
       }),
       'orch:storybook:typecheck': orch({
         command: 'bun run --cwd apps/storybook typecheck',
@@ -194,7 +195,7 @@ export default defineConfig({
         command: 'bun run --cwd packages/ui typecheck',
         // `bun check` reads its sources itself, so list them (see `orch:ui:typecheck`).
         cache: {
-          input: [{ auto: true }, ...libSources, 'packages/ui/package.json'],
+          input: [{ auto: true }, ...bunLoaded, ...libSources],
           env: toolchain,
         },
       },
