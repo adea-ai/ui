@@ -168,29 +168,36 @@ const approachTop = async (page: Page) => {
  * turn it did get, if the setup missed.
  */
 const parkAndLoad = async (page: Page, id: string) => {
+  // Where the turn sits against the top of the view. An engine that keeps whole-pixel
+  // scroll offsets (WebKit: 9 px, not 10) cannot be aimed at a fractional row edge, so
+  // "10 px in" is a band, 5 to 15, which still leaves the turn before it out of view.
+  const offsetOf = () =>
+    scroller(page).evaluate(
+      (element, turnId) =>
+        element.querySelector(`[data-anchor-id="${turnId}"]`)!.getBoundingClientRect().top -
+        element.getBoundingClientRect().top,
+      id
+    )
   await expect
     .poll(
       async () => {
-        await scroller(page).evaluate((element, turnId) => {
-          const box = element.getBoundingClientRect()
-          const top = () =>
-            element.querySelector(`[data-anchor-id="${turnId}"]`)!.getBoundingClientRect().top -
-            box.top
-          element.scrollTo({ top: element.scrollTop + top() + 10, behavior: 'instant' })
-        }, id)
-        await atRest(page)
-        return Math.round(
+        let offset = await offsetOf()
+        if (offset > -5 || offset < -15) {
           await scroller(page).evaluate(
-            (element, turnId) =>
-              element.querySelector(`[data-anchor-id="${turnId}"]`)!.getBoundingClientRect().top -
-              element.getBoundingClientRect().top,
-            id
+            (element, move) =>
+              element.scrollTo({ top: element.scrollTop + move, behavior: 'instant' }),
+            offset + 10
           )
-        )
+          await atRest(page)
+          offset = await offsetOf()
+        }
+        return offset <= -5 && offset >= -15 ? 'parked' : `${id} is ${offset}px from the top`
       },
-      { message: `${id} is 10px above the top of the view once the rows have stopped resizing` }
+      {
+        message: `${id} is about 10px above the top of the view once the rows have stopped resizing`,
+      }
     )
-    .toBe(-10)
+    .toBe('parked')
   // An engine whose reader is already inside the margin has started the load itself, and
   // the control is gone; one that is not has the control, and it starts the load.
   await page.evaluate(() =>
