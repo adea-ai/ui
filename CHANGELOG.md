@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.142.3](https://github.com/adea-ai/ui/compare/v0.142.2...v0.142.3) (2026-10-17)
+
+
+### Bug Fixes
+
+* **stack-trace:** scan for frame boundaries instead of backtracking ([#462](https://github.com/adea-ai/ui/issues/462)) ([ee309c8](https://github.com/adea-ai/ui/commit/ee309c8b1779a45e015bd7353913ae14a73d7f6f))
+
 ## [0.142.2](https://github.com/adea-ai/ui/compare/v0.142.1...v0.142.2) (2026-10-17)
 
 
