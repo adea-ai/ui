@@ -102,7 +102,9 @@ export default defineConfig({
       },
       'orch:ui:typecheck': orch({
         command: 'bun run --cwd packages/ui typecheck',
-        cache: { input: [{ auto: true }, ...libSources] },
+        // `bun check` is a `bun` process: automatic tracking does not see what it reads, and the script text
+        // it runs lives in package.json. `libSources` lists the sources and configs; add the manifest.
+        cache: { input: [{ auto: true }, ...libSources, 'packages/ui/package.json'] },
       }),
       'orch:storybook:typecheck': orch({
         command: 'bun run --cwd apps/storybook typecheck',
@@ -189,7 +191,11 @@ export default defineConfig({
       'orch:test': group(['orch:test:coverage']),
       'proof:typecheck': {
         command: 'bun run --cwd packages/ui typecheck',
-        cache: { env: toolchain },
+        // `bun check` reads its sources itself, so list them (see `orch:ui:typecheck`).
+        cache: {
+          input: [{ auto: true }, ...libSources, 'packages/ui/package.json'],
+          env: toolchain,
+        },
       },
       'proof:registry': {
         command: 'bun run --cwd packages/ui registry:validate',
