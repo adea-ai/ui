@@ -285,6 +285,44 @@ export const Number: Story = {
 }
 
 /**
+ * `optional` lets a numeric limit be left blank: a blank field is valid and reports
+ * `null`, and a `null` value shows a blank field, so a caller needs no `''` to
+ * `undefined` mapping. Range and step checks still apply to a typed value.
+ * `disabled` locks the input while the value stays visible. Clear the document
+ * limit to fall back to the global budget.
+ */
+export const OptionalNumber: Story = {
+  render: () => {
+    const [documents, setDocuments] = createSignal<number | null>(null)
+    const [duration, setDuration] = createSignal<number | null>(3600)
+
+    return (
+      <div class="flex w-96 flex-col gap-4">
+        <NumberField
+          optional
+          label="Document limit"
+          hint="blank uses the global budget"
+          value={documents()}
+          min={1}
+          max={1000000}
+          onChange={setDocuments}
+        />
+        <NumberField
+          optional
+          disabled
+          label="Duration limit (seconds)"
+          hint="locked while the source is syncing"
+          value={duration()}
+          min={1}
+          max={86400}
+          onChange={setDuration}
+        />
+      </div>
+    )
+  },
+}
+
+/**
  * `columns={2}` lays paired fields out in two columns from the `sm` breakpoint
  * up, and in one column below it. A field that needs the full width says
  * `class="col-span-full"`.
