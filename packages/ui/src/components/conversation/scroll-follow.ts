@@ -100,6 +100,13 @@ export function createScrollFollow(options: {
     const geom = geometry(element)
     stick = true
     if (distanceFromBottom(geom) > atBottomEpsilon()) writePin(element, bottomTarget(geom))
+    // An end the engine already clamped to is accepted as it stands, and is the reference
+    // from here on: the write before it is further down than the content now reaches.
+    else {
+      lastWriteTop = element.scrollTop
+      lastWriteClientHeight = element.clientHeight
+      previousTop = element.scrollTop
+    }
     holdTop = element.scrollTop
     setAtBottom(computeAtBottom(geometry(element), options.threshold()))
     reportPosition()
@@ -201,9 +208,11 @@ export function createScrollFollow(options: {
     return () => {
       if (!open || generation !== holdGeneration) return
       open = false
+      // Asked while this hold still counts: `holdsPosition` is false once none is open.
+      const last = holds === 1
+      const resume = last && scroller !== undefined && holdsPosition(scroller)
       holds -= 1
-      if (holds > 0) return
-      const resume = scroller !== undefined && holdsPosition(scroller)
+      if (!last) return
       holdFollowing = false
       holdIntent = false
       if (resume && scroller && options.enabled() && !pendingRestore) pinHeld(scroller)

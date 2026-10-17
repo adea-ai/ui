@@ -253,6 +253,67 @@ const collapseTailAndRelease = (page: Page, after?: AfterLanding) =>
     if (next.reveal !== undefined) element.scrollTop += next.reveal
     if (next.switchTo !== undefined) (window as FixtureWindow).fixture.switchTo(next.switchTo)
   }, after)
+// The stale load's hold closes in the second of its two frames. The content grows in that
+// same frame before the close, so no observer or scroll event reaches the controller in
+// between: the close is the only thing that can put the reader back at the end. The offset
+// is read in a callback queued right behind the close, ahead of the observers that follow.
+const growBeforeHoldCloses = (page: Page) =>
+  page.evaluate(async () => {
+    const element = document.querySelector<HTMLElement>('#scroller')!
+    const content = element.querySelector<HTMLElement>('[data-slot="conversation-content"]')!
+    const tail = content.lastElementChild as HTMLElement
+    // Queued ahead of the load's own frames, so its second frame finds the tail grown.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        tail.style.minHeight = '1600px'
+      })
+    })
+    ;(window as FixtureWindow).fixture.release()
+    for (let tick = 0; tick < 10; tick += 1) await Promise.resolve()
+    return new Promise<number>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve(element.scrollHeight - element.scrollTop - element.clientHeight)
+        })
+      })
+    })
+  })
+// The tail loses height while the stale load's hold is open, so the engine clamps the
+// offset down and the controller accepts that as the new end. The hold closes in the load's
+// second frame and the tail grows back in that same frame, right behind the close and ahead
+// of the observers, so the first thing that reads the controller afterwards is that growth.
+const shrinkInsideHoldThenGrow = (page: Page) =>
+  page.evaluate(async () => {
+    const element = document.querySelector<HTMLElement>('#scroller')!
+    const content = element.querySelector<HTMLElement>('[data-slot="conversation-content"]')!
+    const rows = Array.from(content.children).slice(-40) as HTMLElement[]
+    ;(window as FixtureWindow).fixture.release()
+    // The hold opens once the load has put its rows in.
+    for (
+      let tick = 0;
+      tick < 100 && (window as FixtureWindow).fixture.turnCount() !== 40;
+      tick += 1
+    )
+      await Promise.resolve()
+    for (let tick = 0; tick < 10; tick += 1) await Promise.resolve()
+    for (const row of rows) {
+      row.style.height = '0px'
+      row.style.minHeight = '0'
+      row.style.overflow = 'hidden'
+    }
+    void content.scrollHeight
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          for (const row of rows) {
+            row.style.height = '60px'
+            row.style.minHeight = '60px'
+          }
+          resolve()
+        })
+      })
+    })
+  })
 const toTop = async (page: Page) => {
   await wheel(page, -100_000)
   await expect.poll(async () => (await metrics(page)).top).toBe(0)
@@ -690,6 +751,29 @@ test.describe('history', () => {
     // The reader never touched the thread, so they are still at its end.
     expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
     expect(await calls(page)).toBe(1)
+  })
+
+  test("closing the stale load's hold puts a reader who is following back at the end", async ({
+    page,
+  }) => {
+    await clampWithStaleInsert(page)
+    // Read ahead of the observers that would otherwise repair the offset after the close.
+    expect(await growBeforeHoldCloses(page)).toBeLessThanOrEqual(2)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
+  })
+
+  test('a clamp accepted during the hold does not make the growth after it release following', async ({
+    page,
+  }) => {
+    await clampWithStaleInsert(page)
+    await shrinkInsideHoldThenGrow(page)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    // The reader never touched the thread: content that follows the hold is still followed.
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
+    await expect(jump(page)).toHaveCount(0)
   })
 
   test('a click and a non-scroll key at the end do not stop the thread following a clamp', async ({
