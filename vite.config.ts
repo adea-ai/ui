@@ -4,11 +4,10 @@ import { defineConfig } from 'vite-plus'
 import { expectedId } from './packages/ui/scripts/orch-toolchain.mjs'
 
 /**
- * Vite Task cache proof (additive, not a gate).
+ * Workspace task orchestration and the opt-in cache proof.
  *
- * Production still runs through Turbo (`turbo.json`) and `bun test`; nothing here
- * replaces either. These tasks wrap the same package scripts so `vp run` can be
- * measured against them. Run through `vp run`, never by default:
+ * The root scripts run the `orch:*` tasks. The `proof:*` tasks remain isolated
+ * negative controls for the proof harness, and are invoked explicitly:
  *
  *   vp run proof:typecheck   vp run proof:registry   vp run proof:build   vp run proof:unit
  *   vp run proof:artifact (small outputs, used only by the harness)
@@ -32,11 +31,11 @@ const bunLoaded = [
   'bunfig.toml',
 ]
 
-// Orchestration tasks (`orch:*`). They mirror the Turbo graph in `turbo.json` for this repository
+// Orchestration tasks (`orch:*`) preserve the former workspace graph for this repository
 // (`build`, `typecheck`, `lint`, `test`, with `test` after the library `build` the way
 // `dependsOn: ["^build"]` orders it) and run the same package scripts, so Bun keeps running the
-// tests. They are additive: nothing in CI or `verify` calls them yet, and the root `turbo` scripts
-// are unchanged. Names are prefixed because a task may not share a name with a root script.
+// tests. Root scripts and CI use these tasks. Names are prefixed because a task may not share
+// a name with a root script.
 //
 // `auto` tracking sees what `node`, `tsc` and `vite` read. Files that `bun` or `oxlint` load
 // themselves are listed explicitly (see `bunLoaded` above), and so is everything a task reads
@@ -67,6 +66,17 @@ const workshopSources = [
 ]
 const lintConfig = ['.oxlintrc.json']
 
+// Exclude directory listings and ephemeral bundled configs, not dependency files.
+// The worktree proof observed `.vite-temp` only in the cache writer's listing.
+const volatileInputs = ['.', 'packages/ui', 'apps/storybook'].flatMap((directory) => {
+  const prefix = directory === '.' ? '' : `${directory}/`
+  return [
+    `!${prefix}node_modules`,
+    `!${prefix}node_modules/.vite-temp`,
+    `!${prefix}node_modules/.vite-temp/**`,
+  ]
+})
+
 type OrchTask = {
   command: string
   dependsOn?: string[]
@@ -79,6 +89,7 @@ type OrchTask = {
  */
 const orch = (task: OrchTask) => ({
   ...task,
+  cache: { ...task.cache, input: [...task.cache.input, ...volatileInputs] },
   command: `ORCH_TOOLCHAIN=${toolchainId} ${task.command}`,
   dependsOn: ['orch:toolchain', ...(task.dependsOn ?? [])],
 })
@@ -153,14 +164,14 @@ export default defineConfig({
       'orch:lint': group(['orch:ui:lint', 'orch:storybook:lint', 'orch:root:lint']),
       'orch:ui:build': orch({
         command: 'bun run --cwd packages/ui build',
-        // The outputs `turbo.json` declares for `build`, so a hit restores `dist`.
+        // Restore the library's emitted JavaScript and declarations on a cache hit.
         cache: {
           input: [{ auto: true }, ...bunLoaded, ...libSources],
           output: ['packages/ui/dist/**'],
           env: ['NODE_ENV'],
         },
       }),
-      'orch:build': { command: 'vp run orch:ui:build' },
+      'orch:build': group(['orch:ui:build']),
       'orch:ui:test': orch({
         command: 'bun run --cwd packages/ui test',
         cache: { input: [{ auto: true }, ...bunLoaded, ...libSources] },
@@ -183,13 +194,14 @@ export default defineConfig({
         // tests before lint, so a cold and a warm run both lint with `coverage/` present.
         command:
           'bun test --conditions=browser --preload ./packages/ui/tests/helpers/solid-transform.ts packages/ui/tests --coverage',
-        // After the package tests, as the root `test` script runs it after `turbo run test`.
+        // After both package test suites, preserving the root coverage ordering.
         dependsOn: ['orch:ui:test', 'orch:storybook:test'],
         cache: {
           input: [{ auto: true }, ...bunLoaded, ...libSources, 'bunfig.toml'],
           output: ['coverage/**'],
         },
       }),
+      'orch:test:unit': group(['orch:ui:test', 'orch:storybook:test']),
       'orch:test': group(['orch:test:coverage']),
       'proof:typecheck': {
         command: 'bun run --cwd packages/ui typecheck',
@@ -208,9 +220,9 @@ export default defineConfig({
       },
       'proof:build': {
         command: 'bun run --cwd packages/ui build',
-        // The same outputs `turbo.json` declares for `build`, so a hit restores `dist`.
+        // The same library outputs as the production build task.
         cache: {
-          input: [{ auto: true }, ...bunLoaded],
+          input: [{ auto: true }, ...bunLoaded, ...volatileInputs],
           output: ['packages/ui/dist/**'],
           env: ['NODE_ENV', ...toolchain],
         },
