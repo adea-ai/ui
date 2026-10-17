@@ -493,10 +493,10 @@ async function tools(): Promise<void> {
 
   // The explicit separation: a declared variable that names the toolchain and platform.
   await vp(s, 'toolchain A cold', 'proof:registry', 'hit|executed*', {
-    env: { PROOF_TOOLCHAIN: 'bun-1.4.0 node-24.18.0 linux-x64' },
+    env: { PROOF_TOOLCHAIN: 'bun-1.4.3 node-24.18.0 linux-x64' },
   })
   await vp(s, 'toolchain A warm', 'proof:registry', 'hit', {
-    env: { PROOF_TOOLCHAIN: 'bun-1.4.0 node-24.18.0 linux-x64' },
+    env: { PROOF_TOOLCHAIN: 'bun-1.4.3 node-24.18.0 linux-x64' },
   })
   await vp(
     s,
