@@ -1,4 +1,12 @@
-import { CircleCheck, CircleMinus, CircleX, FlaskConical, LoaderCircle } from 'lucide-solid'
+import {
+  Check,
+  CircleCheck,
+  CircleMinus,
+  CircleX,
+  Copy,
+  FlaskConical,
+  LoaderCircle,
+} from 'lucide-solid'
 import {
   createComputed,
   createMemo,
@@ -11,6 +19,7 @@ import {
   type ComponentProps,
   type JSX,
 } from 'solid-js'
+import { writeClipboardText } from '../../../lib/clipboard'
 import { cn } from '../../../lib/utils'
 import { Button } from '../../ui/button'
 import { DiffBlock } from '../../ui/diff-block'
@@ -23,9 +32,9 @@ import {
   formatDuration,
   listedCounts,
   reconcileCounts,
-  suiteKey,
+  sameFailure,
+  siblingKey,
   suiteState,
-  testKey,
   type CountLine,
   type TestCase,
   type TestCaseStatus,
@@ -209,6 +218,86 @@ function Bounded<T>(props: {
   )
 }
 
+/** Characters of a failure message drawn before the rest is offered. */
+export const TEST_RESULTS_MESSAGE_LIMIT = 4_000
+
+/**
+ * A failed test's message, which a runner may print at any length: a captured
+ * log, a serialized object, a long assertion. It opens on its own for the first
+ * failure, so it is bounded where the diff and stack are already bounded: the
+ * body scrolls past a fixed height, only the first characters are drawn until the
+ * reader asks for the rest, and Copy writes all of it.
+ */
+function FailureMessage(props: { text: string; onCopy?: (ok: boolean) => void }) {
+  const [all, setAll] = createSignal(false)
+  const [copied, setCopied] = createSignal(false)
+  const [copyFailed, setCopyFailed] = createSignal(false)
+  const clipped = () => props.text.length > TEST_RESULTS_MESSAGE_LIMIT
+  const cut = () => {
+    // Never inside a surrogate pair, which would draw a replacement character.
+    const last = props.text.charCodeAt(TEST_RESULTS_MESSAGE_LIMIT - 1)
+    return last >= 0xd800 && last <= 0xdbff
+      ? TEST_RESULTS_MESSAGE_LIMIT - 1
+      : TEST_RESULTS_MESSAGE_LIMIT
+  }
+  const shown = () => (clipped() && !all() ? props.text.slice(0, cut()) : props.text)
+  const copy = async () => {
+    let ok = true
+    try {
+      await writeClipboardText(props.text)
+    } catch {
+      ok = false
+    }
+    setCopied(ok)
+    setCopyFailed(!ok)
+    props.onCopy?.(ok)
+    if (ok) setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <>
+      {/* A region that scrolls is a tab stop and needs a name. */}
+      <pre
+        data-slot="test-results-message"
+        tabindex="0"
+        role="group"
+        aria-label="Failure message"
+        class="m-0 max-h-64 overflow-auto font-code text-code whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]"
+      >
+        {shown()}
+      </pre>
+      <Show when={clipped()}>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span class="italic">
+            <Show
+              when={!all()}
+              fallback={`All ${props.text.length.toLocaleString()} characters shown.`}
+            >
+              Showing the first {cut().toLocaleString()} of {props.text.length.toLocaleString()}{' '}
+              characters (copy has all of it).
+            </Show>
+          </span>
+          <Show when={!all()}>
+            <Button variant="ghost" size="2xs" onClick={() => setAll(true)}>
+              Show all {props.text.length.toLocaleString()} characters
+            </Button>
+          </Show>
+          <Button
+            variant="ghost"
+            size="2xs"
+            title={copyFailed() ? 'Copying is unavailable in this context' : undefined}
+            onClick={() => void copy()}
+          >
+            <Show when={copied()} fallback={<Copy aria-hidden="true" />}>
+              <Check aria-hidden="true" />
+            </Show>
+            {copied() ? 'Copied' : 'Copy message'}
+          </Button>
+        </div>
+      </Show>
+    </>
+  )
+}
+
 function TestLine(props: {
   test: Accessor<TestCase>
   keyed: string
@@ -218,26 +307,32 @@ function TestLine(props: {
   const test = () => props.test()
   const state = () => (test().status ? TRACE_STATUS[test().status as TestCaseStatus] : undefined)
   const hasDetail = () => Boolean(test().message || test().diff || test().stack)
-  const failureKey = () => props.failure?.test
-  const [open, setOpen] = createSignal(failureKey() === props.keyed)
-  let previousFailureKey = failureKey()
-  let collapsedFailureKey: string | undefined
+  // Only the last suite on the failure's path is given it, so a key among
+  // this suite's tests is enough to know the failure is this test.
+  const failureKey = createMemo(
+    () => (props.failure?.test === props.keyed ? props.failure : undefined),
+    undefined,
+    { equals: sameFailure }
+  )
+  const [open, setOpen] = createSignal(failureKey() !== undefined)
+  let previousFailure = failureKey()
+  let collapsedFailure: FirstFailureRenderPath | undefined
 
   createEffect(() => {
-    const currentFailureKey = failureKey()
+    const currentFailure = failureKey()
     if (
-      currentFailureKey === props.keyed &&
-      currentFailureKey !== previousFailureKey &&
-      currentFailureKey !== collapsedFailureKey
+      currentFailure &&
+      !sameFailure(currentFailure, previousFailure) &&
+      !sameFailure(currentFailure, collapsedFailure)
     ) {
       setOpen(true)
     }
-    previousFailureKey = currentFailureKey
+    previousFailure = currentFailure
   })
 
   const handleOpenChange = (next: boolean) => {
-    if (!next && failureKey() === props.keyed) collapsedFailureKey = props.keyed
-    else if (next) collapsedFailureKey = undefined
+    if (!next && failureKey()) collapsedFailure = failureKey()
+    else if (next) collapsedFailure = undefined
     setOpen(next)
   }
 
@@ -253,9 +348,7 @@ function TestLine(props: {
       {hasDetail() ? (
         <TraceDetail class="flex flex-col gap-2">
           <Show when={test().message}>
-            <pre class="m-0 font-code text-code whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">
-              {test().message}
-            </pre>
+            <FailureMessage text={test().message!} />
           </Show>
           <Show when={test().diff}>
             <DiffBlock patch={test().diff!} complete title="Expected and received" />
@@ -271,8 +364,12 @@ function TestLine(props: {
 
 function SuiteLine(props: {
   suite: Accessor<TestSuite>
+  /** This suite's key among its siblings. */
   keyed: string
+  /** How many suites enclose this one. */
+  depth: number
   limit: number
+  /** The first failure, given only to suites on the way to it. */
   failure?: FirstFailureRenderPath
   onOpenFrame?: TestResultsProps['onOpenFrame']
 }) {
@@ -281,27 +378,34 @@ function SuiteLine(props: {
   const state = createMemo(() => suiteState(counts()))
   const children = () => (suite().tests?.length ?? 0) + (suite().suites?.length ?? 0) > 0
   const [open, setOpen] = createSignal(state() === 'failed')
-  const failureKey = () => props.failure?.test
-  const containsFailure = () => props.failure?.suites.includes(props.keyed) ?? false
-  let previousFailureKey = failureKey()
-  let collapsedFailureKey: string | undefined
+  // The parent passes the failure down only while it is on the way to it, so
+  // one comparison at this suite's own depth settles whether it is on the path.
+  // Memoised: each level reads its parent's, so a bare function would re-run the
+  // whole chain above it on every read and cost exponential time in the depth.
+  const failure = createMemo(
+    () => (props.failure?.suites[props.depth] === props.keyed ? props.failure : undefined),
+    undefined,
+    { equals: sameFailure }
+  )
+  const holdsFailure = createMemo(() => failure()?.suites.length === props.depth + 1)
+  let previousFailure = failure()
+  let collapsedFailure: FirstFailureRenderPath | undefined
 
   createEffect(() => {
-    const currentFailureKey = failureKey()
+    const currentFailure = failure()
     if (
-      containsFailure() &&
-      currentFailureKey &&
-      currentFailureKey !== previousFailureKey &&
-      currentFailureKey !== collapsedFailureKey
+      currentFailure &&
+      !sameFailure(currentFailure, previousFailure) &&
+      !sameFailure(currentFailure, collapsedFailure)
     ) {
       setOpen(true)
     }
-    previousFailureKey = currentFailureKey
+    previousFailure = currentFailure
   })
 
   const handleOpenChange = (next: boolean) => {
-    if (!next && containsFailure()) collapsedFailureKey = failureKey()
-    else if (next) collapsedFailureKey = undefined
+    if (!next && failure()) collapsedFailure = failure()
+    else if (next) collapsedFailure = undefined
     setOpen(next)
   }
 
@@ -343,7 +447,7 @@ function SuiteLine(props: {
             <Trace size="sm" aria-label={`${suite().name} tests`}>
               <Bounded
                 items={suite().tests ?? []}
-                itemKey={(test, index) => testKey(props.keyed, test, index)}
+                itemKey={siblingKey}
                 limit={props.limit}
                 noun="tests"
               >
@@ -351,14 +455,14 @@ function SuiteLine(props: {
                   <TestLine
                     test={test}
                     keyed={key}
-                    failure={props.failure}
+                    failure={holdsFailure() ? failure() : undefined}
                     onOpenFrame={props.onOpenFrame}
                   />
                 )}
               </Bounded>
               <Bounded
                 items={suite().suites ?? []}
-                itemKey={(nested, index) => suiteKey(props.keyed, nested, index)}
+                itemKey={siblingKey}
                 limit={props.limit}
                 noun="suites"
               >
@@ -366,8 +470,9 @@ function SuiteLine(props: {
                   <SuiteLine
                     suite={nested}
                     keyed={key}
+                    depth={props.depth + 1}
                     limit={props.limit}
-                    failure={props.failure}
+                    failure={failure()}
                     onOpenFrame={props.onOpenFrame}
                   />
                 )}
@@ -394,7 +499,9 @@ export function TestResults(props: TestResultsProps) {
   const listed = createMemo(() => listedCounts(local.suites))
   const counts = createMemo(() => reconcileCounts(local.summary, listed()))
   const limit = () => Math.max(1, Math.floor(local.listLimit ?? TEST_RESULTS_LIST_LIMIT))
-  const failure = createMemo(() => firstFailureRenderPath(local.suites))
+  const failure = createMemo(() => firstFailureRenderPath(local.suites), undefined, {
+    equals: sameFailure,
+  })
   const duration = () => formatDuration(local.summary?.durationMs, 'long')
   const nothing = () =>
     counts().lines.length === 0 &&
@@ -453,16 +560,12 @@ export function TestResults(props: TestResultsProps) {
         </div>
         <Show when={local.suites.length > 0}>
           <Trace aria-label="Test suites">
-            <Bounded
-              items={local.suites}
-              itemKey={(suite, index) => suiteKey('', suite, index)}
-              limit={limit()}
-              noun="suites"
-            >
+            <Bounded items={local.suites} itemKey={siblingKey} limit={limit()} noun="suites">
               {(suite, _index, key) => (
                 <SuiteLine
                   suite={suite}
                   keyed={key}
+                  depth={0}
                   limit={limit()}
                   failure={failure()}
                   onOpenFrame={local.onOpenFrame}

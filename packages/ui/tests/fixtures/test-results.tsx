@@ -52,6 +52,25 @@ const [pagedSuites, setPagedSuites] = createSignal(
   pagedSuite(['first', 'second', 'failure', 'fourth', 'fifth'])
 )
 
+const deepChain = (depth: number): TestSuite => {
+  let node: TestSuite = {
+    id: 'same',
+    name: 'Deepest suite',
+    tests: [
+      { id: 'broken', name: 'Deep failure', status: 'failed', message: 'Deep failure details' },
+    ],
+  }
+  for (let level = depth; level > 0; level -= 1)
+    node = { id: 'same', name: `Level ${level}`, suites: [node] }
+  return node
+}
+
+export const bigMessage = Array.from(
+  { length: 3_000 },
+  (_, i) => `captured log line ${i + 1}`
+).join('\n')
+;(window as FixtureWindow & { bigMessage?: string }).bigMessage = bigMessage
+
 const streamingSuite = (status: 'running' | 'failed', message?: string): TestSuite[] => [
   {
     id: 'streaming-suite',
@@ -103,6 +122,20 @@ render(
       <TestResults suites={suites()} summary={summary()} />
       <TestResults label="Paged test results" suites={pagedSuites()} listLimit={2} />
       <TestResults label="Streaming test results" suites={streamingSuites()} running />
+      <TestResults label="Deeply nested test results" suites={[deepChain(40)]} />
+      <TestResults
+        label="Large failure test results"
+        suites={[
+          {
+            id: 'large',
+            name: 'Large failure suite',
+            tests: [
+              { id: 'noisy', name: 'Noisy failure', status: 'failed', message: bigMessage },
+              { id: 'quiet', name: 'Quiet failure', status: 'failed', message: 'Short failure' },
+            ],
+          },
+        ]}
+      />
     </main>
   ),
   document.body

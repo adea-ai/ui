@@ -138,3 +138,71 @@ test('a first failure arriving during a run opens once and respects a user colla
   await expect(results.getByText('Initial streamed failure')).toHaveCount(0)
   await expect(results.getByText('Updated streamed failure')).toHaveCount(0)
 })
+
+test('a deep chain of suites with one repeated id opens down to its failure', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Deeply nested test results' })
+  const failure = results.getByRole('button', { name: 'Deep failure' })
+  await expect(failure).toHaveAttribute('aria-expanded', 'true')
+  await expect(results.getByText('Deep failure details')).toHaveCount(1)
+  await expect(results.getByRole('button', { name: 'Level 40' })).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
+})
+
+test('a large failure message is bounded, scrolls, and can be shown or copied in full', async ({
+  page,
+}) => {
+  const results = page.getByRole('region', { name: 'Large failure test results' })
+  const message = results.getByRole('group', { name: 'Failure message' }).first()
+  await expect(message).toBeVisible()
+
+  const metrics = () =>
+    message.evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      scrollHeight: element.scrollHeight,
+      text: element.textContent!.length,
+      overflowY: getComputedStyle(element).overflowY,
+    }))
+  const bounded = await metrics()
+  expect(bounded.height).toBeLessThanOrEqual(260)
+  expect(bounded.scrollHeight).toBeGreaterThan(bounded.height)
+  expect(bounded.overflowY).toBe('auto')
+  expect(bounded.text).toBeLessThanOrEqual(4_000)
+  await expect(message).toHaveAttribute('tabindex', '0')
+
+  const total = await page.evaluate(
+    () => (window as Window & { bigMessage: string }).bigMessage.length
+  )
+  await expect(results.getByText(/copy has all of it/)).toBeVisible()
+  await expect(results.getByText(`Showing the first`, { exact: false })).toContainText(
+    `of ${total.toLocaleString()}`
+  )
+
+  // Copy writes the whole message, not the preview.
+  await page.evaluate(() => {
+    const target = window as Window & { copied?: string[] }
+    target.copied = []
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (value: string) => void target.copied!.push(value) },
+    })
+  })
+  await results.getByRole('button', { name: /Copy message/ }).click()
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { copied?: string[] }).copied!.at(-1)))
+    .toBe(await page.evaluate(() => (window as Window & { bigMessage: string }).bigMessage))
+
+  // Showing all keeps the box bounded and draws every character.
+  await results.getByRole('button', { name: /Show all .* characters/ }).click()
+  const all = await metrics()
+  expect(all.text).toBe(total)
+  expect(all.height).toBeLessThanOrEqual(260)
+  await expect(results.getByText(/All .* characters shown/)).toBeVisible()
+  await expect(results.getByRole('button', { name: /Show all/ })).toHaveCount(0)
+
+  // A short message in the same suite has no note and no copy control of its own.
+  const quiet = results.getByRole('button', { name: 'Quiet failure' })
+  await quiet.click()
+  await expect(results.getByText('Short failure')).toBeVisible()
+})
