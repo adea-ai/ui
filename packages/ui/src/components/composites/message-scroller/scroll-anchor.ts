@@ -47,7 +47,12 @@ export function restoreAnchor(scroller: HTMLElement, anchor: ScrollAnchor | unde
     )
     if (target) correction = target.getBoundingClientRect().top - top - anchor.offset
   } else {
-    correction = scroller.scrollHeight - anchor.scrollHeight
+    // Aim for a position, not a step: the growth since capture is added to where
+    // the reader was, so a second restore after the same insert (the observer and
+    // the settle both run one) finds the position reached and moves nothing, and
+    // growth that lands later moves it only by what is still missing.
+    correction =
+      anchor.scrollTop + (scroller.scrollHeight - anchor.scrollHeight) - scroller.scrollTop
   }
   if (Math.abs(correction) >= 1) scroller.scrollTop += correction
   return correction
