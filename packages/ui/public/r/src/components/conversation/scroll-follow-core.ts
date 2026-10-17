@@ -169,39 +169,35 @@ export function resolveUserScrollStick(args: {
   return stick
 }
 
+/** What the reader did to the scroller, as far as telling a scroll-up from anything else. */
+export type ReaderInput =
+  | { kind: 'wheel'; deltaY: number }
+  | { kind: 'key'; key: string; shiftKey: boolean }
+  | { kind: 'touchmove' }
+  | { kind: 'pointerdown'; onScroller: boolean }
+
+const SCROLL_UP_KEYS = new Set(['ArrowUp', 'PageUp', 'Home'])
+
 /**
- * Did the content, not the reader, take the scroll offset below where we last put it?
+ * Is this the reader moving the view up, right now?
  *
- * A reader parked at the bottom is carried by content that shrinks under them (rows taking
- * their real height) as the engine clamps the offset down with it. That clamp reaches the
- * follow logic as a scroll event, and an engine that has no scroll anchoring (WebKit) can
- * deliver it after more content has landed above the reader: by then the offset is below
- * our last write *and* the bottom is far away, which is exactly what a reader scrolling up
- * looks like. The two differ in what happened around them: a reader scrolling gives input
- * (wheel, touch, a key, the scrollbar), and a clamp comes with the content's height having
- * changed since we last placed them. Both must hold, so a reveal that moves the offset with
- * the content untouched, or any scroll with input behind it, is still the reader's.
+ * A held position (see `createScrollFollow().hold`) is the caller's until the reader takes it,
+ * and only an input that can scroll the view up takes it: a wheel notch up, an up key, a
+ * touch drag, or a press on the scroller itself (its scrollbar or gutter). A click or a
+ * selection inside the content, a letter, a wheel notch down or a down key do not move the
+ * view away from the end, so they leave it where it is.
  */
-export function isContentDrivenDrop(args: {
-  stick: boolean
-  /** Has input reached the scroller since we last placed the reader? */
-  readerInput: boolean
-  geom: ScrollGeom
-  lastWriteTop: number
-  /** `scrollHeight` when we last placed the reader or saw them at the bottom; < 0 when unknown. */
-  lastWriteHeight: number
-  epsilon?: number
-}): boolean {
-  const { stick, readerInput, geom, lastWriteTop, lastWriteHeight } = args
-  const epsilon = args.epsilon ?? SELF_SCROLL_EPSILON
-  return (
-    stick &&
-    !readerInput &&
-    lastWriteTop >= 0 &&
-    lastWriteHeight >= 0 &&
-    geom.scrollTop < lastWriteTop - epsilon &&
-    Math.abs(geom.scrollHeight - lastWriteHeight) > epsilon
-  )
+export function isScrollUpIntent(input: ReaderInput): boolean {
+  switch (input.kind) {
+    case 'wheel':
+      return input.deltaY < 0
+    case 'key':
+      return SCROLL_UP_KEYS.has(input.key) || (input.key === ' ' && input.shiftKey)
+    case 'touchmove':
+      return true
+    case 'pointerdown':
+      return input.onScroller
+  }
 }
 
 /** Result of an automatic (RO / append) pin evaluation. */

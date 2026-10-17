@@ -82,6 +82,7 @@ export function MessageScroller(props: MessageScrollerProps) {
     'children',
   ])
   let scroller: HTMLDivElement | undefined
+  let holdFollow: (() => () => void) | undefined
   let epoch = 0
   const [inFlight, setInFlight] = createSignal(false)
 
@@ -112,10 +113,11 @@ export function MessageScroller(props: MessageScrollerProps) {
     anchor: ScrollAnchor | undefined,
     run: number,
     heightBefore: number,
-    restoreFocus: boolean
+    restoreFocus: boolean,
+    releaseHold?: () => void
   ) => {
     const finish = () => {
-      if (run !== epoch) return
+      if (run !== epoch) return releaseHold?.()
       if (scroller) restoreAnchor(scroller, anchor)
       stopWatching()
       releaseNativeAnchoring()
@@ -138,6 +140,7 @@ export function MessageScroller(props: MessageScrollerProps) {
         scroller.scrollHeight > heightBefore
       )
         void load()
+      releaseHold?.()
     }
     // Two frames: the first lets the host's insert commit, the second lets
     // late-sizing content (images, highlighted code) report its height. A host
@@ -146,7 +149,7 @@ export function MessageScroller(props: MessageScrollerProps) {
     // still be held when they do.
     const wait = (waited: number) =>
       requestAnimationFrame(() => {
-        if (run !== epoch) return
+        if (run !== epoch) return releaseHold?.()
         if (local.loadingOlder && waited < MAX_HOST_WAIT_FRAMES) return void wait(waited + 1)
         finish()
       })
@@ -204,7 +207,11 @@ export function MessageScroller(props: MessageScrollerProps) {
     } catch {
       // The host reports its own failure; the control stays so the reader can retry.
     }
-    settle(anchor, run, heightBefore, restoreFocus)
+    // A load that outlived its conversation inserts into a thread whose reader it knows
+    // nothing about, and the anchor it held is gone. What it does to the layout (rows
+    // taking their height, a clamp, the insert itself) is not the reader scrolling, so the
+    // follow position is held until the two frames the insert needs have passed.
+    settle(anchor, run, heightBefore, restoreFocus, run !== epoch ? holdFollow?.() : undefined)
   }
 
   onCleanup(() => {
@@ -235,6 +242,9 @@ export function MessageScroller(props: MessageScrollerProps) {
         aria-live="polite"
         aria-relevant="additions"
         resetKey={local.resetKey}
+        onFollowHold={(hold) => {
+          holdFollow = hold
+        }}
         {...rest}
         ref={(element) => {
           scroller = element

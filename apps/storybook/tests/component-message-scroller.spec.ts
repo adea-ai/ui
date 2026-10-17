@@ -229,13 +229,12 @@ const clampWithStaleInsert = async (page: Page) => {
   await expect.poll(async () => (await metrics(page)).fromBottom).toBeLessThanOrEqual(1)
   await settled(page)
 }
-const collapseTailAndRelease = (page: Page) =>
-  page.evaluate(() => {
+const collapseTailAndRelease = (page: Page, wheelAfterLanding?: number) =>
+  page.evaluate(async (deltaY) => {
     // One task: the last rows lose height and the layout is forced, so the offset clamps
     // down; the stale load then commits its rows above the reader before any frame runs.
-    const content = document.querySelector<HTMLElement>(
-      '#scroller [data-slot="conversation-content"]'
-    )!
+    const element = document.querySelector<HTMLElement>('#scroller')!
+    const content = element.querySelector<HTMLElement>('[data-slot="conversation-content"]')!
     for (const row of Array.from(content.children).slice(-3) as HTMLElement[]) {
       row.style.height = '0px'
       row.style.minHeight = '0'
@@ -243,7 +242,11 @@ const collapseTailAndRelease = (page: Page) =>
     }
     void content.scrollHeight
     ;(window as FixtureWindow).fixture.release()
-  })
+    if (deltaY === undefined) return
+    // Still the same task: let the load's continuation run, then the reader's wheel arrives.
+    for (let tick = 0; tick < 10; tick += 1) await Promise.resolve()
+    element.dispatchEvent(new WheelEvent('wheel', { deltaY, bubbles: true }))
+  }, wheelAfterLanding)
 const toTop = async (page: Page) => {
   await wheel(page, -100_000)
   await expect.poll(async () => (await metrics(page)).top).toBe(0)
@@ -681,6 +684,58 @@ test.describe('history', () => {
     // The reader never touched the thread, so they are still at its end.
     expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
     expect(await calls(page)).toBe(1)
+  })
+
+  test('a click and a non-scroll key at the end do not stop the thread following a clamp', async ({
+    page,
+  }) => {
+    await clampWithStaleInsert(page)
+    // Neither of these scrolls anything: the reader selects some text and types a letter.
+    const box = (await scroller(page).boundingBox())!
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height - 40)
+    await scroller(page).focus()
+    await page.keyboard.press('a')
+    await page.mouse.wheel(0, 120)
+    await atRest(page)
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(1)
+    await collapseTailAndRelease(page)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
+  })
+
+  test('a reveal that lands with a height change is not pulled back to the end', async ({
+    page,
+  }) => {
+    await page.addStyleTag({ content: '#scroller { overflow-anchor: none !important; }' })
+    await settled(page)
+    // One task, no input: a row below the target grows, and the view is moved to an
+    // earlier turn the way a search hit or an anchor link moves it.
+    await scroller(page).evaluate((element) => {
+      const content = element.querySelector<HTMLElement>('[data-slot="conversation-content"]')!
+      const last = content.lastElementChild as HTMLElement
+      last.style.paddingBottom = '40px'
+      void element.scrollHeight
+      element.scrollTop -= 400
+    })
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeGreaterThan(100)
+  })
+
+  test('a scroll-up as the stale load lands hands the position to the reader', async ({ page }) => {
+    await clampWithStaleInsert(page)
+    await collapseTailAndRelease(page, -120)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeGreaterThan(100)
+  })
+
+  test('a scroll-down as the stale load lands does not', async ({ page }) => {
+    await clampWithStaleInsert(page)
+    await collapseTailAndRelease(page, 120)
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
   })
 
   for (const input of ['wheel', 'keyboard'] as const) {

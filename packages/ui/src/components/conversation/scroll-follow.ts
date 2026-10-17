@@ -16,12 +16,15 @@
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js'
 import type { ConversationReadingPosition } from './conversation-surface'
 import {
+  atBottomEpsilon,
   bottomTarget,
   computeAtBottom,
+  distanceFromBottom,
   evaluateAutoPin,
-  isContentDrivenDrop,
+  isScrollUpIntent,
   isSelfScroll,
   resolveUserScrollStick,
+  type ReaderInput,
 } from './scroll-follow-core'
 
 const geometry = (element: HTMLDivElement) => ({
@@ -30,6 +33,9 @@ const geometry = (element: HTMLDivElement) => ({
   clientHeight: element.clientHeight,
 })
 const noop = () => {}
+
+/** Opens a hold on the follow position (see `createScrollFollow`); the function it returns closes it. */
+export type ScrollFollowHold = () => () => void
 
 /** Internal plain-scroller binding; host-owned restoration can disable follow. */
 export function createScrollFollow(options: {
@@ -45,13 +51,17 @@ export function createScrollFollow(options: {
   let stick = true
   let lastWriteTop = -1
   let lastWriteClientHeight = -1
-  let lastWriteHeight = -1
-  let readerInput = false
   let previousTop = -1
   let lastScrollClientHeight = 0
   let pendingRestore: { frame: number; fromTop: number; target: number } | undefined
   let pendingRestoreUserIntent = false
   let removeRestoreIntentListeners = noop
+  // A hold is the caller saying it is positioning the view (see `hold`): while one is
+  // open and the reader was following, the content's moves are not read as the reader's.
+  let holds = 0
+  let holdFollowing = false
+  let holdIntent = false
+  const holding = () => holds > 0 && holdFollowing && !holdIntent
   const reportPosition = () => {
     if (scroller)
       untrack(() =>
@@ -69,25 +79,19 @@ export function createScrollFollow(options: {
     element.scrollTop = target
     lastWriteTop = element.scrollTop
     lastWriteClientHeight = element.clientHeight
-    lastWriteHeight = element.scrollHeight
-    readerInput = false
     previousTop = element.scrollTop
   }
-  // Anything the reader does to the scroller counts as intent, so only a move with no
-  // input behind it can be read as the content's.
-  const markInput = () => {
-    readerInput = true
+  const pinHeld = (element: HTMLDivElement) => {
+    const geom = geometry(element)
+    stick = true
+    if (distanceFromBottom(geom) > atBottomEpsilon()) writePin(element, bottomTarget(geom))
+    setAtBottom(computeAtBottom(geometry(element), options.threshold()))
+    reportPosition()
   }
   const pinAuto = () => {
     if (!scroller || !options.enabled() || pendingRestore) return
+    if (holding()) return pinHeld(scroller)
     const geom = geometry(scroller)
-    if (isContentDrivenDrop({ stick, readerInput, geom, lastWriteTop, lastWriteHeight })) {
-      // The content clamped the offset and then grew: the reader did not leave the end.
-      writePin(scroller, bottomTarget(geom))
-      setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
-      reportPosition()
-      return
-    }
     const result = evaluateAutoPin({
       stick,
       geom,
@@ -99,7 +103,6 @@ export function createScrollFollow(options: {
     else if (result.stick) {
       lastWriteTop = result.target
       lastWriteClientHeight = geom.clientHeight
-      lastWriteHeight = geom.scrollHeight
     }
     setAtBottom(computeAtBottom(geometry(scroller), options.threshold()))
     reportPosition()
@@ -130,15 +133,9 @@ export function createScrollFollow(options: {
       reportPosition()
       return
     }
+    if (holding()) return pinHeld(scroller)
     const geom = geometry(scroller)
     setAtBottom(computeAtBottom(geom, options.threshold()))
-    if (isContentDrivenDrop({ stick, readerInput, geom, lastWriteTop, lastWriteHeight })) {
-      writePin(scroller, bottomTarget(geom))
-      setAtBottom(true)
-      lastScrollClientHeight = scroller.clientHeight
-      reportPosition()
-      return
-    }
     if (!isSelfScroll(geom.scrollTop, lastWriteTop)) {
       stick = resolveUserScrollStick({
         stick,
@@ -170,6 +167,40 @@ export function createScrollFollow(options: {
     scroller.focus({ preventScroll: true })
   }
 
+  // Open while the caller moves content under a reader who is following, so a clamp or an
+  // insert it causes is not mistaken for the reader leaving the end. Only the reader's own
+  // scroll-up (`isScrollUpIntent`) ends it early; closing it puts a reader who is still
+  // following back at the end. A reveal or search jump outside a hold is never affected.
+  const hold = () => {
+    if (holds === 0) {
+      holdFollowing = options.enabled() && stick
+      holdIntent = false
+    }
+    holds += 1
+    let open = true
+    return () => {
+      if (!open) return
+      open = false
+      holds -= 1
+      if (holds > 0) return
+      const resume = holdFollowing && !holdIntent
+      holdFollowing = false
+      holdIntent = false
+      if (resume && scroller && options.enabled() && !pendingRestore) pinHeld(scroller)
+    }
+  }
+  const noteHoldInput = (event: Event) => {
+    if (holds === 0 || holdIntent) return
+    let input: ReaderInput | undefined
+    if (event instanceof WheelEvent) input = { kind: 'wheel', deltaY: event.deltaY }
+    else if (event instanceof KeyboardEvent)
+      input = { kind: 'key', key: event.key, shiftKey: event.shiftKey }
+    else if (event.type === 'touchmove') input = { kind: 'touchmove' }
+    else if (event.type === 'pointerdown')
+      input = { kind: 'pointerdown', onScroller: event.target === scroller }
+    if (input && isScrollUpIntent(input)) holdIntent = true
+  }
+
   createEffect(() => {
     options.resetKey()
     const enabled = options.enabled()
@@ -190,10 +221,10 @@ export function createScrollFollow(options: {
       observer?.disconnect()
     })
     stick = true
+    holdFollowing = holds > 0
+    holdIntent = false
     lastWriteTop = -1
     lastWriteClientHeight = -1
-    lastWriteHeight = -1
-    readerInput = false
     previousTop = -1
     lastScrollClientHeight = 0
     setAtBottom(true)
@@ -275,10 +306,11 @@ export function createScrollFollow(options: {
     atBottom,
     onScroll,
     jump,
+    hold,
     bindScroller: (element: HTMLDivElement) => {
       scroller = element
-      for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'])
-        element.addEventListener(type, markInput, { passive: true })
+      for (const type of ['wheel', 'touchmove', 'pointerdown', 'keydown'])
+        element.addEventListener(type, noteHoldInput, { passive: true })
     },
     bindContent: (element: HTMLDivElement) => {
       content = element
