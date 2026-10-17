@@ -623,6 +623,11 @@ test.describe('history', () => {
     await expect(page.getByText('Loading earlier messages…')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Load earlier messages' })).toBeVisible()
     await expect.poll(async () => (await metrics(page)).fromBottom).toBeLessThanOrEqual(1)
+    // The new thread's rows are still taking their real height, and the browser clamps the
+    // offset down with them. A load that lands in that window meets the clamp's scroll event
+    // and the follow controller reads it as the reader scrolling up. This test is about the
+    // stale load, so it starts from a settled thread.
+    await settled(page)
 
     // The stale load now finishes and inserts turns whose ids exist in the new thread.
     await page.evaluate(() => (window as FixtureWindow).fixture.release())
