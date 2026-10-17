@@ -101,18 +101,21 @@ const settled = (page: Page) =>
       })
   )
 /**
- * Scroll the thread by `delta` with the wheel and return once it has travelled all of it.
+ * Scroll the thread up with the wheel and return once it has come to rest.
  *
  * Engines that animate a wheel notch keep scrolling after the event is dispatched, so
- * "the view moved" is not "the view has stopped". The thread is settled first so the
- * distance is measured from where it really rests, and the stop is the offset the gesture
- * was asked to reach.
+ * "the view moved" is not "the view has stopped". How far a notch carries the view is
+ * the engine's business (the rows are `content-visibility: auto`, so the distance also
+ * depends on how the rows passed end up sized), so the stop is not an offset worked out
+ * in advance: it is the offset and the height holding still for several frames, after
+ * the view has begun to move. The thread is settled first so the move is from rest.
  */
 const wheelBy = async (page: Page, delta: number) => {
   await settled(page)
-  const target = Math.max(0, (await metrics(page)).top + delta)
+  const start = (await metrics(page)).top
   await wheel(page, delta)
-  await expect.poll(async () => Math.abs((await metrics(page)).top - target) <= 1).toBe(true)
+  await expect.poll(async () => (await metrics(page)).top).toBeLessThan(start)
+  await atRest(page)
 }
 /** Return once the offset and the height have both held still for several frames. */
 const atRest = (page: Page) =>
@@ -291,10 +294,39 @@ test.describe('history', () => {
     await setMode(page, 'noop')
     await settled(page)
     await scroller(page).evaluate((element) => element.scrollTo({ top: 1500, behavior: 'instant' }))
-    await expect.poll(async () => Math.abs((await metrics(page)).top - 1500) <= 1).toBe(true)
+    await atRest(page)
     await scroller(page).evaluate((element) => element.scrollTo({ top: 0, behavior: 'smooth' }))
     await expect.poll(async () => (await metrics(page)).top).toBe(0)
     expect(await calls(page)).toBeGreaterThanOrEqual(1)
+  })
+
+  test('history that lands while the reader is scrolling keeps the turn the reader arrived at', async ({
+    page,
+  }) => {
+    // The reader scrolls on after the load has started (an animated scroll, as a wheel
+    // or touch momentum is), and the host answers only once they have stopped. The turns
+    // that land above must not move the turn the reader came to rest on.
+    await setMode(page, 'gated')
+    await settled(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 1500, behavior: 'instant' }))
+    await atRest(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 0, behavior: 'smooth' }))
+    await expect.poll(async () => (await metrics(page)).top).toBe(0)
+    await atRest(page)
+    await expect.poll(() => calls(page)).toBe(1)
+
+    const offsetOf = (id: string) =>
+      page.evaluate((anchorId) => {
+        const surface = document.querySelector('#scroller')!
+        const element = surface.querySelector(`[data-anchor-id="${anchorId}"]`)!
+        return element.getBoundingClientRect().top - surface.getBoundingClientRect().top
+      }, id)
+    const before = await offsetOf('turn-1000')
+    await page.evaluate(() => (window as FixtureWindow).fixture.release())
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await atRest(page)
+    expect(Math.abs((await offsetOf('turn-1000')) - before)).toBeLessThanOrEqual(1)
+    expect((await metrics(page)).top).toBeGreaterThan(300)
   })
 
   test('never starts a second load while one is in flight', async ({ page }) => {

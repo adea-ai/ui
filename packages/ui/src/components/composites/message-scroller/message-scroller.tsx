@@ -104,6 +104,7 @@ export function MessageScroller(props: MessageScrollerProps) {
     void local.resetKey
     epoch += 1
     setInFlight(false)
+    stopWatching()
     releaseNativeAnchoring()
   })
 
