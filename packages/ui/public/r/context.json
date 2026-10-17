@@ -1,0 +1,33 @@
+{
+  "name": "context",
+  "type": "registry:ui",
+  "title": "Context",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/popover",
+    "@adea-ai/ui/progress",
+    "@adea-ai/ui/sources",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/context/context-model.ts",
+      "type": "registry:ui",
+      "target": "components/composites/context/context-model.ts"
+    },
+    {
+      "path": "src/components/composites/context/context.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/context/context.tsx"
+    },
+    {
+      "path": "src/components/composites/context/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/context/index.ts"
+    }
+  ]
+}

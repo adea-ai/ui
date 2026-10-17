@@ -131,6 +131,31 @@
       ]
     },
     {
+      "name": "attachment",
+      "type": "registry:ui",
+      "title": "Attachment",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/attachment/attachment.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/attachment/attachment.tsx"
+        },
+        {
+          "path": "src/components/ui/attachment/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/attachment/index.ts"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:ui",
       "title": "Avatar",
@@ -221,6 +246,28 @@
           "path": "src/components/ui/breadcrumb/index.ts",
           "type": "registry:ui",
           "target": "components/ui/breadcrumb/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "bubble",
+      "type": "registry:ui",
+      "title": "Bubble",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/bubble/bubble.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/bubble/bubble.tsx"
+        },
+        {
+          "path": "src/components/ui/bubble/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/bubble/index.ts"
         }
       ]
     },
@@ -938,6 +985,28 @@
       ]
     },
     {
+      "name": "marker",
+      "type": "registry:ui",
+      "title": "Marker",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/marker/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/marker/index.ts"
+        },
+        {
+          "path": "src/components/ui/marker/marker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/marker/marker.tsx"
+        }
+      ]
+    },
+    {
       "name": "menubar",
       "type": "registry:ui",
       "title": "Menubar",
@@ -959,6 +1028,39 @@
           "path": "src/components/ui/menubar/menubar.tsx",
           "type": "registry:ui",
           "target": "components/ui/menubar/menubar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "message",
+      "type": "registry:ui",
+      "title": "Message",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/code-block",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/message/cite-ranges.ts",
+          "type": "registry:ui",
+          "target": "components/ui/message/cite-ranges.ts"
+        },
+        {
+          "path": "src/components/ui/message/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/message/index.ts"
+        },
+        {
+          "path": "src/components/ui/message/message.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/message/message.tsx"
+        },
+        {
+          "path": "src/components/ui/message/parse-message-text.ts",
+          "type": "registry:ui",
+          "target": "components/ui/message/parse-message-text.ts"
         }
       ]
     },
@@ -1104,6 +1206,34 @@
           "path": "src/components/ui/progress/progress.tsx",
           "type": "registry:ui",
           "target": "components/ui/progress/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "questionnaire",
+      "type": "registry:ui",
+      "title": "Questionnaire",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/checkbox",
+        "@adea-ai/ui/radio-group",
+        "@adea-ai/ui/textarea",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/questionnaire/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/questionnaire/index.ts"
+        },
+        {
+          "path": "src/components/ui/questionnaire/questionnaire.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/questionnaire/questionnaire.tsx"
         }
       ]
     },
@@ -1558,6 +1688,31 @@
           "path": "src/components/ui/tooltip/tooltip.tsx",
           "type": "registry:ui",
           "target": "components/ui/tooltip/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "trace",
+      "type": "registry:ui",
+      "title": "Trace",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/trace/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/trace/index.ts"
+        },
+        {
+          "path": "src/components/ui/trace/trace.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/trace/trace.tsx"
         }
       ]
     },
@@ -2151,6 +2306,190 @@
       ]
     },
     {
+      "name": "chain-of-thought",
+      "type": "registry:ui",
+      "title": "Chain Of Thought",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/trace",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/chain-of-thought/chain-of-thought.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/chain-of-thought/chain-of-thought.tsx"
+        },
+        {
+          "path": "src/components/composites/chain-of-thought/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/chain-of-thought/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "type": "registry:ui",
+      "title": "Chat",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/chat/chat.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/chat/chat.tsx"
+        },
+        {
+          "path": "src/components/composites/chat/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/chat/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "checkpoint",
+      "type": "registry:ui",
+      "title": "Checkpoint",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/alert-dialog",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/confirmation",
+        "@adea-ai/ui/marker",
+        "@adea-ai/ui/sources",
+        "@adea-ai/ui/spinner",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/checkpoint/checkpoint-model.ts",
+          "type": "registry:ui",
+          "target": "components/composites/checkpoint/checkpoint-model.ts"
+        },
+        {
+          "path": "src/components/composites/checkpoint/checkpoint.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/checkpoint/checkpoint.tsx"
+        },
+        {
+          "path": "src/components/composites/checkpoint/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/checkpoint/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "confirmation",
+      "type": "registry:ui",
+      "title": "Confirmation",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/diff-block",
+        "@adea-ai/ui/sources",
+        "@adea-ai/ui/spinner",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/confirmation/confirmation-model.ts",
+          "type": "registry:ui",
+          "target": "components/composites/confirmation/confirmation-model.ts"
+        },
+        {
+          "path": "src/components/composites/confirmation/confirmation.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/confirmation/confirmation.tsx"
+        },
+        {
+          "path": "src/components/composites/confirmation/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/confirmation/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "context",
+      "type": "registry:ui",
+      "title": "Context",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/popover",
+        "@adea-ai/ui/progress",
+        "@adea-ai/ui/sources",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/context/context-model.ts",
+          "type": "registry:ui",
+          "target": "components/composites/context/context-model.ts"
+        },
+        {
+          "path": "src/components/composites/context/context.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/context/context.tsx"
+        },
+        {
+          "path": "src/components/composites/context/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/context/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "file-tree",
+      "type": "registry:ui",
+      "title": "File Tree",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/tree",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/file-tree/build-file-tree.ts",
+          "type": "registry:ui",
+          "target": "components/composites/file-tree/build-file-tree.ts"
+        },
+        {
+          "path": "src/components/composites/file-tree/file-tree.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/file-tree/file-tree.tsx"
+        },
+        {
+          "path": "src/components/composites/file-tree/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/file-tree/index.ts"
+        }
+      ]
+    },
+    {
       "name": "help-center",
       "type": "registry:ui",
       "title": "Help Center",
@@ -2176,6 +2515,41 @@
           "path": "src/components/composites/help-center/index.ts",
           "type": "registry:ui",
           "target": "components/composites/help-center/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "inline-citation",
+      "type": "registry:ui",
+      "title": "Inline Citation",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/message",
+        "@adea-ai/ui/popover",
+        "@adea-ai/ui/sources",
+        "@adea-ai/ui/text-link",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/inline-citation/citation.ts",
+          "type": "registry:ui",
+          "target": "components/composites/inline-citation/citation.ts"
+        },
+        {
+          "path": "src/components/composites/inline-citation/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/inline-citation/index.ts"
+        },
+        {
+          "path": "src/components/composites/inline-citation/inline-citation.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/inline-citation/inline-citation.tsx"
         }
       ]
     },
@@ -2207,6 +2581,149 @@
           "path": "src/components/composites/list-row/list-row.tsx",
           "type": "registry:ui",
           "target": "components/composites/list-row/list-row.tsx"
+        }
+      ]
+    },
+    {
+      "name": "message-scroller",
+      "type": "registry:ui",
+      "title": "Message Scroller",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/conversation",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/message-scroller/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/message-scroller/index.ts"
+        },
+        {
+          "path": "src/components/composites/message-scroller/message-scroller.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/message-scroller/message-scroller.tsx"
+        },
+        {
+          "path": "src/components/composites/message-scroller/scroll-anchor.ts",
+          "type": "registry:ui",
+          "target": "components/composites/message-scroller/scroll-anchor.ts"
+        }
+      ]
+    },
+    {
+      "name": "model-selector",
+      "type": "registry:ui",
+      "title": "Model Selector",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/command",
+        "@adea-ai/ui/dropdown-menu",
+        "@adea-ai/ui/popover",
+        "@adea-ai/ui/sources",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/model-selector/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/model-selector/index.ts"
+        },
+        {
+          "path": "src/components/composites/model-selector/model-selector.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/model-selector/model-selector.tsx"
+        },
+        {
+          "path": "src/components/composites/model-selector/models.ts",
+          "type": "registry:ui",
+          "target": "components/composites/model-selector/models.ts"
+        }
+      ]
+    },
+    {
+      "name": "plan",
+      "type": "registry:ui",
+      "title": "Plan",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/progress",
+        "@adea-ai/ui/task",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/plan/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/plan/index.ts"
+        },
+        {
+          "path": "src/components/composites/plan/plan.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/plan/plan.tsx"
+        }
+      ]
+    },
+    {
+      "name": "queue",
+      "type": "registry:ui",
+      "title": "Queue",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/task",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/queue/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/queue/index.ts"
+        },
+        {
+          "path": "src/components/composites/queue/queue.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/queue/queue.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reasoning",
+      "type": "registry:ui",
+      "title": "Reasoning",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/message",
+        "@adea-ai/ui/scroll-area",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/reasoning/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/reasoning/index.ts"
+        },
+        {
+          "path": "src/components/composites/reasoning/reasoning.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/reasoning/reasoning.tsx"
         }
       ]
     },
@@ -2272,6 +2789,70 @@
       ]
     },
     {
+      "name": "sources",
+      "type": "registry:ui",
+      "title": "Sources",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/message",
+        "@adea-ai/ui/text-link",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/sources/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/sources/index.ts"
+        },
+        {
+          "path": "src/components/composites/sources/source.ts",
+          "type": "registry:ui",
+          "target": "components/composites/sources/source.ts"
+        },
+        {
+          "path": "src/components/composites/sources/sources.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/sources/sources.tsx"
+        }
+      ]
+    },
+    {
+      "name": "stack-trace",
+      "type": "registry:ui",
+      "title": "Stack Trace",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/trace",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/stack-trace/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/stack-trace/index.ts"
+        },
+        {
+          "path": "src/components/composites/stack-trace/parse-stack-trace.ts",
+          "type": "registry:ui",
+          "target": "components/composites/stack-trace/parse-stack-trace.ts"
+        },
+        {
+          "path": "src/components/composites/stack-trace/stack-trace.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/stack-trace/stack-trace.tsx"
+        }
+      ]
+    },
+    {
       "name": "stat",
       "type": "registry:ui",
       "title": "Stat",
@@ -2293,6 +2874,184 @@
           "path": "src/components/composites/stat/stat.tsx",
           "type": "registry:ui",
           "target": "components/composites/stat/stat.tsx"
+        }
+      ]
+    },
+    {
+      "name": "subagent",
+      "type": "registry:ui",
+      "title": "Subagent",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/reasoning",
+        "@adea-ai/ui/scroll-area",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/subagent/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/subagent/index.ts"
+        },
+        {
+          "path": "src/components/composites/subagent/subagent.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/subagent/subagent.tsx"
+        }
+      ]
+    },
+    {
+      "name": "suggestion",
+      "type": "registry:ui",
+      "title": "Suggestion",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/sources",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/suggestion/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/suggestion/index.ts"
+        },
+        {
+          "path": "src/components/composites/suggestion/suggestion.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/suggestion/suggestion.tsx"
+        }
+      ]
+    },
+    {
+      "name": "task",
+      "type": "registry:ui",
+      "title": "Task",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/attachment",
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/scroll-area",
+        "@adea-ai/ui/trace",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/task/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/task/index.ts"
+        },
+        {
+          "path": "src/components/composites/task/task.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/task/task.tsx"
+        }
+      ]
+    },
+    {
+      "name": "terminal",
+      "type": "registry:ui",
+      "title": "Terminal",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/terminal/ansi.ts",
+          "type": "registry:ui",
+          "target": "components/composites/terminal/ansi.ts"
+        },
+        {
+          "path": "src/components/composites/terminal/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/terminal/index.ts"
+        },
+        {
+          "path": "src/components/composites/terminal/terminal-model.ts",
+          "type": "registry:ui",
+          "target": "components/composites/terminal/terminal-model.ts"
+        },
+        {
+          "path": "src/components/composites/terminal/terminal.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/terminal/terminal.tsx"
+        }
+      ]
+    },
+    {
+      "name": "test-results",
+      "type": "registry:ui",
+      "title": "Test Results",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "@adea-ai/ui/diff-block",
+        "@adea-ai/ui/stack-trace",
+        "@adea-ai/ui/trace",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/test-results/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/test-results/index.ts"
+        },
+        {
+          "path": "src/components/composites/test-results/test-results-model.ts",
+          "type": "registry:ui",
+          "target": "components/composites/test-results/test-results-model.ts"
+        },
+        {
+          "path": "src/components/composites/test-results/test-results.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/test-results/test-results.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tool",
+      "type": "registry:ui",
+      "title": "Tool",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/badge",
+        "@adea-ai/ui/code-block",
+        "@adea-ai/ui/trace"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/tool/format-tool-value.ts",
+          "type": "registry:ui",
+          "target": "components/composites/tool/format-tool-value.ts"
+        },
+        {
+          "path": "src/components/composites/tool/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/tool/index.ts"
+        },
+        {
+          "path": "src/components/composites/tool/tool.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/tool/tool.tsx"
         }
       ]
     },

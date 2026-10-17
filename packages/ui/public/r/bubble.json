@@ -1,0 +1,22 @@
+{
+  "name": "bubble",
+  "type": "registry:ui",
+  "title": "Bubble",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/bubble/bubble.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/bubble/bubble.tsx"
+    },
+    {
+      "path": "src/components/ui/bubble/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/bubble/index.ts"
+    }
+  ]
+}

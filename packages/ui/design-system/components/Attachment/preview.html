@@ -1,0 +1,22 @@
+<!-- @dsCard group="Conversation" height=390 -->
+<div id="root" style="padding:16px;max-width:520px;display:flex;flex-direction:column;gap:12px"></div>
+<script>
+  const { render, html, Attachment, AttachmentList } = window.AdeaUI
+  const noop = (_event) => {}
+  render(
+    () => html`
+      <${Attachment} name="deployment-plan.md" kind="text" size=${18432} />
+      <${Attachment} name="deployment-plan.md" kind="text" size=${18432} onOpen=${noop} onRemove=${noop} />
+      <${Attachment} name="deployment-plan.md" kind="text" size=${18432} variant="card" onOpen=${noop} />
+      <${Attachment} name="spec.pdf" kind="document" status="uploading" progress=${42} onRemove=${noop} />
+      <${Attachment} name="trace.log" kind="text" status="error" statusLabel="Larger than 10 MB" onRemove=${noop} />
+      <${Attachment} name="notes.txt" kind="text" status="unavailable" statusLabel="File no longer stored" />
+      <${AttachmentList} aria-label="3 attachments">
+        <li><${Attachment} name="plan.md" kind="text" size=${2048} /></li>
+        <li><${Attachment} name="schema.sql" kind="code" size=${4800} onRemove=${noop} /></li>
+        <li><${Attachment} name="backup.tar.gz" kind="archive" size=${4800000} onRemove=${noop} /></li>
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

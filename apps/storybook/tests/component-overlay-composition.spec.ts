@@ -173,10 +173,19 @@ test('drawer-from-the-side: the inspector opens from the right edge', async ({ p
 
   const drawer = page.getByRole('dialog', { name: 'Worktree' })
   await expect(drawer).toHaveAttribute('data-side', 'right')
-  await expect(drawer).not.toHaveAttribute('data-transitioning', '')
   const viewport = page.viewportSize()
+  if (!viewport) throw new Error('The page must have a viewport')
+  // The drawer slides in from beyond the right edge, and `data-transitioning` can still be
+  // absent in the instant after the click, before the slide has begun. The edge itself is
+  // what the test is about, so wait for it to arrive rather than for the attribute to go.
+  const rightEdge = async () => {
+    const box = await drawer.boundingBox()
+    return box ? Math.round(box.x + box.width) : undefined
+  }
+  await expect.poll(rightEdge).toBe(viewport.width)
+  await expect(drawer).not.toHaveAttribute('data-transitioning', '')
   const box = await drawer.boundingBox()
-  if (!viewport || !box) throw new Error('The drawer and viewport must both have a size')
+  if (!box) throw new Error('The drawer must have a size')
   expect(Math.round(box.x + box.width)).toBe(viewport.width)
   expect(box.y).toBe(0)
   expect(Math.round(box.height)).toBe(viewport.height)

@@ -1,0 +1,35 @@
+{
+  "name": "terminal",
+  "type": "registry:ui",
+  "title": "Terminal",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/terminal/ansi.ts",
+      "type": "registry:ui",
+      "target": "components/composites/terminal/ansi.ts"
+    },
+    {
+      "path": "src/components/composites/terminal/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/terminal/index.ts"
+    },
+    {
+      "path": "src/components/composites/terminal/terminal-model.ts",
+      "type": "registry:ui",
+      "target": "components/composites/terminal/terminal-model.ts"
+    },
+    {
+      "path": "src/components/composites/terminal/terminal.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/terminal/terminal.tsx"
+    }
+  ]
+}

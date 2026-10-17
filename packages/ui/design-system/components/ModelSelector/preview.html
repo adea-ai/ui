@@ -1,0 +1,28 @@
+<!-- @dsCard group="Conversation" height=440 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;justify-content:flex-end;min-height:420px;box-sizing:border-box"></div>
+<script>
+  const { render, html, createSignal, ModelSelector } = window.AdeaUI
+  const efforts = [
+    { id: 'low', label: 'Low', description: 'Fastest, least reasoning' },
+    { id: 'medium', label: 'Medium' },
+    { id: 'high', label: 'High', description: 'Slowest, most reasoning' },
+  ]
+  const models = [
+    { id: 'sonnet', label: 'Sonnet', provider: 'Anthropic', description: 'Balanced for everyday work', efforts },
+    { id: 'haiku', label: 'Haiku', provider: 'Anthropic', description: 'Fast and light' },
+    { id: 'opus', label: 'Opus', provider: 'Anthropic', description: 'Most capable', disabledReason: 'Not included in your plan.', efforts },
+    { id: 'gpt', label: 'GPT', provider: 'OpenAI', efforts: ['low', 'high'] },
+  ]
+  const root = document.getElementById('root')
+  render(() => {
+    const [value, setValue] = createSignal('sonnet')
+    const [effort, setEffort] = createSignal('medium')
+    return html`<div><${ModelSelector} models=${models} value=${() => value()} effort=${() => effort()} onChange=${(id) => setValue(id)} onEffortChange=${(id) => setEffort(id)} /></div>`
+  }, root)
+  // The model menu owns its open state, so the card opens it the way a pointer would.
+  const trigger = root.querySelector('button')
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }))
+  document.activeElement?.blur()
+</script>

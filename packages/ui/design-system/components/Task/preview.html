@@ -1,0 +1,29 @@
+<!-- @dsCard group="Conversation" height=500 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Trace, Task } = window.AdeaUI
+  const items = [
+    { text: 'Document the new locale column', status: 'complete', files: [{ name: 'docs/schema.md', kind: 'document' }, { name: 'docs/migrations.md', kind: 'document' }] },
+    { text: 'Add the backfill to the runbook', description: 'Batches of 5,000 rows', status: 'active', files: [{ name: 'docs/runbook.md', kind: 'text' }] },
+    { text: 'Update the changelog', status: 'pending' },
+    { text: 'Link the rollback script', status: 'pending' },
+  ]
+  const release = [
+    { text: 'Tag the release', status: 'complete' },
+    { text: 'Build the packages', status: 'active' },
+    { text: 'Publish to the registry', status: 'pending' },
+    { text: 'Notify the channel', status: 'skipped' },
+    { text: 'Verify the smoke test', status: 'failed', description: 'Timed out after 30s' },
+  ]
+  const unmarked = [{ text: 'Document the new locale column', files: [{ name: 'docs/schema.md' }] }, { text: 'Update the changelog' }]
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${Task} title="Update the docs" items=${items} defaultOpen=${true} />
+        <${Task} title="Release checklist" items=${release} defaultOpen=${true} />
+        <${Task} title="Notes without progress" items=${unmarked} />
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

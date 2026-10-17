@@ -1,0 +1,18 @@
+<!-- @dsCard group="Conversation" height=330 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, Sources } = window.AdeaUI
+  const reading = [
+    { id: 'a', title: 'Solid reactivity, explained', url: 'https://docs.solidjs.com/concepts/intro-to-reactivity', snippet: 'Signals are the building block of reactivity. They track and notify subscribers.' },
+    { id: 'b', title: 'Kobalte popover', url: 'https://kobalte.dev/docs/core/components/popover', snippet: 'A popover is a non-modal dialog that floats near its trigger.' },
+    { id: 'c', title: 'Release notes 0.131', url: 'https://github.com/adea-ai/ui/releases' },
+    { id: 'd', title: 'docs/conventions.md' },
+  ]
+  render(
+    () => html`
+      <${Sources} sources=${reading} defaultOpen=${true} />
+      <${Sources} sources=${reading.slice(0, 1)} />
+    `,
+    document.getElementById('root')
+  )
+</script>

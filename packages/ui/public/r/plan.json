@@ -1,0 +1,26 @@
+{
+  "name": "plan",
+  "type": "registry:ui",
+  "title": "Plan",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/progress",
+    "@adea-ai/ui/task",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/plan/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/plan/index.ts"
+    },
+    {
+      "path": "src/components/composites/plan/plan.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/plan/plan.tsx"
+    }
+  ]
+}

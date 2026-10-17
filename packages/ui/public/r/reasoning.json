@@ -1,0 +1,26 @@
+{
+  "name": "reasoning",
+  "type": "registry:ui",
+  "title": "Reasoning",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/message",
+    "@adea-ai/ui/scroll-area",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/reasoning/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/reasoning/index.ts"
+    },
+    {
+      "path": "src/components/composites/reasoning/reasoning.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/reasoning/reasoning.tsx"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "task",
+  "type": "registry:ui",
+  "title": "Task",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/attachment",
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/scroll-area",
+    "@adea-ai/ui/trace",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/task/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/task/index.ts"
+    },
+    {
+      "path": "src/components/composites/task/task.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/task/task.tsx"
+    }
+  ]
+}
