@@ -145,7 +145,7 @@
     "check:packed-paste-model": "node scripts/check-packed-paste-model.mjs"
   },
   "dependencies": {
-    "@adea-ai/themes": "^0.10.4",
+    "@adea-ai/themes": "^0.10.10",
     "@corvu/calendar": "^0.1.2",
     "@corvu/drawer": "^0.2.4",
     "@corvu/otp-field": "^0.1.4",
