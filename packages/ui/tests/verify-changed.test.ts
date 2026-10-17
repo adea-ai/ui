@@ -13,6 +13,7 @@ import {
   specifiersOf,
   TEST_ROOTS,
   typecheckTargets,
+  typecheckTasks,
   type Workspace,
 } from '../scripts/verify-changed-plan'
 
@@ -325,5 +326,24 @@ describe('the plan', () => {
       format: ['README.md', 'docs/conventions.md'],
       lint: [],
     })
+  })
+})
+
+describe('named typecheck tasks', () => {
+  test('checks library consumers without building declarations', () => {
+    expect(typecheckTasks(['@adea-ai/ui'])).toEqual([
+      'orch:storybook:typecheck',
+      'orch:ui:typecheck',
+    ])
+    expect(typecheckTasks(['@adea-ai/storybook'])).toEqual(['orch:storybook:typecheck'])
+    expect(typecheckTasks(['@adea-ai/ui', '@adea-ai/storybook'])).toEqual(
+      typecheckTasks(['@adea-ai/ui'])
+    )
+    expect(typecheckTasks('all')).toEqual(['orch:typecheck'])
+    expect(typecheckTasks([])).toEqual([])
+  })
+
+  test('an unmapped workspace fails rather than silently skipping checks', () => {
+    expect(() => typecheckTasks(['@adea-ai/new-workspace'])).toThrow('No Vite+ typecheck task')
   })
 })

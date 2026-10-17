@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 // The config-resolution guard needs the classic JS API (`ts.sys`,
 // `readConfigFile`, `resolveModuleName`), which TypeScript 7's native compiler
@@ -8,8 +8,8 @@ import { dirname, join, resolve } from 'node:path'
 import ts from 'typescript6'
 
 /*
- * `typecheck` runs without a library build first (turbo.json gives it no
- * `^build`). That is only sound while every workshop tsconfig resolves the design
+ * `typecheck` runs without a library build first (the named Vite+ tasks
+ * depend only on the toolchain check). That is only sound while every workshop tsconfig resolves the design
  * system to its source: were one to fall back to the package's `types` export, it
  * would read `dist` — absent on a clean checkout, stale on a dirty one. The packed
  * `dist` declarations are verified by `bun run build` and the `check:packed-*`
@@ -34,8 +34,20 @@ for (const config of ['tsconfig.json', 'tsconfig.layout.json', 'tsconfig.compone
 }
 
 test('typecheck does not wait on a build', () => {
-  const turbo = JSON.parse(readFileSync(resolve(app, '../../turbo.json'), 'utf8')) as {
-    tasks: Record<string, { dependsOn?: string[] }>
+  // Load Vite's Node-only dependency graph in its own process. The workshop's
+  // transform test installs browser globals in this Bun process.
+  const tasks = JSON.parse(
+    execFileSync(
+      'node',
+      [
+        '--input-type=module',
+        '-e',
+        "import config from './vite.config.ts'; console.log(JSON.stringify(config.run.tasks))",
+      ],
+      { cwd: resolve(app, '../..'), encoding: 'utf8' }
+    )
+  ) as Record<string, { dependsOn?: string[] }>
+  for (const name of ['orch:ui:typecheck', 'orch:storybook:typecheck']) {
+    expect(tasks[name]).toMatchObject({ dependsOn: ['orch:toolchain'] })
   }
-  expect(turbo.tasks.typecheck?.dependsOn ?? []).not.toContain('^build')
 })

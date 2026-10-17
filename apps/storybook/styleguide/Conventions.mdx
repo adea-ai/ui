@@ -321,8 +321,8 @@ and the story are both required.
 
 **A story that supplies only a `render` still has to satisfy the type.** When the
 component has a required prop, put it in the meta's `args` — a story is typechecked by
-`turbo run typecheck`, and `packages/ui/tsconfig.json` excludes `*.stories.tsx`, so a
-story error only appears in CI. Run `bun x turbo run typecheck` from the repository
+`bun run typecheck`, and `packages/ui/tsconfig.json` excludes `*.stories.tsx`, so a
+story error only appears in CI. Run `bun run typecheck` from the repository
 root, not the package-local one.
 
 **A decorator that wraps must render its children.** The decorators in this repository

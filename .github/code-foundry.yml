@@ -10,7 +10,7 @@ codeql: auto
 dependency_review: auto
 package_manager: bun
 runtime_repository: 0xPlayerOne/code-foundry
-runtime_ref: v1.47.1
+runtime_ref: v1.48.1
 runner: ubuntu-latest
 ci_runner: ubuntu-latest
 test_runner: ubuntu-latest
@@ -40,7 +40,8 @@ cache_build: auto
 # 70 is the measured floor, and it keeps the gate live so the contract layer cannot
 # regress unnoticed.
 coverage_minimum: 70
-turbo_remote: auto
+monorepo_tool: vite-plus
+turbo_remote: false
 release_type: node
 npm_publish: false
 post_release: false
