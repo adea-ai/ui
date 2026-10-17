@@ -9,7 +9,7 @@ import {
   ExternalLink,
   LoaderCircle,
 } from 'lucide-solid'
-import { Show, splitProps, type ComponentProps, type JSX } from 'solid-js'
+import { children, Show, splitProps, type ComponentProps, type JSX } from 'solid-js'
 import { cn } from '../../../lib/utils'
 
 /**
@@ -226,6 +226,10 @@ export function TraceLine(props: TraceLineProps) {
     'selectHaspopup',
     'children',
   ])
+  // Resolved once. `local.children` is a getter that builds the subtree each time
+  // it is read, so testing it in `when` and then placing it built every nested
+  // line twice, and a chain of lines nested n deep built 2^n of them.
+  const content = children(() => local.children)
   const head = (trailing?: JSX.Element) => (
     <LineHead
       title={local.title}
@@ -276,7 +280,7 @@ export function TraceLine(props: TraceLineProps) {
             </button>
           }
         >
-          <Show when={local.children} fallback={<div class={lineClass}>{head()}</div>}>
+          <Show when={content()} fallback={<div class={lineClass}>{head()}</div>}>
             <KobalteCollapsible
               open={local.open}
               defaultOpen={local.defaultOpen}
@@ -298,7 +302,7 @@ export function TraceLine(props: TraceLineProps) {
                 {/* The rail is drawn from the mark's centre, so a nested line reads as
                     belonging to the one above it without an indent that eats the width. */}
                 <div class="ms-[0.6875rem] mt-0.5 mb-1 flex min-w-0 flex-col gap-1 border-s border-border ps-3">
-                  {local.children}
+                  {content()}
                 </div>
               </KobalteCollapsible.Content>
             </KobalteCollapsible>
