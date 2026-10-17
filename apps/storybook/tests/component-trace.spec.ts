@@ -199,12 +199,13 @@ test('a nested trace expands, line by line, to its output', async ({ page }) => 
   await expect(page.locator('#nested-output')).toContainText('src/b.ts:40: TODO')
   await expect(page.locator('#nested-output')).toHaveAttribute('data-size', 'sm')
 
-  // Collapsing the parent hides the whole subtree, and it can be opened again to the output.
+  // Collapsing the parent hides the whole subtree. The nested lines are built once, so the
+  // step the reader opened is still open when the parent is opened again.
   await trigger(page, 'line-nested').click()
   await expect(page.locator('#nested-output')).toHaveCount(0)
   await expect(page.getByRole('list', { name: 'Reviewer steps' })).toHaveCount(0)
   await trigger(page, 'line-nested').click()
-  await trigger(page, 'line-step').click()
+  await expect(trigger(page, 'line-step')).toHaveAttribute('aria-expanded', 'true')
   await expect(page.locator('#nested-output')).toBeVisible()
 })
 

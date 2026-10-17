@@ -9,7 +9,7 @@ import {
   ExternalLink,
   LoaderCircle,
 } from 'lucide-solid'
-import { children, Show, splitProps, type ComponentProps, type JSX } from 'solid-js'
+import { createMemo, Show, splitProps, type ComponentProps, type JSX } from 'solid-js'
 import { cn } from '#lib/utils'
 
 /**
@@ -226,10 +226,12 @@ export function TraceLine(props: TraceLineProps) {
     'selectHaspopup',
     'children',
   ])
-  // Resolved once. `local.children` is a getter that builds the subtree each time
-  // it is read, so testing it in `when` and then placing it built every nested
-  // line twice, and a chain of lines nested n deep built 2^n of them.
-  const content = children(() => local.children)
+  // Read once. `local.children` is a getter that builds the subtree each time it
+  // is read, so testing it in `when` and then placing it built every nested line
+  // twice, and a chain of lines nested n deep built 2^n of them. It is not resolved
+  // (`children()`), so a body that renders nothing yet, such as a `Show` that is
+  // closed, still makes the line a disclosure.
+  const content = createMemo(() => local.children)
   const head = (trailing?: JSX.Element) => (
     <LineHead
       title={local.title}
