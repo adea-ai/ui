@@ -23,17 +23,33 @@ export type ScrollAnchor = {
   scrollHeight: number
   /** The scroll offset at the last restore, which the reader's movement is measured from. */
   scrollTop: number
+  /**
+   * When set, only these turns can become the anchor when the reader moves: the ones that
+   * were there when the load began. A turn that has just landed is still at its estimated
+   * height, and anchoring on it takes the correction from a row that is about to resize.
+   */
+  known?: ReadonlySet<string>
 }
 
 const ANCHOR_ATTRIBUTE = 'data-anchor-id'
 
-export function captureAnchor(scroller: HTMLElement): ScrollAnchor {
+/** The ids of the turns in the scroller now. */
+export function anchorIds(scroller: HTMLElement): Set<string> {
+  const ids = new Set<string>()
+  for (const element of scroller.querySelectorAll<HTMLElement>(`[${ANCHOR_ATTRIBUTE}]`))
+    ids.add(element.getAttribute(ANCHOR_ATTRIBUTE)!)
+  return ids
+}
+
+export function captureAnchor(scroller: HTMLElement, known?: ReadonlySet<string>): ScrollAnchor {
   const top = scroller.getBoundingClientRect().top
   let anchor: { id: string; offset: number } | undefined
   for (const element of scroller.querySelectorAll<HTMLElement>(`[${ANCHOR_ATTRIBUTE}]`)) {
+    const id = element.getAttribute(ANCHOR_ATTRIBUTE)!
+    if (known && !known.has(id)) continue
     const box = element.getBoundingClientRect()
     if (box.bottom > top) {
-      anchor = { id: element.getAttribute(ANCHOR_ATTRIBUTE)!, offset: box.top - top }
+      anchor = { id, offset: box.top - top }
       break
     }
   }
@@ -49,9 +65,24 @@ export function captureAnchor(scroller: HTMLElement): ScrollAnchor {
  * Put the anchor back where the reader's own scrolling leaves it. Returns the
  * correction applied, in px. The anchor is re-based on every call, so a second
  * restore after the same insert finds nothing left to correct.
+ *
+ * If the reader has moved since the last restore, the anchor is then re-taken on the
+ * turn now in view. An anchor left where the load began can end up well away from
+ * where the reader has come to rest, and everything between the two is part of its
+ * position: a row there that sizes itself late (an image, highlighted code, a row
+ * leaving `content-visibility`) would move the anchor without moving anything the
+ * reader is looking at, and restoring it would carry the reader along.
+ *
+ * The reader's move is read here, from the offset itself, and not from a scroll event:
+ * the event is delivered at the next rendering opportunity, after the content
+ * observers have run for a change made in the same task, and a restore that re-bases
+ * the offset first would otherwise erase the move before the event arrives. The offset
+ * the restore itself leaves is the base, so the scroll event that a restore causes
+ * finds nothing to follow.
  */
 export function restoreAnchor(scroller: HTMLElement, anchor: ScrollAnchor | undefined): number {
   if (!anchor) return 0
+  const readerMoved = Math.abs(scroller.scrollTop - anchor.scrollTop) > 0.5
   const top = scroller.getBoundingClientRect().top
   // Scrolling by `travelled` moves a turn up the viewport by the same amount.
   const travelled = scroller.scrollTop - anchor.scrollTop
@@ -75,27 +106,11 @@ export function restoreAnchor(scroller: HTMLElement, anchor: ScrollAnchor | unde
   if (Math.abs(correction) >= 1) scroller.scrollTop += correction
   anchor.scrollTop = scroller.scrollTop
   anchor.scrollHeight = scroller.scrollHeight
+  if (readerMoved) {
+    const next = captureAnchor(scroller, anchor.known)
+    // No turn that was there before the load is in view (the reader is among the rows
+    // that landed): keep the anchor rather than fall back to the height.
+    if (next.id !== undefined || anchor.id === undefined) Object.assign(anchor, next)
+  }
   return correction
-}
-
-/**
- * A scroll event during a load: if the reader moved, apply what content has done so
- * far, then make the turn now first in view the anchor.
- *
- * An anchor taken when the load began can end up well away from where the reader
- * has since come to rest, and everything between the two is then part of its
- * position. Content that sizes itself late between them (an image, highlighted code,
- * a row coming out of `content-visibility`) would move the anchor without moving
- * anything the reader is looking at, and restoring it would carry the reader along.
- * An anchor that is the turn in view cannot be moved by anything below it.
- *
- * Only the reader's own movement re-anchors. The scroll event that a restore causes
- * finds the offset where the restore left it and keeps the anchor: after an insert
- * the first turn in view is often a row that has just landed, still at its estimated
- * height, and anchoring there would take the correction from a row about to resize.
- */
-export function followReader(scroller: HTMLElement, anchor: ScrollAnchor): void {
-  const moved = Math.abs(scroller.scrollTop - anchor.scrollTop) > 0.5
-  restoreAnchor(scroller, anchor)
-  if (moved) Object.assign(anchor, captureAnchor(scroller))
 }

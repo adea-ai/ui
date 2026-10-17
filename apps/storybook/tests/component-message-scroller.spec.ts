@@ -367,6 +367,48 @@ test.describe('history', () => {
     expect((await metrics(page)).top).toBeGreaterThan(300)
   })
 
+  test('a reader who moves in the same task as a content change is still followed', async ({
+    page,
+  }) => {
+    // The scroll event is delivered at the next rendering opportunity, so a scroll and a
+    // change to the content made in one task reach the scroller in the opposite order:
+    // the content observers run first, and the reader's move is only seen afterwards.
+    // The anchor must still end up on the turn the reader came to, or a row that sizes
+    // itself late between the two moves the view.
+    await setMode(page, 'gated')
+    await settled(page)
+    // Close enough to the top for the load to begin, with the anchor on a turn below the
+    // one the reader will end on.
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 200, behavior: 'instant' }))
+    await expect.poll(() => calls(page)).toBe(1)
+    await atRest(page)
+
+    await scroller(page).evaluate((element) => {
+      element.scrollTo({ top: 0, behavior: 'instant' })
+      const content = element.querySelector('[data-slot="conversation-content"]')!
+      content.append(document.createElement('span')) // a child mutation: the observer's microtask
+    })
+    await atRest(page)
+
+    const offsetOf = (id: string) =>
+      page.evaluate((anchorId) => {
+        const surface = document.querySelector('#scroller')!
+        const element = surface.querySelector(`[data-anchor-id="${anchorId}"]`)!
+        return element.getBoundingClientRect().top - surface.getBoundingClientRect().top
+      }, id)
+    const before = await offsetOf('turn-1000')
+    expect((await metrics(page)).top).toBe(0)
+    // The turn the reader is on grows below its own top edge, which moves the turn the
+    // load began on (the next one down) but nothing the reader is looking at.
+    await page.evaluate(() => {
+      const row = document.querySelector<HTMLElement>('[data-anchor-id="turn-1000"]')!
+      row.style.paddingBottom = '40px'
+    })
+    await atRest(page)
+    expect(Math.abs((await offsetOf('turn-1000')) - before)).toBeLessThanOrEqual(1)
+    expect((await metrics(page)).top).toBe(0)
+  })
+
   test('never starts a second load while one is in flight', async ({ page }) => {
     await setMode(page, 'gated')
     await wheel(page, -100_000)

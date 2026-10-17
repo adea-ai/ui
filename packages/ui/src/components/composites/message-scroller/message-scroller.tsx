@@ -6,7 +6,7 @@ import {
   ConversationSurface,
   type ConversationSurfaceProps,
 } from '../../conversation/conversation-surface'
-import { captureAnchor, followReader, restoreAnchor, type ScrollAnchor } from './scroll-anchor'
+import { anchorIds, captureAnchor, restoreAnchor, type ScrollAnchor } from './scroll-anchor'
 
 /**
  * MessageScroller.
@@ -167,6 +167,7 @@ export function MessageScroller(props: MessageScrollerProps) {
       return
     const run = epoch
     const anchor = captureAnchor(scroller)
+    anchor.known = anchorIds(scroller)
     const heightBefore = scroller.scrollHeight
     const restoreFocus =
       fromControl && document.activeElement?.closest('[data-slot="message-scroller-older"]') != null
@@ -189,10 +190,11 @@ export function MessageScroller(props: MessageScrollerProps) {
       })
       resizer.observe(content)
     }
-    // The reader may carry on scrolling while the host answers. Keep the anchor on the
-    // turn they are looking at, not on the one that was first in view when the load began.
+    // The reader may carry on scrolling while the host answers. A restore re-takes the
+    // anchor on the turn they have come to, whichever of the observers or this event
+    // reaches it first.
     const follow = () => {
-      if (run === epoch && scroller) followReader(scroller, anchor)
+      if (run === epoch && scroller) restoreAnchor(scroller, anchor)
     }
     scroller.addEventListener('scroll', follow, { passive: true })
     const watched = scroller

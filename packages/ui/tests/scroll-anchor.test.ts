@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  anchorIds,
   captureAnchor,
-  followReader,
   restoreAnchor,
   type ScrollAnchor,
 } from '../src/components/composites/message-scroller/scroll-anchor'
@@ -174,14 +174,14 @@ describe('restoreAnchor while the reader keeps scrolling', () => {
   })
 })
 
-describe('followReader', () => {
-  test('a reader who scrolled on takes the turn now in view as the anchor', () => {
+describe('restoreAnchor follows the reader', () => {
+  test('a reader who moved takes the turn now in view as the anchor, so rows between do not move the view', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 520, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)
-    expect(anchor.id).toBe('c') // 'c' is the first turn with its bottom in view, 20px above the top
+    expect(anchor).toMatchObject({ id: 'c', offset: -20 }) // 'c' is the first turn whose bottom is in view
 
     state.scrollTop = 0 // the reader came to rest at the top
-    followReader(scroller, anchor)
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
     expect(anchor).toMatchObject({ id: 'a', offset: 0, scrollTop: 0 })
 
     // A row between the reader's turn and where the load began now changes size.
@@ -192,7 +192,25 @@ describe('followReader', () => {
     expect(state.scrollTop).toBe(0)
   })
 
-  test('without the reader moving, the anchor is kept and only content movement is applied', () => {
+  test("a restore that runs before the scroll event cannot erase the reader's move", () => {
+    // A scroll and a change to the content in one task: the content observers run first
+    // and restore, and the scroll event follows. Whatever calls restore first, the next
+    // call must find the anchor on the turn the reader came to.
+    const { scroller, state } = fakeScroller({ scrollTop: 520, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(scroller)
+
+    state.scrollTop = 0
+    restoreAnchor(scroller, anchor) // the observer
+    restoreAnchor(scroller, anchor) // the scroll event
+    expect(anchor.id).toBe('a')
+
+    state.turns[1]!.height += 30
+    state.turns[2]!.top += 30
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+    expect(state.scrollTop).toBe(0)
+  })
+
+  test('the scroll event a restore causes keeps the anchor', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)
     expect(anchor).toMatchObject({ id: 'b', offset: -50 })
@@ -202,8 +220,32 @@ describe('followReader', () => {
     for (const turn of state.turns) turn.top += 600
     state.scrollHeight = 1400
     restoreAnchor(scroller, anchor)
-    followReader(scroller, anchor)
+    restoreAnchor(scroller, anchor)
     expect(anchor).toMatchObject({ id: 'b', offset: -50, scrollTop: 850 })
     expect(state.scrollTop).toBe(850)
+  })
+
+  test('only a turn that was there before the load can become the anchor', () => {
+    const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(scroller)
+    anchor.known = anchorIds(scroller)
+
+    // 120px of history lands, the view is carried to it, and the reader moves on up. The
+    // new turn is partly in view at its estimated height; 'a' is the turn to hold.
+    state.turns = [
+      { id: 'n', top: 0, height: 120 },
+      ...state.turns.map((t) => ({ ...t, top: t.top + 120 })),
+    ]
+    state.scrollHeight = 920
+    state.scrollTop = 80
+    restoreAnchor(scroller, anchor)
+    expect(anchor.id).toBe('a')
+
+    // Nothing known in view: the anchor stays where it was.
+    state.scrollTop = 0
+    const before = { ...anchor }
+    state.turns = [{ id: 'n', top: 0, height: 120 }]
+    restoreAnchor(scroller, anchor)
+    expect(anchor.id).toBe(before.id)
   })
 })
