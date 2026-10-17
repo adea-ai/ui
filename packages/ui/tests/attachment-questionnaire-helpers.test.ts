@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { formatAttachmentSize, safePreviewSrc } from '../src/components/ui/attachment/attachment'
 import {
+  answerFor,
   isQuestionAnswered,
   type QuestionnaireQuestion,
 } from '../src/components/ui/questionnaire/questionnaire'
@@ -104,5 +105,30 @@ describe('isQuestionAnswered', () => {
     expect(isQuestionAnswered({ ...choice, optional: true }, { optionIds: [], text: '' })).toBe(
       true
     )
+  })
+})
+
+const question = (id: string): QuestionnaireQuestion => ({ id, prompt: id })
+
+describe('answerFor', () => {
+  test('reads only an answer the record itself holds', () => {
+    const own = { optionIds: ['a'], text: 'x' }
+    const record = { real: own }
+    expect(answerFor(record, question('real'))).toBe(own)
+    expect(answerFor(record, question('missing'))).toBeUndefined()
+  })
+
+  test('ids that name members every object has are unanswered, not inherited', () => {
+    for (const id of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']) {
+      expect(answerFor({}, question(id)), id).toBeUndefined()
+      expect(isQuestionAnswered(question(id), answerFor({}, question(id))), id).toBe(false)
+    }
+  })
+
+  test('an answer stored under such an id is still found', () => {
+    const answer = { optionIds: [], text: 'mine' }
+    const record = JSON.parse('{"__proto__": {"optionIds": [], "text": "mine"}}')
+    expect(answerFor(record, question('__proto__'))).toEqual(answer)
+    expect(answerFor({ constructor: answer }, question('constructor'))).toBe(answer)
   })
 })

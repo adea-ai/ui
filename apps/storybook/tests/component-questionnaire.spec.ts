@@ -296,6 +296,53 @@ test('a repeat send while the host is still handling the first is ignored', asyn
   expect(await calls()).toBe(2)
 })
 
+for (const id of ['inherited-default', 'inherited-controlled'] as const) {
+  test(`${id}: ids that name inherited members read as unanswered and can be answered`, async ({
+    page,
+  }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    const form = page.locator(`#${id}`)
+    await expect(form).toBeVisible()
+    for (const name of ['constructor', '__proto__', 'toString']) {
+      await expect(form.getByText(`Question ${name}`).first()).toBeVisible()
+      // Nothing is answered yet, so nothing may advance or send.
+      const forward = form.getByRole('button', { name: /^(Next|Send answers?)$/ })
+      await expect(forward).toBeDisabled()
+      await form.getByRole('textbox', { name: 'Your answer' }).fill(`answer for ${name}`)
+      await expect(forward).toBeEnabled()
+      if (name !== 'toString') await forward.click()
+    }
+    await form.getByRole('button', { name: /^Send answers?$/ }).click()
+    // Read inside the page: the test transport would assign `__proto__` as a prototype.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          (window as FixtureWindow).fixture.submissions.map((sent) =>
+            ['constructor', '__proto__', 'toString'].map((name) =>
+              Object.hasOwn(sent, name) ? sent[name]!.text : null
+            )
+          )
+        )
+      )
+      .toEqual([['answer for constructor', 'answer for __proto__', 'answer for toString']])
+    expect(errors).toEqual([])
+  })
+}
+
+test('a settled questionnaire with no answers shows inherited ids as unanswered', async ({
+  page,
+}) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  const settled = page.locator('#inherited-settled')
+  await expect(settled).toBeVisible()
+  await expect(settled.getByText('Question constructor')).toBeVisible()
+  await expect(settled.getByText('Question __proto__')).toBeVisible()
+  await expect(settled.getByText('Question toString')).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test('fits a 320px screen', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 })
   expect(await hasNoHorizontalOverflow(page)).toBe(true)

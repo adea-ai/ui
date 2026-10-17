@@ -46,6 +46,27 @@ const flow: readonly QuestionnaireQuestion[] = [
   { id: 'notes', prompt: 'Anything else we should know?', textPlaceholder: 'Optional detail' },
 ]
 
+/** Ids that name inherited members of any object: valid, and not yet answered. */
+const inherited: readonly QuestionnaireQuestion[] = ['constructor', '__proto__', 'toString'].map(
+  (id) => ({ id, prompt: `Question ${id}` })
+)
+
+function ControlledInherited() {
+  const [answers, setAnswers] = createSignal<QuestionnaireAnswers>({})
+  return (
+    <Questionnaire
+      id="inherited-controlled"
+      title="Inherited ids, controlled"
+      questions={inherited}
+      answers={answers()}
+      onAnswersChange={setAnswers}
+      onSubmit={(sent) => {
+        fixture.submissions.push(sent)
+      }}
+    />
+  )
+}
+
 function Flow() {
   const [status, setStatus] = createSignal<QuestionnaireStatus>('open')
   fixture.settle = setStatus
@@ -126,6 +147,23 @@ render(
           fixture.slowCalls += 1
           await new Promise((resolve) => setTimeout(resolve, 400))
         }}
+      />
+      <Questionnaire
+        id="inherited-default"
+        title="Inherited ids, uncontrolled"
+        questions={inherited}
+        defaultAnswers={{}}
+        onSubmit={(sent) => {
+          fixture.submissions.push(sent)
+        }}
+      />
+      <ControlledInherited />
+      <Questionnaire
+        id="inherited-settled"
+        title="Inherited ids, settled"
+        status="answered"
+        questions={inherited}
+        answers={{}}
       />
       <button id="after" type="button">
         After

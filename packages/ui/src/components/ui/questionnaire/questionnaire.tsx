@@ -75,6 +75,19 @@ export type QuestionnaireStatus = 'open' | 'submitting' | 'answered' | 'expired'
 
 const EMPTY: QuestionnaireAnswer = { optionIds: [], text: '' }
 
+/**
+ * The answer a record holds for a question. Question ids are host strings, and
+ * the record is an ordinary object, so `constructor`, `toString` and `__proto__`
+ * are valid ids that a plain index would resolve to inherited values and a
+ * summary or a validity check would then read `optionIds` from.
+ */
+export function answerFor(
+  record: QuestionnaireAnswers,
+  question: Pick<QuestionnaireQuestion, 'id'>
+): QuestionnaireAnswer | undefined {
+  return Object.hasOwn(record, question.id) ? record[question.id] : undefined
+}
+
 /** Whether a question has what it needs. */
 export function isQuestionAnswered(
   question: QuestionnaireQuestion,
@@ -134,7 +147,7 @@ export function Questionnaire(props: QuestionnaireProps) {
       : undefined)
   let questionHeading: HTMLHeadingElement | undefined
 
-  const answerOf = (question: QuestionnaireQuestion) => answers()[question.id] ?? EMPTY
+  const answerOf = (question: QuestionnaireQuestion) => answerFor(answers(), question) ?? EMPTY
   const change = (question: QuestionnaireQuestion, next: QuestionnaireAnswer) => {
     const value = { ...answers(), [question.id]: next }
     if (local.answers === undefined) setInternal(value)
@@ -143,10 +156,12 @@ export function Questionnaire(props: QuestionnaireProps) {
 
   const canAdvance = () => {
     const question = current()
-    return question !== undefined && isQuestionAnswered(question, answers()[question.id])
+    return question !== undefined && isQuestionAnswered(question, answerFor(answers(), question))
   }
   const canSubmit = () =>
-    local.questions.every((question) => isQuestionAnswered(question, answers()[question.id]))
+    local.questions.every((question) =>
+      isQuestionAnswered(question, answerFor(answers(), question))
+    )
 
   // A host that is slow to report `submitting` must not be handed the same answer
   // twice by a second Ctrl+Enter or a double click.
@@ -204,7 +219,7 @@ export function Questionnaire(props: QuestionnaireProps) {
 
   const summary = createMemo(() =>
     local.questions.map((question) => {
-      const answer = answers()[question.id] ?? EMPTY
+      const answer = answerFor(answers(), question) ?? EMPTY
       const chosen = (question.options ?? [])
         .filter((option) => answer.optionIds.includes(option.id))
         .map((option) => option.label)
