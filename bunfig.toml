@@ -1,4 +1,7 @@
 [test]
+# Bun's test runner does not load vite-plugin-solid; this gives `.tsx` modules the Solid
+# DOM transform (see the file for why). `packages/ui` passes it with `--preload`.
+preload = ["./packages/ui/tests/helpers/solid-transform.ts"]
 # The library is a pure component package: every module here is either a
 # component, a class-name helper, or the token/registry data the components
 # read. All of it is testable without a browser, so the bar stays high.
