@@ -409,6 +409,41 @@ test.describe('history', () => {
     expect((await metrics(page)).top).toBe(0)
   })
 
+  test("a row that grows in the same task as the reader's move does not move the view", async ({
+    page,
+  }) => {
+    // The anchor is a turn below the one the reader will end on, with a row between the two.
+    // The reader moves up and that row grows in the same task as a child mutation, so the
+    // first observer callback sees both at once: the anchor has moved down by the growth,
+    // and nothing the reader is looking at has moved.
+    await setMode(page, 'gated')
+    await settled(page)
+    await scroller(page).evaluate((element) => element.scrollTo({ top: 300, behavior: 'instant' }))
+    await expect.poll(() => calls(page)).toBe(1)
+    await atRest(page)
+    const anchorId = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
+    expect(anchorId).toBe('turn-1002')
+
+    await scroller(page).evaluate((element) => {
+      element.scrollTo({ top: 0, behavior: 'instant' })
+      element.querySelector<HTMLElement>('[data-anchor-id="turn-1001"]')!.style.paddingBottom =
+        '30px'
+      element
+        .querySelector('[data-slot="conversation-content"]')!
+        .append(document.createElement('span'))
+    })
+    await atRest(page)
+
+    const offset = await page.evaluate(() => {
+      const surface = document.querySelector('#scroller')!
+      const element = surface.querySelector('[data-anchor-id="turn-1000"]')!
+      return element.getBoundingClientRect().top - surface.getBoundingClientRect().top
+    })
+    // Turn-1000 sat 65.59 px from the top at rest before anything moved; it is the turn in view.
+    expect(Math.abs(offset - 65.59375), `turn-1000 is at ${offset}px`).toBeLessThanOrEqual(1)
+    expect((await metrics(page)).top).toBe(0)
+  })
+
   test('never starts a second load while one is in flight', async ({ page }) => {
     await setMode(page, 'gated')
     await wheel(page, -100_000)

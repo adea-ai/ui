@@ -106,7 +106,8 @@ describe('restoreAnchor with anchor ids', () => {
   test('the first visible turn is put back where it was after history lands above', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)
-    expect(anchor).toMatchObject({ id: 'b', offset: -50 })
+    expect(anchor.id).toBe('b')
+    expect(anchor.marks.get('b')).toBe(200) // where 'b' sits in the document
 
     for (const turn of state.turns) turn.top += 600
     state.scrollHeight = 1400
@@ -178,11 +179,13 @@ describe('restoreAnchor follows the reader', () => {
   test('a reader who moved takes the turn now in view as the anchor, so rows between do not move the view', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 520, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)
-    expect(anchor).toMatchObject({ id: 'c', offset: -20 }) // 'c' is the first turn whose bottom is in view
+    expect(anchor.id).toBe('c') // 'c' is the first turn whose bottom is in view
+    expect([...anchor.marks.keys()]).toEqual(['a', 'b', 'c']) // with the turns above it
 
     state.scrollTop = 0 // the reader came to rest at the top
     expect(restoreAnchor(scroller, anchor)).toBe(0)
-    expect(anchor).toMatchObject({ id: 'a', offset: 0, scrollTop: 0 })
+    expect(anchor).toMatchObject({ id: 'a', scrollTop: 0 })
+    expect(anchor.marks.get('a')).toBe(0)
 
     // A row between the reader's turn and where the load began now changes size.
     state.turns[1]!.height += 30
@@ -210,10 +213,36 @@ describe('restoreAnchor follows the reader', () => {
     expect(state.scrollTop).toBe(0)
   })
 
+  test("a row that grows in the same task as the reader's move is not part of the correction", () => {
+    // Captured on 'c', the reader moves up to 'a', and the row between them grows before
+    // the first restore runs: 'c' has moved down in the document, 'a' has not moved.
+    const { scroller, state } = fakeScroller({ scrollTop: 520, scrollHeight: 800, turns: turns() })
+    const anchor = captureAnchor(scroller)
+    expect(anchor.id).toBe('c')
+
+    state.scrollTop = 0
+    state.turns[1]!.height += 30
+    state.turns[2]!.top += 30
+    state.scrollHeight = 830
+    expect(restoreAnchor(scroller, anchor)).toBe(0)
+    expect(state.scrollTop).toBe(0)
+    expect(anchor.id).toBe('a')
+
+    // Growth above the turn the reader is on is still carried.
+    state.turns[0]!.height += 20
+    state.turns[1]!.top += 20
+    state.turns[2]!.top += 20
+    state.scrollTop = 10 // 'a' is still the turn in view
+    expect(restoreAnchor(scroller, anchor)).toBe(0) // 'a' itself did not move
+    for (const turn of state.turns) turn.top += 50 // history lands above everything
+    expect(restoreAnchor(scroller, anchor)).toBe(50)
+    expect(state.scrollTop).toBe(60)
+  })
+
   test('the scroll event a restore causes keeps the anchor', () => {
     const { scroller, state } = fakeScroller({ scrollTop: 250, scrollHeight: 800, turns: turns() })
     const anchor = captureAnchor(scroller)
-    expect(anchor).toMatchObject({ id: 'b', offset: -50 })
+    expect(anchor.id).toBe('b')
 
     // History lands above and a restore moves the view; the scroll event it causes
     // arrives with the offset where the restore left it.
@@ -221,7 +250,8 @@ describe('restoreAnchor follows the reader', () => {
     state.scrollHeight = 1400
     restoreAnchor(scroller, anchor)
     restoreAnchor(scroller, anchor)
-    expect(anchor).toMatchObject({ id: 'b', offset: -50, scrollTop: 850 })
+    expect(anchor).toMatchObject({ id: 'b', scrollTop: 850 })
+    expect(anchor.marks.get('b')).toBe(800)
     expect(state.scrollTop).toBe(850)
   })
 
