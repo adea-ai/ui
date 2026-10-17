@@ -191,13 +191,13 @@ test('keeps composite inputs inside the shared field and clear tooltip contracts
   await lockedClear.scrollIntoViewIfNeeded()
   await page.evaluate(
     () =>
-      new Promise<void>((resolve) => {
+      new Promise<void>((done) => {
         let last = -1
         let steady = 0
         const frame = () => {
           steady = window.scrollY === last ? steady + 1 : 0
           last = window.scrollY
-          if (steady >= 5) resolve()
+          if (steady >= 5) done()
           else requestAnimationFrame(frame)
         }
         requestAnimationFrame(frame)
