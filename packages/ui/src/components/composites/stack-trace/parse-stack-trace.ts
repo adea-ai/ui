@@ -100,6 +100,31 @@ export function splitLocation(location: string): { file: string; line?: number; 
   return { file: last.rest, line: last.value }
 }
 
+/**
+ * Split the pre-1.78 Rust panic suffix `'message', location`. The message may
+ * contain `', ` itself, and the greedy pattern this replaces took the last
+ * occurrence with a non-space behind it — this scan keeps that last-wins
+ * answer, in one pass, so a message repeating the marker stays linear.
+ */
+function splitRustOldPanic(after: string): { message: string; location: string } | undefined {
+  // As in `parsePython`: no `.` in the old pattern could cross a line break.
+  if (/[\n\r\u2028\u2029]/.test(after) || !after.startsWith("'")) return undefined
+  let close: number | undefined
+  let search = 1
+  for (;;) {
+    const at = after.indexOf("', ", search)
+    if (at < 0) break
+    search = at + 1
+    const start = at + 3
+    if (start >= after.length) continue
+    // Preserve ECMAScript \S, including NBSP/BOM and Unicode space separators.
+    if (/\s/.test(after[start]!)) continue
+    close = at
+  }
+  if (close === undefined) return undefined
+  return { message: after.slice(1, close), location: after.slice(close + 3) }
+}
+
 const FILE_LIKE = /[\\/]|\.[A-Za-z0-9]{1,6}$/
 const URL_LIKE = /^node:/i
 
@@ -154,13 +179,58 @@ function parseV8(trimmed: string): Draft | undefined {
   return draft
 }
 
-const PYTHON_FRAME = /^File "(.*)", line (\d+)(?:, in (.*))?$/
+const PYTHON_PREFIX = 'File "'
+const PYTHON_LINE = '", line '
+const PYTHON_IN = ', in '
 
+/** Whether a character is an ASCII digit, as `\d` was in the pattern this replaced. */
+function isDigit(code: number): boolean {
+  return code >= 48 && code <= 57
+}
+
+/**
+ * Read a Python frame: `File "<file>", line <n>[, in <fn>]`.
+ *
+ * Scanned, not matched. A line repeating the frame shape many times must still
+ * cost one pass, so the closing `", line ` is found by walking its candidates
+ * left to right. The last valid candidate wins — what the greedy pattern this
+ * replaces would have settled on — so a file path containing a quote still
+ * parses exactly as it always did.
+ */
 function parsePython(trimmed: string): Draft | undefined {
-  const match = PYTHON_FRAME.exec(trimmed)
-  if (!match) return undefined
-  const draft: Draft = { raw: trimmed, format: 'python', file: match[1], line: Number(match[2]) }
-  if (match[3]) draft.function = match[3]
+  // `.` never matches a line break, so the whole-line pattern this replaces
+  // could not have matched a string containing one either.
+  if (/[\n\r\u2028\u2029]/.test(trimmed) || !trimmed.startsWith(PYTHON_PREFIX)) return undefined
+  let close: number | undefined
+  let digits = 0
+  let rest = 0
+  let hasIn = false
+  let search = PYTHON_PREFIX.length
+  for (;;) {
+    const at = trimmed.indexOf(PYTHON_LINE, search)
+    if (at < 0) break
+    search = at + 1
+    let end = at + PYTHON_LINE.length
+    const start = end
+    while (end < trimmed.length && isDigit(trimmed.charCodeAt(end))) end += 1
+    if (end === start) continue
+    if (end < trimmed.length && !trimmed.startsWith(PYTHON_IN, end)) continue
+    close = at
+    digits = end - start
+    rest = end
+    hasIn = end < trimmed.length
+  }
+  if (close === undefined) return undefined
+  const draft: Draft = {
+    raw: trimmed,
+    format: 'python',
+    file: trimmed.slice(PYTHON_PREFIX.length, close),
+    line: Number(trimmed.slice(rest - digits, rest)),
+  }
+  if (hasIn) {
+    const fn = trimmed.slice(rest + PYTHON_IN.length)
+    if (fn) draft.function = fn
+  }
   return draft
 }
 
@@ -341,13 +411,13 @@ function liftHeader(entries: StackEntry[], format: StackTraceFormat): StackTrace
     if (at < 0) return undefined
     const type = first.slice(0, at).trim()
     const after = first.slice(at + 4)
-    const old = /^'(.*)', (\S.*)$/.exec(after)
+    const old = splitRustOldPanic(after)
     let consumed = 1
     let message: string
     let location: string | undefined
     if (old) {
-      message = old[1]!
-      location = old[2]
+      message = old.message
+      location = old.location
     } else {
       location = after.replace(/:$/, '')
       const body: string[] = []

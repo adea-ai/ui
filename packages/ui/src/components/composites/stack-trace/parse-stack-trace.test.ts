@@ -508,3 +508,65 @@ describe('boundLines', () => {
     expect(bounded.lines.join('').length + bounded.omittedChars).toBe(9_996 * 4_000)
   })
 })
+
+describe('linear parser compatibility with JavaScript character classes', () => {
+  for (const separator of ['\r', '\u2028', '\u2029']) {
+    test(`Python rejects interior line terminator U+${separator.charCodeAt(0).toString(16)}`, () => {
+      for (const input of [
+        `  File "src/left${separator}right.py", line 7, in run`,
+        `  File "src/main.py", line 7, in left${separator}right`,
+      ]) {
+        const parsed = parseStackTrace(input)
+        expect(parsed.frames).toEqual([])
+        expect(parsed.entries).toContainEqual({ type: 'text', text: input })
+      }
+    })
+
+    test(`Rust rejects interior line terminator U+${separator.charCodeAt(0).toString(16)}`, () => {
+      for (const suffix of [
+        `'left${separator}right', src/main.rs:7:1`,
+        `'message', src/left${separator}right.rs:7:1`,
+      ]) {
+        const parsed = parseStackTrace(
+          `thread 'main' panicked at ${suffix}\nstack backtrace:\n  0: demo::main`
+        )
+        expect(parsed.format).toBe('rust')
+        expect(parsed.header?.message).toBe('')
+        expect(parsed.header?.location).toBe(suffix)
+      }
+    })
+  }
+
+  for (const whitespace of [
+    '\t',
+    '\v',
+    '\f',
+    ' ',
+    '\u00a0',
+    '\u1680',
+    ...Array.from({ length: 11 }, (_, index) => String.fromCharCode(0x2000 + index)),
+    '\u202f',
+    '\u205f',
+    '\u3000',
+    '\ufeff',
+  ]) {
+    test(`Rust last-separator selection excludes JS whitespace U+${whitespace.charCodeAt(0).toString(16)}`, () => {
+      const location = `src/main.rs:7:1', ${whitespace}not-a-location`
+      const parsed = parseStackTrace(
+        `thread 'main' panicked at 'message', ${location}\nstack backtrace:\n  0: demo::main`
+      )
+      expect(parsed.header?.message).toBe('message')
+      expect(parsed.header?.location).toBe(location)
+    })
+  }
+
+  for (const character of ['\u0085', '\u180e']) {
+    test(`Rust keeps non-JS-whitespace U+${character.charCodeAt(0).toString(16)} as a location head`, () => {
+      const parsed = parseStackTrace(
+        `thread 'main' panicked at 'message', src/main.rs:7:1', ${character}location\nstack backtrace:\n  0: demo::main`
+      )
+      expect(parsed.header?.message).toBe("message', src/main.rs:7:1")
+      expect(parsed.header?.location).toBe(`${character}location`)
+    })
+  }
+})
