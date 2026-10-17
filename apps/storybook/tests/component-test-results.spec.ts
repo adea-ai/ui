@@ -107,7 +107,7 @@ test('a reorder never pulls focus back once the user has moved elsewhere', async
     ;(document.activeElement as HTMLElement | null)?.blur()
   })
   await page.evaluate(() => {
-    ;(window as Window & { reorderPagedResults?: () => void }).growPagedResults?.()
+    ;(window as Window & { growPagedResults?: () => void }).growPagedResults?.()
   })
   await expect(failure).toHaveAttribute('aria-expanded', 'true')
   await expect(failure).not.toBeFocused()
