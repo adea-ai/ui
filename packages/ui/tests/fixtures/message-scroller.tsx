@@ -34,6 +34,8 @@ type Fixture = {
   setHasOlder: (value: boolean) => void
   turnCount: () => number
   probe: Probe | undefined
+  /** The host's saved reading position, read when the conversation changes. */
+  saved: { top: number; following: boolean } | undefined
   lastLoad: { turnsBefore: number; turnsAfter: number } | undefined
 }
 const fixture: Fixture = {
@@ -51,6 +53,7 @@ const fixture: Fixture = {
   setHasOlder: () => undefined,
   turnCount: () => 0,
   probe: undefined,
+  saved: undefined,
   lastLoad: undefined,
 }
 ;(window as Window & { fixture?: Fixture }).fixture = fixture
@@ -212,6 +215,7 @@ function App() {
         aria-label="Conversation"
         gutter
         resetKey={conversation()}
+        initialReadingPosition={fixture.saved}
         hasOlder={hasOlder()}
         loadingOlder={loadingOlder()}
         onLoadOlder={loadOlder}

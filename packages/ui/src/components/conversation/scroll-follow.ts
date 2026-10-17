@@ -24,6 +24,7 @@ import {
   isScrollUpIntent,
   isSelfScroll,
   resolveUserScrollStick,
+  SELF_SCROLL_EPSILON,
   type ReaderInput,
 } from './scroll-follow-core'
 
@@ -61,7 +62,21 @@ export function createScrollFollow(options: {
   let holds = 0
   let holdFollowing = false
   let holdIntent = false
+  let holdTop = -1
+  // Bumped on every identity change, so a hold opened for the previous conversation can
+  // neither pin the next one nor close over its state.
+  let holdGeneration = 0
   const holding = () => holds > 0 && holdFollowing && !holdIntent
+  // Is the view still where the hold left it? The content can move the offset only by
+  // clamping it to the end it has now; anything else moved it from outside (a reveal, a
+  // search jump), and that is the caller's to keep, so the hold gives way.
+  const holdsPosition = (element: HTMLDivElement) => {
+    if (!holding()) return false
+    const maxTop = Math.max(0, element.scrollHeight - element.clientHeight)
+    if (Math.abs(element.scrollTop - Math.min(holdTop, maxTop)) <= SELF_SCROLL_EPSILON) return true
+    holdIntent = true
+    return false
+  }
   const reportPosition = () => {
     if (scroller)
       untrack(() =>
@@ -85,12 +100,13 @@ export function createScrollFollow(options: {
     const geom = geometry(element)
     stick = true
     if (distanceFromBottom(geom) > atBottomEpsilon()) writePin(element, bottomTarget(geom))
+    holdTop = element.scrollTop
     setAtBottom(computeAtBottom(geometry(element), options.threshold()))
     reportPosition()
   }
   const pinAuto = () => {
     if (!scroller || !options.enabled() || pendingRestore) return
-    if (holding()) return pinHeld(scroller)
+    if (holdsPosition(scroller)) return pinHeld(scroller)
     const geom = geometry(scroller)
     const result = evaluateAutoPin({
       stick,
@@ -133,7 +149,7 @@ export function createScrollFollow(options: {
       reportPosition()
       return
     }
-    if (holding()) return pinHeld(scroller)
+    if (holdsPosition(scroller)) return pinHeld(scroller)
     const geom = geometry(scroller)
     setAtBottom(computeAtBottom(geom, options.threshold()))
     if (!isSelfScroll(geom.scrollTop, lastWriteTop)) {
@@ -168,22 +184,26 @@ export function createScrollFollow(options: {
   }
 
   // Open while the caller moves content under a reader who is following, so a clamp or an
-  // insert it causes is not mistaken for the reader leaving the end. Only the reader's own
-  // scroll-up (`isScrollUpIntent`) ends it early; closing it puts a reader who is still
-  // following back at the end. A reveal or search jump outside a hold is never affected.
+  // insert it causes is not mistaken for the reader leaving the end. It gives way to the
+  // reader's own scroll-up (`isScrollUpIntent`) and to anything else that moves the view
+  // from outside (a reveal, a search jump); closing it puts a reader who is still following
+  // back at the end. A change of conversation invalidates it, so the next conversation's
+  // saved position is its own. A reveal or search jump outside a hold is never affected.
   const hold = () => {
     if (holds === 0) {
-      holdFollowing = options.enabled() && stick
+      holdFollowing = options.enabled() && stick && scroller !== undefined
       holdIntent = false
+      holdTop = scroller ? scroller.scrollTop : -1
     }
     holds += 1
+    const generation = holdGeneration
     let open = true
     return () => {
-      if (!open) return
+      if (!open || generation !== holdGeneration) return
       open = false
       holds -= 1
       if (holds > 0) return
-      const resume = holdFollowing && !holdIntent
+      const resume = scroller !== undefined && holdsPosition(scroller)
       holdFollowing = false
       holdIntent = false
       if (resume && scroller && options.enabled() && !pendingRestore) pinHeld(scroller)
@@ -221,7 +241,9 @@ export function createScrollFollow(options: {
       observer?.disconnect()
     })
     stick = true
-    holdFollowing = holds > 0
+    holdGeneration += 1
+    holds = 0
+    holdFollowing = false
     holdIntent = false
     lastWriteTop = -1
     lastWriteClientHeight = -1

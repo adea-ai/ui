@@ -32,6 +32,7 @@ type FixtureWindow = Window &
       setHasOlder: (value: boolean) => void
       turnCount: () => number
       probe: { id: string; offset: number; max: number } | undefined
+      saved: { top: number; following: boolean } | undefined
     }
   }
 
@@ -229,8 +230,9 @@ const clampWithStaleInsert = async (page: Page) => {
   await expect.poll(async () => (await metrics(page)).fromBottom).toBeLessThanOrEqual(1)
   await settled(page)
 }
-const collapseTailAndRelease = (page: Page, wheelAfterLanding?: number) =>
-  page.evaluate(async (deltaY) => {
+type AfterLanding = { wheel?: number; reveal?: number; switchTo?: string }
+const collapseTailAndRelease = (page: Page, after?: AfterLanding) =>
+  page.evaluate(async (next) => {
     // One task: the last rows lose height and the layout is forced, so the offset clamps
     // down; the stale load then commits its rows above the reader before any frame runs.
     const element = document.querySelector<HTMLElement>('#scroller')!
@@ -242,11 +244,15 @@ const collapseTailAndRelease = (page: Page, wheelAfterLanding?: number) =>
     }
     void content.scrollHeight
     ;(window as FixtureWindow).fixture.release()
-    if (deltaY === undefined) return
-    // Still the same task: let the load's continuation run, then the reader's wheel arrives.
+    if (!next) return
+    // Still the same task: let the load's continuation run, then the reader (or the host)
+    // acts while the stale load's two frames are still open.
     for (let tick = 0; tick < 10; tick += 1) await Promise.resolve()
-    element.dispatchEvent(new WheelEvent('wheel', { deltaY, bubbles: true }))
-  }, wheelAfterLanding)
+    if (next.wheel !== undefined)
+      element.dispatchEvent(new WheelEvent('wheel', { deltaY: next.wheel, bubbles: true }))
+    if (next.reveal !== undefined) element.scrollTop += next.reveal
+    if (next.switchTo !== undefined) (window as FixtureWindow).fixture.switchTo(next.switchTo)
+  }, after)
 const toTop = async (page: Page) => {
   await wheel(page, -100_000)
   await expect.poll(async () => (await metrics(page)).top).toBe(0)
@@ -724,7 +730,7 @@ test.describe('history', () => {
 
   test('a scroll-up as the stale load lands hands the position to the reader', async ({ page }) => {
     await clampWithStaleInsert(page)
-    await collapseTailAndRelease(page, -120)
+    await collapseTailAndRelease(page, { wheel: -120 })
     await expect.poll(() => turnCount(page)).toBe(40)
     await frames(page, 8)
     expect((await metrics(page)).fromBottom).toBeGreaterThan(100)
@@ -732,10 +738,35 @@ test.describe('history', () => {
 
   test('a scroll-down as the stale load lands does not', async ({ page }) => {
     await clampWithStaleInsert(page)
-    await collapseTailAndRelease(page, 120)
+    await collapseTailAndRelease(page, { wheel: 120 })
     await expect.poll(() => turnCount(page)).toBe(40)
     await frames(page, 8)
     expect((await metrics(page)).fromBottom).toBeLessThanOrEqual(2)
+  })
+
+  test('a reveal while the stale load lands is not overridden', async ({ page }) => {
+    await clampWithStaleInsert(page)
+    // The host moves the view to an earlier turn (a search hit, an anchor link) in the same
+    // task as the load's landing, with no input from the reader.
+    await collapseTailAndRelease(page, { reveal: -400 })
+    await expect.poll(() => turnCount(page)).toBe(40)
+    await frames(page, 8)
+    expect((await metrics(page)).fromBottom).toBeGreaterThan(100)
+  })
+
+  test('a conversation change while the stale load lands keeps its saved position', async ({
+    page,
+  }) => {
+    await clampWithStaleInsert(page)
+    // The next conversation was left part-way up, so it opens there and is not followed.
+    await page.evaluate(() => {
+      ;(window as FixtureWindow).fixture.saved = { top: 400, following: false }
+    })
+    await collapseTailAndRelease(page, { switchTo: 'C' })
+    await frames(page, 8)
+    const { top, fromBottom } = await metrics(page)
+    expect(fromBottom).toBeGreaterThan(100)
+    expect(Math.abs(top - 400)).toBeLessThanOrEqual(2)
   })
 
   for (const input of ['wheel', 'keyboard'] as const) {
