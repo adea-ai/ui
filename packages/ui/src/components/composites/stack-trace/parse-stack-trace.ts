@@ -108,7 +108,7 @@ export function splitLocation(location: string): { file: string; line?: number; 
  */
 function splitRustOldPanic(after: string): { message: string; location: string } | undefined {
   // As in `parsePython`: no `.` in the old pattern could cross a line break.
-  if (after.includes('\n') || !after.startsWith("'")) return undefined
+  if (/[\n\r\u2028\u2029]/.test(after) || !after.startsWith("'")) return undefined
   let close: number | undefined
   let search = 1
   for (;;) {
@@ -117,9 +117,8 @@ function splitRustOldPanic(after: string): { message: string; location: string }
     search = at + 1
     const start = at + 3
     if (start >= after.length) continue
-    // The location begins with `\S`: anything but ASCII whitespace.
-    const head = after.charCodeAt(start)
-    if (head === 32 || (head >= 9 && head <= 13)) continue
+    // Preserve ECMAScript \S, including NBSP/BOM and Unicode space separators.
+    if (/\s/.test(after[start]!)) continue
     close = at
   }
   if (close === undefined) return undefined
@@ -201,7 +200,7 @@ function isDigit(code: number): boolean {
 function parsePython(trimmed: string): Draft | undefined {
   // `.` never matches a line break, so the whole-line pattern this replaces
   // could not have matched a string containing one either.
-  if (trimmed.includes('\n') || !trimmed.startsWith(PYTHON_PREFIX)) return undefined
+  if (/[\n\r\u2028\u2029]/.test(trimmed) || !trimmed.startsWith(PYTHON_PREFIX)) return undefined
   let close: number | undefined
   let digits = 0
   let rest = 0
