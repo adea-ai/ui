@@ -30,6 +30,14 @@ function measureContinuations(count: number): number {
 const codeBlocks = (blocks: readonly MessageBlock[]) =>
   blocks.filter((block): block is Extract<MessageBlock, { kind: 'code' }> => block.kind === 'code')
 
+const language = (line: string) => codeBlocks(parseMessageText(`${line}\nx\n\`\`\``))[0]?.language
+const isFence = (line: string) => codeBlocks(parseMessageText(`${line}\nx`)).length > 0
+
+const heading = (line: string) => {
+  const [block] = parseMessageText(line)
+  return block?.kind === 'heading' ? { level: block.level, text: plain(block.inline) } : block?.kind
+}
+
 /** Flatten inline spans to the text a reader would see, to compare against the input. */
 function plain(nodes: readonly MessageInline[]): string {
   return nodes
@@ -558,6 +566,80 @@ describe('robustness', () => {
     const large = Math.min(...Array.from({ length: 3 }, () => measureContinuations(32_000)))
     // Four times the lines should not take much more than four times as long.
     expect(large / Math.max(small, 1)).toBeLessThan(10)
+  })
+
+  test('a long info string that a stray backtick ends parses in bounded time', () => {
+    const run = 'a'.repeat(65_536)
+    for (const [name, line] of Object.entries({
+      'backticks, a long word, a backtick': `\`\`\`${run}\``,
+      'tildes, a long word, a backtick': `~~~${run}\``,
+      'a long run of blanks, then a backtick': `\`\`\` ${' '.repeat(65_536)}a\``,
+      'a long marker run, then a backtick': `${'`'.repeat(65_536)}a\``,
+      'a long info string that ends the line': `\`\`\`${run}`,
+    })) {
+      const start = performance.now()
+      const blocks = parseMessageText(line)
+      const elapsed = performance.now() - start
+      expect(elapsed, `${name} took ${Math.round(elapsed)}ms`).toBeLessThan(1_000)
+      expect(blocks.length, name).toBeGreaterThan(0)
+    }
+  })
+
+  test('a fence line keeps its syntax whatever follows the marker', () => {
+    expect(language('```ts')).toBe('ts')
+    expect(language('```  ts   extra words')).toBe('ts')
+    expect(language('~~~~py')).toBe('py')
+    expect(language('   ```')).toBeUndefined()
+    expect(language('~~~ has`tick')).toBeUndefined()
+    // Not fences: too few marks, four leading spaces, or a backtick in the info string.
+    expect(isFence('``ts')).toBe(false)
+    expect(isFence('    ```ts')).toBe(false)
+    expect(isFence('```ts`')).toBe(false)
+    expect(isFence('``` a ```')).toBe(false)
+    expect(isFence('~~~ a`')).toBe(false)
+    // A long word is the language, in full.
+    expect(language(`\`\`\`${'a'.repeat(20_000)}`)).toBe('a'.repeat(20_000))
+  })
+
+  test('long runs of blanks after a heading or list marker parse in bounded time', () => {
+    const blanks = ' '.repeat(65_536)
+    for (const [name, line] of Object.entries({
+      heading: `# x${blanks}y`,
+      'heading with closing marks': `# x ${'# '.repeat(32_768)}y`,
+      'heading, only blanks': `#${blanks}`,
+      bullet: `- ${blanks}\u2028`,
+      ordered: `1. ${blanks}\u2028`,
+    })) {
+      const start = performance.now()
+      parseMessageText(line)
+      const elapsed = performance.now() - start
+      expect(elapsed, `${name} took ${Math.round(elapsed)}ms`).toBeLessThan(1_000)
+    }
+  })
+
+  test('a heading keeps its text, its level and its closing marks', () => {
+    expect(heading('# Title')).toEqual({ level: 1, text: 'Title' })
+    expect(heading('   #### Deep ###  ')).toEqual({ level: 4, text: 'Deep' })
+    expect(heading('## C# is a language')).toEqual({ level: 2, text: 'C# is a language' })
+    expect(heading('## a #')).toEqual({ level: 2, text: 'a' })
+    expect(heading('# #')).toEqual({ level: 1, text: '#' })
+    expect(heading('#\tTabbed')).toEqual({ level: 1, text: 'Tabbed' })
+    expect(heading('##### five')).toBe('paragraph')
+    expect(heading('#nospace')).toBe('paragraph')
+    expect(heading('    # indented')).toBe('paragraph')
+  })
+
+  test('one list continuation of very many spans appends every span', () => {
+    const spans = 100_000
+    const [block] = parseMessageText(`- root\n  ${'*x* '.repeat(spans)}`)
+    expect(block?.kind).toBe('list')
+    if (block?.kind !== 'list') return
+    expect(block.items).toHaveLength(1)
+    const item = block.items[0]!
+    expect(item[0]).toEqual({ kind: 'text', text: 'root' })
+    expect(item.filter((node) => node.kind === 'em')).toHaveLength(spans)
+    // The root, the joining blank, and then each emphasis with the blank after it.
+    expect(plain(item)).toBe(`root ${'x '.repeat(spans - 1)}x`)
   })
 
   test('doubling the input does not much more than double the time', () => {

@@ -60,11 +60,73 @@ export type MessageBlock =
       raw: string
     }>
 
-const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})[ \t]*([^\s`]*)[^`]*$/
-const HEADING = /^ {0,3}(#{1,4})[ \t]+(.+?)[ \t]*#*[ \t]*$/
-const BULLET = /^ {0,3}[-*+][ \t]+(.*)$/
-const ORDERED = /^ {0,3}(\d{1,9})[.)][ \t]+(.*)$/
+const WHITESPACE = /\s/
+
+/**
+ * An opening fence: up to three spaces, a run of three or more backticks or of
+ * three or more tildes, then an info string that holds no backtick. The first
+ * word of the info string is the language. This is a scan, not one pattern,
+ * because a pattern whose classes overlap (`[^\s`]*` then `[^`]*`) retries every
+ * split of a long info string when a stray backtick ends it: three backticks, a
+ * long run of `a` and a trailing backtick took quadratic time.
+ */
+function fenceOpen(line: string): Readonly<{ marker: string; language: string }> | undefined {
+  let start = 0
+  while (start < 3 && line.charCodeAt(start) === 32) start += 1
+  const mark = line[start]
+  if (mark !== '`' && mark !== '~') return undefined
+  let end = start + 1
+  while (line[end] === mark) end += 1
+  if (end - start < 3) return undefined
+  if (line.includes('`', end)) return undefined
+  let wordStart = end
+  while (line[wordStart] === ' ' || line[wordStart] === '\t') wordStart += 1
+  let wordEnd = wordStart
+  while (wordEnd < line.length && !WHITESPACE.test(line[wordEnd]!)) wordEnd += 1
+  return { marker: line.slice(start, end), language: line.slice(wordStart, wordEnd) }
+}
+// The lookahead after each marker's spaces makes that run maximal, so a line
+// that fails later (`.` stops at U+2028) cannot retry every shorter run.
+const BULLET = /^ {0,3}[-*+][ \t]+(?![ \t])(.*)$/
+const ORDERED = /^ {0,3}(\d{1,9})[.)][ \t]+(?![ \t])(.*)$/
 const QUOTE = /^ {0,3}>[ \t]?(.*)$/
+
+const isBlank = (char: string | undefined) => char === ' ' || char === '\t'
+const LINE_TERMINATOR = /[\n\r\u2028\u2029]/
+
+/**
+ * An ATX heading: up to three spaces, one to four `#`, spaces or tabs, then the
+ * text, with any trailing spaces and closing `#` run removed. This is a scan for
+ * the reason `fenceOpen` is: the equivalent pattern (`(.+?)[ \t]*#*[ \t]*$`)
+ * retries the closing check from every position of a long run of spaces.
+ */
+function headingOf(line: string): Readonly<{ level: 1 | 2 | 3 | 4; text: string }> | undefined {
+  let start = 0
+  while (start < 3 && line.charCodeAt(start) === 32) start += 1
+  let marks = start
+  while (line[marks] === '#') marks += 1
+  const level = marks - start
+  if (level < 1 || level > 4 || !isBlank(line[marks])) return undefined
+  let textStart = marks
+  while (isBlank(line[textStart])) textStart += 1
+  if (textStart === line.length) {
+    // Only blanks follow the marker: the text is the last of them, which needs a second one.
+    return textStart - marks >= 2
+      ? { level: level as 1 | 2 | 3 | 4, text: line[line.length - 1]! }
+      : undefined
+  }
+  if (LINE_TERMINATOR.test(line.slice(textStart))) return undefined
+  // Drop the longest tail of blanks, a run of `#`, and blanks again.
+  let textEnd = line.length
+  while (textEnd > textStart && isBlank(line[textEnd - 1])) textEnd -= 1
+  while (textEnd > textStart && line[textEnd - 1] === '#') textEnd -= 1
+  while (textEnd > textStart && isBlank(line[textEnd - 1])) textEnd -= 1
+  // Text that is nothing but a closing run keeps its first character.
+  return {
+    level: level as 1 | 2 | 3 | 4,
+    text: line.slice(textStart, Math.max(textEnd, textStart + 1)),
+  }
+}
 
 /** Only these schemes become links; everything else is shown as its text. */
 export function safeHref(value: string): string | undefined {
@@ -285,11 +347,11 @@ export function parseMessageText(
   let index = 0
   while (index < lines.length) {
     const line = lines[index]!
-    const fence = FENCE_OPEN.exec(line)
+    const fence = fenceOpen(line)
     if (fence) {
       flushParagraph()
-      const marker = fence[1]!
-      const language = fence[2] || undefined
+      const marker = fence.marker
+      const language = fence.language || undefined
       const body: string[] = []
       let closed = false
       index += 1
@@ -319,13 +381,13 @@ export function parseMessageText(
       index += 1
       continue
     }
-    const heading = HEADING.exec(line)
+    const heading = headingOf(line)
     if (heading) {
       flushParagraph()
       blocks.push({
         kind: 'heading',
-        level: heading[1]!.length as 1 | 2 | 3 | 4,
-        inline: inline(heading[2]!),
+        level: heading.level,
+        inline: inline(heading.text),
         raw: line,
       })
       index += 1
@@ -351,9 +413,12 @@ export function parseMessageText(
         // An indented continuation belongs to the previous item.
         if (/^ {2,}\S/.test(current) && items.length > 0) {
           // Append in place: copying the accumulated spans on every continuation
-          // makes a long item quadratic in its number of lines.
+          // makes a long item quadratic in its number of lines. Push one span at
+          // a time, because spreading a line of many spans into `push` exceeds
+          // the engine's argument limit and throws.
           const item = items[items.length - 1]!
-          item.push({ kind: 'text', text: ' ' }, ...inline(current.trim()))
+          item.push({ kind: 'text', text: ' ' })
+          for (const span of inline(current.trim())) item.push(span)
           rawLines.push(current)
           index += 1
           continue
