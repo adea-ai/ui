@@ -99,18 +99,45 @@ test.describe('overlays', () => {
     await expect(trigger).toBeFocused()
   })
 
-  test('an alert dialog refuses Escape, so a destructive choice is explicit', async ({ page }) => {
+  test('an alert dialog treats Escape as Cancel, but ignores a click on the scrim', async ({
+    page,
+  }) => {
     await openStory(page, 'primitives-overlays-alert-dialog--destructive', 'adea-dark')
 
-    await page.getByRole('button', { name: 'Delete workspace' }).click()
+    const trigger = page.getByRole('button', { name: 'Delete workspace' })
+    await trigger.click()
     const dialog = page.getByRole('alertdialog')
     await expect(dialog).toBeVisible({ timeout: 10_000 })
 
-    await page.keyboard.press('Escape')
-    // Still open: the whole point of this surface.
+    // A stray click outside never answers the question.
+    await page.mouse.click(5, 5)
     await expect(dialog).toBeVisible()
 
-    await page.getByRole('button', { name: 'Keep it' }).click()
+    // Escape can only cancel, so it closes without confirming and returns focus.
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+
+  test('Escape in a confirmation closes only the confirmation, not the dialog beneath', async ({
+    page,
+  }) => {
+    await openStory(page, 'primitives-overlays-alert-dialog--inside-dialog', 'adea-dark')
+
+    await page.getByRole('button', { name: 'Manage workspace' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Manage workspace' })
+    await expect(dialog).toBeVisible({ timeout: 10_000 })
+    const remove = dialog.getByRole('button', { name: 'Remove all members' })
+    await remove.click()
+    const alert = page.getByRole('alertdialog')
+    await expect(alert).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(alert).toBeHidden()
+    await expect(dialog).toBeVisible()
+    await expect(remove).toBeFocused()
+
+    await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
   })
 

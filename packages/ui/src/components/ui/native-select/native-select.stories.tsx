@@ -75,3 +75,38 @@ export const Sizes: Story = {
     </div>
   ),
 }
+
+/**
+ * `wrapperClass` lays out the box a flex or grid parent actually sees — the
+ * select plus its chevron. Here one filter grows to fill the toolbar, one is
+ * capped, and both selects fill their wrapper, so each chevron stays at its
+ * control's edge instead of floating past a select that stopped short.
+ * `class` would reach the `<select>` inside, which is the wrong box for this.
+ */
+export const InToolbar: Story = {
+  parameters: { layout: 'padded' },
+  render: () => (
+    <div class="flex w-96 items-center gap-2">
+      <NativeSelect
+        size="sm"
+        aria-label="Filter relationships"
+        wrapperClass="flex-1"
+        defaultValue="all"
+        options={[
+          { value: 'all', label: 'All relationships' },
+          { value: 'explicit', label: 'Explicit' },
+        ]}
+      />
+      <NativeSelect
+        size="sm"
+        aria-label="Filter origin"
+        wrapperClass="max-w-32"
+        defaultValue="inferred"
+        options={[
+          { value: 'all', label: 'All origins' },
+          { value: 'inferred', label: 'Inferred, from the text of a document' },
+        ]}
+      />
+    </div>
+  ),
+}

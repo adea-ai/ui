@@ -86,6 +86,14 @@ export function SettingsRow(
     orientation?: 'horizontal' | 'vertical'
     /** Hide the divider this row would otherwise contribute. */
     bare?: boolean
+    /**
+     * Drop the row's own 16px padding so its label and control sit on the same
+     * edges as the fields around it. For a row placed loose in a
+     * `bodyLayout="content"` section, where nothing encloses it and the section's
+     * gap already spaces it from its neighbours. Leave it off inside a divided
+     * rows body or a `Card`, whose edge the padding is there to clear.
+     */
+    flush?: boolean
   }
 ) {
   const [local, rest] = splitProps(props, [
@@ -94,6 +102,7 @@ export function SettingsRow(
     'description',
     'orientation',
     'bare',
+    'flush',
     'children',
   ])
   const rowId = createUniqueId()
@@ -113,7 +122,8 @@ export function SettingsRow(
       <div
         data-slot="settings-row"
         class={cn(
-          'flex gap-4 p-4',
+          'flex gap-4',
+          local.flush ? 'p-0' : 'p-4',
           local.orientation === 'vertical'
             ? 'flex-col'
             : 'flex-col sm:flex-row sm:items-center sm:justify-between',

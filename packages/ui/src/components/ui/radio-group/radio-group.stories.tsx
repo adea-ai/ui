@@ -145,3 +145,29 @@ export const Cards: Story = {
     </RadioGroup>
   ),
 }
+
+/**
+ * A card with only a label — the shape of a source-type picker — is shorter than
+ * its `media`, so the radio has to centre against the icon rather than sit on the
+ * label's first line. A card with a description centres its radio the same way,
+ * so the radio, icon and text share one axis whatever the card holds.
+ */
+export const CardsLabelOnly: Story = {
+  render: () => (
+    <RadioGroup defaultValue="folder" aria-label="Source type" class="w-96 sm:grid-cols-2">
+      <RadioGroupItem
+        variant="card"
+        value="folder"
+        label="Folder"
+        media={<EntityIcon name="Folder" size="sm" icon={FolderOpen} />}
+      />
+      <RadioGroupItem
+        variant="card"
+        value="mail"
+        label="Mail"
+        media={<EntityIcon name="Mail" size="sm" icon={Mail} />}
+      />
+      <RadioGroupItem variant="card" value="plain" label="Plain text" />
+    </RadioGroup>
+  ),
+}

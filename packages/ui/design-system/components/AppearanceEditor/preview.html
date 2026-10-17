@@ -1,5 +1,5 @@
-<!-- @dsCard group="Composites" height=860 -->
-<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+<!-- @dsCard group="Composites" height=2300 -->
+<div style="padding:16px;display:flex;flex-direction:column;gap:32px"><div id="default"></div><div id="dense"></div></div>
 <script>
   const { render, html, createSignal, createMemo, AppearanceEditor, themeRecordById, appearancePreviewThemes, themeAccentsFor, accentPresets } = window.AdeaUI;
   // The editor takes the catalogue's own theme records, which the bundle exports as
@@ -14,25 +14,39 @@
     mode: 'system', lightThemeId: 'adea-light', darkThemeId: 'adea-dark',
     terminalThemeId: 'theme', accent: 'theme', surface: 'theme', reduceTransparency: false,
   };
-  render(() => {
+  // One editor per card section. `dense` is the composition a toolbar host asks for:
+  // typefaces last, the accent row one equally spaced line with Custom as a button that
+  // opens the native colour selector, and a glyph on each mode card.
+  const dense = {
+    fontSettingsPlacement: 'end', accentEntryStyle: 'row', showThemeDefaultAccent: false,
+    showModeIcons: true, customAccentValue: '#2563eb',
+  };
+  const Example = ({ isDense }) => {
     const [draft, setDraft] = createSignal({ ...defaults });
     const preview = createMemo(() => appearancePreviewThemes(draft()));
-    return html`
-<div style="width:100%;max-width:512px">
-  <${AppearanceEditor}
-    draft=${() => draft()}
-    lightTheme=${() => preview().lightTheme}
-    darkTheme=${() => preview().darkTheme}
-    resolvedAppearance="dark"
-    themes=${themes}
-    accentOptions=${accentOptions}
-    themeAccentOptions=${() => themeAccentsFor(draft().lightThemeId, draft().darkThemeId)}
-    surfaceCapability=${{ frosted: false, reason: 'Transparency is unavailable on this host.' }}
-    onChange=${(patch) => setDraft((value) => ({ ...value, ...patch }))}
-    onReset=${(_event) => setDraft({ ...defaults })}
-    onCancel=${(_event) => setDraft({ ...defaults })}
-    onSave=${(_event) => {}}
-  />
-</div>`;
-  }, document.getElementById('root'));
+    // Getters, not accessors: a spread forwards values as-is, so each reactive prop is a getter.
+    const props = {
+      get draft() { return draft(); },
+      get lightTheme() { return preview().lightTheme; },
+      get darkTheme() { return preview().darkTheme; },
+      resolvedAppearance: 'dark',
+      themes,
+      accentOptions,
+      get themeAccentOptions() { return themeAccentsFor(draft().lightThemeId, draft().darkThemeId); },
+      surfaceCapability: { frosted: false, reason: 'Transparency is unavailable on this host.' },
+      onChange: (patch) => setDraft((value) => ({ ...value, ...patch })),
+      onReset: (_event) => setDraft({ ...defaults }),
+      onCancel: (_event) => setDraft({ ...defaults }),
+      onSave: (_event) => {},
+      ...(isDense ? dense : {}),
+    };
+    return html`<${AppearanceEditor} ...${props} />`;
+  };
+  const mount = (id, title, node) => render(() => html`
+<div style="width:100%;max-width:512px;display:flex;flex-direction:column;gap:8px">
+  <p style="margin:0;font-size:12px;color:var(--muted-foreground)">${title}</p>
+  ${node}
+</div>`, document.getElementById(id));
+  mount('default', 'Default', () => Example({}));
+  mount('dense', 'Dense host: typefaces last, accent presets and Custom on one line, glyphs on the mode cards', () => Example({ isDense: true }));
 </script>

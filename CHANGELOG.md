@@ -1,5 +1,126 @@
 # Changelog
 
+## [0.141.1](https://github.com/adea-ai/ui/compare/v0.141.0...v0.141.1) (2026-10-17)
+
+
+### Maintenance
+
+* **bun:** align pins to Bun 1.4.3 and compile .tsx tests with the Solid transform ([#454](https://github.com/adea-ai/ui/issues/454)) ([06002d3](https://github.com/adea-ai/ui/commit/06002d3d349719c1612769d93f158437be492e6a))
+
+## [0.141.0](https://github.com/adea-ai/ui/compare/v0.140.0...v0.141.0) (2026-10-17)
+
+
+### Features
+
+* **field:** let NumberField be optional and disabled ([#444](https://github.com/adea-ai/ui/issues/444)) ([71abd24](https://github.com/adea-ai/ui/commit/71abd242979e7934ec8ce8c6d1ad716f6dd00bd8))
+
+## [0.140.0](https://github.com/adea-ai/ui/compare/v0.139.1...v0.140.0) (2026-10-16)
+
+
+### Features
+
+* **tooling:** add vp run orchestration tasks alongside Turbo ([#451](https://github.com/adea-ai/ui/issues/451)) ([fa97569](https://github.com/adea-ai/ui/commit/fa97569f53e621a517d82b372e43d2d084c8922a))
+
+## [0.139.1](https://github.com/adea-ai/ui/compare/v0.139.0...v0.139.1) (2026-10-16)
+
+
+### Maintenance
+
+* **ci:** add an opt-in Vite Task cache proof beside Turbo ([#449](https://github.com/adea-ai/ui/issues/449)) ([d661be7](https://github.com/adea-ai/ui/commit/d661be7ac6a0cb29ef40bda535da294380374c8e))
+
+## [0.139.0](https://github.com/adea-ai/ui/compare/v0.138.1...v0.139.0) (2026-10-16)
+
+
+### Features
+
+* **top-bar:** add centerWidth wide for a centre that holds more than a search field ([#446](https://github.com/adea-ai/ui/issues/446)) ([7e51633](https://github.com/adea-ai/ui/commit/7e5163399830ee7bf0401661c5ed85649dc64feb))
+
+
+### Bug Fixes
+
+* **secret-input-group:** add and remove the clear action as onClear changes ([#447](https://github.com/adea-ai/ui/issues/447)) ([cb7caaf](https://github.com/adea-ai/ui/commit/cb7caaf840303d0e58b16064650817aadb48d2b4))
+
+## [0.138.1](https://github.com/adea-ai/ui/compare/v0.138.0...v0.138.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **callout:** drop the title's bottom margin when it is the only child ([#442](https://github.com/adea-ai/ui/issues/442)) ([a3b7367](https://github.com/adea-ai/ui/commit/a3b73676be82ef82dd664637cf4af2fff9342f33))
+* **tree:** leave focus alone when a control outside the tree has it ([#440](https://github.com/adea-ai/ui/issues/440)) ([ad56eb9](https://github.com/adea-ai/ui/commit/ad56eb977c0898c7748a7e98b6504aaf69550405))
+
+## [0.138.0](https://github.com/adea-ai/ui/compare/v0.137.0...v0.138.0) (2026-10-16)
+
+
+### Features
+
+* **alert-dialog:** let Escape cancel a confirmation ([#441](https://github.com/adea-ai/ui/issues/441)) ([e4d4cf7](https://github.com/adea-ai/ui/commit/e4d4cf7589b17ada9c2772dc3f9670c1a7c9dd86))
+
+## [0.137.0](https://github.com/adea-ai/ui/compare/v0.136.0...v0.137.0) (2026-10-15)
+
+
+### Features
+
+* **tree:** add an opt-in pointer disclosure marker ([#436](https://github.com/adea-ai/ui/issues/436)) ([621f0a1](https://github.com/adea-ai/ui/commit/621f0a1cb3ab2b0ee0bbbf57051d73514308e15e))
+
+## [0.136.0](https://github.com/adea-ai/ui/compare/v0.135.1...v0.136.0) (2026-10-15)
+
+
+### Features
+
+* **callout:** add a quiet accent-rule note block ([#435](https://github.com/adea-ai/ui/issues/435)) ([317357e](https://github.com/adea-ai/ui/commit/317357ebd15d46a7a574b970534e44b631a409cb))
+
+## [0.135.1](https://github.com/adea-ai/ui/compare/v0.135.0...v0.135.1) (2026-10-15)
+
+
+### Documentation
+
+* **design-system:** show the dense host editor and its toolbar sheet ([#415](https://github.com/adea-ai/ui/issues/415)) ([1bec409](https://github.com/adea-ai/ui/commit/1bec409c206c3c59863384f2bfdb1f1464f141c5))
+
+## [0.135.0](https://github.com/adea-ai/ui/compare/v0.134.0...v0.135.0) (2026-10-15)
+
+
+### Features
+
+* **stat:** add StatGroup fit to size columns from the group's own width ([#426](https://github.com/adea-ai/ui/issues/426)) ([3ce47ea](https://github.com/adea-ai/ui/commit/3ce47ea9912a3cf6a8c64c3419d9d94e30a7e192))
+
+
+### Bug Fixes
+
+* **card:** lay CardHeader out as a grid so CardAction takes its column ([#419](https://github.com/adea-ai/ui/issues/419)) ([ab7ecf8](https://github.com/adea-ai/ui/commit/ab7ecf84ebf36bedd8df365c9932869e507f3e38))
+
+## [0.134.0](https://github.com/adea-ai/ui/compare/v0.133.0...v0.134.0) (2026-10-15)
+
+
+### Features
+
+* **native-select:** add wrapperClass for layout of the control ([#425](https://github.com/adea-ai/ui/issues/425)) ([0b2e16e](https://github.com/adea-ai/ui/commit/0b2e16e0ac86db6b24e20dfd2eefd58e7fd656b7))
+* **secret-input-group:** name the clear action per field ([#424](https://github.com/adea-ai/ui/issues/424)) ([6d70729](https://github.com/adea-ai/ui/commit/6d707298fcd8204b4636ba5a5aecb3bd69c61925))
+* **settings:** add a flush SettingsRow for rows loose in a content section ([#427](https://github.com/adea-ai/ui/issues/427)) ([5fde0be](https://github.com/adea-ai/ui/commit/5fde0be3c9f5dc9a09b6010c1f66a55769cc07f8))
+
+## [0.133.0](https://github.com/adea-ai/ui/compare/v0.132.0...v0.133.0) (2026-10-15)
+
+
+### Features
+
+* **number-field:** add step ([#422](https://github.com/adea-ai/ui/issues/422)) ([55cbb46](https://github.com/adea-ai/ui/commit/55cbb46c6731fae730fca665fabab14bbc21fe5b))
+
+## [0.132.0](https://github.com/adea-ai/ui/compare/v0.131.1...v0.132.0) (2026-10-15)
+
+
+### Features
+
+* **empty-state:** add a secondary action beside the primary one ([#423](https://github.com/adea-ai/ui/issues/423)) ([ed7c19a](https://github.com/adea-ai/ui/commit/ed7c19ac62d82baaef1a6ef09df41bc1e97ab18b))
+* **field:** add a three-column FieldGroup ([#421](https://github.com/adea-ai/ui/issues/421)) ([6ac5220](https://github.com/adea-ai/ui/commit/6ac5220864bd9b856333bea9468f4c5d61a5f6ce))
+* **list-row:** add truncateDescription for a single-line description ([#420](https://github.com/adea-ai/ui/issues/420)) ([c4796e9](https://github.com/adea-ai/ui/commit/c4796e9934832d2843170a15cadb467d16e19f69))
+
+## [0.131.1](https://github.com/adea-ai/ui/compare/v0.131.0...v0.131.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **accordion:** rotate the chevron when a section opens ([#417](https://github.com/adea-ai/ui/issues/417)) ([84a303a](https://github.com/adea-ai/ui/commit/84a303a4af6044b70c6bf9f55c41937ec9011557))
+* **radio-group:** centre the radio of a card option against its content ([#418](https://github.com/adea-ai/ui/issues/418)) ([e121f7f](https://github.com/adea-ai/ui/commit/e121f7f66fe8c065146b3958a6b4166132563e33))
+
 ## [0.131.0](https://github.com/adea-ai/ui/compare/v0.130.4...v0.131.0) (2026-10-14)
 
 

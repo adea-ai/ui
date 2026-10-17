@@ -195,8 +195,12 @@ export type FieldGroupProps = ComponentProps<'div'> & {
    * that needs the full width says `class="col-span-full"`. Below `sm` it is
    * one column again, because two inputs side by side on a phone are each too
    * narrow to read.
+   *
+   * `3` is the same grid with three columns from `sm`, for a row of short values
+   * (a trio of limits, a day count and two thresholds). Each column is a third of
+   * the group, so reach for `2` when a field holds a path, a URL or a sentence.
    */
-  columns?: 1 | 2
+  columns?: 1 | 2 | 3
 }
 
 /** A visual stack for related controls that does not imply fieldset semantics. */
@@ -206,7 +210,11 @@ export function FieldGroup(props: FieldGroupProps) {
     <div
       data-slot="field-group"
       class={cn(
-        local.columns === 2 ? 'grid gap-4 sm:grid-cols-2' : 'flex flex-col gap-4',
+        {
+          'grid gap-4 sm:grid-cols-2': local.columns === 2,
+          'grid gap-4 sm:grid-cols-3': local.columns === 3,
+          'flex flex-col gap-4': local.columns !== 2 && local.columns !== 3,
+        },
         local.class
       )}
       {...rest}

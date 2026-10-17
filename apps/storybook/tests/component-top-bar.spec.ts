@@ -213,6 +213,74 @@ test('toolbar actions remain reachable without document overflow at narrow width
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
+test('centerWidth="wide" widens the centre track only above 1280px and never overflows', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+  const tracks = (label: string) =>
+    page.locator(`[data-slot="top-bar"][aria-label="${label}"]`).evaluate((element) =>
+      getComputedStyle(element)
+        .gridTemplateColumns.split(' ')
+        .map((value) => Number.parseFloat(value))
+    )
+
+  // 1440px: the default centre is clamp(240px, 22vw, 480px) and the wide one
+  // is clamp(240px, 32vw, 672px), with equal side tracks either way.
+  await page.setViewportSize({ width: 1440, height: 844 })
+  const field = await tracks('Workspace toolbar')
+  const wide = await tracks('Wide centre toolbar')
+  expect(field[1]).toBeCloseTo(1440 * 0.22, 0)
+  expect(wide[1]).toBeCloseTo(1440 * 0.32, 0)
+  expect(Math.abs(wide[0]! - wide[2]!)).toBeLessThanOrEqual(1)
+
+  // Between 768px and 1280px the wide bar keeps a fluid centre between
+  // content-sized side tracks instead of the field bar's fixed 22vw.
+  await page.setViewportSize({ width: 1000, height: 844 })
+  const mid = await tracks('Wide centre toolbar')
+  expect(mid[1]).toBeGreaterThan(1000 * 0.22)
+
+  // The leading title is wide at 200% text. The centre must keep its controls
+  // inside its own track (the side groups scroll instead of squeezing it), and
+  // the document must not overflow.
+  for (const width of [1440, 1000, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    for (const factor of [1, 2]) {
+      await page.evaluate((scale) => {
+        document.documentElement.style.fontSize = `${16 * scale}px`
+      }, factor)
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+        .toBe(true)
+      const centre = await page
+        .locator('[data-slot="top-bar"][aria-label="Wide centre toolbar"]')
+        .evaluate((bar) => {
+          const cluster = bar.children[1] as HTMLElement
+          const track = cluster.getBoundingClientRect()
+          const controls = [...cluster.children].map((child) => child.getBoundingClientRect())
+          return {
+            width: track.width,
+            fits: cluster.scrollWidth <= cluster.clientWidth + 1,
+            controlsInside: controls.every(
+              (rect) => rect.left >= track.left - 1 && rect.right <= track.right + 1
+            ),
+            documentFits: track.right <= window.innerWidth,
+          }
+        })
+      expect(centre.fits, `${width}px at ${factor}x text: centre content fits its track`).toBe(true)
+      expect(centre.controlsInside, `${width}px at ${factor}x text: controls inside`).toBe(true)
+      expect(centre.documentFits).toBe(true)
+      expect(
+        centre.width,
+        `${width}px at ${factor}x text: centre keeps 7rem`
+      ).toBeGreaterThanOrEqual(7 * 16 * factor - 1)
+    }
+  }
+})
+
 test('the search chord stays out of the button accessible name', async ({ page }) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'

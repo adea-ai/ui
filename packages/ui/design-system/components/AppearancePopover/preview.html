@@ -1,0 +1,40 @@
+<!-- @dsCard group="Composites" height=1120 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, createSignal, createMemo, AppearancePopover, themeRecordById, appearancePreviewThemes, themeAccentsFor, accentPresets } = window.AdeaUI;
+  // The dense composition a toolbar host asks for, in the sheet the toolbar trigger opens:
+  // typefaces last, the accent row one equally spaced line of presets with Custom as a
+  // button that opens the native colour selector, a glyph on each mode card. While the
+  // sheet is open the toolbar trigger holds the accent tint. The sheet is a full-height
+  // overlay: closing it leaves only the trigger.
+  const ids = ['adea-light', 'adea-dark', 'ayu', 'ayu-light', 'ayu-mirage', 'catppuccin-frappe', 'catppuccin-latte',
+    'catppuccin-macchiato', 'catppuccin-mocha', 'dracula', 'everforest-dark', 'everforest-light', 'gruvbox-dark', 'gruvbox-light'];
+  const themes = ids.map(themeRecordById).filter(Boolean);
+  const accentOptions = accentPresets.filter((preset) => preset.id !== 'theme');
+  const defaults = {
+    mode: 'system', lightThemeId: 'adea-light', darkThemeId: 'adea-dark',
+    terminalThemeId: 'theme', accent: 'theme', surface: 'theme', reduceTransparency: false,
+  };
+  render(() => {
+    const [draft, setDraft] = createSignal({ ...defaults });
+    const [open, setOpen] = createSignal(true);
+    const preview = createMemo(() => appearancePreviewThemes(draft()));
+    const props = {
+      get draft() { return draft(); },
+      get lightTheme() { return preview().lightTheme; },
+      get darkTheme() { return preview().darkTheme; },
+      resolvedAppearance: 'dark',
+      themes,
+      accentOptions,
+      get themeAccentOptions() { return themeAccentsFor(draft().lightThemeId, draft().darkThemeId); },
+      surfaceCapability: { frosted: false, reason: 'Transparency is unavailable on this host.' },
+      onChange: (patch) => setDraft((value) => ({ ...value, ...patch })),
+      onReset: (_event) => setDraft({ ...defaults }),
+      onCancel: (_event) => { setDraft({ ...defaults }); setOpen(false); },
+      onSave: (_event) => setOpen(false),
+      fontSettingsPlacement: 'end', accentEntryStyle: 'row', showThemeDefaultAccent: false,
+      showModeIcons: true, customAccentValue: '#2563eb',
+    };
+    return html`<${AppearancePopover} ...${props} triggerVariant="toolbar" open=${() => open()} onOpen=${(_event) => setOpen(true)} onDismiss=${(_event) => setOpen(false)} />`;
+  }, document.getElementById('root'));
+</script>

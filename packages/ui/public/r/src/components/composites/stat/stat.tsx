@@ -83,13 +83,31 @@ export function Stat(props: StatProps) {
   )
 }
 
-/** A row of stats that shares one gap and wraps as the window narrows. */
-export function StatGroup(props: ComponentProps<'div'>) {
-  const [local, rest] = splitProps(props, ['class'])
+/**
+ * A row of stats that shares one gap and wraps as the window narrows.
+ *
+ * By default the column count steps with the *viewport* (two from `sm`, four from
+ * `lg`), which is right for a group that spans the page. A group inside a pane
+ * whose width is not the window's (a docked panel, a resizable column, a view
+ * beside a sidebar) gets the wrong count from a viewport breakpoint. `fit` sizes
+ * from the group's own width instead: as many tiles per row as fit at the
+ * minimum tile width, each growing to share the remainder, however many stats
+ * there are.
+ */
+export function StatGroup(props: ComponentProps<'div'> & { fit?: boolean }) {
+  const [local, rest] = splitProps(props, ['class', 'fit'])
   return (
     <div
       data-slot="stat-group"
-      class={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-4', local.class)}
+      class={cn(
+        'grid gap-3',
+        // 9.375rem is 150px at the default root size: room for a label of about
+        // twenty characters and a six-digit value before the tile truncates.
+        local.fit
+          ? 'grid-cols-[repeat(auto-fill,minmax(9.375rem,1fr))]'
+          : 'sm:grid-cols-2 lg:grid-cols-4',
+        local.class
+      )}
       {...rest}
     />
   )

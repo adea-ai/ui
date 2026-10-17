@@ -63,6 +63,26 @@ render(() => {
         </TopBarTitle>
         <TopBarSection align="end" />
       </TopBar>
+      <TopBar aria-label="Wide centre toolbar" centerWidth="wide">
+        <TopBarSection>
+          <TopBarTitle>Wide centre</TopBarTitle>
+        </TopBarSection>
+        <div class="flex w-full min-w-0 items-center gap-2 justify-self-center">
+          <input
+            aria-label="Search with an action"
+            class="h-control-md min-w-0 flex-1 rounded-md border border-input px-3"
+          />
+          <ActionButton
+            tooltip="Reflect"
+            aria-label="Reflect"
+            size="icon-sm"
+            onClick={() => setLastAction('Reflect')}
+          >
+            <Search aria-hidden="true" />
+          </ActionButton>
+        </div>
+        <TopBarSection align="end" />
+      </TopBar>
       <output aria-live="polite">{lastAction()}</output>
     </main>
   )

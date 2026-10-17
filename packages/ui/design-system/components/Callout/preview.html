@@ -1,0 +1,23 @@
+<!-- @dsCard group="Feedback" height=420 -->
+<div id="root" style="padding: 16px; display: flex; flex-direction: column; gap: 12px"></div>
+<script>
+  const { render, html, Callout, CalloutTitle } = window.AdeaUI
+  render(
+    () => html`
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:576px">
+        <${Callout} size="lg"
+          ><${CalloutTitle}>Summary<//
+          >The release is ready to ship; the soak lane passed on the last three runs.<//
+        >
+        <${Callout} variant="info"
+          ><${CalloutTitle}>From memory<//
+          >This workspace deploys from the main branch.<//
+        >
+        <${Callout} variant="success" size="sm">Imported fourteen worktrees.<//>
+        <${Callout} variant="warning" size="sm">The source answered slowly; results may be partial.<//>
+        <${Callout} variant="destructive" size="sm">This answer cites a source that was removed.<//>
+      </div>
+    `,
+    document.getElementById('root')
+  )
+</script>

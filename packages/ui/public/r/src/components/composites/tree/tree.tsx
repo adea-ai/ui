@@ -25,7 +25,10 @@ type TreeContextValue = {
   unregister: (id: string, element: HTMLDivElement | undefined) => void
   focusItem: (id: string) => void
   noteFocus: (id: string) => void
+  noteBlur: (next: EventTarget | null) => void
   activate: (id: string, event: Event) => void
+  expand: (id: string, expanded: boolean) => void
+  disclosure: () => TreeDisclosure
   onActiveIdChange: (id: string) => void
 }
 
@@ -36,6 +39,19 @@ function useTreeContext() {
   if (!tree) throw new Error('[adea-ui]: TreeRow must be used inside Tree.')
   return tree
 }
+
+/**
+ * Who owns the pointer on a row's disclosure chevron.
+ *
+ * - `row` (default): the chevron is decoration; a click anywhere on the row,
+ *   chevron included, is a row activation. This is the file-explorer
+ *   convention, where the host's `onActivate` toggles a folder.
+ * - `marker`: the chevron of an expandable row is its own pointer target. It
+ *   calls `onExpand(id, !expanded)` and nothing else; the rest of the row still
+ *   activates. For trees where expanding and selecting are independent (a
+ *   source list that selects a source and separately reveals its details).
+ */
+export type TreeDisclosure = 'row' | 'marker'
 
 type TreeAccessibleName =
   | { 'aria-label': string; 'aria-labelledby'?: string }
@@ -50,10 +66,19 @@ export type TreeProps = Omit<
     visibleItems: readonly TreeItemDescriptor[]
     /** The host-owned identity of the row that currently owns roving focus. */
     activeId: string | null
-    /** Called when keyboard or pointer navigation changes the active row. */
+    /**
+     * Called when keyboard or pointer navigation changes the active row, and when
+     * the active row leaves `visibleItems` (collapsed away, filtered out) and the
+     * first visible row takes over as the roving stop.
+     */
     onActiveIdChange: (id: string) => void
     /** Called for Left/Right expand and collapse requests. */
     onExpand?: (id: string, expanded: boolean) => void
+    /**
+     * Opt-in pointer behaviour of the disclosure chevron; see {@link TreeDisclosure}.
+     * Keyboard behaviour is identical in both modes: Left/Right expand and collapse.
+     */
+    disclosure?: TreeDisclosure
     /** Called for Enter or pointer activation. Domain action stays host-owned. */
     onActivate?: (id: string, event: Event) => void
     /** Called for Space selection. Selection state stays host-owned. */
@@ -78,6 +103,26 @@ export type TreeProps = Omit<
  *
  * Kobalte 0.13.14 has no Tree primitive, so this component implements the
  * WAI-ARIA tree row navigation contract and leaves product state to callbacks.
+ *
+ * By default the disclosure chevron is decoration and a click anywhere on a
+ * row activates it, so a file explorer can toggle a folder from `onActivate`.
+ * Reach for `disclosure="marker"` when expanding and selecting are separate
+ * decisions: the chevron then calls only `onExpand`, and the rest of the row
+ * calls only `onActivate`. The chevron stays `aria-hidden` and out of the tab
+ * order in both modes; keyboard expansion is Left/Right either way.
+ *
+ * Collapsing is the one thing that can move focus without a key or a click on
+ * the target row: when the active row leaves `visibleItems`, the first visible
+ * row becomes the roving stop and `onActiveIdChange` is called with it. If the
+ * removed row held focus, or was the last row the tree saw focused, focus moves
+ * to that same row; if it had no focus, only the roving stop moves. Focus that
+ * has already gone to a control outside the tree is never pulled back: the tree
+ * forgets its last focused row when focus moves to an element outside it, and
+ * the roving stop alone moves if that control still has focus when the row is
+ * hidden. Focus the tree has asked for but not yet moved (a queued recovery, or a
+ * keyboard move to a row the host has not mounted) is withdrawn when focus lands
+ * outside the tree, and is checked again when a row mounts. This is the same in
+ * both `disclosure` modes and for every way a host collapses a row.
  */
 export function Tree(props: TreeProps) {
   const [local, rest] = splitProps(props, [
@@ -86,6 +131,7 @@ export function Tree(props: TreeProps) {
     'activeId',
     'onActiveIdChange',
     'onExpand',
+    'disclosure',
     'onActivate',
     'onSelectItem',
     'onRequestReveal',
@@ -104,9 +150,26 @@ export function Tree(props: TreeProps) {
   const rows = new Map<string, HTMLDivElement>()
   const rowIdsByElement = new WeakMap<HTMLDivElement, string>()
   let pendingFocusId: string | null = null
+  let pendingFocusGuard: ((event: FocusEvent) => void) | undefined
   let requestedRevealId: string | null = null
   let focusedId: string | null = null
   let disposed = false
+  const isInsideTreeRow = (element: Element) => {
+    const row = element.closest('[role="treeitem"]')
+    return row instanceof HTMLDivElement && rowIdsByElement.has(row)
+  }
+  // True when a focusable control outside this tree owns focus. Nothing focused
+  // (`body`) is not outside: that is where focus falls when a focused row is removed.
+  const focusIsOutsideTree = () => {
+    if (typeof document === 'undefined') return false
+    const active = document.activeElement
+    return (
+      active instanceof Element &&
+      active !== document.body &&
+      active !== document.documentElement &&
+      !isInsideTreeRow(active)
+    )
+  }
   const rowSizeObserver =
     typeof ResizeObserver === 'undefined'
       ? undefined
@@ -121,8 +184,33 @@ export function Tree(props: TreeProps) {
           }
         })
 
+  // Focus the tree has asked for but not yet moved (a microtask away, or waiting for a
+  // virtualised row to mount) is only a request. While one is pending, focus arriving
+  // on a control outside the tree withdraws it, so a row mounting later cannot take
+  // focus back from a control the user, or the host, has since chosen.
+  const setPendingFocus = (id: string | null) => {
+    pendingFocusId = id
+    if (typeof document === 'undefined') return
+    if (id === null) {
+      if (pendingFocusGuard) document.removeEventListener('focusin', pendingFocusGuard, true)
+      pendingFocusGuard = undefined
+    } else if (!pendingFocusGuard) {
+      pendingFocusGuard = (event) => {
+        if (event.target instanceof Element && !isInsideTreeRow(event.target)) cancelPendingFocus()
+      }
+      document.addEventListener('focusin', pendingFocusGuard, true)
+    }
+  }
+  // Withdrawing a request also drops the memory of the row it was recovering for:
+  // nothing is left to recover.
+  const cancelPendingFocus = () => {
+    setPendingFocus(null)
+    focusedId = null
+  }
+
   onCleanup(() => {
     disposed = true
+    setPendingFocus(null)
     rowSizeObserver?.disconnect()
   })
 
@@ -137,13 +225,19 @@ export function Tree(props: TreeProps) {
       if (pendingFocusId !== id || effectiveActiveId() !== id) return
       const row = rows.get(id)
       if (!row || typeof document === 'undefined') return
+      // Ownership is checked when focus would move, not when it was requested: a
+      // control outside the tree may have taken focus since, and keeps it.
+      if (focusIsOutsideTree()) {
+        cancelPendingFocus()
+        return
+      }
       row.focus()
-      if (document.activeElement === row) pendingFocusId = null
+      if (document.activeElement === row) setPendingFocus(null)
     })
   }
 
   const focusItem = (id: string) => {
-    pendingFocusId = id
+    setPendingFocus(id)
     local.onActiveIdChange(id)
     if (rows.has(id)) requestedRevealId = null
     else requestReveal(id)
@@ -177,8 +271,14 @@ export function Tree(props: TreeProps) {
       if (focusWasInside) {
         queueMicrotask(() => {
           const fallbackId = effectiveActiveId()
-          if (!disposed && fallbackId !== null && pendingFocusId !== fallbackId)
-            focusItem(fallbackId)
+          if (disposed || fallbackId === null || pendingFocusId === fallbackId) return
+          // Focus fell out of the removed row, but it may have been given to a control
+          // outside the tree before this ran. Only nothing-focused (body) recovers.
+          if (focusIsOutsideTree()) {
+            focusedId = null
+            return
+          }
+          focusItem(fallbackId)
         })
       }
     },
@@ -186,19 +286,36 @@ export function Tree(props: TreeProps) {
     noteFocus: (id) => {
       focusedId = id
     },
+    noteBlur: (next) => {
+      // Focus moving to an element outside this tree ends the memory of the last
+      // focused row and withdraws any focus the tree was still waiting to give a
+      // row. A null target (focus to nothing, or the window losing focus) is
+      // ambiguous, so both stay for the recovery below.
+      if (next instanceof Element && !isInsideTreeRow(next)) cancelPendingFocus()
+    },
     activate: (id, event) => local.onActivate?.(id, event),
+    expand: (id, expanded) => local.onExpand?.(id, expanded),
+    disclosure: () => local.disclosure ?? 'row',
     onActiveIdChange: local.onActiveIdChange,
   }
 
-  // A filtered or removed active ID falls back to the first visible item. This
-  // keeps one treeitem in the sequential tab order while notifying the host.
+  // A filtered, collapsed-away or removed active ID falls back to the first
+  // visible item. This keeps one treeitem in the sequential tab order while
+  // notifying the host.
   createEffect(() => {
     const activeId = effectiveActiveId()
     if (activeId === null) return
-    // If a host filter removes the row that had DOM focus, move focus to the
-    // same projection fallback that now owns the roving tab stop.
+    // If the projection removes the last row that took focus (a host filter, or
+    // an ancestor collapsing), move focus to the same fallback that now owns the
+    // roving tab stop, unless a control outside the tree has focus: that control
+    // keeps it, and only the roving stop moves.
     if (focusedId !== null && !index().byId.has(focusedId) && pendingFocusId !== activeId) {
-      focusItem(activeId)
+      if (focusIsOutsideTree()) {
+        focusedId = null
+        if (local.activeId !== activeId) local.onActiveIdChange(activeId)
+      } else {
+        focusItem(activeId)
+      }
     } else if (local.activeId !== activeId) {
       local.onActiveIdChange(activeId)
     }
@@ -282,6 +399,15 @@ export type TreeRowProps = Omit<
  * Keeps the donor's disclosure marker, leading file/folder affordance, primary
  * label and trailing-action hierarchy while replacing the donor's button and
  * runtime callbacks with a shared treeitem and host-owned slots/actions.
+ *
+ * With `Tree`'s `disclosure="marker"` the chevron of an expandable row is a
+ * separate pointer target (`data-slot="tree-row-disclosure"`) that only calls
+ * `onExpand`. It is not focusable and has no role: the row remains the single
+ * focus stop, Enter and Space still activate and select, and Left/Right still
+ * expand and collapse, so the marker adds a pointer path and nothing else.
+ * Pressing it does not move focus or the roving stop to its row; if the toggle
+ * hides the focused row, `Tree` recovers focus as it does for any collapse (see
+ * the `Tree` comment and docs/tree.md).
  */
 export function TreeRow(props: TreeRowProps) {
   const tree = useTreeContext()
@@ -300,12 +426,19 @@ export function TreeRow(props: TreeRowProps) {
   let registeredId: string | undefined
   const id = () => local.item.id
 
-  onCleanup(() => tree.unregister(registeredId ?? id(), row))
+  const handleFocusOut = (event: FocusEvent) => tree.noteBlur(event.relatedTarget)
+
+  onCleanup(() => {
+    row?.removeEventListener('focusout', handleFocusOut)
+    tree.unregister(registeredId ?? id(), row)
+  })
 
   const setRef = (element: HTMLDivElement) => {
     row = element
     registeredId = id()
     tree.register(registeredId, element)
+    // A listener, not an `onFocusOut` prop, so a host's own handler is untouched.
+    element.addEventListener('focusout', handleFocusOut)
   }
 
   createEffect(() => {
@@ -333,7 +466,15 @@ export function TreeRow(props: TreeRowProps) {
   }
 
   const position = () => tree.index().positionById.get(id())
+  // Only an expandable row has a chevron to press; a leaf's marker slot stays
+  // part of the row so a click there is an ordinary row click.
+  const markerTarget = () => tree.disclosure() === 'marker' && local.item.expandable
 
+  const handleMarkerClick: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) => {
+    // The row's own handler would focus and activate the row.
+    event.stopPropagation()
+    tree.expand(id(), !local.item.expanded)
+  }
   return (
     <div
       {...rest}
@@ -364,7 +505,23 @@ export function TreeRow(props: TreeRowProps) {
       onClick={handleClick}
       onDblClick={handleDoubleClick}
     >
-      <span class="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+      <span
+        data-slot={markerTarget() ? 'tree-row-disclosure' : undefined}
+        class={cn(
+          'flex',
+          !markerTarget() && 'size-3.5',
+          'shrink-0 items-center justify-center text-muted-foreground',
+          /* The glyph stays 14px wide but the target is not: it takes the row's full
+             height (a flex child's `self-stretch`, so it follows row density and a
+             tall trailing control) and the pseudo-element widens it to 26px, which
+             stops at the row's own padding and gap, never over the icon or label. */
+          markerTarget() &&
+            'relative w-3.5 cursor-pointer self-stretch hover:text-foreground after:absolute after:inset-y-0 after:-inset-x-1.5'
+        )}
+        onMouseDown={markerTarget() ? handleMarkerMouseDown : undefined}
+        onClick={markerTarget() ? handleMarkerClick : undefined}
+        onDblClick={markerTarget() ? handleMarkerDoubleClick : undefined}
+      >
         {local.item.expandable ? (
           <ChevronRight
             aria-hidden="true"
@@ -411,6 +568,19 @@ export function TreeRowActions(props: ComponentProps<'span'> & { pinned?: boolea
     />
   )
 }
+
+// Pressing the chevron must not move focus to its row: a mousedown on a
+// non-focusable child would otherwise focus the row, making it the roving stop
+// (and notifying `onActiveIdChange`) for what is a disclosure toggle, not a
+// selection. The press itself leaves focus where it was, so Left/Right keep
+// acting on the row the keyboard user left off at. It cannot stop the toggle
+// from hiding that row; `Tree` then recovers focus onto the first visible row.
+const handleMarkerMouseDown: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) =>
+  event.preventDefault()
+// A double-click is two toggles; it must not also reach `onDoubleClick`
+// (rename, open) as though the row itself had been double-clicked.
+const handleMarkerDoubleClick: JSX.EventHandler<HTMLSpanElement, MouseEvent> = (event) =>
+  event.stopPropagation()
 
 function isActionTarget(target: EventTarget | null, currentTarget: HTMLElement): boolean {
   if (!(target instanceof Element) || target === currentTarget) return false

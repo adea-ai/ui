@@ -8,7 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from './card'
+import { Trash2 } from 'lucide-solid'
 import { Badge } from '../badge/badge'
+import { ActionButton } from '../../composites/action-button/action-button'
 import { Button } from '../button/button'
 import { ListRow } from '../../composites/list-row/list-row'
 
@@ -60,7 +62,13 @@ export const Default: Story = {
   ),
 }
 
-/** A card with a trailing action in the header, for a row-level control. */
+/**
+ * A card with a trailing action in the header, for a row-level control.
+ *
+ * `CardAction` must be a direct child of `CardHeader`: the header becomes a
+ * two-column grid when it holds one, and the action takes the second column
+ * across the title and description rows.
+ */
 export const WithAction: Story = {
   render: () => (
     <Card class="w-96">
@@ -78,6 +86,48 @@ export const WithAction: Story = {
         </p>
       </CardContent>
     </Card>
+  ),
+}
+
+/**
+ * The action is its own column, so a long title wraps before it reaches the
+ * action instead of running underneath it. By default it is top-aligned and
+ * spans the title and description rows, which suits a badge beside a two-line
+ * header. A one-line header with an icon-only control centres the two with
+ * layout classes alone: `items-center` on the header and `row-span-1` on the
+ * action, so no wrapper element is needed around the copy.
+ */
+export const ActionBesideAWrappingTitle: Story = {
+  render: () => (
+    <div class="flex flex-wrap items-start gap-4">
+      <Card class="w-72">
+        <CardHeader>
+          <CardTitle>Nightly soak on the release candidate with the long workspace name</CardTitle>
+          <CardDescription>Runs at 02:00.</CardDescription>
+          <CardAction>
+            <Badge variant="success">Published</Badge>
+          </CardAction>
+        </CardHeader>
+      </Card>
+      <Card size="sm" class="w-72">
+        <CardHeader class="items-center">
+          <CardTitle>Principal 1</CardTitle>
+          <CardAction class="row-span-1">
+            <ActionButton
+              variant="destructive"
+              size="icon-sm"
+              aria-label="Remove principal 1"
+              tooltip="Remove principal 1"
+            >
+              <Trash2 aria-hidden="true" />
+            </ActionButton>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <p class="text-sm text-muted-foreground">Read-only scope on every workspace.</p>
+        </CardContent>
+      </Card>
+    </div>
   ),
 }
 

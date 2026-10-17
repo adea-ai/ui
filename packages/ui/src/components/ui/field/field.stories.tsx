@@ -236,11 +236,18 @@ export const SharedFormField: Story = {
   },
 }
 
-/** Draft validation and controlled updates for numeric values. */
+/**
+ * Draft validation and controlled updates for numeric values. `step` is both the
+ * spinner's increment and the grid a typed value must sit on (measured from
+ * `min`), and a fractional step accepts decimals without `integer={false}`. Try
+ * 0.12 in the confidence field: it is in range but off the 0.05 grid, so it is
+ * announced and never reported through `onChange`.
+ */
 export const Number: Story = {
   render: () => {
     const [workers, setWorkers] = createSignal(4)
     const [ratio, setRatio] = createSignal(1.5)
+    const [confidence, setConfidence] = createSignal(0.5)
 
     return (
       <div class="flex w-96 flex-col gap-4">
@@ -260,9 +267,56 @@ export const Number: Story = {
           integer={false}
           onChange={setRatio}
         />
+        <NumberField
+          label="Default confidence"
+          hint="0 to 1, in steps of 0.05."
+          value={confidence()}
+          min={0}
+          max={1}
+          step={0.05}
+          onChange={setConfidence}
+        />
         <Button size="sm" onClick={() => setWorkers(6)}>
           Set workers to six
         </Button>
+      </div>
+    )
+  },
+}
+
+/**
+ * `optional` lets a numeric limit be left blank: a blank field is valid and reports
+ * `null`, and a `null` value shows a blank field, so a caller needs no `''` to
+ * `undefined` mapping. Range and step checks still apply to a typed value.
+ * `disabled` locks the input while the value stays visible. Clear the document
+ * limit to fall back to the global budget.
+ */
+export const OptionalNumber: Story = {
+  render: () => {
+    const [documents, setDocuments] = createSignal<number | null>(null)
+    const [duration, setDuration] = createSignal<number | null>(3600)
+
+    return (
+      <div class="flex w-96 flex-col gap-4">
+        <NumberField
+          optional
+          label="Document limit"
+          hint="blank uses the global budget"
+          value={documents()}
+          min={1}
+          max={1000000}
+          onChange={setDocuments}
+        />
+        <NumberField
+          optional
+          disabled
+          label="Duration limit (seconds)"
+          hint="locked while the source is syncing"
+          value={duration()}
+          min={1}
+          max={86400}
+          onChange={setDuration}
+        />
       </div>
     )
   },
@@ -290,4 +344,47 @@ export const TwoColumns: Story = {
       </Field>
     </FieldGroup>
   ),
+}
+
+/**
+ * `columns={3}` is the same grid with three columns from `sm`, for a row of short
+ * values — here three numeric limits. Below `sm` the fields stack, so each one
+ * keeps a readable width on a narrow window. A field that needs the full width
+ * says `class="col-span-full"`.
+ */
+export const ThreeColumns: Story = {
+  render: () => {
+    const [working, setWorking] = createSignal(3)
+    const [durable, setDurable] = createSignal(365)
+    const [candidate, setCandidate] = createSignal(7)
+
+    return (
+      <FieldGroup columns={3} class="w-full max-w-176">
+        <NumberField
+          label="Working ceiling (days)"
+          min={1}
+          max={7}
+          value={working()}
+          onChange={setWorking}
+        />
+        <NumberField
+          label="Durable ceiling (days)"
+          min={1}
+          max={3650}
+          value={durable()}
+          onChange={setDurable}
+        />
+        <NumberField
+          label="Candidate expiry (days)"
+          min={1}
+          max={7}
+          value={candidate()}
+          onChange={setCandidate}
+        />
+        <FormField label="Note" hint="A field that spans every column." class="col-span-full">
+          <Input />
+        </FormField>
+      </FieldGroup>
+    )
+  },
 }
