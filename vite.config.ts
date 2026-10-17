@@ -178,7 +178,8 @@ export default defineConfig({
         // workspace root, so that directory appearing or disappearing is one lint miss (a
         // negated glob does not hide a directory's existence). `vp:verify` therefore runs the
         // tests before lint, so a cold and a warm run both lint with `coverage/` present.
-        command: 'bun test --conditions=browser packages/ui/tests --coverage',
+        command:
+          'bun test --conditions=browser --preload ./packages/ui/tests/helpers/solid-transform.ts packages/ui/tests --coverage',
         // After the package tests, as the root `test` script runs it after `turbo run test`.
         dependsOn: ['orch:ui:test', 'orch:storybook:test'],
         cache: {

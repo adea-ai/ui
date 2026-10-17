@@ -1,4 +1,8 @@
 [test]
+# No `preload` here: root `bun test` also runs the dependency-free workflow tests (Design
+# System Gates' Gate scope) before any install, and a global preload would import Babel
+# there. The UI test commands pass `packages/ui/tests/helpers/solid-transform.ts` with
+# `--preload` instead (see its header for why `.tsx` tests need it).
 # The library is a pure component package: every module here is either a
 # component, a class-name helper, or the token/registry data the components
 # read. All of it is testable without a browser, so the bar stays high.
