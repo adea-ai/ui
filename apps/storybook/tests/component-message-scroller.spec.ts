@@ -153,6 +153,54 @@ const approachTop = async (page: Page) => {
     if (top > 100) await atRest(page)
   }
 }
+/**
+ * Park the reader on a turn, then start a load from the "Load earlier messages" control.
+ *
+ * Where the load margin ends is the engine's business: the rows are `content-visibility:
+ * auto`, so a jump to a fixed offset lands where the rows it passed end up sized, and an
+ * offset that starts a load in one engine (300 did, in Chromium) is outside the margin in
+ * another (WebKit's calls stayed 0). So the reader is put on a turn found from the
+ * geometry now (10 px into it, so the turn before is out of view by more than a
+ * sub-pixel), re-aimed until the rows around have stopped resizing, and the load is
+ * started from the control when the engine has not already started it, which loads
+ * wherever the reader is. The anchor the scroller
+ * took is read back, so a test that is about an anchor on that turn fails here, with the
+ * turn it did get, if the setup missed.
+ */
+const parkAndLoad = async (page: Page, id: string) => {
+  await expect
+    .poll(
+      async () => {
+        await scroller(page).evaluate((element, turnId) => {
+          const box = element.getBoundingClientRect()
+          const top = () =>
+            element.querySelector(`[data-anchor-id="${turnId}"]`)!.getBoundingClientRect().top -
+            box.top
+          element.scrollTo({ top: element.scrollTop + top() + 10, behavior: 'instant' })
+        }, id)
+        await atRest(page)
+        return Math.round(
+          await scroller(page).evaluate(
+            (element, turnId) =>
+              element.querySelector(`[data-anchor-id="${turnId}"]`)!.getBoundingClientRect().top -
+              element.getBoundingClientRect().top,
+            id
+          )
+        )
+      },
+      { message: `${id} is 10px above the top of the view once the rows have stopped resizing` }
+    )
+    .toBe(-10)
+  // An engine whose reader is already inside the margin has started the load itself, and
+  // the control is gone; one that is not has the control, and it starts the load.
+  await page.evaluate(() =>
+    document.querySelector<HTMLElement>('[data-slot="message-scroller-older"] button')?.click()
+  )
+  await expect.poll(() => calls(page)).toBe(1)
+  await atRest(page)
+  const taken = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
+  expect(taken, `the anchor taken when the load started`).toBe(id)
+}
 const probe = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.probe)
 const calls = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.calls)
 const turnCount = (page: Page) => page.evaluate(() => (window as FixtureWindow).fixture.turnCount())
@@ -377,11 +425,8 @@ test.describe('history', () => {
     // itself late between the two moves the view.
     await setMode(page, 'gated')
     await settled(page)
-    // Close enough to the top for the load to begin, with the anchor on a turn below the
-    // one the reader will end on.
-    await scroller(page).evaluate((element) => element.scrollTo({ top: 200, behavior: 'instant' }))
-    await expect.poll(() => calls(page)).toBe(1)
-    await atRest(page)
+    // The load begins with the anchor on a turn below the one the reader will end on.
+    await parkAndLoad(page, 'turn-1001')
 
     await scroller(page).evaluate((element) => {
       element.scrollTo({ top: 0, behavior: 'instant' })
@@ -418,11 +463,7 @@ test.describe('history', () => {
     // and nothing the reader is looking at has moved.
     await setMode(page, 'gated')
     await settled(page)
-    await scroller(page).evaluate((element) => element.scrollTo({ top: 300, behavior: 'instant' }))
-    await expect.poll(() => calls(page)).toBe(1)
-    await atRest(page)
-    const anchorId = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
-    expect(anchorId).toBe('turn-1002')
+    await parkAndLoad(page, 'turn-1002')
 
     // The offset turn-1000 has at the top is read in the same task, before the row grows,
     // so the expectation is measured on this engine and not carried over from another.
@@ -463,11 +504,7 @@ test.describe('history', () => {
     // reader was reading, even though some of it is now in view.
     await setMode(page, 'gated')
     await settled(page)
-    await scroller(page).evaluate((element) => element.scrollTo({ top: 300, behavior: 'instant' }))
-    await expect.poll(() => calls(page)).toBe(1)
-    await atRest(page)
-    const anchorId = await page.evaluate(() => (window as FixtureWindow).fixture.probe?.id)
-    expect(anchorId).toBe('turn-1002')
+    await parkAndLoad(page, 'turn-1002')
 
     const geometry = await scroller(page).evaluate((element) => {
       const top = element.getBoundingClientRect().top
