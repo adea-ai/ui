@@ -1,0 +1,28 @@
+{
+  "name": "questionnaire",
+  "type": "registry:ui",
+  "title": "Questionnaire",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/checkbox",
+    "@adea-ai/ui/radio-group",
+    "@adea-ai/ui/textarea",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/questionnaire/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/questionnaire/index.ts"
+    },
+    {
+      "path": "src/components/ui/questionnaire/questionnaire.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/questionnaire/questionnaire.tsx"
+    }
+  ]
+}

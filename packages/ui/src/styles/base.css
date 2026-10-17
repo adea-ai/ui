@@ -449,6 +449,40 @@
 }
 
 /**
+ * Running text. A highlight sweeps across the glyphs of a step that is still in
+ * flight, which is how a line of agent activity says "this is happening" without
+ * a spinner competing with the title for attention. Under reduced motion the
+ * sweep is dropped and the text keeps a steady muted tone; under forced colors
+ * the transparent fill would vanish, so the system text colour is restored.
+ */
+@utility text-shimmer {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--muted-foreground) 35%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 65%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  animation: ds-shimmer 2s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    color: var(--muted-foreground);
+    background-image: none;
+    animation: none;
+  }
+
+  @media (forced-colors: active) {
+    color: CanvasText;
+    background-image: none;
+    animation: none;
+  }
+}
+
+/**
  * A streaming caret: the block that trails the last character of a turn that is
  * still arriving. It is a caret rather than a spinner because the text is already
  * readable and growing — the reader wants to know *where* the stream is, not that

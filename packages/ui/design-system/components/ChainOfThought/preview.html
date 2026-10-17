@@ -1,0 +1,32 @@
+<!-- @dsCard group="Conversation" height=380 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Icons, Trace, ChainOfThought, ChainOfThoughtStep, ChainOfThoughtResults, ChainOfThoughtResult } = window.AdeaUI
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${ChainOfThought} summary="Compared three migration strategies" defaultOpen=${true}>
+          <${ChainOfThoughtStep} icon=${html`<${Icons.Search} />`} label="Searched the docs" status="complete">
+            <${ChainOfThoughtResults} aria-label="Search results">
+              <${ChainOfThoughtResult} icon=${html`<${Icons.FileText} />`} label="docs/migrations.md" />
+              <${ChainOfThoughtResult} icon=${html`<${Icons.FileText} />`} label="docs/rollbacks.md" />
+              <${ChainOfThoughtResult} icon=${html`<${Icons.FileText} />`} label="docs/locking.md" />
+            <//>
+          <//>
+          <${ChainOfThoughtStep} label="Compared the lock behaviour" description="3 options" status="complete" />
+          <${ChainOfThoughtStep} label="Chose a nullable column first" status="complete" />
+        <//>
+        <${ChainOfThought} summary="Reading the codebase" defaultOpen=${true}>
+          <${ChainOfThoughtStep} icon=${html`<${Icons.Search} />`} label="Found the schema files" status="complete" />
+          <${ChainOfThoughtStep} label="Reading the latest migration" status="active" />
+          <${ChainOfThoughtStep} label="Checking the rollback script" status="pending" />
+        <//>
+        <${ChainOfThought} summary="Notes on the approach" defaultOpen=${true}>
+          <${ChainOfThoughtStep} label="The index is on a hot table" />
+          <${ChainOfThoughtStep} label="Build it concurrently" description="avoids the write lock" />
+        <//>
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

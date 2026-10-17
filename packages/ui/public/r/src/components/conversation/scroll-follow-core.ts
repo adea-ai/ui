@@ -169,6 +169,37 @@ export function resolveUserScrollStick(args: {
   return stick
 }
 
+/** What the reader did to the scroller, as far as telling a scroll-up from anything else. */
+export type ReaderInput =
+  | { kind: 'wheel'; deltaY: number }
+  | { kind: 'key'; key: string; shiftKey: boolean }
+  | { kind: 'touchmove' }
+  | { kind: 'pointerdown'; onScroller: boolean }
+
+const SCROLL_UP_KEYS = new Set(['ArrowUp', 'PageUp', 'Home'])
+
+/**
+ * Is this the reader moving the view up, right now?
+ *
+ * A held position (see `createScrollFollow().hold`) is the caller's until the reader takes it,
+ * and only an input that can scroll the view up takes it: a wheel notch up, an up key, a
+ * touch drag, or a press on the scroller itself (its scrollbar or gutter). A click or a
+ * selection inside the content, a letter, a wheel notch down or a down key do not move the
+ * view away from the end, so they leave it where it is.
+ */
+export function isScrollUpIntent(input: ReaderInput): boolean {
+  switch (input.kind) {
+    case 'wheel':
+      return input.deltaY < 0
+    case 'key':
+      return SCROLL_UP_KEYS.has(input.key) || (input.key === ' ' && input.shiftKey)
+    case 'touchmove':
+      return true
+    case 'pointerdown':
+      return input.onScroller
+  }
+}
+
 /** Result of an automatic (RO / append) pin evaluation. */
 export interface AutoPinResult {
   /** Whether to write `el.scrollTop = target` now. */

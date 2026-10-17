@@ -1,0 +1,27 @@
+<!-- @dsCard group="Conversation" height=870 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:20px"></div>
+<script>
+  const { render, html, Questionnaire } = window.AdeaUI
+  const env = [{
+    id: 'env',
+    prompt: 'Which environment should receive the changes?',
+    options: [
+      { id: 'staging', label: 'Staging', description: 'Safe to roll back' },
+      { id: 'prod', label: 'Production', description: 'Customer-facing' },
+    ],
+    allowText: true,
+  }]
+  const text = [{ id: 'env', prompt: 'Which environment should receive the reviewed changes?' }]
+  const answered = [
+    { id: 'env', prompt: 'Which environment?', options: [{ id: 'staging', label: 'Staging' }] },
+    { id: 'note', prompt: 'Anything to avoid?', optional: true },
+  ]
+  render(
+    () => html`
+      <${Questionnaire} questions=${env} />
+      <${Questionnaire} questions=${text} disabledReason="Reconnect to this session to answer." />
+      <${Questionnaire} questions=${answered} status="answered" answers=${{ env: { optionIds: ['staging'], text: '' } }} />
+    `,
+    document.getElementById('root')
+  )
+</script>

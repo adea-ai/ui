@@ -1,0 +1,24 @@
+<!-- @dsCard group="Conversation" height=400 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:20px"></div>
+<script>
+  const { render, html, Queue, QueueFollowUps } = window.AdeaUI
+  const items = [
+    { text: 'Read the migration plan', status: 'complete' },
+    { text: 'Add the nullable column', status: 'complete' },
+    { text: 'Backfill locale in batches', description: 'Paused between batches', status: 'active' },
+    { text: 'Add the not-null constraint', status: 'pending' },
+    { text: 'Create the index concurrently' },
+  ]
+  const waiting = [
+    { text: 'Also update the README when you are done', onRemove: (_event) => {} },
+    { text: 'And run the full test suite afterwards', onRemove: (_event) => {} },
+    { text: 'Already past recall' },
+  ]
+  render(
+    () => html`
+      <${Queue} items=${items} defaultCompletedOpen=${true} />
+      <${QueueFollowUps} items=${waiting} />
+    `,
+    document.getElementById('root')
+  )
+</script>

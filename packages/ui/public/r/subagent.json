@@ -1,0 +1,27 @@
+{
+  "name": "subagent",
+  "type": "registry:ui",
+  "title": "Subagent",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/code-block",
+    "@adea-ai/ui/reasoning",
+    "@adea-ai/ui/scroll-area",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/subagent/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/subagent/index.ts"
+    },
+    {
+      "path": "src/components/composites/subagent/subagent.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/subagent/subagent.tsx"
+    }
+  ]
+}

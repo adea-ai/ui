@@ -21,6 +21,7 @@ import {
   isSelfScroll,
   resolveUserScrollStick,
   evaluateAutoPin,
+  isScrollUpIntent,
   atBottomEpsilon,
   SELF_SCROLL_EPSILON,
   DEFAULT_BOTTOM_THRESHOLD,
@@ -659,5 +660,28 @@ describe('resolveUserScrollStick — a clamp only ever lowers scrollTop', () => 
       viewportGrowth: 50,
     })
     expect(armed).toBe(false)
+  })
+})
+
+describe('isScrollUpIntent — what takes a held position back from the caller', () => {
+  it('a wheel notch up does, a notch down or sideways does not', () => {
+    expect(isScrollUpIntent({ kind: 'wheel', deltaY: -1 })).toBe(true)
+    expect(isScrollUpIntent({ kind: 'wheel', deltaY: 120 })).toBe(false)
+    expect(isScrollUpIntent({ kind: 'wheel', deltaY: 0 })).toBe(false)
+  })
+
+  it('the keys that scroll the view up do, other keys and the down keys do not', () => {
+    for (const key of ['ArrowUp', 'PageUp', 'Home'])
+      expect(isScrollUpIntent({ kind: 'key', key, shiftKey: false })).toBe(true)
+    expect(isScrollUpIntent({ kind: 'key', key: ' ', shiftKey: true })).toBe(true)
+    for (const key of ['ArrowDown', 'PageDown', 'End', ' ', 'a', 'Enter', 'Shift', 'Tab'])
+      expect(isScrollUpIntent({ kind: 'key', key, shiftKey: false })).toBe(false)
+  })
+
+  it('a touch drag does, and a press does only on the scroller itself (scrollbar, gutter)', () => {
+    expect(isScrollUpIntent({ kind: 'touchmove' })).toBe(true)
+    expect(isScrollUpIntent({ kind: 'pointerdown', onScroller: true })).toBe(true)
+    // A click or the start of a text selection inside the content moves nothing.
+    expect(isScrollUpIntent({ kind: 'pointerdown', onScroller: false })).toBe(false)
   })
 })

@@ -1,0 +1,31 @@
+<!-- @dsCard group="Conversation" height=400 -->
+<div id="root" style="padding:16px;max-width:560px"></div>
+<script>
+  const { render, html, Icons, Trace, TraceLine, TraceDetail, CodeBlock } = window.AdeaUI
+  const typecheck = 'src/a.ts(3,1): error TS2322: Type string is not assignable to type number.\nsrc/b.ts(9,5): error TS2339: Property id does not exist on type Row.'
+  const open = (_event) => {}
+  render(
+    () => html`
+      <${Trace} aria-label="Agent activity">
+        <${TraceLine} icon=${html`<${Icons.Search} />`} title="Searched the project" description="4 results" status="success" />
+        <${TraceLine} icon=${html`<${Icons.Terminal} />`} title="Checked the build" description="1 of 3 failed" status="error" defaultOpen=${true}>
+          <${Trace} size="sm" aria-label="Build steps">
+            <${TraceLine} title="bun run lint" status="success" meta="4.1s" />
+            <${TraceLine} title="bun run typecheck" status="error" meta="12s" defaultOpen=${true}>
+              <${TraceDetail}>
+                <${CodeBlock} size="sm" language="text" code=${typecheck} complete=${true} />
+              <//>
+            <//>
+            <${TraceLine} title="bun run test" status="pending" />
+          <//>
+        <//>
+        <${TraceLine} title="Reading the migration plan" status="running" meta="2s" />
+        <${TraceLine} title="Fetched the changelog" status="cancelled" />
+        <${TraceLine} icon=${html`<${Icons.FileText} />`} title="docs/specs/dev-runtime.md" href="https://example.com/spec" />
+        <${TraceLine} icon=${html`<${Icons.Terminal} />`} title="Open full output" onSelect=${(_event) => open()} />
+        <${TraceLine} icon=${html`<${Icons.Info} />`} title="No status given" description="the producer did not say" />
+      <//>
+    `,
+    document.getElementById('root')
+  )
+</script>

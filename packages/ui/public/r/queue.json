@@ -1,0 +1,26 @@
+{
+  "name": "queue",
+  "type": "registry:ui",
+  "title": "Queue",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/task",
+    "@adea-ai/ui/trace"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/queue/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/queue/index.ts"
+    },
+    {
+      "path": "src/components/composites/queue/queue.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/queue/queue.tsx"
+    }
+  ]
+}

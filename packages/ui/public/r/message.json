@@ -1,0 +1,33 @@
+{
+  "name": "message",
+  "type": "registry:ui",
+  "title": "Message",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/code-block",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/message/cite-ranges.ts",
+      "type": "registry:ui",
+      "target": "components/ui/message/cite-ranges.ts"
+    },
+    {
+      "path": "src/components/ui/message/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/message/index.ts"
+    },
+    {
+      "path": "src/components/ui/message/message.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/message/message.tsx"
+    },
+    {
+      "path": "src/components/ui/message/parse-message-text.ts",
+      "type": "registry:ui",
+      "target": "components/ui/message/parse-message-text.ts"
+    }
+  ]
+}

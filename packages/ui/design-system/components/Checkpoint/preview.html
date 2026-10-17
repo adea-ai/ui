@@ -1,0 +1,16 @@
+<!-- @dsCard group="Conversation" height=210 -->
+<div id="root" style="padding:16px;max-width:560px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, Checkpoint } = window.AdeaUI
+  const restore = (_event) => {}
+  render(
+    () => html`
+      <${Checkpoint} label="Before the refactor" time="10:02" />
+      <${Checkpoint} label="Before the refactor" time="10:02" onRestore=${restore}
+        consequence="Undoes the 14 file edits and 3 commands made after 10:02. Messages stay; the working tree returns to this point." />
+      <${Checkpoint} label="After the schema change" time="10:41" state="restored" onRestore=${restore} />
+      <${Checkpoint} label="Before the backfill" time="11:20" state="failed" error="The snapshot is no longer available." onRestore=${restore} />
+    `,
+    document.getElementById('root')
+  )
+</script>

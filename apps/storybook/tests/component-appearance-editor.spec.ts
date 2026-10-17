@@ -468,6 +468,11 @@ test('font controls remain keyboard accessible and all text roles scale at 200%'
 
   await page.keyboard.press('Enter')
   await expect(menu).toBeVisible()
+  // The menu is visible before its focus scope has taken focus, and a Tab that arrives in
+  // that gap leaves focus on the document. A reader presses Tab from inside the menu.
+  await expect
+    .poll(() => menu.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true)
   await page.keyboard.press('Tab')
   await expect(family).toHaveAttribute('aria-expanded', 'false')
   await expect(size).toBeFocused()

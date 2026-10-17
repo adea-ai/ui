@@ -78,11 +78,14 @@ test('Tab cycles the enabled rows; outside pointer dismissal preserves its actio
 }) => {
   const trigger = page.getByRole('button', { name: 'Send options' })
   await trigger.press('ArrowDown')
-  await page.getByRole('menuitemradio', { name: /Steer/ }).press('Tab')
+  const steer = page.getByRole('menuitemradio', { name: /Steer/ })
+  // The menu focuses its first row on a deferred timer after it opens, and that focus resets
+  // the focused row. A reader presses Tab once the menu has focus, so wait for it first.
+  await expect(steer).toBeFocused()
+  await page.keyboard.press('Tab')
   const queue = page.getByRole('menuitemradio', { name: /Queue/ })
   await expect(queue).toBeFocused()
   await queue.press('Tab')
-  const steer = page.getByRole('menuitemradio', { name: /Steer/ })
   await expect(steer).toBeFocused()
   await steer.press('Shift+Tab')
   await expect(queue).toBeFocused()

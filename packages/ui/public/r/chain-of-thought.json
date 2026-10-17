@@ -1,0 +1,26 @@
+{
+  "name": "chain-of-thought",
+  "type": "registry:ui",
+  "title": "Chain Of Thought",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/badge",
+    "@adea-ai/ui/trace",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/chain-of-thought/chain-of-thought.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/chain-of-thought/chain-of-thought.tsx"
+    },
+    {
+      "path": "src/components/composites/chain-of-thought/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/chain-of-thought/index.ts"
+    }
+  ]
+}

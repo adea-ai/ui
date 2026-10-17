@@ -1,0 +1,24 @@
+{
+  "name": "suggestion",
+  "type": "registry:ui",
+  "title": "Suggestion",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/sources",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/suggestion/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/suggestion/index.ts"
+    },
+    {
+      "path": "src/components/composites/suggestion/suggestion.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/suggestion/suggestion.tsx"
+    }
+  ]
+}
