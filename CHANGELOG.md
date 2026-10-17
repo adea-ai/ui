@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.142.2](https://github.com/adea-ai/ui/compare/v0.142.1...v0.142.2) (2026-10-17)
+
+
+### Maintenance
+
+* **deps:** align TypeScript compiler and preserve API compatibility ([#460](https://github.com/adea-ai/ui/issues/460)) ([3eb1cdb](https://github.com/adea-ai/ui/commit/3eb1cdbadb8c2c337e31b2faf590956c536ddc3b))
+
 ## [0.142.1](https://github.com/adea-ai/ui/compare/v0.142.0...v0.142.1) (2026-10-17)
 
 
