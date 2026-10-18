@@ -144,6 +144,50 @@ render(() => {
           </For>
         </TopBarSection>
       </TopBar>
+      <TopBar aria-label="Wide centre saturated toolbar" centerWidth="wide">
+        <TopBarSection>
+          <For each={['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight']}>
+            {(name) => (
+              <ActionButton
+                tooltip={`Saturated lead ${name}`}
+                aria-label={`Saturated lead ${name}`}
+                size="icon-sm"
+                onClick={() => setLastAction(`Saturated lead ${name}`)}
+              >
+                <ArrowLeft aria-hidden="true" />
+              </ActionButton>
+            )}
+          </For>
+        </TopBarSection>
+        <div class="flex w-full min-w-0 items-center gap-2 justify-self-center">
+          <input
+            aria-label="Saturated search with an action"
+            class="h-control-md min-w-0 flex-1 rounded-md border border-input px-3"
+          />
+          <ActionButton
+            tooltip="Saturated reflect"
+            aria-label="Saturated reflect"
+            size="icon-sm"
+            onClick={() => setLastAction('Saturated reflect')}
+          >
+            <Search aria-hidden="true" />
+          </ActionButton>
+        </div>
+        <TopBarSection align="end">
+          <For each={['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight']}>
+            {(name) => (
+              <ActionButton
+                tooltip={`Saturated trail ${name}`}
+                aria-label={`Saturated trail ${name}`}
+                size="icon-sm"
+                onClick={() => setLastAction(`Saturated trail ${name}`)}
+              >
+                <Search aria-hidden="true" />
+              </ActionButton>
+            )}
+          </For>
+        </TopBarSection>
+      </TopBar>
       <output aria-live="polite">{lastAction()}</output>
     </main>
   )

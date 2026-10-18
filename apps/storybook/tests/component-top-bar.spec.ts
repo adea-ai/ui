@@ -372,6 +372,93 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
   }
 })
 
+test('a wide bar whose side groups are both full keeps a usable, contained centre across the wrap threshold', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+  const bar = page.locator('[data-slot="top-bar"][aria-label="Wide centre saturated toolbar"]')
+
+  for (const factor of [1, 2]) {
+    const rem = 16 * factor
+    await page.evaluate((scale) => {
+      document.documentElement.style.fontSize = `${16 * scale}px`
+    }, factor)
+    // The row's content box runs from just above the 19rem wrap threshold to
+    // well past it; the two side groups hold eight controls each, so both
+    // reach their caps the whole way.
+    for (const remWidth of [19.1, 20, 21.9, 24, 28, 32, 44]) {
+      await page.setViewportSize({ width: Math.ceil((remWidth + 1.5) * rem), height: 844 })
+      const where = `${remWidth}rem row at ${factor}x text`
+      await page.evaluate(() => {
+        for (const section of document.querySelectorAll('[data-slot="top-bar-section"]'))
+          section.scrollLeft = 0
+      })
+      const measured = await bar.evaluate((element) => {
+        const input = element.querySelector('input')!.getBoundingClientRect()
+        const [leading, centre, trailing] = [...element.children] as [
+          HTMLElement,
+          HTMLElement,
+          HTMLElement,
+        ]
+        const centreBox = centre.getBoundingClientRect()
+        const style = getComputedStyle(element)
+        return {
+          wrapped: centreBox.top >= leading.getBoundingClientRect().bottom - 1,
+          input: input.width,
+          inputInside: input.left >= centreBox.left - 1 && input.right <= centreBox.right + 1,
+          action:
+            centre.querySelector('button')!.getBoundingClientRect().right <= centreBox.right + 1,
+          leadingScrollLeft: leading.scrollLeft,
+          trailingBox: trailing.getBoundingClientRect().width,
+          content:
+            element.clientWidth -
+            Number.parseFloat(style.paddingLeft) -
+            Number.parseFloat(style.paddingRight),
+        }
+      })
+      expect(measured.inputInside, `${where}: input stays inside the centre`).toBe(true)
+      expect(measured.action, `${where}: the action stays inside the centre`).toBe(true)
+      expect(
+        measured.leadingScrollLeft,
+        `${where}: the first leading control is not scrolled away`
+      ).toBe(0)
+      // A search field must leave room for a few characters: 2.5rem at least.
+      expect(
+        measured.input,
+        `${where}: the search input keeps a usable width`
+      ).toBeGreaterThanOrEqual(2.5 * rem)
+
+      // Keyboard access: tabbing through every control reveals each one inside
+      // its own visible box and inside the window.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+      await bar.locator('button').first().focus()
+      const count = await bar.locator('button, input').count()
+      for (let step = 0; step < count; step += 1) {
+        const focused = await page.evaluate(() => {
+          const active = document.activeElement as HTMLElement
+          const own = active.getBoundingClientRect()
+          const section = active.closest('[data-slot="top-bar-section"]')
+          const box = (section ?? active.parentElement!).getBoundingClientRect()
+          return {
+            name: active.getAttribute('aria-label'),
+            inside:
+              own.left >= box.left - 1 &&
+              own.right <= box.right + 1 &&
+              own.left >= -1 &&
+              own.right <= window.innerWidth + 1,
+          }
+        })
+        expect(focused.inside, `${where}: ${focused.name} is visible when focused`).toBe(true)
+        await page.keyboard.press('Tab')
+      }
+    }
+  }
+})
+
 test('the search chord stays out of the button accessible name', async ({ page }) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
