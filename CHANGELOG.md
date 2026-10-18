@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.142.4](https://github.com/adea-ai/ui/compare/v0.142.3...v0.142.4) (2026-10-18)
+
+
+### Bug Fixes
+
+* **top-bar:** keep every wide-bar control usable at narrow widths and enlarged text ([#465](https://github.com/adea-ai/ui/issues/465)) ([576d629](https://github.com/adea-ai/ui/commit/576d629c4870d0cbc70425346e913cd86c4a97a0))
+
 ## [0.142.3](https://github.com/adea-ai/ui/compare/v0.142.2...v0.142.3) (2026-10-17)
 
 
