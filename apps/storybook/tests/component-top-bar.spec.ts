@@ -381,16 +381,26 @@ test('a wide bar whose side groups are both full keeps a usable, contained centr
   await page.addStyleTag({ content: css })
   await page.addScriptTag({ content: script })
   const bar = page.locator('[data-slot="top-bar"][aria-label="Wide centre saturated toolbar"]')
+  const tabKey =
+    test.info().project.name === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+  const numbers = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight']
+  // DOM order is the keyboard order: leading group, search, action, trailing group.
+  const expectedOrder = [
+    ...numbers.map((name) => `Saturated lead ${name}`),
+    'Saturated search with an action',
+    'Saturated reflect',
+    ...numbers.map((name) => `Saturated trail ${name}`),
+  ]
 
   for (const factor of [1, 2]) {
     const rem = 16 * factor
     await page.evaluate((scale) => {
       document.documentElement.style.fontSize = `${16 * scale}px`
     }, factor)
-    // The row's content box runs from just above the 19rem wrap threshold to
+    // The row's content box runs from well below the 19rem wrap threshold to
     // well past it; the two side groups hold eight controls each, so both
     // reach their caps the whole way.
-    for (const remWidth of [19.1, 20, 21.9, 24, 28, 32, 44]) {
+    for (const remWidth of [12, 16, 18.9, 19.1, 20, 21.9, 24, 28, 32, 44]) {
       await page.setViewportSize({ width: Math.ceil((remWidth + 1.5) * rem), height: 844 })
       const where = `${remWidth}rem row at ${factor}x text`
       await page.evaluate(() => {
@@ -420,6 +430,11 @@ test('a wide bar whose side groups are both full keeps a usable, contained centr
             Number.parseFloat(style.paddingRight),
         }
       })
+      // Below 19rem the centre sits on a row of its own; at and above it, beside
+      // the side groups. Both sides of the threshold are asserted.
+      expect(measured.wrapped, `${where}: wraps exactly below 19rem`).toBe(
+        measured.content < 19 * rem
+      )
       expect(measured.inputInside, `${where}: input stays inside the centre`).toBe(true)
       expect(measured.action, `${where}: the action stays inside the centre`).toBe(true)
       expect(
@@ -432,12 +447,11 @@ test('a wide bar whose side groups are both full keeps a usable, contained centr
         `${where}: the search input keeps a usable width`
       ).toBeGreaterThanOrEqual(2.5 * rem)
 
-      // Keyboard access: tabbing through every control reveals each one inside
-      // its own visible box and inside the window.
+      // Keyboard access: tabbing visits every control in DOM order, and each one
+      // is revealed inside its own visible box and inside the window when focused.
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
       await bar.locator('button').first().focus()
-      const count = await bar.locator('button, input').count()
-      for (let step = 0; step < count; step += 1) {
+      for (const [step, expected] of expectedOrder.entries()) {
         const focused = await page.evaluate(() => {
           const active = document.activeElement as HTMLElement
           const own = active.getBoundingClientRect()
@@ -452,8 +466,9 @@ test('a wide bar whose side groups are both full keeps a usable, contained centr
               own.right <= window.innerWidth + 1,
           }
         })
-        expect(focused.inside, `${where}: ${focused.name} is visible when focused`).toBe(true)
-        await page.keyboard.press('Tab')
+        expect(focused.name, `${where}: tab stop ${step + 1} is ${expected}`).toBe(expected)
+        expect(focused.inside, `${where}: ${expected} is visible when focused`).toBe(true)
+        if (step < expectedOrder.length - 1) await page.keyboard.press(tabKey)
       }
     }
   }
