@@ -65,6 +65,14 @@ render(() => {
       </TopBar>
       <TopBar aria-label="Wide centre toolbar" centerWidth="wide">
         <TopBarSection>
+          <ActionButton
+            tooltip="Toggle navigation"
+            aria-label="Toggle navigation"
+            size="icon-sm"
+            onClick={() => setLastAction('Toggle navigation')}
+          >
+            <ArrowLeft aria-hidden="true" />
+          </ActionButton>
           <TopBarTitle>Wide centre</TopBarTitle>
         </TopBarSection>
         <div class="flex w-full min-w-0 items-center gap-2 justify-self-center">
@@ -81,7 +89,60 @@ render(() => {
             <Search aria-hidden="true" />
           </ActionButton>
         </div>
-        <TopBarSection align="end" />
+        <TopBarSection align="end">
+          <For each={['Status', 'Actions']}>
+            {(name) => (
+              <ActionButton
+                tooltip={name}
+                aria-label={`Wide ${name}`}
+                size="icon-sm"
+                onClick={() => setLastAction(`Wide ${name}`)}
+              >
+                <Search aria-hidden="true" />
+              </ActionButton>
+            )}
+          </For>
+        </TopBarSection>
+      </TopBar>
+      <TopBar aria-label="Wide centre compact toolbar" centerWidth="wide">
+        <TopBarSection>
+          <ActionButton
+            tooltip="Compact navigation"
+            aria-label="Compact navigation"
+            size="icon-sm"
+            onClick={() => setLastAction('Compact navigation')}
+          >
+            <ArrowLeft aria-hidden="true" />
+          </ActionButton>
+        </TopBarSection>
+        <div class="flex w-full min-w-0 items-center gap-2 justify-self-center">
+          <input
+            aria-label="Compact search with an action"
+            class="h-control-md min-w-0 flex-1 rounded-md border border-input px-3"
+          />
+          <ActionButton
+            tooltip="Compact reflect"
+            aria-label="Compact reflect"
+            size="icon-sm"
+            onClick={() => setLastAction('Compact reflect')}
+          >
+            <Search aria-hidden="true" />
+          </ActionButton>
+        </div>
+        <TopBarSection align="end">
+          <For each={['Status', 'Actions']}>
+            {(name) => (
+              <ActionButton
+                tooltip={name}
+                aria-label={`Compact ${name}`}
+                size="icon-sm"
+                onClick={() => setLastAction(`Compact ${name}`)}
+              >
+                <Search aria-hidden="true" />
+              </ActionButton>
+            )}
+          </For>
+        </TopBarSection>
       </TopBar>
       <output aria-live="polite">{lastAction()}</output>
     </main>

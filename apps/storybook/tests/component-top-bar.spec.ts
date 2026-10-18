@@ -243,9 +243,10 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
   const mid = await tracks('Wide centre toolbar')
   expect(mid[1]).toBeGreaterThan(1000 * 0.22)
 
-  // The leading title is wide at 200% text. The centre must keep its controls
-  // inside its own track (the side groups scroll instead of squeezing it), and
-  // the document must not overflow.
+  // The leading title is wide at 200% text. At every width and text size the
+  // controls of both bars must stay inside the row, never paint over one
+  // another, and keep their first leading control fully visible; when the row
+  // is narrower than 19rem the centre drops to a row of its own (and only then).
   for (const width of [1440, 1000, 390, 320]) {
     await page.setViewportSize({ width, height: 844 })
     for (const factor of [1, 2]) {
@@ -255,28 +256,118 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
         .toBe(true)
-      const centre = await page
-        .locator('[data-slot="top-bar"][aria-label="Wide centre toolbar"]')
-        .evaluate((bar) => {
-          const cluster = bar.children[1] as HTMLElement
-          const track = cluster.getBoundingClientRect()
-          const controls = [...cluster.children].map((child) => child.getBoundingClientRect())
-          return {
-            width: track.width,
-            fits: cluster.scrollWidth <= cluster.clientWidth + 1,
-            controlsInside: controls.every(
-              (rect) => rect.left >= track.left - 1 && rect.right <= track.right + 1
-            ),
-            documentFits: track.right <= window.innerWidth,
-          }
-        })
-      expect(centre.fits, `${width}px at ${factor}x text: centre content fits its track`).toBe(true)
-      expect(centre.controlsInside, `${width}px at ${factor}x text: controls inside`).toBe(true)
-      expect(centre.documentFits).toBe(true)
-      expect(
-        centre.width,
-        `${width}px at ${factor}x text: centre keeps 7rem`
-      ).toBeGreaterThanOrEqual(7 * 16 * factor - 1)
+
+      for (const label of ['Wide centre compact toolbar', 'Wide centre toolbar']) {
+        const state = await page
+          .locator(`[data-slot="top-bar"][aria-label="${label}"]`)
+          .evaluate((bar, scale) => {
+            const style = getComputedStyle(bar)
+            const content =
+              bar.clientWidth -
+              Number.parseFloat(style.paddingLeft) -
+              Number.parseFloat(style.paddingRight)
+            const [leading, centre, trailing] = [...bar.children] as [
+              HTMLElement,
+              HTMLElement,
+              HTMLElement,
+            ]
+            const barBox = bar.getBoundingClientRect()
+            const leadingBox = leading.getBoundingClientRect()
+            const centreBox = centre.getBoundingClientRect()
+            const trailingBox = trailing.getBoundingClientRect()
+            // Visible part of each control: what its side group does not clip.
+            const visible = [...bar.querySelectorAll('button, input')].map((control) => {
+              const own = control.getBoundingClientRect()
+              const section = control.closest('[data-slot="top-bar-section"]')
+              const box = (section ?? bar).getBoundingClientRect()
+              return {
+                name: control.getAttribute('aria-label') ?? control.textContent?.trim() ?? '',
+                left: Math.max(own.left, box.left),
+                right: Math.min(own.right, box.right),
+                top: own.top,
+                bottom: own.bottom,
+              }
+            })
+            const overlaps = visible.flatMap((one, index) =>
+              visible
+                .slice(index + 1)
+                .flatMap((other) =>
+                  Math.min(one.right, other.right) - Math.max(one.left, other.left) > 1 &&
+                  Math.min(one.bottom, other.bottom) - Math.max(one.top, other.top) > 1
+                    ? [`${one.name} / ${other.name}`]
+                    : []
+                )
+            )
+            const sides = [leading, trailing].map((section) => {
+              const box = section.getBoundingClientRect()
+              const first = section.querySelector('button')!.getBoundingClientRect()
+              return {
+                scrolls: section.scrollWidth > section.clientWidth + 1,
+                firstVisible: first.left >= box.left - 1 && first.right <= box.right + 1,
+                scrollLeft: section.scrollLeft,
+              }
+            })
+            return {
+              content,
+              height: barBox.height,
+              columnGap: Number.parseFloat(style.columnGap),
+              wrapped: centreBox.top >= leadingBox.bottom - 1,
+              sidesShareRow: Math.abs(leadingBox.top - trailingBox.top) <= 1,
+              centreWidth: centreBox.width,
+              centreFits: centre.scrollWidth <= centre.clientWidth + 1,
+              centreInside: [...centre.children].every((child) => {
+                const box = child.getBoundingClientRect()
+                return box.left >= centreBox.left - 1 && box.right <= centreBox.right + 1
+              }),
+              barInside: barBox.right <= window.innerWidth + 1,
+              overlaps,
+              sides,
+              topbarHeight: 3 * 16 * scale,
+            }
+          }, factor)
+        const where = `${width}px at ${factor}x text: ${label}`
+        expect(state.wrapped, `${where}: centre drops to its own row only below 19rem`).toBe(
+          state.content < 19 * 16 * factor
+        )
+        expect(state.overlaps, `${where}: no control paints over another`).toEqual([])
+        expect(state.centreFits, `${where}: centre content fits its track`).toBe(true)
+        expect(state.centreInside, `${where}: centre controls inside the centre`).toBe(true)
+        expect(state.barInside, `${where}: bar stays inside the window`).toBe(true)
+        for (const side of state.sides) {
+          expect(
+            side.firstVisible && side.scrollLeft === 0,
+            `${where}: first control of each side group stays visible`
+          ).toBe(true)
+        }
+        if (state.wrapped) {
+          expect(state.sidesShareRow, `${where}: side groups share the first row`).toBe(true)
+          expect(state.height, `${where}: a wrapped bar is taller than one row`).toBeGreaterThan(
+            state.topbarHeight + 1
+          )
+        } else {
+          // One row keeps the bar's height. The centre is the remainder between
+          // two side groups each capped at 40% of the row's content box, so it
+          // keeps at least 20% of it (less the two gaps) however long the side
+          // groups are. A fixed 7rem floor was the old guarantee; it scaled with
+          // the text and pushed a short leading control out of the row.
+          expect(state.height, `${where}: one row keeps the bar height`).toBeCloseTo(
+            state.topbarHeight,
+            0
+          )
+          expect(
+            state.centreWidth,
+            `${where}: centre keeps its guaranteed minimum`
+          ).toBeGreaterThanOrEqual(
+            Math.min(7 * 16 * factor, 0.2 * state.content - 2 * state.columnGap) - 1
+          )
+        }
+        if (label === 'Wide centre compact toolbar') {
+          expect(
+            state.sides.map((side) => side.scrolls),
+            `${where}: compact side groups never scroll`
+          ).toEqual([false, false])
+        }
+      }
     }
   }
 })
