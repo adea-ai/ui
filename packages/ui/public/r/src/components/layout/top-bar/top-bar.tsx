@@ -14,9 +14,22 @@ import { cn } from '../../../lib/utils'
  *
  * The centre track is sized for a lone search field. A bar whose centre holds
  * more than that, such as a search plus an action beside it, passes
- * `centerWidth="wide"`: the centre then stays fluid below 1280px, never
- * narrower than 7rem so its controls are not squeezed out by a long leading
- * group (which scrolls instead), and takes a wider fixed track above it.
+ * `centerWidth="wide"`: the centre then stays fluid below 1280px, with each
+ * side group sized to its content but capped between 30% and 40% of the row
+ * (a longer group scrolls instead): the cap is 30% on the narrowest rows and
+ * grows to 40% as the row widens, so full side groups never squeeze the
+ * centre's search out of it and enlarged text never pushes a short leading
+ * control such as a navigation toggle out of the row. Above 1280px it takes a
+ * wider fixed track.
+ *
+ * A wide bar also never squeezes its centre to nothing. When the row is
+ * narrower than 19rem (measured in rem, so enlarged text reaches it at a wider
+ * window) the centre moves to a second row of its own and the two side groups
+ * share the first, the trailing group taking the remainder beside the leading
+ * group's cap, so the leading and trailing controls and the whole centre each
+ * keep a full row instead of fighting for one. The bar grows from one row
+ * to two only then. The wide layout places the leading group, centre and
+ * trailing group as its first, second and third children.
  *
  * On a frameless desktop window this row is also the drag region, so it carries
  * `window-drag` and the controls inside it opt back out. `macos-inset` and
@@ -35,9 +48,11 @@ export type TopBarProps = ComponentProps<'header'> & {
   glass?: boolean
   /**
    * How wide the centre track is. `field` (default) suits a lone search field.
-   * `wide` suits a centre that also holds an action: fluid below 1280px and
-   * never narrower than 7rem (the side groups scroll to make room), then a
-   * clamp of 32vw up to 672px between equal side tracks.
+   * `wide` suits a centre that also holds an action: fluid below 1280px between
+   * side groups sized to their content and capped between 30% and 40% of the
+   * row (a longer group scrolls), then a clamp of 32vw up to 672px between equal
+   * side tracks.
+   * Below a 19rem row the centre drops to a second row of its own.
    */
   centerWidth?: 'field' | 'wide'
 }
@@ -57,8 +72,12 @@ export function TopBar(props: TopBarProps) {
       data-slot="top-bar"
       class={cn(
         'h-topbar relative z-(--z-sticky) grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-card text-card-foreground md:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,480px)_minmax(0,1fr)]',
+        /* The bar is its own container so its children can move to a second
+           row by the row's width in rem, which enlarged text shrinks. The
+           first row keeps the bar's height (less the 1px bottom border); the
+           second only exists when the centre has dropped onto it. */
         local.centerWidth === 'wide' &&
-          'grid-cols-[auto_minmax(7rem,1fr)_auto] gap-2 md:grid-cols-[auto_minmax(7rem,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_clamp(240px,32vw,672px)_minmax(0,1fr)]',
+          '@container/top-bar h-auto grid-cols-[fit-content(max(30%,min(40%,calc(50%-3.75rem))))_minmax(0,1fr)_fit-content(max(30%,min(40%,calc(50%-3.75rem))))] grid-rows-[minmax(calc(var(--topbar-height)-1px),auto)] gap-x-2 gap-y-0 md:grid-cols-[fit-content(max(30%,min(40%,calc(50%-3.75rem))))_minmax(0,1fr)_fit-content(max(30%,min(40%,calc(50%-3.75rem))))] xl:grid-cols-[minmax(0,1fr)_clamp(240px,32vw,672px)_minmax(0,1fr)] [&>:nth-child(2)]:@max-[19rem]/top-bar:col-span-full [&>:nth-child(2)]:@max-[19rem]/top-bar:row-start-2 [&>:nth-child(2)]:@max-[19rem]/top-bar:pb-2 [&>:nth-child(3)]:@max-[19rem]/top-bar:col-span-2 [&>:nth-child(3)]:@max-[19rem]/top-bar:col-start-2 [&>:nth-child(3)]:@max-[19rem]/top-bar:row-start-1',
         local.glass && 'glass-panel',
         local.draggable && 'window-drag',
         /* Each edge gets exactly one inline-padding utility. A window inset
@@ -93,7 +112,7 @@ export function TopBarSection(props: ComponentProps<'div'> & { align?: 'start' |
       data-slot="top-bar-section"
       class={cn(
         'window-no-drag flex min-w-0 items-center gap-2 overflow-x-auto overflow-y-hidden',
-        local.align === 'end' && 'md:justify-end',
+        local.align === 'end' && 'md:justify-end-safe',
         local.align !== 'end' && 'justify-start',
         local.class
       )}

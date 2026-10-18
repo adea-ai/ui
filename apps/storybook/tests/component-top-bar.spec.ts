@@ -243,9 +243,10 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
   const mid = await tracks('Wide centre toolbar')
   expect(mid[1]).toBeGreaterThan(1000 * 0.22)
 
-  // The leading title is wide at 200% text. The centre must keep its controls
-  // inside its own track (the side groups scroll instead of squeezing it), and
-  // the document must not overflow.
+  // The leading title is wide at 200% text. At every width and text size the
+  // controls of both bars must stay inside the row, never paint over one
+  // another, and keep their first leading control fully visible; when the row
+  // is narrower than 19rem the centre drops to a row of its own (and only then).
   for (const width of [1440, 1000, 390, 320]) {
     await page.setViewportSize({ width, height: 844 })
     for (const factor of [1, 2]) {
@@ -255,28 +256,220 @@ test('centerWidth="wide" widens the centre track only above 1280px and never ove
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
         .toBe(true)
-      const centre = await page
-        .locator('[data-slot="top-bar"][aria-label="Wide centre toolbar"]')
-        .evaluate((bar) => {
-          const cluster = bar.children[1] as HTMLElement
-          const track = cluster.getBoundingClientRect()
-          const controls = [...cluster.children].map((child) => child.getBoundingClientRect())
+
+      for (const label of ['Wide centre compact toolbar', 'Wide centre toolbar']) {
+        const state = await page
+          .locator(`[data-slot="top-bar"][aria-label="${label}"]`)
+          .evaluate((bar, scale) => {
+            const style = getComputedStyle(bar)
+            const content =
+              bar.clientWidth -
+              Number.parseFloat(style.paddingLeft) -
+              Number.parseFloat(style.paddingRight)
+            const [leading, centre, trailing] = [...bar.children] as [
+              HTMLElement,
+              HTMLElement,
+              HTMLElement,
+            ]
+            const barBox = bar.getBoundingClientRect()
+            const leadingBox = leading.getBoundingClientRect()
+            const centreBox = centre.getBoundingClientRect()
+            const trailingBox = trailing.getBoundingClientRect()
+            // Visible part of each control: what its side group does not clip.
+            const visible = [...bar.querySelectorAll('button, input')].map((control) => {
+              const own = control.getBoundingClientRect()
+              const section = control.closest('[data-slot="top-bar-section"]')
+              const box = (section ?? bar).getBoundingClientRect()
+              return {
+                name: control.getAttribute('aria-label') ?? control.textContent?.trim() ?? '',
+                left: Math.max(own.left, box.left),
+                right: Math.min(own.right, box.right),
+                top: own.top,
+                bottom: own.bottom,
+              }
+            })
+            const overlaps = visible.flatMap((one, index) =>
+              visible
+                .slice(index + 1)
+                .flatMap((other) =>
+                  Math.min(one.right, other.right) - Math.max(one.left, other.left) > 1 &&
+                  Math.min(one.bottom, other.bottom) - Math.max(one.top, other.top) > 1
+                    ? [`${one.name} / ${other.name}`]
+                    : []
+                )
+            )
+            const sides = [leading, trailing].map((section) => {
+              const box = section.getBoundingClientRect()
+              const first = section.querySelector('button')!.getBoundingClientRect()
+              return {
+                scrolls: section.scrollWidth > section.clientWidth + 1,
+                firstVisible: first.left >= box.left - 1 && first.right <= box.right + 1,
+                scrollLeft: section.scrollLeft,
+              }
+            })
+            return {
+              content,
+              height: barBox.height,
+              columnGap: Number.parseFloat(style.columnGap),
+              wrapped: centreBox.top >= leadingBox.bottom - 1,
+              sidesShareRow: Math.abs(leadingBox.top - trailingBox.top) <= 1,
+              centreWidth: centreBox.width,
+              centreFits: centre.scrollWidth <= centre.clientWidth + 1,
+              centreInside: [...centre.children].every((child) => {
+                const box = child.getBoundingClientRect()
+                return box.left >= centreBox.left - 1 && box.right <= centreBox.right + 1
+              }),
+              barInside: barBox.right <= window.innerWidth + 1,
+              overlaps,
+              sides,
+              topbarHeight: 3 * 16 * scale,
+            }
+          }, factor)
+        const where = `${width}px at ${factor}x text: ${label}`
+        expect(state.wrapped, `${where}: centre drops to its own row only below 19rem`).toBe(
+          state.content < 19 * 16 * factor
+        )
+        expect(state.overlaps, `${where}: no control paints over another`).toEqual([])
+        expect(state.centreFits, `${where}: centre content fits its track`).toBe(true)
+        expect(state.centreInside, `${where}: centre controls inside the centre`).toBe(true)
+        expect(state.barInside, `${where}: bar stays inside the window`).toBe(true)
+        for (const side of state.sides) {
+          expect(
+            side.firstVisible && side.scrollLeft === 0,
+            `${where}: first control of each side group stays visible`
+          ).toBe(true)
+        }
+        if (state.wrapped) {
+          expect(state.sidesShareRow, `${where}: side groups share the first row`).toBe(true)
+          expect(state.height, `${where}: a wrapped bar is taller than one row`).toBeGreaterThan(
+            state.topbarHeight + 1
+          )
+        } else {
+          // One row keeps the bar's height. The centre is the remainder between
+          // two side groups each capped at 40% of the row's content box, so it
+          // keeps at least 20% of it (less the two gaps) however long the side
+          // groups are. A fixed 7rem floor was the old guarantee; it scaled with
+          // the text and pushed a short leading control out of the row.
+          expect(state.height, `${where}: one row keeps the bar height`).toBeCloseTo(
+            state.topbarHeight,
+            0
+          )
+          expect(
+            state.centreWidth,
+            `${where}: centre keeps its guaranteed minimum`
+          ).toBeGreaterThanOrEqual(
+            Math.min(7 * 16 * factor, 0.2 * state.content - 2 * state.columnGap) - 1
+          )
+        }
+        if (label === 'Wide centre compact toolbar') {
+          expect(
+            state.sides.map((side) => side.scrolls),
+            `${where}: compact side groups never scroll`
+          ).toEqual([false, false])
+        }
+      }
+    }
+  }
+})
+
+test('a wide bar whose side groups are both full keeps a usable, contained centre across the wrap threshold', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Toolbar</title></head><body></body></html>'
+  )
+  await page.addStyleTag({ content: css })
+  await page.addScriptTag({ content: script })
+  const bar = page.locator('[data-slot="top-bar"][aria-label="Wide centre saturated toolbar"]')
+  const tabKey =
+    test.info().project.name === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+  const numbers = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight']
+  // DOM order is the keyboard order: leading group, search, action, trailing group.
+  const expectedOrder = [
+    ...numbers.map((name) => `Saturated lead ${name}`),
+    'Saturated search with an action',
+    'Saturated reflect',
+    ...numbers.map((name) => `Saturated trail ${name}`),
+  ]
+
+  for (const factor of [1, 2]) {
+    const rem = 16 * factor
+    await page.evaluate((scale) => {
+      document.documentElement.style.fontSize = `${16 * scale}px`
+    }, factor)
+    // The row's content box runs from well below the 19rem wrap threshold to
+    // well past it; the two side groups hold eight controls each, so both
+    // reach their caps the whole way.
+    for (const remWidth of [12, 16, 18.9, 19.1, 20, 21.9, 24, 28, 32, 44]) {
+      await page.setViewportSize({ width: Math.ceil((remWidth + 1.5) * rem), height: 844 })
+      const where = `${remWidth}rem row at ${factor}x text`
+      await page.evaluate(() => {
+        for (const section of document.querySelectorAll('[data-slot="top-bar-section"]'))
+          section.scrollLeft = 0
+      })
+      const measured = await bar.evaluate((element) => {
+        const input = element.querySelector('input')!.getBoundingClientRect()
+        const [leading, centre, trailing] = [...element.children] as [
+          HTMLElement,
+          HTMLElement,
+          HTMLElement,
+        ]
+        const centreBox = centre.getBoundingClientRect()
+        const style = getComputedStyle(element)
+        return {
+          wrapped: centreBox.top >= leading.getBoundingClientRect().bottom - 1,
+          input: input.width,
+          inputInside: input.left >= centreBox.left - 1 && input.right <= centreBox.right + 1,
+          action:
+            centre.querySelector('button')!.getBoundingClientRect().right <= centreBox.right + 1,
+          leadingScrollLeft: leading.scrollLeft,
+          trailingBox: trailing.getBoundingClientRect().width,
+          content:
+            element.clientWidth -
+            Number.parseFloat(style.paddingLeft) -
+            Number.parseFloat(style.paddingRight),
+        }
+      })
+      // Below 19rem the centre sits on a row of its own; at and above it, beside
+      // the side groups. Both sides of the threshold are asserted.
+      expect(measured.wrapped, `${where}: wraps exactly below 19rem`).toBe(
+        measured.content < 19 * rem
+      )
+      expect(measured.inputInside, `${where}: input stays inside the centre`).toBe(true)
+      expect(measured.action, `${where}: the action stays inside the centre`).toBe(true)
+      expect(
+        measured.leadingScrollLeft,
+        `${where}: the first leading control is not scrolled away`
+      ).toBe(0)
+      // A search field must leave room for a few characters: 2.5rem at least.
+      expect(
+        measured.input,
+        `${where}: the search input keeps a usable width`
+      ).toBeGreaterThanOrEqual(2.5 * rem)
+
+      // Keyboard access: tabbing visits every control in DOM order, and each one
+      // is revealed inside its own visible box and inside the window when focused.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+      await bar.locator('button').first().focus()
+      for (const [step, expected] of expectedOrder.entries()) {
+        const focused = await page.evaluate(() => {
+          const active = document.activeElement as HTMLElement
+          const own = active.getBoundingClientRect()
+          const section = active.closest('[data-slot="top-bar-section"]')
+          const box = (section ?? active.parentElement!).getBoundingClientRect()
           return {
-            width: track.width,
-            fits: cluster.scrollWidth <= cluster.clientWidth + 1,
-            controlsInside: controls.every(
-              (rect) => rect.left >= track.left - 1 && rect.right <= track.right + 1
-            ),
-            documentFits: track.right <= window.innerWidth,
+            name: active.getAttribute('aria-label'),
+            inside:
+              own.left >= box.left - 1 &&
+              own.right <= box.right + 1 &&
+              own.left >= -1 &&
+              own.right <= window.innerWidth + 1,
           }
         })
-      expect(centre.fits, `${width}px at ${factor}x text: centre content fits its track`).toBe(true)
-      expect(centre.controlsInside, `${width}px at ${factor}x text: controls inside`).toBe(true)
-      expect(centre.documentFits).toBe(true)
-      expect(
-        centre.width,
-        `${width}px at ${factor}x text: centre keeps 7rem`
-      ).toBeGreaterThanOrEqual(7 * 16 * factor - 1)
+        expect(focused.name, `${where}: tab stop ${step + 1} is ${expected}`).toBe(expected)
+        expect(focused.inside, `${where}: ${expected} is visible when focused`).toBe(true)
+        if (step < expectedOrder.length - 1) await page.keyboard.press(tabKey)
+      }
     }
   }
 })
