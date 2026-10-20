@@ -90,6 +90,10 @@ export function IconPicker(props: IconPickerProps) {
               type="file"
               class="sr-only"
               tabIndex={-1}
+              // The visible button drives this input; hide the duplicate from assistive
+              // technology but keep a name so the form-label rule is satisfied.
+              aria-hidden="true"
+              aria-label={props.image ? 'Replace image' : 'Upload image'}
               accept="image/png,image/jpeg,image/webp,image/gif"
               disabled={props.disabled}
               onChange={(event) => {
