@@ -47,6 +47,12 @@ export type ShellTopBarProps = Omit<ComponentProps<'header'>, 'children'> & {
    * the sidebar's edge; closed, the leading half hugs its controls.
    */
   sidebarOpen?: boolean
+  /**
+   * The open sidebar's width in pixels. Published as `--shell-sidebar-width` on
+   * the bar so the divider tracks a resizable sidebar; leave it unset to use an
+   * ancestor's variable or the 17rem default.
+   */
+  sidebarWidth?: number
   /** Breadcrumbs or the view's title. Takes the free space and truncates first. */
   breadcrumb?: JSX.Element
   /** The view's search. */
@@ -70,6 +76,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
     'sidebarToggle',
     'workspace',
     'sidebarOpen',
+    'sidebarWidth',
     'breadcrumb',
     'search',
     'actions',
@@ -105,6 +112,11 @@ export function ShellTopBar(props: ShellTopBarProps) {
         local.windowsInset ? 'window-inset-windows' : 'pe-3',
         local.class
       )}
+      style={
+        local.sidebarWidth === undefined
+          ? undefined
+          : { '--shell-sidebar-width': `${local.sidebarWidth}px` }
+      }
       {...rest}
     >
       <div
