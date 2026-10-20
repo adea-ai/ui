@@ -1,6 +1,6 @@
 import { Search } from 'lucide-solid'
 import type { ComponentProps, JSX } from 'solid-js'
-import { For, Show, splitProps } from 'solid-js'
+import { children, For, Show, splitProps } from 'solid-js'
 import { cn } from '../../../lib/utils'
 import { Kbd, KbdGroup } from '../../ui/kbd'
 import { Separator } from '../../ui/separator'
@@ -59,6 +59,10 @@ export function ShellRail(props: ShellRailProps) {
     'aria-label',
   ])
 
+  // Resolve the footer once: reading a JSX prop twice builds two copies.
+  const footer = children(() => local.footer)
+  const content = children(() => local.children)
+
   return (
     <SideRail
       collapsed
@@ -105,11 +109,11 @@ export function ShellRail(props: ShellRailProps) {
           </div>
           <Separator class="my-1" />
         </Show>
-        {local.children}
+        {content()}
       </SideRailContent>
 
-      <Show when={local.footer}>
-        <SideRailFooter data-slot="shell-rail-footer">{local.footer}</SideRailFooter>
+      <Show when={footer()}>
+        <SideRailFooter data-slot="shell-rail-footer">{footer()}</SideRailFooter>
       </Show>
     </SideRail>
   )
