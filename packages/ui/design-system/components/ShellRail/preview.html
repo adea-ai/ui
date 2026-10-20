@@ -1,0 +1,19 @@
+<!-- @dsCard group="Shell" height=360 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, ShellRail, SideRailItem } = window.AdeaUI;
+  render(() => html`
+    <div style="display:flex;height:320px;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background);width:max-content">
+      <${ShellRail}
+        mark=${html`<span style="font-size:18px;font-weight:600">A</span>`}
+        onSearch=${() => {}}
+        searchKeys=${['⌘', 'K']}
+        searchKeyshortcuts="Meta+K"
+        footer=${html`<${SideRailItem} as="button" type="button" label="Settings"><${Icons.Settings} /><//>`}
+      >
+        <${SideRailItem} as="button" type="button" label="Home" active=${true}><${Icons.Box} /><//>
+        <${SideRailItem} as="button" type="button" label="Files"><${Icons.Files} /><//>
+      <//>
+    </div>
+  `, document.getElementById('root'));
+</script>

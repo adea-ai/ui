@@ -100,6 +100,8 @@ export * from './components/layout/sidebar-nav'
 export * from './components/layout/contextual-sidebar'
 export * from './components/layout/status-bar'
 export * from './components/layout/top-bar'
+export * from './components/layout/shell-top-bar'
+export * from './components/layout/shell-rail'
 
 /* --- Conversation -------------------------------------------------------- */
 export * from './components/conversation'
@@ -141,6 +143,9 @@ export * from './components/composites/update-dialog'
 export * from './components/composites/about-dialog'
 export * from './components/composites/help-center'
 export * from './components/composites/workspace-mark'
+export * from './components/composites/workspace-switcher'
+export * from './components/composites/icon-picker'
+export * from './components/composites/accent-picker'
 
 /* --- Library ------------------------------------------------------------- */
 export { cn } from './lib/utils'

@@ -1,0 +1,13 @@
+<!-- @dsCard group="Composites" height=120 -->
+<div id="root" style="padding:16px;display:flex;flex-direction:column;gap:16px"></div>
+<script>
+  const { render, html, createSignal, AccentPicker } = window.AdeaUI;
+  render(() => {
+    const [inherit, setInherit] = createSignal(null);
+    const [chosen, setChosen] = createSignal('green');
+    return html`
+      <${AccentPicker} label="Icon colour" inheritLabel="Inherit workspace accent" value=${inherit} onValueChange=${setInherit} />
+      <${AccentPicker} label="Icon colour (chosen)" value=${chosen} onValueChange=${setChosen} />
+    `;
+  }, document.getElementById('root'));
+</script>

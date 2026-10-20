@@ -1,0 +1,26 @@
+{
+  "name": "workspace-switcher",
+  "type": "registry:ui",
+  "title": "Workspace Switcher",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/action-button",
+    "@adea-ai/ui/dropdown-menu",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/workspace-switcher/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-switcher/index.ts"
+    },
+    {
+      "path": "src/components/composites/workspace-switcher/workspace-switcher.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-switcher/workspace-switcher.tsx"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+<!-- @dsCard group="Shell" height=170 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, Button, ShellTopBar, TopBarBreadcrumb, TopBarSearch, ActionButton } = window.AdeaUI;
+  const frame = 'overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background)';
+  render(() => html`
+    <div style=${frame}>
+      <${ShellTopBar}
+        sidebarOpen=${true}
+        navigation=${html`<${ActionButton} variant="ghost" size="sm" aria-label="Back"><${Icons.ChevronLeft} /><//><${ActionButton} variant="ghost" size="sm" aria-label="Forward"><${Icons.ChevronRight} /><//>`}
+        sidebarToggle=${html`<${ActionButton} variant="ghost" size="sm" aria-label="Collapse sidebar"><${Icons.PanelLeft} /><//>`}
+        workspace=${html`<${Button} variant="ghost" size="sm">adea<//>`}
+        breadcrumb=${html`<${TopBarBreadcrumb}><span>Projects</span><span aria-hidden="true">/</span><span style="font-weight:500">Redesign</span><//>`}
+        search=${html`<${TopBarSearch} placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />`}
+        actions=${html`<${Button} size="sm" variant="ghost" aria-label="Settings"><${Icons.Settings} /><//>`}
+      />
+    </div>
+  `, document.getElementById('root'));
+</script>

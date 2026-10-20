@@ -1,0 +1,36 @@
+{
+  "name": "icon-picker",
+  "type": "registry:ui",
+  "title": "Icon Picker",
+  "description": "",
+  "dependencies": [
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/button",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/composites/icon-picker/icon-picker.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/icon-picker/icon-picker.tsx"
+    },
+    {
+      "path": "src/components/composites/icon-picker/image-data-url.ts",
+      "type": "registry:ui",
+      "target": "components/composites/icon-picker/image-data-url.ts"
+    },
+    {
+      "path": "src/components/composites/icon-picker/index.ts",
+      "type": "registry:ui",
+      "target": "components/composites/icon-picker/index.ts"
+    },
+    {
+      "path": "src/components/composites/icon-picker/shell-icons.ts",
+      "type": "registry:ui",
+      "target": "components/composites/icon-picker/shell-icons.ts"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "shell-rail",
+  "type": "registry:ui",
+  "title": "Shell Rail",
+  "description": "",
+  "dependencies": [
+    "lucide-solid@^1.51.0"
+  ],
+  "registryDependencies": [
+    "@adea-ai/ui/kbd",
+    "@adea-ai/ui/separator",
+    "@adea-ai/ui/side-rail",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/shell-rail/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/shell-rail/index.ts"
+    },
+    {
+      "path": "src/components/layout/shell-rail/shell-rail.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/shell-rail/shell-rail.tsx"
+    }
+  ]
+}
