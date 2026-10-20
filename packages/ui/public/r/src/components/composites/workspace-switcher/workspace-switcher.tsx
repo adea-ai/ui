@@ -1,4 +1,4 @@
-import { ChevronDown, Plus } from 'lucide-solid'
+import { ChevronDown, Plus, Settings } from 'lucide-solid'
 import type { JSX } from 'solid-js'
 import { For, Show, createSignal } from 'solid-js'
 import { cn } from '../../../lib/utils'
@@ -47,6 +47,9 @@ export type WorkspaceSwitcherProps = {
   /** Offered at the foot of the menu when present. */
   onCreate?(): void
   createLabel?: string
+  /** Offered beside the create action when present: open the current workspace's settings. */
+  onManage?(): void
+  manageLabel?: string
   /** The menu's heading; also the trigger's accessible-name prefix. */
   label?: string
   /** Shown while no workspace is current. */
@@ -104,12 +107,20 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
             </For>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
-        <Show when={props.onCreate}>
+        <Show when={props.onCreate || props.onManage}>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => props.onCreate?.()}>
-            <Plus aria-hidden="true" />
-            {props.createLabel ?? 'New workspace'}
-          </DropdownMenuItem>
+          <Show when={props.onCreate}>
+            <DropdownMenuItem onSelect={() => props.onCreate?.()}>
+              <Plus aria-hidden="true" />
+              {props.createLabel ?? 'New workspace'}
+            </DropdownMenuItem>
+          </Show>
+          <Show when={props.onManage}>
+            <DropdownMenuItem onSelect={() => props.onManage?.()}>
+              <Settings aria-hidden="true" />
+              {props.manageLabel ?? 'Workspace settings…'}
+            </DropdownMenuItem>
+          </Show>
         </Show>
       </DropdownMenuContent>
     </DropdownMenu>

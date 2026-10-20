@@ -40,6 +40,7 @@ export const Default: Story = {
         value={value()}
         onValueChange={setValue}
         onCreate={() => {}}
+        onManage={() => {}}
         workspaces={[
           { id: 'home', name: 'Home', mark: <Home class="size-4" /> },
           {

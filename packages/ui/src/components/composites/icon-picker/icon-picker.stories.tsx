@@ -8,9 +8,9 @@ import type { ShellIconKey } from './shell-icons'
  *
  * Chooses the icon a workspace or project wears, from a curated set, and, when
  * the host passes `onImageChange`, offers uploading a picture instead. The two
- * are one setting: an uploaded image wins over the icon key until it is removed,
- * and removing it returns to the key the user had chosen, so nothing is lost by
- * trying a picture.
+ * are one setting: an uploaded image replaces the glyph until it is removed, and
+ * while it is set no glyph is checked. Remove hands control back to the host,
+ * which decides which glyph the mark returns to (usually its default).
  *
  * It is a radio group, not a grid of buttons: one tab stop for the whole set and
  * arrow keys inside it, so a 50-icon palette does not cost 50 tab presses.
