@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.143.0](https://github.com/adea-ai/ui/compare/v0.142.4...v0.143.0) (2026-10-20)
+
+
+### Features
+
+* **shell:** shared top bar, rail, workspace switcher and icon/accent pickers ([#467](https://github.com/adea-ai/ui/issues/467)) ([c25aa69](https://github.com/adea-ai/ui/commit/c25aa69b4cab02e78dc1ae4097f3ff040a0e0fb1))
+
 ## [0.142.4](https://github.com/adea-ai/ui/compare/v0.142.3...v0.142.4) (2026-10-18)
 
 
