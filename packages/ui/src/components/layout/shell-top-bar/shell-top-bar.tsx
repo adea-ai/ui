@@ -1,5 +1,5 @@
 import type { ComponentProps, JSX } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import { children, Show, splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 import { Separator } from '../../ui/separator'
 
@@ -79,6 +79,16 @@ export function ShellTopBar(props: ShellTopBarProps) {
     'glass',
   ])
 
+  // Resolve each slot once: a JSX prop is a getter that builds its elements on
+  // every read, so testing it with `Show` and then rendering it would build
+  // (and run the refs of) two copies.
+  const navigation = children(() => local.navigation)
+  const sidebarToggle = children(() => local.sidebarToggle)
+  const workspace = children(() => local.workspace)
+  const breadcrumb = children(() => local.breadcrumb)
+  const search = children(() => local.search)
+  const actions = children(() => local.actions)
+
   return (
     <header
       data-slot="shell-top-bar"
@@ -109,19 +119,19 @@ export function ShellTopBar(props: ShellTopBarProps) {
             'md:w-[calc(var(--rail-width)+var(--shell-sidebar-width,17rem)-var(--shell-top-bar-inset))]'
         )}
       >
-        <Show when={local.navigation}>
+        <Show when={navigation()}>
           <div data-slot="shell-top-bar-navigation" class="flex shrink-0 items-center gap-2">
-            {local.navigation}
+            {navigation()}
           </div>
         </Show>
-        <Show when={local.sidebarToggle}>
+        <Show when={sidebarToggle()}>
           <div data-slot="shell-top-bar-toggle" class="flex shrink-0 items-center">
-            {local.sidebarToggle}
+            {sidebarToggle()}
           </div>
         </Show>
-        <Show when={local.workspace}>
+        <Show when={workspace()}>
           <div data-slot="shell-top-bar-workspace" class="flex min-w-0 items-center">
-            {local.workspace}
+            {workspace()}
           </div>
         </Show>
       </div>
@@ -131,31 +141,31 @@ export function ShellTopBar(props: ShellTopBarProps) {
         aria-hidden="true"
         class="h-5"
       />
-      <Show when={local.breadcrumb}>
+      <Show when={breadcrumb()}>
         <div
           data-slot="shell-top-bar-breadcrumb"
           class="window-no-drag flex h-topbar min-w-0 flex-1 items-center truncate ps-3 text-sm [&_:is(a,button)]:window-no-drag"
         >
-          {local.breadcrumb}
+          {breadcrumb()}
         </div>
       </Show>
-      <Show when={!local.breadcrumb}>
+      <Show when={!breadcrumb()}>
         <div class="min-w-0 flex-1" aria-hidden="true" />
       </Show>
-      <Show when={local.search}>
+      <Show when={search()}>
         <div
           data-slot="shell-top-bar-search"
           class="window-no-drag min-w-0 max-w-md shrink basis-72 px-3 @max-[34rem]/shell-top-bar:order-last @max-[34rem]/shell-top-bar:max-w-none @max-[34rem]/shell-top-bar:basis-full @max-[34rem]/shell-top-bar:pb-2"
         >
-          {local.search}
+          {search()}
         </div>
       </Show>
-      <Show when={local.actions}>
+      <Show when={actions()}>
         <div
           data-slot="shell-top-bar-actions"
           class="window-no-drag flex h-topbar min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden ps-1"
         >
-          {local.actions}
+          {actions()}
         </div>
       </Show>
     </header>
