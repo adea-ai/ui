@@ -1,0 +1,19 @@
+<!-- @dsCard group="Composites" height=200 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, Icons, createSignal, WorkspaceSwitcher, Badge } = window.AdeaUI;
+  const tile = (letter) => html`<span style="display:flex;width:20px;height:20px;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-md);font-size:12px;font-weight:600">${letter}</span>`;
+  render(() => {
+    const [value, setValue] = createSignal('adea');
+    return html`<${WorkspaceSwitcher}
+      value=${value}
+      onValueChange=${setValue}
+      onCreate=${() => {}}
+      workspaces=${[
+        { id: 'home', name: 'Home', mark: html`<${Icons.House} style="width:16px;height:16px" />` },
+        { id: 'adea', name: 'adea', mark: tile('A'), detail: html`<${Badge} size="sm" variant="destructive">3<//>` },
+        { id: 'cortana', name: 'cortana', mark: tile('C') },
+      ]}
+    />`;
+  }, document.getElementById('root'));
+</script>

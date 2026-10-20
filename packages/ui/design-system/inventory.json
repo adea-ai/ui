@@ -422,6 +422,12 @@
         "group": "Shell"
       }
     ],
+    "shell-rail": [
+      {
+        "card": "ShellRail",
+        "group": "Shell"
+      }
+    ],
     "sidebar-nav": [
       {
         "card": "SidebarNav",
@@ -443,6 +449,12 @@
     "top-bar": [
       {
         "card": "TopBar",
+        "group": "Shell"
+      }
+    ],
+    "shell-top-bar": [
+      {
+        "card": "ShellTopBar",
         "group": "Shell"
       }
     ],
@@ -531,6 +543,24 @@
     "workspace-mark": [
       {
         "card": "WorkspaceMark",
+        "group": "Composites"
+      }
+    ],
+    "workspace-switcher": [
+      {
+        "card": "WorkspaceSwitcher",
+        "group": "Composites"
+      }
+    ],
+    "icon-picker": [
+      {
+        "card": "IconPicker",
+        "group": "Composites"
+      }
+    ],
+    "accent-picker": [
+      {
+        "card": "AccentPicker",
         "group": "Composites"
       }
     ],

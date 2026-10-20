@@ -1,0 +1,17 @@
+<!-- @dsCard group="Composites" height=340 -->
+<div id="root" style="padding:16px;max-width:420px"></div>
+<script>
+  const { render, html, createSignal, IconPicker } = window.AdeaUI;
+  render(() => {
+    const [value, setValue] = createSignal('box');
+    const [image, setImage] = createSignal();
+    return html`<${IconPicker}
+      label="Workspace icon"
+      value=${value}
+      onValueChange=${setValue}
+      defaultKey="box"
+      image=${image}
+      onImageChange=${setImage}
+    />`;
+  }, document.getElementById('root'));
+</script>

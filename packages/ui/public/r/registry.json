@@ -1919,6 +1919,56 @@
       ]
     },
     {
+      "name": "shell-rail",
+      "type": "registry:ui",
+      "title": "Shell Rail",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/kbd",
+        "@adea-ai/ui/separator",
+        "@adea-ai/ui/side-rail",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/shell-rail/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/shell-rail/index.ts"
+        },
+        {
+          "path": "src/components/layout/shell-rail/shell-rail.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/shell-rail/shell-rail.tsx"
+        }
+      ]
+    },
+    {
+      "name": "shell-top-bar",
+      "type": "registry:ui",
+      "title": "Shell Top Bar",
+      "description": "",
+      "dependencies": [],
+      "registryDependencies": [
+        "@adea-ai/ui/separator",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/layout/shell-top-bar/index.ts",
+          "type": "registry:ui",
+          "target": "components/layout/shell-top-bar/index.ts"
+        },
+        {
+          "path": "src/components/layout/shell-top-bar/shell-top-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/layout/shell-top-bar/shell-top-bar.tsx"
+        }
+      ]
+    },
+    {
       "name": "side-rail",
       "type": "registry:ui",
       "title": "Side Rail",
@@ -2140,6 +2190,31 @@
           "path": "src/components/composites/about-dialog/index.ts",
           "type": "registry:ui",
           "target": "components/composites/about-dialog/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "accent-picker",
+      "type": "registry:ui",
+      "title": "Accent Picker",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/accent-picker/accent-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/accent-picker/accent-picker.tsx"
+        },
+        {
+          "path": "src/components/composites/accent-picker/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/accent-picker/index.ts"
         }
       ]
     },
@@ -2515,6 +2590,42 @@
           "path": "src/components/composites/help-center/index.ts",
           "type": "registry:ui",
           "target": "components/composites/help-center/index.ts"
+        }
+      ]
+    },
+    {
+      "name": "icon-picker",
+      "type": "registry:ui",
+      "title": "Icon Picker",
+      "description": "",
+      "dependencies": [
+        "@kobalte/core@^0.13.14",
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/button",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/icon-picker/icon-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/icon-picker/icon-picker.tsx"
+        },
+        {
+          "path": "src/components/composites/icon-picker/image-data-url.ts",
+          "type": "registry:ui",
+          "target": "components/composites/icon-picker/image-data-url.ts"
+        },
+        {
+          "path": "src/components/composites/icon-picker/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/icon-picker/index.ts"
+        },
+        {
+          "path": "src/components/composites/icon-picker/shell-icons.ts",
+          "type": "registry:ui",
+          "target": "components/composites/icon-picker/shell-icons.ts"
         }
       ]
     },
@@ -3141,6 +3252,32 @@
           "path": "src/components/composites/workspace-mark/workspace-mark.tsx",
           "type": "registry:ui",
           "target": "components/composites/workspace-mark/workspace-mark.tsx"
+        }
+      ]
+    },
+    {
+      "name": "workspace-switcher",
+      "type": "registry:ui",
+      "title": "Workspace Switcher",
+      "description": "",
+      "dependencies": [
+        "lucide-solid@^1.51.0"
+      ],
+      "registryDependencies": [
+        "@adea-ai/ui/action-button",
+        "@adea-ai/ui/dropdown-menu",
+        "lib"
+      ],
+      "files": [
+        {
+          "path": "src/components/composites/workspace-switcher/index.ts",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-switcher/index.ts"
+        },
+        {
+          "path": "src/components/composites/workspace-switcher/workspace-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/composites/workspace-switcher/workspace-switcher.tsx"
         }
       ]
     },

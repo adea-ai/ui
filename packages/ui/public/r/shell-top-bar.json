@@ -1,0 +1,23 @@
+{
+  "name": "shell-top-bar",
+  "type": "registry:ui",
+  "title": "Shell Top Bar",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "@adea-ai/ui/separator",
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/shell-top-bar/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/shell-top-bar/index.ts"
+    },
+    {
+      "path": "src/components/layout/shell-top-bar/shell-top-bar.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/shell-top-bar/shell-top-bar.tsx"
+    }
+  ]
+}
