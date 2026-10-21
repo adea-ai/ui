@@ -646,11 +646,16 @@ describe('robustness', () => {
     for (const unit of ['[a ', '[a](', '*a ', '`a ', '*a `']) {
       const small = unit.repeat(100_000)
       const large = unit.repeat(400_000)
+      // One slow run (a garbage collection, a busy neighbour on a shared runner)
+      // must not decide the ratio: warm both sizes up, then compare the medians
+      // of several runs. A genuine quadratic parse is slow in every run, so the
+      // median still shows it.
       measure(small)
-      const base = Math.max(measure(small), 5)
+      measure(large)
+      const base = Math.max(median(small), 5)
       // Four times the input: linear is ~4x; quadratic is ~16x. Generous slack
       // for a noisy machine, still far below quadratic.
-      expect(measure(large) / base, unit).toBeLessThan(12)
+      expect(median(large) / base, unit).toBeLessThan(12)
     }
   })
 })
@@ -663,6 +668,12 @@ function measureUnderscores(repeats: number): number {
   const elapsed = performance.now() - start
   expect(nodes).toEqual([{ kind: 'text', text: source }])
   return elapsed
+}
+
+/** The median of several timed parses of one input, in milliseconds. */
+function median(text: string, runs = 5): number {
+  const times = Array.from({ length: runs }, () => measure(text)).toSorted((a, b) => a - b)
+  return times[Math.floor(runs / 2)]!
 }
 
 /** Milliseconds one block parse takes. */
