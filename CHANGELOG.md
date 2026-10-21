@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.144.1](https://github.com/adea-ai/ui/compare/v0.144.0...v0.144.1) (2026-10-21)
+
+
+### Tests
+
+* **ui:** take the median of several runs in the parser growth check ([#471](https://github.com/adea-ai/ui/issues/471)) ([1540c62](https://github.com/adea-ai/ui/commit/1540c62868fe09ecc83311cac3a55c5db5d57634))
+
 ## [0.144.0](https://github.com/adea-ai/ui/compare/v0.143.0...v0.144.0) (2026-10-21)
 
 
