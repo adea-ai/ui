@@ -8,6 +8,8 @@
   ],
   "registryDependencies": [
     "@adea-ai/ui/action-button",
+    "@adea-ai/ui/button",
+    "@adea-ai/ui/dialog",
     "@adea-ai/ui/dropdown-menu",
     "lib"
   ],
@@ -16,6 +18,16 @@
       "path": "src/components/composites/workspace-switcher/index.ts",
       "type": "registry:ui",
       "target": "components/composites/workspace-switcher/index.ts"
+    },
+    {
+      "path": "src/components/composites/workspace-switcher/workspace-order.ts",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-switcher/workspace-order.ts"
+    },
+    {
+      "path": "src/components/composites/workspace-switcher/workspace-reorder-dialog.tsx",
+      "type": "registry:ui",
+      "target": "components/composites/workspace-switcher/workspace-reorder-dialog.tsx"
     },
     {
       "path": "src/components/composites/workspace-switcher/workspace-switcher.tsx",
