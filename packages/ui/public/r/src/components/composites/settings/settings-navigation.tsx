@@ -182,7 +182,7 @@ export function SettingsNavigation(props: SettingsNavigationProps) {
                 class={cn(
                   sidebarNavItemClass,
                   sidebarNavItemStateClass.idle,
-                  'h-row-lg justify-start border-0 px-3 py-2 text-left data-[selected]:bg-primary-subtle data-[selected]:text-foreground',
+                  'h-row-lg justify-start border-0 px-3 py-2 text-left text-foreground data-[selected]:bg-primary-subtle',
                   strip() ? 'w-auto shrink-0' : 'w-full'
                 )}
               >

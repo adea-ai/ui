@@ -1,4 +1,9 @@
-export { IconPicker, type IconPickerProps } from './icon-picker'
+export {
+  IconPicker,
+  IconPickerDropdown,
+  type IconPickerDropdownProps,
+  type IconPickerProps,
+} from './icon-picker'
 export {
   MARK_IMAGE_MAX_DATA_URL_LENGTH,
   MARK_IMAGE_MAX_SOURCE_BYTES,

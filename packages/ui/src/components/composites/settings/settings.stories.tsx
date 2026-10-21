@@ -307,3 +307,17 @@ export const NarrowStrip: Story = {
     expect(groupLabel?.textContent).toBe('Privacy')
   },
 }
+
+/**
+ * A row that explains itself without a paragraph: `help` puts a small icon beside
+ * the label whose tooltip carries the explanation, on hover or keyboard focus.
+ */
+export const RowWithHelp: Story = {
+  render: () => (
+    <SettingsSection title="Connections">
+      <SettingsRow label="Device vault" help="Secrets for this device stay in the device vault.">
+        <Button variant="outline">Open vault</Button>
+      </SettingsRow>
+    </SettingsSection>
+  ),
+}

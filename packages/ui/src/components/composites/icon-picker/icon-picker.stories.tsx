@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite'
 import { createSignal } from 'solid-js'
-import { IconPicker } from './icon-picker'
+import { IconPicker, IconPickerDropdown } from './icon-picker'
 import type { ShellIconKey } from './shell-icons'
 
 /**
@@ -68,4 +68,28 @@ export const Disabled: Story = {
       <IconPicker label="Workspace icon" value="rocket" onValueChange={() => {}} disabled />
     </div>
   ),
+}
+
+/**
+ * The compact form for a settings row: one button showing the current mark that
+ * opens the grid and the upload row in a popover. Picking a glyph closes it.
+ */
+export const Dropdown: Story = {
+  render: () => {
+    const [value, setValue] = createSignal<ShellIconKey>('box')
+    const [image, setImage] = createSignal<string>()
+    return (
+      <IconPickerDropdown
+        label="Workspace icon"
+        value={value()}
+        onValueChange={(key) => {
+          setValue(key as ShellIconKey)
+          setImage(undefined)
+        }}
+        defaultKey="box"
+        image={image()}
+        onImageChange={setImage}
+      />
+    )
+  },
 }

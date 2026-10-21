@@ -4,10 +4,10 @@
   "title": "Accent Picker",
   "description": "",
   "dependencies": [
-    "@kobalte/core@^0.13.14",
-    "lucide-solid@^1.51.0"
+    "@kobalte/core@^0.13.14"
   ],
   "registryDependencies": [
+    "@adea-ai/ui/tooltip",
     "lib"
   ],
   "files": [

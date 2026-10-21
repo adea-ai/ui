@@ -1,7 +1,9 @@
+import { CircleHelp } from 'lucide-solid'
 import type { ComponentProps, JSX } from 'solid-js'
 import { createUniqueId, Show, splitProps } from 'solid-js'
 import { createFormFieldContext, FormFieldContext } from '../../../lib/form-field'
 import { cn } from '../../../lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 import { Heading } from '../../ui/typography'
 
 /**
@@ -82,6 +84,12 @@ export function SettingsRow(
   props: ComponentProps<'div'> & {
     label: string
     description?: string
+    /**
+     * A short explanation behind a help icon beside the label. Prefer it to a
+     * long description: the row stays quiet and the explanation is one hover or
+     * focus away.
+     */
+    help?: string
     /** Render a vertical stack when the control needs the full width. */
     orientation?: 'horizontal' | 'vertical'
     /** Hide the divider this row would otherwise contribute. */
@@ -100,6 +108,7 @@ export function SettingsRow(
     'class',
     'label',
     'description',
+    'help',
     'orientation',
     'bare',
     'flush',
@@ -132,8 +141,26 @@ export function SettingsRow(
         {...rest}
       >
         <div class="flex min-w-0 flex-col gap-0.5">
-          <div id={labelId} data-slot="settings-row-label" class="text-sm font-medium">
-            {local.label}
+          <div class="flex items-center gap-1.5">
+            <div id={labelId} data-slot="settings-row-label" class="text-sm font-medium">
+              {local.label}
+            </div>
+            <Show when={local.help}>
+              {(help) => (
+                <Tooltip>
+                  <TooltipTrigger
+                    as="button"
+                    type="button"
+                    data-slot="settings-row-help"
+                    aria-label={`About ${local.label}`}
+                    class="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    <CircleHelp class="size-3.5" aria-hidden="true" />
+                  </TooltipTrigger>
+                  <TooltipContent>{help()}</TooltipContent>
+                </Tooltip>
+              )}
+            </Show>
           </div>
           <Show when={local.description}>
             <p id={descriptionId} class="max-w-prose text-sm text-muted-foreground text-pretty">
