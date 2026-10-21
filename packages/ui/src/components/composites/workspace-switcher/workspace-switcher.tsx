@@ -1,6 +1,6 @@
 import { ArrowDownUp, ChevronDown, Plus, Settings } from 'lucide-solid'
 import type { JSX } from 'solid-js'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, Suspense, createEffect, createSignal, lazy } from 'solid-js'
 import { cn } from '#lib/utils'
 import {
   DropdownMenu,
@@ -14,7 +14,13 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu'
 import { ActionButton } from '../action-button'
-import { WorkspaceReorderDialog } from './workspace-reorder-dialog'
+
+// The dialog is only reachable from a menu item, so it stays out of the code
+// that ships with the switcher and loads the first time the menu opens.
+const loadReorderDialog = () => import('./workspace-reorder-dialog')
+const WorkspaceReorderDialog = lazy(() =>
+  loadReorderDialog().then((module) => ({ default: module.WorkspaceReorderDialog }))
+)
 
 /**
  * WorkspaceSwitcher.
@@ -71,11 +77,17 @@ export type WorkspaceSwitcherProps = {
 export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
   const [open, setOpen] = createSignal(false)
   const [reordering, setReordering] = createSignal(false)
+  // Mounted from the first request on and kept, so closing still restores focus.
+  const [reorderRequested, setReorderRequested] = createSignal(false)
   let trigger: HTMLElement | undefined
   const current = () => props.workspaces.find((item) => item.id === props.value)
   const label = () => props.label ?? 'Workspaces'
   const canReorder = () =>
     props.onReorder !== undefined && props.workspaces.filter((item) => !item.fixed).length > 1
+  // Warm the chunk while the menu is open, so choosing the item rarely waits.
+  createEffect(() => {
+    if (open() && canReorder()) void loadReorderDialog()
+  })
 
   return (
     <>
@@ -132,7 +144,12 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
               </DropdownMenuItem>
             </Show>
             <Show when={canReorder()}>
-              <DropdownMenuItem onSelect={() => setReordering(true)}>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setReorderRequested(true)
+                  setReordering(true)
+                }}
+              >
                 <ArrowDownUp aria-hidden="true" />
                 {props.reorderLabel ?? 'Reorder workspaces…'}
               </DropdownMenuItem>
@@ -146,15 +163,17 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
           </Show>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Show when={props.onReorder}>
+      <Show when={reorderRequested() && props.onReorder}>
         {(onReorder) => (
-          <WorkspaceReorderDialog
-            open={reordering()}
-            onOpenChange={setReordering}
-            workspaces={props.workspaces}
-            onReorder={onReorder()}
-            restoreFocusRef={() => trigger}
-          />
+          <Suspense>
+            <WorkspaceReorderDialog
+              open={reordering()}
+              onOpenChange={setReordering}
+              workspaces={props.workspaces}
+              onReorder={onReorder()}
+              restoreFocusRef={() => trigger}
+            />
+          </Suspense>
         )}
       </Show>
     </>
