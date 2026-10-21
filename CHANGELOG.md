@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.145.2](https://github.com/adea-ai/ui/compare/v0.145.1...v0.145.2) (2026-10-21)
+
+
+### Performance
+
+* **ui:** load the workspace reorder dialog on demand ([#477](https://github.com/adea-ai/ui/issues/477)) ([1f9638b](https://github.com/adea-ai/ui/commit/1f9638b3ce4fd78fa02a9afbeb2cdb519a552826))
+
 ## [0.145.1](https://github.com/adea-ai/ui/compare/v0.145.0...v0.145.1) (2026-10-21)
 
 
