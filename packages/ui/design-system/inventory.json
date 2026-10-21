@@ -634,6 +634,13 @@
         "source": "layout/pixel-resize-handle/pixel-resize-handle.tsx"
       }
     ],
+    "pixel-pane": [
+      {
+        "card": "PixelPane",
+        "group": "Layout",
+        "source": "layout/pixel-pane/pixel-pane.tsx"
+      }
+    ],
     "attachment": [
       {
         "card": "Attachment",

@@ -1,0 +1,22 @@
+{
+  "name": "pixel-pane",
+  "type": "registry:ui",
+  "title": "Pixel Pane",
+  "description": "",
+  "dependencies": [],
+  "registryDependencies": [
+    "lib"
+  ],
+  "files": [
+    {
+      "path": "src/components/layout/pixel-pane/index.ts",
+      "type": "registry:ui",
+      "target": "components/layout/pixel-pane/index.ts"
+    },
+    {
+      "path": "src/components/layout/pixel-pane/pixel-pane.tsx",
+      "type": "registry:ui",
+      "target": "components/layout/pixel-pane/pixel-pane.tsx"
+    }
+  ]
+}
