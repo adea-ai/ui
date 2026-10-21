@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -65,4 +65,90 @@ test('a pane clips content wider than itself and never widens the row', async ({
   expect(await pane.evaluate((element) => getComputedStyle(element).overflowX)).toBe('hidden')
   const row = page.getByTestId('crowded')
   expect(await row.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
+const read = (page: Page, name: string) =>
+  page.getByLabel(name, { exact: true }).evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      width: element.getBoundingClientRect().width,
+      background: style.backgroundColor,
+      paddingLeft: style.paddingLeft,
+      tone: element.style.getPropertyValue('--pane-tone'),
+      color: style.color,
+      attribute: element.getAttribute('style'),
+    }
+  })
+
+test('a string style keeps its declarations and the host width still wins', async ({ page }) => {
+  const string = await read(page, 'String style')
+  expect(string.background).toBe('rgb(1, 2, 3)')
+  expect(string.paddingLeft).toBe('10px')
+  expect(string.width).toBeCloseTo(200, 0)
+
+  // A flex-basis of the caller's own does not override the host's width.
+  const own = await read(page, 'Own basis')
+  expect(own.color).toBe('rgb(7, 8, 9)')
+  expect(own.width).toBeCloseTo(100, 0)
+})
+
+test('an object style keeps its declarations and the host width still wins', async ({ page }) => {
+  const object = await read(page, 'Object style')
+  expect(object.tone).toBe('kept')
+  expect(object.width).toBeCloseTo(100, 0)
+})
+
+test('a pane follows width and style changes, between fixed and flexible and between kinds', async ({
+  page,
+}) => {
+  const set = (next: { width: number | undefined; style: 'none' | 'string' | 'object' }) =>
+    page.evaluate(
+      (value) =>
+        (
+          window as unknown as {
+            paneFixture: { set(next: unknown): void }
+          }
+        ).paneFixture.set(value),
+      next
+    )
+
+  expect((await read(page, 'Live')).width).toBeCloseTo(120, 0)
+
+  await set({ width: 260, style: 'none' })
+  expect((await read(page, 'Live')).width).toBeCloseTo(260, 0)
+
+  // Fixed with a string, then a larger width: the string stays, the width moves.
+  await set({ width: 260, style: 'string' })
+  await set({ width: 300, style: 'string' })
+  const grown = await read(page, 'Live')
+  expect(grown.width).toBeCloseTo(300, 0)
+  expect(grown.background).toBe('rgb(1, 2, 3)')
+
+  // String to object at the same width.
+  await set({ width: 300, style: 'object' })
+  const object = await read(page, 'Live')
+  expect(object.width).toBeCloseTo(300, 0)
+  expect(object.tone).toBe('kept')
+  expect(object.background).toBe('rgba(0, 0, 0, 0)')
+
+  // Fixed to flexible: the style stays, the basis is gone and the pane shares the row.
+  await set({ width: undefined, style: 'object' })
+  const flexible = await read(page, 'Live')
+  expect(flexible.tone).toBe('kept')
+  expect(flexible.attribute ?? '').not.toContain('flex-basis')
+  expect(flexible.width).toBeCloseTo(300, 0)
+
+  // Flexible with a string, then back to fixed.
+  await set({ width: undefined, style: 'string' })
+  expect((await read(page, 'Live')).background).toBe('rgb(1, 2, 3)')
+  await set({ width: 180, style: 'string' })
+  const back = await read(page, 'Live')
+  expect(back.width).toBeCloseTo(180, 0)
+  expect(back.background).toBe('rgb(1, 2, 3)')
+
+  // Style removed altogether while fixed.
+  await set({ width: 180, style: 'none' })
+  const bare = await read(page, 'Live')
+  expect(bare.width).toBeCloseTo(180, 0)
+  expect(bare.background).toBe('rgba(0, 0, 0, 0)')
 })

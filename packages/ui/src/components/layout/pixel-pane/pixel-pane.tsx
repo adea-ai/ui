@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'solid-js'
+import type { ComponentProps, JSX } from 'solid-js'
 import { splitProps } from 'solid-js'
 import { cn } from '#lib/utils'
 
@@ -32,14 +32,26 @@ export function PixelPane(props: PixelPaneProps) {
         local.width === undefined ? 'flex-1' : 'grow-0 shrink',
         local.class
       )}
-      style={
-        local.width === undefined
-          ? local.style
-          : {
-              ...(typeof local.style === 'object' ? local.style : {}),
-              'flex-basis': `${Math.max(0, Math.round(local.width))}px`,
-            }
-      }
+      style={fixedStyle(local.style, local.width)}
     />
   )
+}
+
+/**
+ * The pane's style with its width applied last, so the host's width wins over a
+ * `flex-basis` of the caller's own. A string style stays a string and an object
+ * style stays an object; both keep every declaration they came with.
+ */
+function fixedStyle(
+  style: JSX.CSSProperties | string | undefined,
+  width: number | undefined
+): JSX.CSSProperties | string | undefined {
+  if (width === undefined) return style
+  const basis = `${Math.max(0, Math.round(width))}px`
+  if (typeof style === 'string') {
+    const declarations = style.trim()
+    const separator = declarations === '' || declarations.endsWith(';') ? '' : ';'
+    return `${declarations}${separator}flex-basis:${basis}`
+  }
+  return { ...style, 'flex-basis': basis }
 }
