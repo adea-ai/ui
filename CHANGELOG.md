@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.145.0](https://github.com/adea-ai/ui/compare/v0.144.1...v0.145.0) (2026-10-21)
+
+
+### Features
+
+* **ui:** reorder workspaces from the workspace switcher ([#473](https://github.com/adea-ai/ui/issues/473)) ([889facd](https://github.com/adea-ai/ui/commit/889facd9b7229dafbb72d4b78c94548dd2b70787))
+
 ## [0.144.1](https://github.com/adea-ai/ui/compare/v0.144.0...v0.144.1) (2026-10-21)
 
 
