@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.145.1](https://github.com/adea-ai/ui/compare/v0.145.0...v0.145.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **ui:** keep the current workspace mark in the switcher trigger ([#475](https://github.com/adea-ai/ui/issues/475)) ([3298e11](https://github.com/adea-ai/ui/commit/3298e11bede9d5c5873ce8ffa0e7b3b44d1c0f30))
+
 ## [0.145.0](https://github.com/adea-ai/ui/compare/v0.144.1...v0.145.0) (2026-10-21)
 
 
