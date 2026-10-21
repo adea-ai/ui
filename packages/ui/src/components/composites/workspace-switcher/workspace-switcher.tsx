@@ -40,8 +40,16 @@ const WorkspaceReorderDialog = lazy(() =>
 export type WorkspaceSwitcherItem = {
   id: string
   name: string
-  /** The workspace's mark, drawn in the trigger and its row. Decorative. */
-  mark: JSX.Element
+  /**
+   * The workspace's mark, drawn in the trigger and in its row. Decorative.
+   *
+   * A DOM node can sit in one place, so the current workspace's mark would have
+   * to be in the trigger and its menu row at once. Pass a function to draw a
+   * fresh mark in each place (the preferred form). A node built once is also
+   * safe: the trigger keeps it and the current row gets a copy, which carries
+   * no event handlers or reactive bindings, so keep marks static.
+   */
+  mark: JSX.Element | (() => JSX.Element)
   /** A quiet trailing readout in the row, e.g. an unread count. Optional. */
   detail?: JSX.Element
   /** Pinned to the top of the order, e.g. Home: it cannot be moved and nothing moves above it. */
@@ -74,6 +82,15 @@ export type WorkspaceSwitcherProps = {
   class?: string
 }
 
+/**
+ * Draws one placement of a mark. A function draws anew each time; a node that is
+ * already placed elsewhere is copied so the original stays where it is.
+ */
+function drawMark(mark: WorkspaceSwitcherItem['mark'], copy: boolean): JSX.Element {
+  if (typeof mark === 'function') return mark()
+  return copy && mark instanceof Node ? mark.cloneNode(true) : mark
+}
+
 export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
   const [open, setOpen] = createSignal(false)
   const [reordering, setReordering] = createSignal(false)
@@ -104,7 +121,7 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
           class={cn('max-w-full min-w-0 shrink', props.class)}
         >
           <span aria-hidden="true" class="flex shrink-0">
-            {current()?.mark}
+            {current() && drawMark(current()!.mark, false)}
           </span>
           <span class="min-w-0 max-w-40 truncate">
             {current()?.name ?? props.placeholder ?? 'Choose workspace'}
@@ -126,7 +143,7 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
                 {(item) => (
                   <DropdownMenuRadioItem value={item.id} closeOnSelect data-workspace-id={item.id}>
                     <span aria-hidden="true" class="flex shrink-0">
-                      {item.mark}
+                      {drawMark(item.mark, item.id === props.value)}
                     </span>
                     <span class="min-w-0 flex-1 truncate">{item.name}</span>
                     <Show when={item.detail}>{item.detail}</Show>
