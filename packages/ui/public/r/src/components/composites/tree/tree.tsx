@@ -5,7 +5,9 @@ import {
   createEffect,
   createMemo,
   createUniqueId,
+  For,
   onCleanup,
+  Show,
   splitProps,
   useContext,
 } from 'solid-js'
@@ -29,6 +31,7 @@ type TreeContextValue = {
   activate: (id: string, event: Event) => void
   expand: (id: string, expanded: boolean) => void
   disclosure: () => TreeDisclosure
+  guides: () => boolean
   onActiveIdChange: (id: string) => void
 }
 
@@ -79,6 +82,12 @@ export type TreeProps = Omit<
      * Keyboard behaviour is identical in both modes: Left/Right expand and collapse.
      */
     disclosure?: TreeDisclosure
+    /**
+     * Draw a vertical guide line down each ancestor level of a nested row, so a
+     * group of children reads as belonging to its parent. Off by default: a flat
+     * list or a dense file explorer carries its own rhythm.
+     */
+    guides?: boolean
     /** Called for Enter or pointer activation. Domain action stays host-owned. */
     onActivate?: (id: string, event: Event) => void
     /** Called for Space selection. Selection state stays host-owned. */
@@ -132,6 +141,7 @@ export function Tree(props: TreeProps) {
     'onActiveIdChange',
     'onExpand',
     'disclosure',
+    'guides',
     'onActivate',
     'onSelectItem',
     'onRequestReveal',
@@ -296,6 +306,7 @@ export function Tree(props: TreeProps) {
     activate: (id, event) => local.onActivate?.(id, event),
     expand: (id, expanded) => local.onExpand?.(id, expanded),
     disclosure: () => local.disclosure ?? 'row',
+    guides: () => local.guides ?? false,
     onActiveIdChange: local.onActiveIdChange,
   }
 
@@ -492,7 +503,7 @@ export function TreeRow(props: TreeRowProps) {
       data-selected={local.selected ? '' : undefined}
       data-expanded={local.item.expandable ? String(local.item.expanded) : undefined}
       class={cn(
-        'group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors',
+        'group/tree-row relative flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
         {
           'bg-primary-subtle text-foreground': local.selected,
@@ -505,6 +516,18 @@ export function TreeRow(props: TreeRowProps) {
       onClick={handleClick}
       onDblClick={handleDoubleClick}
     >
+      <Show when={tree.guides() && local.item.level > 1}>
+        <For each={Array.from({ length: local.item.level - 1 }, (_, index) => index)}>
+          {(index) => (
+            <span
+              aria-hidden="true"
+              data-slot="tree-row-guide"
+              class="pointer-events-none absolute inset-y-0 w-px bg-border"
+              style={{ 'inset-inline-start': `${6 + index * 12 + 7}px` }}
+            />
+          )}
+        </For>
+      </Show>
       <span
         data-slot={markerTarget() ? 'tree-row-disclosure' : undefined}
         class={cn(

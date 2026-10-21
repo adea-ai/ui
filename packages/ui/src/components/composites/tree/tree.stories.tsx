@@ -387,6 +387,63 @@ export const DisclosureMarker: Story = {
 }
 
 /**
+ * `guides` draws a vertical line under each ancestor's chevron so a parent's
+ * children read as a group: the shape a project row and its sessions take in
+ * the workspace sidebar.
+ */
+export const Guides: Story = {
+  args: {
+    'aria-label': 'Workspace files',
+    visibleItems: [],
+    activeId: null,
+    onActiveIdChange: () => undefined,
+  },
+  render: () => {
+    const items = nodes.map((item): TreeItemDescriptor => ({
+      id: item.id,
+      parentId: item.parentId,
+      level: item.level,
+      expandable: item.expandable,
+      expanded: item.expandable,
+    }))
+    return (
+      <div class="w-80 rounded-xl border border-border p-2">
+        <Tree
+          aria-label="Workspace files"
+          guides
+          visibleItems={items}
+          activeId="src"
+          onActiveIdChange={() => undefined}
+        >
+          <For each={items}>
+            {(item) => (
+              <TreeRow
+                item={item}
+                leading={
+                  item.expandable ? (
+                    <Folder aria-hidden="true" class="text-muted-foreground" />
+                  ) : (
+                    <FileText aria-hidden="true" class="text-muted-foreground" />
+                  )
+                }
+              >
+                {nodes.find((node) => node.id === item.id)!.label}
+              </TreeRow>
+            )}
+          </For>
+        </Tree>
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    // Level 3 rows sit under two ancestors; level 1 rows have none.
+    await expect(canvasElement.querySelectorAll('[data-slot="tree-row-guide"]').length).toBe(
+      nodes.reduce((total, node) => total + node.level - 1, 0)
+    )
+  },
+}
+
+/**
  * Keyboard behaviour with `disclosure="marker"` is the default tree's, key for
  * key: the chevron is never a tab stop, Left/Right expand and collapse, and
  * Enter and Space activate and select without toggling.
