@@ -20,10 +20,29 @@ import { Heading } from '../../ui/typography'
  * the first control inside it. `SettingsField` is the visual stacked layout;
  * use `FormField` when the control needs label, help, or validation wiring.
  */
+function HelpTip(props: { label: string; help: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        as="button"
+        type="button"
+        data-slot="settings-row-help"
+        aria-label={`About ${props.label}`}
+        class="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      >
+        <CircleHelp class="size-3.5" aria-hidden="true" />
+      </TooltipTrigger>
+      <TooltipContent>{props.help}</TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function SettingsSection(
   props: ComponentProps<'section'> & {
     title: string
     description?: string
+    /** A short explanation behind a help icon beside the title; prefer it to a long description. */
+    help?: string
     /** A control for the section as a whole, e.g. a master toggle. */
     action?: JSX.Element
     /** Use a spaced content stack for fields, alerts, and cards instead of divided rows. */
@@ -34,6 +53,7 @@ export function SettingsSection(
     'class',
     'title',
     'description',
+    'help',
     'action',
     'bodyLayout',
     'children',
@@ -47,9 +67,12 @@ export function SettingsSection(
     >
       <div class="flex items-start justify-between gap-4">
         <div class="flex min-w-0 flex-col gap-0.5">
-          <Heading as="h2" size="card">
-            {local.title}
-          </Heading>
+          <div class="flex items-center gap-1.5">
+            <Heading as="h2" size="card">
+              {local.title}
+            </Heading>
+            <Show when={local.help}>{(help) => <HelpTip label={local.title} help={help()} />}</Show>
+          </div>
           <Show when={local.description}>
             <p class="max-w-prose text-sm text-muted-foreground text-pretty">{local.description}</p>
           </Show>
@@ -145,22 +168,7 @@ export function SettingsRow(
             <div id={labelId} data-slot="settings-row-label" class="text-sm font-medium">
               {local.label}
             </div>
-            <Show when={local.help}>
-              {(help) => (
-                <Tooltip>
-                  <TooltipTrigger
-                    as="button"
-                    type="button"
-                    data-slot="settings-row-help"
-                    aria-label={`About ${local.label}`}
-                    class="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                  >
-                    <CircleHelp class="size-3.5" aria-hidden="true" />
-                  </TooltipTrigger>
-                  <TooltipContent>{help()}</TooltipContent>
-                </Tooltip>
-              )}
-            </Show>
+            <Show when={local.help}>{(help) => <HelpTip label={local.label} help={help()} />}</Show>
           </div>
           <Show when={local.description}>
             <p id={descriptionId} class="max-w-prose text-sm text-muted-foreground text-pretty">

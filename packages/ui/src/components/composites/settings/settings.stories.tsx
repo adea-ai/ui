@@ -314,7 +314,7 @@ export const NarrowStrip: Story = {
  */
 export const RowWithHelp: Story = {
   render: () => (
-    <SettingsSection title="Connections">
+    <SettingsSection title="Connections" help="Where this workspace's agents run and sign in.">
       <SettingsRow label="Device vault" help="Secrets for this device stay in the device vault.">
         <Button variant="outline">Open vault</Button>
       </SettingsRow>
