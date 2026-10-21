@@ -210,3 +210,26 @@ test('focus stays on the control used while open and is not taken after the dial
   await frames(page)
   await expect(opener).toBeFocused()
 })
+
+test('focus is back on the moved control as soon as its save settles, not a frame later', async ({
+  page,
+}) => {
+  await open(page)
+  const down = page.getByRole('button', { name: 'Move adea down' })
+  await down.focus()
+  await down.click()
+
+  // Settle the save and look at focus after the microtasks it queues, before any
+  // frame: a key pressed in that gap would otherwise go nowhere.
+  const focused = await page.evaluate(async () => {
+    const fixture = (window as unknown as { reorderFixture: Record<string, (i: number) => void> })
+      .reorderFixture
+    fixture['resolve']?.(0)
+    for (let tick = 0; tick < 5; tick += 1) await Promise.resolve()
+    return document.activeElement?.getAttribute('aria-label') ?? null
+  })
+  expect(focused).toBe('Move adea up')
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})
