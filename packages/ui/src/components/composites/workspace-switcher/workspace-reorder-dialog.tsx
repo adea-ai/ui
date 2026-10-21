@@ -84,11 +84,12 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
   })
 
   const focusMove = (owner: number, id: string, direction: WorkspaceMoveDirection) => {
-    // The host re-renders the rows with the new order; focus the same control
-    // once it exists, or its sibling when the move reached an edge.
+    // The host re-renders the rows with the new order, which replaces the control
+    // that had focus; focus the same control once it exists, or its sibling when
+    // the move reached an edge. Try at once so keys pressed right after a save
+    // still reach the dialog, and again next frame for a host that renders later.
     if (frame !== undefined) cancelAnimationFrame(frame)
-    frame = requestAnimationFrame(() => {
-      frame = undefined
+    const restore = () => {
       if (disposed || owner !== session || !props.open) return
       const row = list?.querySelector<HTMLElement>(`[data-reorder-id="${CSS.escape(id)}"]`)
       const wanted = row?.querySelector<HTMLElement>(`[data-move="${direction}"]`)
@@ -96,7 +97,12 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
         `[data-move="${direction === 'up' ? 'down' : 'up'}"]`
       )
       const target = wanted?.getAttribute('aria-disabled') === 'true' ? other : wanted
-      target?.focus({ preventScroll: true })
+      if (target && document.activeElement !== target) target.focus({ preventScroll: true })
+    }
+    restore()
+    frame = requestAnimationFrame(() => {
+      frame = undefined
+      restore()
     })
   }
 
