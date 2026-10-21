@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from 'lucide-solid'
-import { For, Show, createEffect, createSignal, on, type Accessor } from 'solid-js'
+import { For, Show, createEffect, createSignal, on, onCleanup, type Accessor } from 'solid-js'
 import { Button } from '../../ui/button'
 import {
   Dialog,
@@ -38,33 +38,58 @@ export type WorkspaceReorderDialogProps = {
  * a screen reader: every row has a labelled Move up and Move down. Each move is
  * reported to the host straight away (there is no Save), the moved row keeps
  * focus on the control that was used, and the new position is announced.
+ *
+ * One save runs at a time, even across a close and reopen: the moves stay
+ * disabled until the host's promise settles. A save that finishes after the
+ * dialog has closed reports nothing here (the host owns any failure it wants
+ * to surface) and never moves focus.
  */
 export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
   const [status, setStatus] = createSignal('')
   const [error, setError] = createSignal('')
   const [pending, setPending] = createSignal(false)
   let list: HTMLOListElement | undefined
+  // Each open and each close starts a new session. A save belongs to the session
+  // it began in; once the dialog has closed (or closed and reopened) its result
+  // no longer speaks for what is on screen, so it must not touch the status
+  // line or focus. `pending` is deliberately not reset with the session: the
+  // host's save is still running, so the next move waits for it instead of
+  // running a second save beside it.
+  let session = 0
+  let disposed = false
+  let frame: number | undefined
 
   createEffect(
     on(
       () => props.open,
       () => {
+        session += 1
+        if (frame !== undefined) cancelAnimationFrame(frame)
+        frame = undefined
         setStatus('')
         setError('')
-        setPending(false)
-      }
+      },
+      { defer: true }
     )
   )
+  onCleanup(() => {
+    disposed = true
+    session += 1
+    if (frame !== undefined) cancelAnimationFrame(frame)
+  })
 
   const focus = createDialogFocusRestoration({
     open: () => props.open,
     restoreFocusRef: props.restoreFocusRef,
   })
 
-  const focusMove = (id: string, direction: WorkspaceMoveDirection) => {
+  const focusMove = (owner: number, id: string, direction: WorkspaceMoveDirection) => {
     // The host re-renders the rows with the new order; focus the same control
     // once it exists, or its sibling when the move reached an edge.
-    requestAnimationFrame(() => {
+    if (frame !== undefined) cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(() => {
+      frame = undefined
+      if (disposed || owner !== session || !props.open) return
       const row = list?.querySelector<HTMLElement>(`[data-reorder-id="${CSS.escape(id)}"]`)
       const wanted = row?.querySelector<HTMLElement>(`[data-move="${direction}"]`)
       const other = row?.querySelector<HTMLElement>(
@@ -79,17 +104,22 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
     if (pending()) return
     const next = moveWorkspace(props.workspaces, item.id, direction)
     if (!next) return
+    const owner = session
+    const current = () => !disposed && owner === session && props.open
     setError('')
     setPending(true)
     try {
       await props.onReorder(next)
-      setStatus(`Moved ${item.name} to position ${next.indexOf(item.id) + 1} of ${next.length}.`)
+      if (current())
+        setStatus(`Moved ${item.name} to position ${next.indexOf(item.id) + 1} of ${next.length}.`)
     } catch {
-      setStatus('')
-      setError('Could not save the order. Try again.')
+      if (current()) {
+        setStatus('')
+        setError('Could not save the order. Try again.')
+      }
     } finally {
-      setPending(false)
-      focusMove(item.id, direction)
+      if (!disposed) setPending(false)
+      if (current()) focusMove(owner, item.id, direction)
     }
   }
 
@@ -97,6 +127,13 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent
         class="w-full max-w-sm"
+        onKeyDown={(event: KeyboardEvent) => {
+          // Tooltip help on a focused move control would otherwise take the first Escape.
+          if (event.key === 'Escape' && !event.defaultPrevented) {
+            event.preventDefault()
+            props.onOpenChange(false)
+          }
+        }}
         onOpenAutoFocus={focus.onOpenAutoFocus}
         onCloseAutoFocus={focus.onCloseAutoFocus}
       >
@@ -106,7 +143,12 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
             Move a workspace up or down. The order is saved as you go.
           </DialogDescription>
         </DialogHeader>
-        <ol ref={list} class="flex flex-col gap-1" aria-label="Workspace order">
+        <ol
+          ref={(el) => (list = el)}
+          class="flex flex-col gap-1"
+          aria-label="Workspace order"
+          aria-busy={pending()}
+        >
           <For each={props.workspaces}>
             {(item) => (
               <li
@@ -126,7 +168,10 @@ export function WorkspaceReorderDialog(props: WorkspaceReorderDialogProps) {
                         data-move={direction}
                         aria-label={`Move ${item.name} ${direction}`}
                         tooltip={`Move ${direction}`}
-                        disabled={moveTarget(props.workspaces, item.id, direction) === undefined}
+                        disabled={
+                          pending() ||
+                          moveTarget(props.workspaces, item.id, direction) === undefined
+                        }
                         onClick={() => void move(item, direction)}
                       >
                         <Show when={direction === 'up'} fallback={<ArrowDown aria-hidden="true" />}>
