@@ -24,7 +24,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Decorative tiles: a mark inside a menu row must not be a second button.
+// Decorative tiles: a mark inside a menu row must not be a second button. Stories pass
+// marks as functions, so the trigger and the menu row each draw their own.
 const mark = (name: string) => (
   <span class="flex size-5 items-center justify-center rounded-md border border-border text-xs font-semibold uppercase">
     {name.slice(0, 1)}
@@ -42,18 +43,18 @@ export const Default: Story = {
         onCreate={() => {}}
         onManage={() => {}}
         workspaces={[
-          { id: 'home', name: 'Home', mark: <Home class="size-4" /> },
+          { id: 'home', name: 'Home', mark: () => <Home class="size-4" /> },
           {
             id: 'adea',
             name: 'adea',
-            mark: mark('adea'),
+            mark: () => mark('adea'),
             detail: (
               <Badge size="sm" variant="notification">
                 3
               </Badge>
             ),
           },
-          { id: 'cortana', name: 'cortana', mark: mark('cortana') },
+          { id: 'cortana', name: 'cortana', mark: () => mark('cortana') },
         ]}
       />
     )
@@ -71,7 +72,7 @@ export const LongName: Story = {
           {
             id: 'long',
             name: 'A workspace with an unreasonably long name',
-            mark: mark('long'),
+            mark: () => mark('long'),
           },
         ]}
       />
@@ -111,7 +112,7 @@ export const Reorderable: Story = {
       order().map((id) => ({
         id,
         name: names[id] ?? id,
-        mark: id === 'home' ? <Home class="size-4" /> : mark(names[id] ?? id),
+        mark: () => (id === 'home' ? <Home class="size-4" /> : mark(names[id] ?? id)),
         fixed: id === 'home',
       }))
     return (
@@ -122,6 +123,27 @@ export const Reorderable: Story = {
         onReorder={(ids) => {
           setOrder([...ids])
         }}
+      />
+    )
+  },
+}
+
+/**
+ * A mark built once, as a node, is also safe: the trigger keeps the node and the
+ * current row draws a copy. Prefer a function (as the other stories do), because
+ * a copy has no event handlers or reactive bindings.
+ */
+export const StableMark: Story = {
+  render: () => {
+    const [value, setValue] = createSignal('adea')
+    return (
+      <WorkspaceSwitcher
+        value={value()}
+        onValueChange={setValue}
+        workspaces={[
+          { id: 'adea', name: 'adea', mark: mark('adea') },
+          { id: 'cortana', name: 'cortana', mark: mark('cortana') },
+        ]}
       />
     )
   },
