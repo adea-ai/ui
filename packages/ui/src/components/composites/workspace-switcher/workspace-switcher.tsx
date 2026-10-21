@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Settings } from 'lucide-solid'
+import { ArrowDownUp, ChevronDown, Plus, Settings } from 'lucide-solid'
 import type { JSX } from 'solid-js'
 import { For, Show, createSignal } from 'solid-js'
 import { cn } from '#lib/utils'
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu'
 import { ActionButton } from '../action-button'
+import { WorkspaceReorderDialog } from './workspace-reorder-dialog'
 
 /**
  * WorkspaceSwitcher.
@@ -37,6 +38,8 @@ export type WorkspaceSwitcherItem = {
   mark: JSX.Element
   /** A quiet trailing readout in the row, e.g. an unread count. Optional. */
   detail?: JSX.Element
+  /** Pinned to the top of the order, e.g. Home: it cannot be moved and nothing moves above it. */
+  fixed?: boolean
 }
 
 export type WorkspaceSwitcherProps = {
@@ -50,6 +53,13 @@ export type WorkspaceSwitcherProps = {
   /** Offered beside the create action when present: open the current workspace's settings. */
   onManage?(): void
   manageLabel?: string
+  /**
+   * Offered when present and at least two workspaces can move: opens a dialog
+   * with Move up and Move down on each row. Receives the full id order after
+   * each move; the host saves it and passes the workspaces back in that order.
+   */
+  onReorder?(ids: readonly string[]): void | Promise<void>
+  reorderLabel?: string
   /** The menu's heading; also the trigger's accessible-name prefix. */
   label?: string
   /** Shown while no workspace is current. */
@@ -60,69 +70,93 @@ export type WorkspaceSwitcherProps = {
 
 export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
   const [open, setOpen] = createSignal(false)
+  const [reordering, setReordering] = createSignal(false)
+  let trigger: HTMLElement | undefined
   const current = () => props.workspaces.find((item) => item.id === props.value)
   const label = () => props.label ?? 'Workspaces'
+  const canReorder = () =>
+    props.onReorder !== undefined && props.workspaces.filter((item) => !item.fixed).length > 1
 
   return (
-    <DropdownMenu modal={false} open={open()} onOpenChange={setOpen}>
-      <DropdownMenuTrigger
-        as={ActionButton}
-        variant="ghost"
-        size="sm"
-        disabled={props.disabled}
-        data-slot="workspace-switcher"
-        tooltip={`Workspace: ${current()?.name ?? props.placeholder ?? 'Choose workspace'}`}
-        aria-label={`Switch workspace, current: ${current()?.name ?? 'none'}`}
-        class={cn('max-w-full min-w-0 shrink', props.class)}
-      >
-        <span aria-hidden="true" class="flex shrink-0">
-          {current()?.mark}
-        </span>
-        <span class="min-w-0 max-w-40 truncate">
-          {current()?.name ?? props.placeholder ?? 'Choose workspace'}
-        </span>
-        <ChevronDown aria-hidden="true" class="size-3.5 shrink-0 text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={6} class="min-w-56">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{label()}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={props.value}
-            onChange={(value) => {
-              setOpen(false)
-              const id = String(value)
-              if (id !== props.value) props.onValueChange(id)
-            }}
-          >
-            <For each={props.workspaces}>
-              {(item) => (
-                <DropdownMenuRadioItem value={item.id} closeOnSelect data-workspace-id={item.id}>
-                  <span aria-hidden="true" class="flex shrink-0">
-                    {item.mark}
-                  </span>
-                  <span class="min-w-0 flex-1 truncate">{item.name}</span>
-                  <Show when={item.detail}>{item.detail}</Show>
-                </DropdownMenuRadioItem>
-              )}
-            </For>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-        <Show when={props.onCreate || props.onManage}>
-          <DropdownMenuSeparator />
-          <Show when={props.onCreate}>
-            <DropdownMenuItem onSelect={() => props.onCreate?.()}>
-              <Plus aria-hidden="true" />
-              {props.createLabel ?? 'New workspace'}
-            </DropdownMenuItem>
+    <>
+      <DropdownMenu modal={false} open={open()} onOpenChange={setOpen}>
+        <DropdownMenuTrigger
+          as={ActionButton}
+          variant="ghost"
+          size="sm"
+          disabled={props.disabled}
+          ref={(el: HTMLElement) => (trigger = el)}
+          data-slot="workspace-switcher"
+          tooltip={`Workspace: ${current()?.name ?? props.placeholder ?? 'Choose workspace'}`}
+          aria-label={`Switch workspace, current: ${current()?.name ?? 'none'}`}
+          class={cn('max-w-full min-w-0 shrink', props.class)}
+        >
+          <span aria-hidden="true" class="flex shrink-0">
+            {current()?.mark}
+          </span>
+          <span class="min-w-0 max-w-40 truncate">
+            {current()?.name ?? props.placeholder ?? 'Choose workspace'}
+          </span>
+          <ChevronDown aria-hidden="true" class="size-3.5 shrink-0 text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" sideOffset={6} class="min-w-56">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{label()}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={props.value}
+              onChange={(value) => {
+                setOpen(false)
+                const id = String(value)
+                if (id !== props.value) props.onValueChange(id)
+              }}
+            >
+              <For each={props.workspaces}>
+                {(item) => (
+                  <DropdownMenuRadioItem value={item.id} closeOnSelect data-workspace-id={item.id}>
+                    <span aria-hidden="true" class="flex shrink-0">
+                      {item.mark}
+                    </span>
+                    <span class="min-w-0 flex-1 truncate">{item.name}</span>
+                    <Show when={item.detail}>{item.detail}</Show>
+                  </DropdownMenuRadioItem>
+                )}
+              </For>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuGroup>
+          <Show when={props.onCreate || props.onManage || canReorder()}>
+            <DropdownMenuSeparator />
+            <Show when={props.onCreate}>
+              <DropdownMenuItem onSelect={() => props.onCreate?.()}>
+                <Plus aria-hidden="true" />
+                {props.createLabel ?? 'New workspace'}
+              </DropdownMenuItem>
+            </Show>
+            <Show when={canReorder()}>
+              <DropdownMenuItem onSelect={() => setReordering(true)}>
+                <ArrowDownUp aria-hidden="true" />
+                {props.reorderLabel ?? 'Reorder workspaces…'}
+              </DropdownMenuItem>
+            </Show>
+            <Show when={props.onManage}>
+              <DropdownMenuItem onSelect={() => props.onManage?.()}>
+                <Settings aria-hidden="true" />
+                {props.manageLabel ?? 'Workspace settings…'}
+              </DropdownMenuItem>
+            </Show>
           </Show>
-          <Show when={props.onManage}>
-            <DropdownMenuItem onSelect={() => props.onManage?.()}>
-              <Settings aria-hidden="true" />
-              {props.manageLabel ?? 'Workspace settings…'}
-            </DropdownMenuItem>
-          </Show>
-        </Show>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Show when={props.onReorder}>
+        {(onReorder) => (
+          <WorkspaceReorderDialog
+            open={reordering()}
+            onOpenChange={setReordering}
+            workspaces={props.workspaces}
+            onReorder={onReorder()}
+            restoreFocusRef={() => trigger}
+          />
+        )}
+      </Show>
+    </>
   )
 }

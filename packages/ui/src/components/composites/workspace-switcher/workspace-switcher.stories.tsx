@@ -90,3 +90,39 @@ export const Empty: Story = {
     />
   ),
 }
+
+/**
+ * With `onReorder`, the menu offers "Reorder workspaces…". The dialog lists the
+ * workspaces with a labelled Move up and Move down on each row; Home is `fixed`,
+ * so it stays first and nothing moves above it. Each move is reported at once
+ * and the host passes the workspaces back in the new order.
+ */
+export const Reorderable: Story = {
+  render: () => {
+    const [value, setValue] = createSignal('home')
+    const [order, setOrder] = createSignal(['home', 'adea', 'cortana', 'themes'])
+    const names: Record<string, string> = {
+      home: 'Home',
+      adea: 'adea',
+      cortana: 'cortana',
+      themes: 'themes',
+    }
+    const workspaces = () =>
+      order().map((id) => ({
+        id,
+        name: names[id] ?? id,
+        mark: id === 'home' ? <Home class="size-4" /> : mark(names[id] ?? id),
+        fixed: id === 'home',
+      }))
+    return (
+      <WorkspaceSwitcher
+        value={value()}
+        onValueChange={setValue}
+        workspaces={workspaces()}
+        onReorder={(ids) => {
+          setOrder([...ids])
+        }}
+      />
+    )
+  },
+}
