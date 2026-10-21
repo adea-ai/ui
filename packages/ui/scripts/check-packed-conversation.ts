@@ -14,6 +14,7 @@ import {
   MAX_ATOMIC_INCREMENT_GZIP_BYTES,
 } from './conversation-packed-budget'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { describeBrowserGoneFailure } from './packed-browser-gone.mjs'
 import { waitForFiniteAnimations } from './finite-animations'
 
 const root = resolve(import.meta.dir, '..')
@@ -1389,6 +1390,12 @@ void textarea
             chunks: js.length,
             retainedModules: modules,
           })
+        } catch (error) {
+          // A browser process that goes away mid-interaction is reported as one
+          // opaque line, so the run fails without saying which leg lost it. The check
+          // still fails either way; the failure is only named, and the original error
+          // stays as its cause.
+          throw describeBrowserGoneFailure(pilot, condition, engine, error)
         } finally {
           await browser.close()
         }
