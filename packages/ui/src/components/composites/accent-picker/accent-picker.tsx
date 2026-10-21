@@ -1,9 +1,9 @@
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { Ban } from 'lucide-solid'
 import type { JSX } from 'solid-js'
 import { For } from 'solid-js'
 import { accents } from '#lib/accent-presets'
 import { cn } from '#lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 
 /**
  * AccentPicker.
@@ -25,7 +25,7 @@ export type AccentPickerProps = {
   /** An accent preset id, or `null` for no override. */
   value: string | null
   onValueChange(value: string | null): void
-  /** What `null` means here, e.g. "Inherit workspace accent". Also the first swatch's name. */
+  /** What `null` means here, e.g. "Inherit workspace accent". Also the first swatch's name and tooltip. */
   inheritLabel?: string
   disabled?: boolean
   class?: string
@@ -43,8 +43,8 @@ export function AccentPicker(props: AccentPickerProps) {
       onChange={(id) => props.onValueChange(id === NONE ? null : id)}
       class={cn('flex flex-wrap items-center gap-2', props.class)}
     >
-      <SwatchItem id={NONE} label={props.inheritLabel ?? 'No colour override'}>
-        <Ban class="size-4 text-muted-foreground" aria-hidden="true" />
+      <SwatchItem id={NONE} label={props.inheritLabel ?? 'Inherit (default)'}>
+        <InheritSwatch />
       </SwatchItem>
       <For each={accents}>
         {(accent) => (
@@ -64,22 +64,43 @@ export function AccentPicker(props: AccentPickerProps) {
   )
 }
 
+/**
+ * The "inherit" swatch: a black disc with a red slash, the universal "no
+ * override" mark. It is drawn rather than painted from a token so it reads the
+ * same in every theme and appearance.
+ */
+function InheritSwatch() {
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="swatch-inherit"
+      class="relative block size-full overflow-hidden rounded-full bg-(--swatch-inherit)"
+      style={{ '--swatch-inherit': '#000' }}
+    >
+      <span class="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 -rotate-45 bg-destructive" />
+    </span>
+  )
+}
+
 function SwatchItem(props: { id: string; label: string; children: JSX.Element }) {
   return (
     <Radio.Item value={props.id} data-accent-option={props.id} class="contents">
       <Radio.ItemInput class="peer" />
-      <Radio.ItemLabel
-        title={props.label}
-        class={cn(
-          'flex size-7 cursor-pointer items-center justify-center rounded-full border border-border p-0.5',
-          'peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-primary-subtle',
-          'data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
-        )}
-      >
-        {props.children}
-        <span class="sr-only">{props.label}</span>
-      </Radio.ItemLabel>
+      <Tooltip>
+        <TooltipTrigger
+          as={Radio.ItemLabel}
+          class={cn(
+            'flex size-7 cursor-pointer items-center justify-center rounded-full border border-border p-0.5',
+            'peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-primary-subtle',
+            'data-[checked]:border-primary data-[checked]:ring-1 data-[checked]:ring-primary',
+            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
+          )}
+        >
+          {props.children}
+          <span class="sr-only">{props.label}</span>
+        </TooltipTrigger>
+        <TooltipContent>{props.label}</TooltipContent>
+      </Tooltip>
     </Radio.Item>
   )
 }

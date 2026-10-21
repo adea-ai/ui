@@ -4,11 +4,13 @@
   "title": "Settings",
   "description": "",
   "dependencies": [
-    "@kobalte/core@^0.13.14"
+    "@kobalte/core@^0.13.14",
+    "lucide-solid@^1.51.0"
   ],
   "registryDependencies": [
     "@adea-ai/ui/sidebar-nav",
     "@adea-ai/ui/tabs",
+    "@adea-ai/ui/tooltip",
     "@adea-ai/ui/typography",
     "lib"
   ],

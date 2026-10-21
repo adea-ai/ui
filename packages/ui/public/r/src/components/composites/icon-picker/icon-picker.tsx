@@ -1,15 +1,18 @@
 import { RadioGroup as Radio } from '@kobalte/core/radio-group'
-import { ImageUp, Trash2 } from 'lucide-solid'
-import { For, Show, createSignal, createUniqueId } from 'solid-js'
+import { ChevronDown, ImageUp, Trash2 } from 'lucide-solid'
+import type { JSX } from 'solid-js'
+import { For, Show, createSignal, createUniqueId, splitProps } from 'solid-js'
+import { Dynamic } from 'solid-js/web'
 import { cn } from '../../../lib/utils'
 import { Button } from '../../ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import {
   MarkImageError,
   markImageFromFile,
   markImageProblemCopy,
   MARK_IMAGE_MAX_SOURCE_BYTES,
 } from './image-data-url'
-import { resolveShellIcon, shellIconEntries } from './shell-icons'
+import { resolveShellIcon, shellIconEntries, shellIconLabel } from './shell-icons'
 
 /**
  * IconPicker.
@@ -180,5 +183,64 @@ export function IconPicker(props: IconPickerProps) {
         </For>
       </Radio>
     </div>
+  )
+}
+
+/**
+ * IconPickerDropdown.
+ *
+ * The compact form of the picker for a settings row: one button showing the
+ * current mark, opening the full grid (and the upload row, when the host offers
+ * it) in a popover. Choosing a glyph applies it and closes the popover; an
+ * upload or Remove leaves it open so the result is visible. The host owns the
+ * value exactly as it does for `IconPicker`.
+ */
+export type IconPickerDropdownProps = IconPickerProps & {
+  /** The mark shown on the trigger; defaults to the checked glyph or the uploaded image. */
+  trigger?: JSX.Element
+}
+
+export function IconPickerDropdown(props: IconPickerDropdownProps) {
+  const [open, setOpen] = createSignal(false)
+  const [local, picker] = splitProps(props, ['trigger', 'class'])
+  const Current = () => resolveShellIcon(props.value ?? props.defaultKey ?? '')
+  return (
+    <Popover open={open()} onOpenChange={setOpen} placement="bottom-start">
+      <PopoverTrigger
+        as={Button}
+        type="button"
+        variant="outline"
+        data-slot="icon-picker-trigger"
+        aria-label={`${props.label}: ${props.image ? 'uploaded image' : shellIconLabel(props.value ?? props.defaultKey ?? '')}`}
+        disabled={props.disabled}
+        class={cn('gap-2', local.class)}
+      >
+        <span aria-hidden="true" class="flex size-5 items-center justify-center overflow-hidden">
+          <Show
+            when={local.trigger}
+            fallback={
+              <Show
+                when={props.image}
+                fallback={<Dynamic component={Current()} class="size-4" aria-hidden="true" />}
+              >
+                {(src) => <img src={src()} alt="" class="size-full rounded-sm object-cover" />}
+              </Show>
+            }
+          >
+            {local.trigger}
+          </Show>
+        </span>
+        <ChevronDown class="size-4 text-muted-foreground" aria-hidden="true" />
+      </PopoverTrigger>
+      <PopoverContent class="w-[min(22rem,var(--kb-popper-available-width))]">
+        <IconPicker
+          {...picker}
+          onValueChange={(key) => {
+            picker.onValueChange(key)
+            setOpen(false)
+          }}
+        />
+      </PopoverContent>
+    </Popover>
   )
 }
