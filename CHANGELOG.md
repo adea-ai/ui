@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.144.0](https://github.com/adea-ai/ui/compare/v0.143.0...v0.144.0) (2026-10-21)
+
+
+### Features
+
+* **settings:** inherit swatch, icon dropdown, row help tips and foreground nav items ([#469](https://github.com/adea-ai/ui/issues/469)) ([d2b6c3c](https://github.com/adea-ai/ui/commit/d2b6c3cd9424a62d556023da0af68ea78828ac22))
+
 ## [0.143.0](https://github.com/adea-ai/ui/compare/v0.142.4...v0.143.0) (2026-10-20)
 
 
