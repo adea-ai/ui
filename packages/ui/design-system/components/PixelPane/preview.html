@@ -1,0 +1,12 @@
+<!-- @dsCard group="Layout" height=200 -->
+<div id="root" style="padding:16px"></div>
+<script>
+  const { render, html, PixelPane } = window.AdeaUI;
+  render(() => html`
+    <div style="display:flex;height:160px;border:1px solid var(--border)">
+      <${PixelPane} width=${200} role="region" aria-label="Sources" style="background:var(--sidebar);padding:12px">Sources: 200 pixels<//>
+      <${PixelPane} role="region" aria-label="Workspace" style="padding:12px">Takes the remaining space<//>
+      <${PixelPane} width=${160} role="region" aria-label="Context" style="background:var(--sidebar);padding:12px">Context: 160 pixels<//>
+    </div>
+  `, document.getElementById('root'));
+</script>
