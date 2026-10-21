@@ -12,7 +12,7 @@ const uiRoot = resolve(import.meta.dirname, '../../../packages/ui')
 const fixture = resolve(uiRoot, 'tests/fixtures/workspace-switcher-reorder.tsx')
 const origin = 'http://ui.test'
 
-type Served = { body: string | Uint8Array; type: string }
+type Served = { body: string; type: string }
 const files = new Map<string, Served>()
 let entry = ''
 let styles = ''
