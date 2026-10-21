@@ -1,6 +1,7 @@
 import { ArrowDownUp, ChevronDown, Plus, Settings } from 'lucide-solid'
 import type { JSX } from 'solid-js'
-import { For, Show, Suspense, createEffect, createSignal, lazy } from 'solid-js'
+import { Dynamic } from 'solid-js/web'
+import { For, Show, createSignal, onCleanup } from 'solid-js'
 import { cn } from '#lib/utils'
 import {
   DropdownMenu,
@@ -16,11 +17,9 @@ import {
 import { ActionButton } from '../action-button'
 
 // The dialog is only reachable from a menu item, so it stays out of the code
-// that ships with the switcher and loads the first time the menu opens.
+// that ships with the switcher and loads on demand.
 const loadReorderDialog = () => import('./workspace-reorder-dialog')
-const WorkspaceReorderDialog = lazy(() =>
-  loadReorderDialog().then((module) => ({ default: module.WorkspaceReorderDialog }))
-)
+type ReorderDialog = Awaited<ReturnType<typeof loadReorderDialog>>['WorkspaceReorderDialog']
 
 /**
  * WorkspaceSwitcher.
@@ -74,6 +73,8 @@ export type WorkspaceSwitcherProps = {
    */
   onReorder?(ids: readonly string[]): void | Promise<void>
   reorderLabel?: string
+  /** Replaces the "Reorder workspaces…" item when the dialog could not be loaded. */
+  reorderErrorLabel?: string
   /** The menu's heading; also the trigger's accessible-name prefix. */
   label?: string
   /** Shown while no workspace is current. */
@@ -94,21 +95,67 @@ function drawMark(mark: WorkspaceSwitcherItem['mark'], copy: boolean): JSX.Eleme
 export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
   const [open, setOpen] = createSignal(false)
   const [reordering, setReordering] = createSignal(false)
-  // Mounted from the first request on and kept, so closing still restores focus.
-  const [reorderRequested, setReorderRequested] = createSignal(false)
+  const [reorderDialog, setReorderDialog] = createSignal<ReorderDialog>()
+  const [reorderFailed, setReorderFailed] = createSignal(false)
+  let cancelPending: (() => void) | undefined
   let trigger: HTMLElement | undefined
   const current = () => props.workspaces.find((item) => item.id === props.value)
   const label = () => props.label ?? 'Workspaces'
   const canReorder = () =>
     props.onReorder !== undefined && props.workspaces.filter((item) => !item.fixed).length > 1
+
+  // Fetch the dialog's code. Safe to call early and often: the browser keeps one
+  // copy, and a failure is remembered here instead of surfacing as an unhandled
+  // rejection, so the switcher keeps working without reordering.
+  const loadDialog = () =>
+    loadReorderDialog().then(
+      (module) => {
+        setReorderDialog(() => module.WorkspaceReorderDialog)
+        return true
+      },
+      () => {
+        setReorderFailed(true)
+        return false
+      }
+    )
   // Warm the chunk while the menu is open, so choosing the item rarely waits.
-  createEffect(() => {
-    if (open() && canReorder()) void loadReorderDialog()
-  })
+  const warm = (next: boolean) => {
+    setOpen(next)
+    if (next && canReorder() && !reorderDialog()) void loadDialog()
+  }
+  // Choosing the item while the code is still arriving must not open the dialog
+  // late: nothing on screen can take Escape or an outside click yet, so either
+  // of them withdraws the request, and the dialog opens only if the user waits.
+  const requestReorder = () => {
+    cancelPending?.()
+    if (reorderDialog()) {
+      setReordering(true)
+      return
+    }
+    let waiting = true
+    const stop = () => {
+      waiting = false
+      document.removeEventListener('keydown', onKey, true)
+      document.removeEventListener('pointerdown', stop, true)
+      if (cancelPending === stop) cancelPending = undefined
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') stop()
+    }
+    document.addEventListener('keydown', onKey, true)
+    document.addEventListener('pointerdown', stop, true)
+    cancelPending = stop
+    void loadDialog().then((loaded) => {
+      const stillWanted = waiting
+      stop()
+      if (loaded && stillWanted) setReordering(true)
+    })
+  }
+  onCleanup(() => cancelPending?.())
 
   return (
     <>
-      <DropdownMenu modal={false} open={open()} onOpenChange={setOpen}>
+      <DropdownMenu modal={false} open={open()} onOpenChange={warm}>
         <DropdownMenuTrigger
           as={ActionButton}
           variant="ghost"
@@ -161,14 +208,11 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
               </DropdownMenuItem>
             </Show>
             <Show when={canReorder()}>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setReorderRequested(true)
-                  setReordering(true)
-                }}
-              >
+              <DropdownMenuItem disabled={reorderFailed()} onSelect={requestReorder}>
                 <ArrowDownUp aria-hidden="true" />
-                {props.reorderLabel ?? 'Reorder workspaces…'}
+                {reorderFailed()
+                  ? (props.reorderErrorLabel ?? 'Couldn’t load reordering. Reload to try again.')
+                  : (props.reorderLabel ?? 'Reorder workspaces…')}
               </DropdownMenuItem>
             </Show>
             <Show when={props.onManage}>
@@ -180,17 +224,16 @@ export function WorkspaceSwitcher(props: WorkspaceSwitcherProps) {
           </Show>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Show when={reorderRequested() && props.onReorder}>
+      <Show when={reorderDialog() && props.onReorder}>
         {(onReorder) => (
-          <Suspense>
-            <WorkspaceReorderDialog
-              open={reordering()}
-              onOpenChange={setReordering}
-              workspaces={props.workspaces}
-              onReorder={onReorder()}
-              restoreFocusRef={() => trigger}
-            />
-          </Suspense>
+          <Dynamic
+            component={reorderDialog()}
+            open={reordering()}
+            onOpenChange={setReordering}
+            workspaces={props.workspaces}
+            onReorder={onReorder()}
+            restoreFocusRef={() => trigger}
+          />
         )}
       </Show>
     </>

@@ -25,7 +25,9 @@ function Fixture() {
           mark: () => <span aria-hidden="true">{id[0]}</span>,
           fixed: id === 'home',
         }))}
-        onReorder={(ids) => setOrder([...ids])}
+        onReorder={(ids) => {
+          setOrder([...ids])
+        }}
       />
       <output aria-label="Order">{order().join(',')}</output>
     </main>
