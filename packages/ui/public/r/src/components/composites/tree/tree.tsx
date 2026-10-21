@@ -503,9 +503,11 @@ export function TreeRow(props: TreeRowProps) {
       data-selected={local.selected ? '' : undefined}
       data-expanded={local.item.expandable ? String(local.item.expanded) : undefined}
       class={cn(
-        'group/tree-row relative flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors',
+        'group/tree-row flex min-h-row-sm w-full min-w-0 items-center gap-1.5 rounded-md pe-1.5 text-left text-sm outline-none transition-colors',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-primary-subtle',
         {
+          // Guide lines are positioned against the row; without them it keeps its original classes.
+          relative: tree.guides(),
           'bg-primary-subtle text-foreground': local.selected,
           'hover:bg-surface-hover': !local.selected,
         },
