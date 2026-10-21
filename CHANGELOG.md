@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.0](https://github.com/adea-ai/ui/compare/v0.145.2...v0.146.0) (2026-10-21)
+
+
+### Features
+
+* **ui:** add PixelPane for host-owned pixel widths ([#478](https://github.com/adea-ai/ui/issues/478)) ([bec67ef](https://github.com/adea-ai/ui/commit/bec67ef840662a791e5ee65456c1695847c40750))
+
 ## [0.145.2](https://github.com/adea-ai/ui/compare/v0.145.1...v0.145.2) (2026-10-21)
 
 
