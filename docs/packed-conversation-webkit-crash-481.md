@@ -141,11 +141,16 @@ report in any of the three failures.
 | **concurrent** | four gates at once in one container                                                            | 12 runs, 12 pass              |
 | **40 legs**    | the same five pilots twice in one process                                                      | 3 runs, 3 pass (40 legs each) |
 
-**No further failure was recorded.** The arms are 31 further full-gate attempts, and the fixed gate
-accounts for six more, and **not one of them failed in a browser**. The only failures in that traffic
-were `npm pack` failing on a half-written `packages/ui/dist` — two containers building and packing the
-same mounted worktree at once — which is a race in the measurement harness, not in the gate, and which
-happened before the gate reached a browser.
+**No further failure was recorded.** The arms are 31 further full-gate attempts, the fixed gate accounts for
+six more, and a **crash-time probe** — the fixed gate with the page's running-transition count read every
+250 ms, so that the state at the moment of a crash would be on the record — accounts for sixteen, and **not
+one of them failed in a browser**. The only failures in that traffic were `npm pack` failing on a
+half-written `packages/ui/dist` — two containers building and packing the same mounted worktree at once —
+which is a race in the measurement harness, not in the gate, and which happened before the gate reached a
+browser.
+
+The crash-time probe therefore **could not read the state at the crash**: the crash is too rare to be caught
+in sixteen attempts, and no reading is claimed from it.
 
 The crash is **not** introduced by this pull request: the archived CI failure was on PR #477's branch, which
 contains none of this branch's code, and the released baseline gate and this branch's gate behave the same.
