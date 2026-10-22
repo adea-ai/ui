@@ -171,6 +171,17 @@ attempts. That is where the search for a cause should continue, and it is the UI
 collapse path — the shared `ime-guard` and the composer's focus restoration — rather than anything in this
 gate's own control flow.
 
+**That path was read, and no source defect was found in it.** `createComposerImeGuard`
+(`packages/ui/src/components/conversation/ime-guard.ts`) is a single latch with one timeout and no document
+listener. The shared shell's focus restoration
+(`packages/ui/src/components/conversation/internal/chat-composer-shell.tsx`) is **one** `requestAnimationFrame`
+that focuses once and clears itself — `cancelFocus()` cancels the previous frame, and nothing re-requests
+focus, so there is no focus loop. There is no unbounded buffer, no interval and no accumulating listener on
+the collapse path; the only observer in the area is the scroll follower's `ResizeObserver`, which is bounded
+by the frame budget and reports a warning rather than dying. So the remaining candidates in this path are
+engine-level, not application-level — a renderer that dies with no stderr of its own is not what an
+application-level loop or leak looks like.
+
 ## 4. What is fixed, and what is not
 
 **Fixed — the gate now says what happened.** A browser or renderer that dies mid-interaction used to leave
@@ -225,6 +236,34 @@ cancelled one still fails the leg; only a leg that has _already_ failed treats t
 that its own error is the informative one. Nothing about the gate's assertions, budgets, engines,
 environment, timeouts or retry behaviour changes, and no failure is masked: the leg still fails, and the
 failure is now named.
+
+**Fixed — the failure now names the interaction the leg was in.** Playwright's own error for a crashed
+renderer carries **no call log**: it reads `evaluate: Target crashed` and nothing else, so the archived
+occurrence could say which leg died and not which interaction it was in. That gap is what made the #481
+record unreadable, and it is closed now: the gate records the last action each leg performed and puts it in
+the failure message.
+
+```
+Packed atomic/solid/webkit: the page's renderer crashed mid-interaction
+(evaluate: Target crashed), last action: click on getByRole 'button' name 'Finish delivery';
+the packed contract is unproven in this run
+```
+
+The record is taken from the real gate — one per leg, in the pinned image:
+
+| Leg               | last action recorded                                 |
+| ----------------- | ---------------------------------------------------- |
+| conversation/*    | `click on getByRole 'button' name 'Switch channel'`  |
+| composer-fields/* | `press on getByRole 'textbox' name 'Reply message'`  |
+| busy/*            | `press on getByRole 'menuitemradio' name /Steer/`    |
+| composed/*        | `click on getByRole 'button' name 'Finish delivery'` |
+| atomic/*          | `click on getByRole 'button' name 'Finish delivery'` |
+
+The trace **decides nothing**: it remembers a string and forwards every call unchanged. The locator a caller
+holds is still the locator it asked for — the action methods are shadowed on it, not replaced — so the
+assertions that take a locator are untouched, and the traced gate passes all twenty legs in the pinned
+image. The regression is pinned in `packages/ui/tests/packed-interaction-trace.test.ts` (5 cases), and the
+message shape in `packages/ui/scripts/check-packed-browser-gone.test.mjs` (now 8 cases).
 
 **Not fixed — the crash.** The engine still dies under the packed fixture. The cause is **not established**
 and the crash is therefore **unresolved**. The candidates the evidence keeps open, none of them established

@@ -81,3 +81,32 @@ test('every other failure is returned unchanged', () => {
   const notAnError = 'a thrown string'
   assert.equal(describeBrowserGoneFailure('composed', 'solid', 'webkit', notAnError), notAnError)
 })
+
+test('the failure names the interaction the leg was performing', () => {
+  // Playwright's own error for a crashed renderer carries no call log, so the
+  // recorded action is the only thing that says where the leg was.
+  const named = describeBrowserGoneFailure(
+    'atomic',
+    'solid',
+    'webkit',
+    rendererCrashed,
+    "click on getByRole 'menuitem' name 'Collapse the message input'"
+  )
+  assert.match(
+    named.message,
+    /last action: click on getByRole 'menuitem' name 'Collapse the message input'/
+  )
+  // The action is an addition: the leg, the failure and the cause are unchanged.
+  assert.match(named.message, /Packed atomic\/solid\/webkit/)
+  assert.match(named.message, /the page's renderer crashed mid-interaction/)
+  assert.equal(named.cause, rendererCrashed)
+})
+
+test('a failure with no recorded action reads exactly as it did before', () => {
+  const named = describeBrowserGoneFailure('atomic', 'solid', 'webkit', rendererCrashed)
+  assert.doesNotMatch(named.message, /last action/)
+  assert.match(
+    named.message,
+    /the page's renderer crashed mid-interaction \(evaluate: Target crashed \)/
+  )
+})

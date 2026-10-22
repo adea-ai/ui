@@ -40,20 +40,26 @@ export function isTargetCrashedError(error) {
  * The returned error keeps the original as its cause, so the operation Playwright
  * was in and its own log are not lost. Any other error is returned unchanged, so
  * nothing else about a gate's outcome changes.
+ *
+ * `lastAction` is the interaction the leg was performing when it died, when the
+ * gate was able to record it. Playwright's own error for a crashed renderer
+ * carries no call log, so without it the failure says which leg died and not
+ * which interaction it was in.
  */
-export function describeBrowserGoneFailure(pilot, condition, engine, error) {
+export function describeBrowserGoneFailure(pilot, condition, engine, error, lastAction) {
   const detail = error instanceof Error ? error.message : String(error)
+  const step = lastAction ? `, last action: ${lastAction}` : ''
   if (isTargetCrashedError(error)) {
     return new Error(
       `Packed ${pilot}/${condition}/${engine}: the page's renderer crashed mid-interaction ` +
-        `(${detail}); the packed contract is unproven in this run`,
+        `(${detail}${step}); the packed contract is unproven in this run`,
       { cause: error }
     )
   }
   if (!isBrowserGoneError(error)) return error
   return new Error(
     `Packed ${pilot}/${condition}/${engine}: the browser process went away mid-interaction ` +
-      `(${detail}); the packed contract is unproven in this run`,
+      `(${detail}${step}); the packed contract is unproven in this run`,
     { cause: error }
   )
 }
