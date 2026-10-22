@@ -457,7 +457,7 @@ trigger CI. Applicable passing checks and protections gate merge, rather than WI
   and [docs/design-system.md](docs/design-system.md): authoring, package/registry
   consumption and the design artifact's source map.
 
-Use `.mise.toml` (Node 24.18.0, Bun 1.4.0) and the committed `bun.lock`.
+Use `.mise.toml` (Node 24.18.0, Bun 1.4.4) and the committed `bun.lock`.
 For visual changes, inspect affected stories and Foundations galleries in Storybook;
 exercise variants, sizes, awkward states, keyboard and focus behavior. Run the
 appropriate `test:components`, `test:a11y` or `test:layout` lane in addition to

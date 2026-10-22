@@ -149,11 +149,7 @@ export function PackedDialogConsumer() {
       include: ['consumer.tsx'],
     })
   )
-  await run(
-    join(root, 'node_modules/.bin/tsc'),
-    ['--project', join(consumer, 'tsconfig.json')],
-    consumer
-  )
+  await run('bun', ['check', '--project', join(consumer, 'tsconfig.json')], consumer)
 
   const sourceFixture = readFileSync(join(packageRoot, 'tests/fixtures/modal-dialog.tsx'), 'utf8')
     .replace(

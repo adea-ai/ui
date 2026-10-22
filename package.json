@@ -77,5 +77,5 @@
   "engines": {
     "node": "24.18.0"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

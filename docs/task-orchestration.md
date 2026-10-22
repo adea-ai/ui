@@ -1,7 +1,7 @@
 # Workspace task orchestration
 
 The root build, lint, typecheck, test and test:unit scripts run the named `orch:*`
-tasks in `vite.config.ts` using Vite+ 1.3.0. Bun 1.4.3 runs the package scripts,
+tasks in `vite.config.ts` using Vite+ 1.3.0. Bun 1.4.4 runs the package scripts,
 checks TypeScript and executes tests. Library JavaScript and declaration builds
 keep their existing Vite and TypeScript emit commands.
 

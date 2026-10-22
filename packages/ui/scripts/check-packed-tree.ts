@@ -122,15 +122,11 @@ export function RootExportConsumer() {
       include: ['type-probe.tsx'],
     })
   )
-  execFileSync(
-    resolve(repositoryRoot, 'node_modules/.bin/tsc'),
-    ['-p', join(consumer, 'tsconfig.json')],
-    {
-      cwd: consumer,
-      stdio: 'inherit',
-      timeout: 120_000,
-    }
-  )
+  execFileSync('bun', ['check', '-p', join(consumer, 'tsconfig.json')], {
+    cwd: consumer,
+    stdio: 'inherit',
+    timeout: 120_000,
+  })
 
   const fixture = readFileSync(join(uiRoot, 'tests/fixtures/tree.tsx'), 'utf8')
     .replace('../../src/components/ui/button/button', '@adea-ai/ui/components/ui/button')
