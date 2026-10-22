@@ -362,7 +362,7 @@ export function PackedSceneControlsConsumer() {
       include: [typeConsumer],
     })
   )
-  execFileSync(join(repoRoot, 'node_modules/.bin/tsc'), ['--project', typeConfig], {
+  execFileSync('bun', ['check', '--project', typeConfig], {
     cwd: consumer,
     stdio: 'inherit',
   })

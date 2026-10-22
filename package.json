@@ -60,7 +60,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.4",
     "bun-types": "^1.4.3",
-    "code-foundry": "1.48.1",
+    "code-foundry": "1.48.4",
     "oxfmt": "^0.71.0",
     "oxlint": "^1.86.0",
     "release-please": "17.11.2",
@@ -77,5 +77,5 @@
   "engines": {
     "node": "24.18.0"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

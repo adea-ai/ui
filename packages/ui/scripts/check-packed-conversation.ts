@@ -314,10 +314,7 @@ void textarea
       include: [typedConsumer],
     })
   )
-  execFileSync(resolve(root, '../../node_modules/.bin/tsc'), [
-    '--project',
-    join(consumer, 'message-composer-tsconfig.json'),
-  ])
+  execFileSync('bun', ['check', '--project', join(consumer, 'message-composer-tsconfig.json')])
   if (Object.keys(manifest.exports).some((key) => /(?:^|\/)internal(?:\/|$)/.test(key)))
     throw new Error('Packed UI export map exposes an internal module path')
   const privateImportProbe = `
