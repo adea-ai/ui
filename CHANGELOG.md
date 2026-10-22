@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.1](https://github.com/adea-ai/ui/compare/v0.146.0...v0.146.1) (2026-10-22)
+
+
+### Maintenance
+
+* pin Bun 1.4.4 and check packed consumers natively ([#483](https://github.com/adea-ai/ui/issues/483)) ([7c5d212](https://github.com/adea-ai/ui/commit/7c5d2122fb5165d16ea2ae4dad7a1543da75cbe2))
+
 ## [0.146.0](https://github.com/adea-ai/ui/compare/v0.145.2...v0.146.0) (2026-10-21)
 
 
