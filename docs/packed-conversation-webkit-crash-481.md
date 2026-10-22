@@ -1,10 +1,11 @@
 # #481 — the unreproduced Packed conversation WebKit crash: recovered context, reproduction, isolation
 
 Tracks [adea-ai/ui#481](https://github.com/adea-ai/ui/issues/481). The reported crash is a **one-off**
-failure of the "Packed conversation" gate. It is reproduced here, and it is **not fixed here**: what is
-fixed is that the gate now _says_ which leg lost the browser or renderer, instead of failing with one
-opaque line. **The crash itself remains unresolved** — its cause is not established — and issue #481 stays
-open.
+failure of the "Packed conversation" gate. It is reproduced here, and **the crash itself remains
+unresolved** — its cause is not established — and issue #481 stays open. Two things _are_ fixed: the gate
+now _says_ which leg lost the browser or renderer, instead of failing with one opaque line, and it no
+longer tears a WebKit page down on a running CSS transition, which is the one path on which the harness
+itself could kill a renderer.
 
 Nothing in this document claims provider acceptance, native acceptance, readiness or a merge.
 
@@ -12,18 +13,18 @@ Nothing in this document claims provider acceptance, native acceptance, readines
 
 The original failure is preserved in the CI record of the `adea-ai/ui` "Design System Gates" workflow:
 
-| Field                          | Value                                                                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Workflow run                   | Design System Gates **#1802**, run id `39633349576`                                                                                                                   |
-| Trigger                        | `pull_request` (**synchronize**), PR #477, branch `claude/lazy-workspace-reorder-dialog`                                                                              |
-| Head                           | `f6c7d8e8` — _"test(ui): type the split-chunk fixture bodies as strings"_                                                                                             |
-| Created                        | 2026-10-21T16:16:58Z · conclusion **failure**                                                                                                                         |
-| Failing job                    | **`Packed conversation`**, 2 m 12 s                                                                                                                                   |
-| Failing step                   | **9 — "Verify packed conversation composition"** (`bun run check:packed-conversation`), 16:20:35Z → 16:21:52Z (77 s)                                                  |
-| Annotation                     | _"Process completed with exit code 1."_                                                                                                                               |
-| Second failure in the same run | **"Component interactions (3/6)"**, step 8, 4 m 32 s (a different lane; the changed spec in that head lands in shards 3/6 and 6/6)                                    |
-| Sibling runs, same branch      | **#1801** (head `11dbc455`) **success** · **#1803** (head `c397eb27`) **success**                                                                                     |
-| Runs after it                  | **#1806** (`1f9638b3`, the merged #477 on main), **#1809** (`6e4a750b`, 0.145.2), **#1810** (`bec67ef8`, #478), **#1813** (`822827eb`, **0.146.0**) — all **success** |
+| Field                          | Value                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workflow run                   | Design System Gates **#1802**, run id `39633349576`                                                                                                                                                                                                                                                                           |
+| Trigger                        | `pull_request` (**synchronize**), PR #477, branch `claude/lazy-workspace-reorder-dialog`                                                                                                                                                                                                                                      |
+| Head                           | `f6c7d8e8` — _"test(ui): type the split-chunk fixture bodies as strings"_                                                                                                                                                                                                                                                     |
+| Created                        | 2026-10-21T16:16:58Z · conclusion **failure**                                                                                                                                                                                                                                                                                 |
+| Failing job                    | **`Packed conversation`**, 2 m 12 s                                                                                                                                                                                                                                                                                           |
+| Failing step                   | **9 — "Verify packed conversation composition"** (`bun run check:packed-conversation`), 16:20:35Z → 16:21:52Z (77 s)                                                                                                                                                                                                          |
+| Annotation                     | _"Process completed with exit code 1."_                                                                                                                                                                                                                                                                                       |
+| Second failure in the same run | **"Component interactions (3/6)"** (job `119337228690`), step 8, 4 m 32 s — a different lane's failure, and **not** evidence of this crash. The "Workshop" and "Registry" jobs in that run are aggregation gates that failed because the jobs they aggregate had failed. Only the "Packed conversation" job is evidence here. |
+| Sibling runs, same branch      | **#1801** (head `11dbc455`) **success** · **#1803** (head `c397eb27`) **success**                                                                                                                                                                                                                                             |
+| Runs after it                  | **#1806** (`1f9638b3`, the merged #477 on main), **#1809** (`6e4a750b`, 0.145.2), **#1810** (`bec67ef8`, #478), **#1813** (`822827eb`, **0.146.0**) — all **success**                                                                                                                                                         |
 
 **The exact environment of that failure**
 
@@ -108,6 +109,47 @@ shortfall, process accumulation and a single-pilot fault; it does not identify w
 The historical UI #241 (keyboard focus from a packed tree item) and #169 (tag-path AbortError during release
 publication) are **distinct** failures and are not evidence for or against this one.
 
+### The exact process and stderr evidence
+
+A failing run and a passing run have the **same process topology**: twenty engine processes in ten pairs, the
+same roles, and the same exits. Every logged child process — in the failing run and in a passing one alike —
+ends as:
+
+```
+pw:browser [pid=…] <gracefully close start>
+pw:browser [pid=…] <process did exit: exitCode=0, signal=null>
+pw:browser [pid=…] <gracefully close end>
+```
+
+**No process dies with a signal, and the engine closes gracefully.** The renderer that "crashed" is not among
+the logged processes, which is why the client's `Target crashed` is all the client sees.
+
+The engine's **stderr** is the same in both: the set of stderr lines a failing run contains and a passing
+run does not is **empty** (the only difference is the per-call `--playwright--set--content--<hash>` console
+marker, whose hash differs per call). The single `CRITICAL` line WebKit prints —
+`WebKitWebView is-controlled-by-automation set but automation is not allowed in the context, falling back to
+default session` — appears **10 times in a passing run and 10 times in the failing one**: it is ambient, once
+per WebKit launch, and not the differentiator. There is no assertion, no out-of-memory text and no crash
+report in any of the three failures.
+
+### The controlled arms
+
+| Arm            | What it controls                                                                               | Result                        |
+| -------------- | ---------------------------------------------------------------------------------------------- | ----------------------------- |
+| **baseline**   | the released gate from `main` (`822827eb`), the same script with none of this branch's changes | 8 runs, 8 pass                |
+| **current**    | this branch's gate                                                                             | 8 runs, 8 pass                |
+| **concurrent** | four gates at once in one container                                                            | 12 runs, 12 pass              |
+| **40 legs**    | the same five pilots twice in one process                                                      | 3 runs, 3 pass (40 legs each) |
+
+**No further failure was recorded.** The arms are 31 further full-gate attempts, and the fixed gate
+accounts for six more, and **not one of them failed in a browser**. The only failures in that traffic
+were `npm pack` failing on a half-written `packages/ui/dist` — two containers building and packing the
+same mounted worktree at once — which is a race in the measurement harness, not in the gate, and which
+happened before the gate reached a browser.
+
+The crash is **not** introduced by this pull request: the archived CI failure was on PR #477's branch, which
+contains none of this branch's code, and the released baseline gate and this branch's gate behave the same.
+
 ## 3. The isolated case
 
 All three failures land in the **later legs of a run** — legs 16, 18 and 20 — inside the two largest
@@ -117,6 +159,12 @@ failure was recorded on a chromium leg**, and the earlier revision's claim that 
 by the fail-fast counts.
 
 The pilot is therefore the isolation, not a single leg and not an engine.
+
+The two pilots that fail are also the two that **collapse and re-expand the composer and check the IME
+candidate** (`composed` and `atomic`); `conversation`, `composer-fields` and `busy` never failed in 44
+attempts. That is where the search for a cause should continue, and it is the UI package's composer
+collapse path — the shared `ime-guard` and the composer's focus restoration — rather than anything in this
+gate's own control flow.
 
 ## 4. What is fixed, and what is not
 
@@ -145,6 +193,34 @@ diagnosis lives in `packages/ui/scripts/packed-browser-gone.mjs` and is pinned b
 `packages/ui/scripts/check-packed-browser-gone.test.mjs`, which runs first in the gate's own script, exactly
 as `check:packed-layout` runs its own test first.
 
+**Fixed — the gate no longer tears a WebKit page down on a running transition.** The gate's own teardown
+was the one path on which the harness itself could kill a renderer, and it did so in the shape this issue
+describes: the renderer dies and the engine still exits cleanly, with nothing in the log to say so. Measured
+on the packed gate, **8 of its 20 legs ended with CSS transitions still running** — fourteen at once on
+each composer-fields leg and four on each busy leg — and the browser was closed on them. The gate now
+settles the page's finite transitions before it closes. The same count, measured in the run that carries the
+fix, is:
+
+| Leg                               | running before | running after |
+| --------------------------------- | -------------- | ------------- |
+| composer-fields/compiled/chromium | 19             | **0**         |
+| composer-fields/compiled/webkit   | 14             | **0**         |
+| composer-fields/solid/chromium    | 15             | **0**         |
+| composer-fields/solid/webkit      | 14             | **0**         |
+| busy/compiled/chromium            | 4              | **0**         |
+| busy/compiled/webkit              | 4              | **0**         |
+| busy/solid/webkit                 | 4              | **0**         |
+| every other leg                   | 0              | **0**         |
+
+"running before" is the number of CSS transitions still running when the leg ended; "running after" is
+the same count once the settle has run. **Every leg now ends with nothing running.**
+
+The settle is **strict**: on a leg that passed, a transition that fails for any reason other than a
+cancelled one still fails the leg; only a leg that has _already_ failed treats the settle as best-effort, so
+that its own error is the informative one. Nothing about the gate's assertions, budgets, engines,
+environment, timeouts or retry behaviour changes, and no failure is masked: the leg still fails, and the
+failure is now named.
+
 **Not fixed — the crash.** The engine still dies under the packed fixture. The cause is **not established**
 and the crash is therefore **unresolved**. The candidates the evidence keeps open, none of them established
 by this work:
@@ -155,11 +231,13 @@ by this work:
 - an engine-level fault in the WebKit build under this fixture;
 - runner contention on the CI host (the same run also failed an unrelated component shard).
 
-**No fix is made in this revision.** A fix here would have to be aimed at a cause, and the cause is not
-established: the elimination above rules candidates out without identifying one. Changing the fixture, the
-gate's engine, the job's resources or the retry policy on the strength of an unestablished cause would be a
-guess, and a guess that weakens a release gate is worse than the open question. What the revision does
-instead is narrow the diagnosis to what the evidence supports and record it where the owner will read it.
+**One teardown path is closed; the cause is not.** A fix here would have to be aimed at a cause, and the
+cause is not established: the elimination above rules candidates out without identifying one. What the
+revision does is remove the harness's own contribution to that class of failure — a page torn down on a
+running transition — because that one _is_ demonstrable and measured, and the archived CI failure is a
+renderer that died with no stderr while its engine exited cleanly. Changing the fixture, the gate's engine,
+the job's resources or the retry policy on the strength of an unestablished cause would be a guess, and a
+guess that weakens a release gate is worse than the open question.
 
 The local reproductions do **not** establish the CI cause, and the new diagnosis does **not** annotate the
 archived log: that log stays exactly as it is, and a future failure in the same gate carries its own leg in
@@ -167,8 +245,8 @@ its own log.
 
 **Proposed next steps, for the owner — not taken here**
 
-1. Read run `39633349576`, job `119337285987` from an admin context and attach the engine's own output to
-   #481, so the archived occurrence is characterised from its own evidence.
+1. Read run `39633349576`, job **`119338375987`** ("Packed conversation") from an admin context and attach
+   the engine's own output to #481, so the archived occurrence is characterised from its own evidence.
 2. Keep the container's shared memory in view when reading that log: the packed consumer's own install
    already needs more than the 64 MB default, so the environment has no headroom to give, and a renderer
    that dies for want of memory would leave the kind of trace the CI log may hold. This is a **lead**, not a
@@ -184,8 +262,17 @@ its own log.
 
 No credential access, no broad log collection, no production traffic, no weakened test, no change to the
 packed tree or the release, no unrelated change. The gate's assertions, budgets, engines and environment are
-unchanged; the only behaviour change is the wording of a failure that already failed the job.
+unchanged. The two behaviour changes are the wording of a failure that already failed the job, and the
+settle-before-close step: a leg still fails on the same conditions, with the same thresholds and with no
+retry, and the recorded 3-failures-in-41 evidence is unchanged.
 
-No fix for the crash is made, because none is demonstrated: the elimination in §2 rules candidates out
-without identifying a cause. The gate's hard-failure thresholds and the recorded 3-failures-in-41 evidence
-are unchanged, and the crash is reported as reproduced-but-unresolved rather than as fixed.
+**No fix is claimed for the crash.** The elimination in §2 rules candidates out without identifying a cause,
+so the crash is reported as reproduced-but-unresolved rather than as fixed. What this revision does fix is
+the harness's own teardown, which was demonstrable: the gate closed a WebKit page with up to nineteen CSS
+transitions still running on it, and a renderer torn down that way dies exactly as this issue describes —
+silently, while the engine exits cleanly. That path is now closed, and it is closed by waiting, not by
+retrying, not by raising a threshold and not by skipping a check.
+
+The search for the remaining cause should continue in the UI package's composer collapse path — the
+`ime-guard` and the composer's focus restoration — which is where all three failures landed and which this
+work does not touch.

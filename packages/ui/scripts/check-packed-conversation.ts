@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { chromium, webkit, expect } from '@playwright/test'
+import { chromium, webkit, expect, type Page } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -15,7 +15,7 @@ import {
 } from './conversation-packed-budget'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 import { describeBrowserGoneFailure } from './packed-browser-gone.mjs'
-import { waitForFiniteAnimations } from './finite-animations'
+import { waitForFiniteAnimations, settleBeforeClose } from './finite-animations'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -729,8 +729,11 @@ void textarea
       ] as const) {
         console.log(`Packed ${pilot}/${condition}/${engine}: interactions starting`)
         const browser = await browserType.launch({ headless: true })
+        let legPage: Page | undefined
+        let legFailed = false
         try {
           const page = await browser.newPage({ viewport: { width: 768, height: 700 } })
+          legPage = page
           const errors: string[] = []
           page.on('pageerror', (error) => errors.push(error.message))
           await page.setContent('<div id="app"></div>')
@@ -1395,8 +1398,18 @@ void textarea
           // opaque line, so the run fails without saying which leg lost it. The check
           // still fails either way; the failure is only named, and the original error
           // stays as its cause.
+          legFailed = true
           throw describeBrowserGoneFailure(pilot, condition, engine, error)
         } finally {
+          // Settle the page's transitions before the browser goes. The gate has
+          // measured up to nineteen CSS transitions still running at the end of a leg,
+          // and a WebKit page torn down on a running transition can take its renderer
+          // with it — a failure the gate cannot tell from an application failure
+          // afterwards, because the renderer dies and the engine still exits cleanly.
+          // A leg that already failed keeps its own error, so the settle is
+          // best-effort there; on a passing leg a transition that fails for any other
+          // reason still fails the leg.
+          if (legPage) await settleBeforeClose(legPage, { bestEffort: legFailed })
           await browser.close()
         }
       }
