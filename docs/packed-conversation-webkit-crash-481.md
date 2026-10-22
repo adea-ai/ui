@@ -84,6 +84,30 @@ went away (`Target page, context or browser has been closed`) are two shapes of 
 the packed gate. They are **local** observations: they say that this gate loses a browser or renderer
 under this fixture on this machine. They do not say that the archived CI failure was either of them.
 
+### What the attempts ruled out
+
+The reproduction is rare, so the cause was approached by elimination, on the supported path, with the same
+pinned image and the same gate.
+
+| Candidate                  | Experiment                                                  | Result                                                                                                                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A container memory ceiling | the container capped at **2 GiB** (`--memory=2g`)           | 8 runs, **0 failures**; the peak footprint was unchanged, so the cap never bound                                                                                                                                                          |
+| … at a harder ceiling      | capped at **1 GiB**                                         | the gate still completes and passes; the crash does not appear                                                                                                                                                                            |
+| A shared-memory shortfall  | `/dev/shm` shrunk to **32 MB** and to **4 MB**              | the gate cannot even install the packed consumer (0 legs, a different failure), so a shortfall below the default is not the trigger — and the CI packed jobs run at exactly that 64 MB default, since the workflow declares no `options:` |
+| Process accumulation       | the engine process count sampled every 0.5 s across a run   | it alternates **2 → 3** and never climbs: each browser is reaped before the next, so nothing accumulates                                                                                                                                  |
+| One pilot                  | only the two largest pilots (`composed` + `atomic`, 8 legs) | 8 runs, **0 failures**: the crash needs the whole twenty-leg sequence, not one pilot                                                                                                                                                      |
+| The measured footprint     | the same sampler                                            | the engine processes hold **~1.26 GiB** RSS across three processes, ~1.72–1.77 GiB in total, **stable from run to run**                                                                                                                   |
+
+**What the failures do show.** The **renderer** dies while the engine itself closes cleanly
+(`exitCode=0, signal=null`, _"gracefully close end"_), with no crash signal and no out-of-memory text in
+any log; the only `CRITICAL` line WebKit prints is ambient, on every launch. The failures need the whole
+sequence and land in its later legs.
+
+**The cause is not established.** The evidence above excludes a container memory ceiling, a shared-memory
+shortfall, process accumulation and a single-pilot fault; it does not identify what kills the renderer.
+The historical UI #241 (keyboard focus from a packed tree item) and #169 (tag-path AbortError during release
+publication) are **distinct** failures and are not evidence for or against this one.
+
 ## 3. The isolated case
 
 All three failures land in the **later legs of a run** — legs 16, 18 and 20 — inside the two largest
@@ -126,9 +150,16 @@ and the crash is therefore **unresolved**. The candidates the evidence keeps ope
 by this work:
 
 - the renderer dying under the largest compositions' memory or scheduling pressure (every failure landed in
-  the later legs of a twenty-leg run, and the failures drift across legs);
+  the later legs of a twenty-leg run, and the failures drift across legs) — note that a _container_ memory
+  ceiling is excluded, but that does not exclude a limit the renderer itself reaches;
 - an engine-level fault in the WebKit build under this fixture;
 - runner contention on the CI host (the same run also failed an unrelated component shard).
+
+**No fix is made in this revision.** A fix here would have to be aimed at a cause, and the cause is not
+established: the elimination above rules candidates out without identifying one. Changing the fixture, the
+gate's engine, the job's resources or the retry policy on the strength of an unestablished cause would be a
+guess, and a guess that weakens a release gate is worse than the open question. What the revision does
+instead is narrow the diagnosis to what the evidence supports and record it where the owner will read it.
 
 The local reproductions do **not** establish the CI cause, and the new diagnosis does **not** annotate the
 archived log: that log stays exactly as it is, and a future failure in the same gate carries its own leg in
@@ -138,9 +169,14 @@ its own log.
 
 1. Read run `39633349576`, job `119337285987` from an admin context and attach the engine's own output to
    #481, so the archived occurrence is characterised from its own evidence.
-2. Establish whether the `composed`/`atomic` compositions are what the engine cannot carry — the pilot's
-   fixture size against the runner's memory — before changing anything about the fixture.
-3. If the engine death cannot be removed, decide whether the gate should retry a lost leg once. That is a
+2. Keep the container's shared memory in view when reading that log: the packed consumer's own install
+   already needs more than the 64 MB default, so the environment has no headroom to give, and a renderer
+   that dies for want of memory would leave the kind of trace the CI log may hold. This is a **lead**, not a
+   demonstrated cause — the gate cannot even reach the browser when shared memory is reduced below the
+   default, so it cannot be tested from here.
+3. Establish whether the `composed`/`atomic` compositions are what the engine cannot carry — the pilot's
+   fixture size against the renderer's ~1.26 GiB — before changing anything about the fixture.
+4. If the engine death cannot be removed, decide whether the gate should retry a lost leg once. That is a
    release-gate decision and is deliberately **not** taken here: it would change what the gate accepts, and
    this investigation does not establish that a retry is sound.
 
@@ -149,3 +185,7 @@ its own log.
 No credential access, no broad log collection, no production traffic, no weakened test, no change to the
 packed tree or the release, no unrelated change. The gate's assertions, budgets, engines and environment are
 unchanged; the only behaviour change is the wording of a failure that already failed the job.
+
+No fix for the crash is made, because none is demonstrated: the elimination in §2 rules candidates out
+without identifying a cause. The gate's hard-failure thresholds and the recorded 3-failures-in-41 evidence
+are unchanged, and the crash is reported as reproduced-but-unresolved rather than as fixed.
