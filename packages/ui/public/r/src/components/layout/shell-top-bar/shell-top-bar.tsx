@@ -156,7 +156,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
         orientation="vertical"
         data-slot="shell-top-bar-divider"
         aria-hidden="true"
-        class="h-5"
+        class="data-[orientation=vertical]:h-5"
       />
       <Show when={breadcrumb()}>
         <div
@@ -180,7 +180,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
       <Show when={actions()}>
         <div
           data-slot="shell-top-bar-actions"
-          class="window-no-drag flex h-topbar max-w-full min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden ps-1"
+          class="window-no-drag flex h-topbar max-w-full min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden ps-1 @max-[34rem]/shell-top-bar:mb-0.5"
         >
           {actions()}
         </div>

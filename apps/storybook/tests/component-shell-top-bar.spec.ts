@@ -72,6 +72,15 @@ test('the shell top bar stays inside its window and keeps every control reachabl
           height: box.height,
           leadingScrolls: leading.scrollWidth > leading.clientWidth + 1,
           leadingRight: leading.getBoundingClientRect().right,
+          top: box.top,
+          bottom: box.bottom,
+          rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+          divider: (() => {
+            const rect = header
+              .querySelector<HTMLElement>('[data-slot="shell-top-bar-divider"]')!
+              .getBoundingClientRect()
+            return { height: rect.height, top: rect.top, bottom: rect.bottom }
+          })(),
           controls: controls.map((control) => {
             const rect = control.getBoundingClientRect()
             return {
@@ -80,6 +89,8 @@ test('the shell top bar stays inside its window and keeps every control reachabl
               right: rect.right,
               width: rect.width,
               height: rect.height,
+              top: rect.top,
+              bottom: rect.bottom,
             }
           }),
         }
@@ -95,7 +106,29 @@ test('the shell top bar stays inside its window and keeps every control reachabl
         measured.controls.length,
         `${where}: every control is rendered`
       ).toBeGreaterThanOrEqual(7)
+      // The divider is a fixed 1.25rem mark. Its own vertical-orientation `h-full` once won over a
+      // plain `h-5`, so it took a height from the wrapped bar (or none at all) instead.
+      expect(
+        Math.abs(measured.divider.height - 1.25 * measured.rem),
+        `${where}: the divider is 1.25rem tall`
+      ).toBeLessThanOrEqual(1)
+      expect(
+        measured.divider.top,
+        `${where}: the divider starts inside the bar`
+      ).toBeGreaterThanOrEqual(measured.top - 1)
+      expect(
+        measured.divider.bottom,
+        `${where}: the divider ends inside the bar`
+      ).toBeLessThanOrEqual(measured.bottom + 1)
       for (const control of measured.controls) {
+        expect(
+          control.bottom,
+          `${where}: ${control.name} ends inside the bar, not below it`
+        ).toBeLessThanOrEqual(measured.bottom)
+        expect(
+          control.height,
+          `${where}: ${control.name} keeps a 24px target height`
+        ).toBeGreaterThanOrEqual(24)
         expect(
           control.left,
           `${where}: ${control.name} starts inside the window`
@@ -117,4 +150,41 @@ test('the shell top bar stays inside its window and keeps every control reachabl
   await page.keyboard.press('Tab')
   const first = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'))
   expect(first).toBe('Back')
+})
+
+test('at 320px and 200% text the last control keeps 24px under it, with or without a search row', async ({
+  page,
+}) => {
+  for (const withSearch of [true, false]) {
+    await page.setContent(
+      '<!doctype html><html lang="en"><head><title>Shell top bar</title></head><body></body></html>'
+    )
+    await page.addStyleTag({ content: css })
+    await page.evaluate((search) => {
+      ;(globalThis as { shellTopBarNoSearch?: boolean }).shellTopBarNoSearch = !search
+    }, withSearch)
+    await page.addScriptTag({ content: script })
+    await page.setViewportSize({ width: 320, height: 844 })
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '32px'
+    })
+    const where = `320px at 200% text, ${withSearch ? 'with' : 'without'} a search row`
+    // The bar's own geometry: the lowest control must keep 24px above the bar's bottom edge, so a
+    // menu opened from it has room under it. (Where the menu itself starts is the menu's offset.)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const bar = document
+              .querySelector('[data-slot="shell-top-bar"]')!
+              .getBoundingClientRect()
+            const trigger = document
+              .querySelector('[aria-label="Settings"]')!
+              .getBoundingClientRect()
+            return bar.bottom - trigger.bottom
+          }),
+        { message: `${where}: the Settings trigger keeps 24px under it` }
+      )
+      .toBeGreaterThanOrEqual(24)
+  }
 })

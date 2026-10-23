@@ -6,6 +6,12 @@ import { WorkspaceSwitcher } from '../../src/components/composites/workspace-swi
 import { TopBarBreadcrumb, TopBarSearch } from '../../src/components/layout/top-bar'
 import { ShellTopBar } from '../../src/components/layout/shell-top-bar'
 import { Button } from '../../src/components/ui/button/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../src/components/ui/dropdown-menu'
 import '../../src/styles/globals.css'
 
 render(() => {
@@ -53,15 +59,24 @@ render(() => {
             <span class="truncate font-medium">Redesign</span>
           </TopBarBreadcrumb>
         }
-        search={<TopBarSearch placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />}
+        search={
+          (globalThis as { shellTopBarNoSearch?: boolean }).shellTopBarNoSearch ? undefined : (
+            <TopBarSearch placeholder="Search" shortcut="⌘K" keyshortcuts="Meta+K" />
+          )
+        }
         actions={
           <>
             <Button size="sm" variant="ghost" aria-label="New session">
               <Plus aria-hidden="true" />
             </Button>
-            <Button size="sm" variant="ghost" aria-label="Settings">
-              <Settings aria-hidden="true" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as={Button} size="sm" variant="ghost" aria-label="Settings">
+                <Settings aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>Preferences</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         }
       />
