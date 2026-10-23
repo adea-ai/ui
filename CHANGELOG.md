@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.5](https://github.com/adea-ai/ui/compare/v0.146.4...v0.146.5) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** read the tarball name from npm pack output of either shape ([#493](https://github.com/adea-ai/ui/issues/493)) ([a1c150f](https://github.com/adea-ai/ui/commit/a1c150fdd5bcfb556ab9c5012f58d6f76f1d354c))
+
 ## [0.146.4](https://github.com/adea-ai/ui/compare/v0.146.3...v0.146.4) (2026-10-23)
 
 
