@@ -1,4 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
   affectsComponentShards,
   affectsLibExports,
@@ -275,6 +279,32 @@ describe('unit test selection', () => {
       expect(root.dir.length).toBeGreaterThan(0)
     }
   })
+})
+
+test('selected UI tests can import Solid JSX with the configured runner', () => {
+  const root = TEST_ROOTS.find((entry) => entry.dir === 'packages/ui/tests')
+  if (!root) throw new Error('UI test root is missing')
+  const directory = mkdtempSync(join(tmpdir(), 'ui-selected-solid-test-'))
+  try {
+    const fixture = join(directory, 'selected.test.ts')
+    const component = new URL('fixtures/solid-transform/a.tsx', import.meta.url).href
+    writeFileSync(
+      fixture,
+      'import { expect, test } from "bun:test"\n' +
+        `import { Fixture } from ${JSON.stringify(component)}\n` +
+        'test("selected Solid JSX fixture", () => expect(typeof Fixture).toBe("function"))\n'
+    )
+    const child = spawnSync(process.execPath, [...root.command.slice(1), fixture], {
+      cwd: new URL('../', import.meta.url),
+      encoding: 'utf8',
+      timeout: 5_000,
+    })
+    expect(child.error).toBeUndefined()
+    expect(child.status).toBe(0)
+    expect(child.stdout + child.stderr).toContain('1 pass')
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 describe('the plan', () => {
