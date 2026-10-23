@@ -50,6 +50,7 @@ const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
 })
 
 const archive = parseNpmPackEntry(raw)
+if (!archive.files) throw new Error('npm pack did not report the packed file list')
 const files: string[] = archive.files.map((file: { path: string }) => file.path)
 const failures: string[] = []
 
