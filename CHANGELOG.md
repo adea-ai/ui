@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.146.7](https://github.com/adea-ai/ui/compare/v0.146.6...v0.146.7) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** give the ShellTopBar divider its own 1.25rem height ([#488](https://github.com/adea-ai/ui/issues/488)) ([85dafdd](https://github.com/adea-ai/ui/commit/85dafddc7fde9ed00ee00f356a178c4359c57f70))
+
+
+### Tests
+
+* **ui:** combine component and tooling coverage without weakening gates ([#491](https://github.com/adea-ai/ui/issues/491)) ([27cd6a8](https://github.com/adea-ai/ui/commit/27cd6a8c138d573a01f239916296f4cf72d799a8))
+
 ## [0.146.6](https://github.com/adea-ai/ui/compare/v0.146.5...v0.146.6) (2026-10-23)
 
 
