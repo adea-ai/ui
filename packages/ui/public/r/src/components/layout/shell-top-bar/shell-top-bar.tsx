@@ -31,6 +31,11 @@ import { Separator } from '../../ui/separator'
  * own so the leading controls, the breadcrumb and the actions keep their room;
  * the breadcrumb is the first thing to truncate.
  *
+ * The bar never spills past its window. When the leading controls are wider than
+ * the window (a 320px viewport at 200% text), they wrap onto a second row inside
+ * the leading half instead of being cut off or pushing the page sideways, and
+ * the actions are capped to the bar and scroll if they are still too wide.
+ *
  * On a frameless desktop window the bar is the drag region (`draggable`) and
  * every control opts back out; `macosInset` and `windowsInset` reserve the
  * native window controls.
@@ -123,7 +128,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
         data-slot="shell-top-bar-leading"
         data-sidebar-open={local.sidebarOpen ? 'true' : 'false'}
         class={cn(
-          'window-no-drag flex h-topbar min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden pe-3',
+          'window-no-drag flex min-h-topbar max-w-full min-w-0 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 pe-3',
           /* Wide and open: span the rail and the sidebar so the divider lands on
              the sidebar's edge. The sidebar's own border is the 1px the divider
              overlaps, so no extra allowance is needed. */
@@ -175,7 +180,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
       <Show when={actions()}>
         <div
           data-slot="shell-top-bar-actions"
-          class="window-no-drag flex h-topbar min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden ps-1"
+          class="window-no-drag flex h-topbar max-w-full min-w-0 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden ps-1"
         >
           {actions()}
         </div>
