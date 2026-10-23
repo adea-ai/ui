@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.6](https://github.com/adea-ai/ui/compare/v0.146.5...v0.146.6) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** allow the tooltip focus gate in the packed scene-controls gate ([#494](https://github.com/adea-ai/ui/issues/494)) ([ef7cc11](https://github.com/adea-ai/ui/commit/ef7cc116fd5575cba65f8b77343162f477e0080a))
+
 ## [0.146.5](https://github.com/adea-ai/ui/compare/v0.146.4...v0.146.5) (2026-10-23)
 
 
