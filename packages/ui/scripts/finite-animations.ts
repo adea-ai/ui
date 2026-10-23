@@ -47,3 +47,34 @@ export async function settleBeforeClose(
     if (!options.bestEffort) throw error
   }
 }
+
+/**
+ * Settles the page's transitions and then closes the browser, always.
+ *
+ * Closing the browser must not depend on the settle: a rejected settle on a
+ * passing leg is a real failure, and it must still leave no browser process
+ * behind. The settle's error is the one the leg reports; a close error never
+ * replaces it, and on a leg that already failed it never replaces that leg's own
+ * error (the caller rethrows it). A close that fails on a passing leg still
+ * fails the leg.
+ */
+export async function settleAndClose(
+  page: SettleablePage | undefined,
+  browser: { close: () => Promise<unknown> },
+  options: { legFailed?: boolean } = {}
+): Promise<void> {
+  let settleFailure: { error: unknown } | undefined
+  let closeFailure: { error: unknown } | undefined
+  try {
+    if (page) await settleBeforeClose(page, { bestEffort: options.legFailed })
+  } catch (error) {
+    settleFailure = { error }
+  }
+  try {
+    await browser.close()
+  } catch (error) {
+    closeFailure = { error }
+  }
+  if (settleFailure) throw settleFailure.error
+  if (closeFailure && !options.legFailed) throw closeFailure.error
+}

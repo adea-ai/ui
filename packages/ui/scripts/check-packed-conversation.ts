@@ -16,7 +16,7 @@ import {
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 import { describeBrowserGoneFailure } from './packed-browser-gone.mjs'
 import { tracePageInteractions, type InteractionTrace } from './packed-interaction-trace'
-import { waitForFiniteAnimations, settleBeforeClose } from './finite-animations'
+import { waitForFiniteAnimations, settleAndClose } from './finite-animations'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-conversation-'))
@@ -1416,8 +1416,10 @@ void textarea
           // A leg that already failed keeps its own error, so the settle is
           // best-effort there; on a passing leg a transition that fails for any other
           // reason still fails the leg.
-          if (legPage) await settleBeforeClose(legPage, { bestEffort: legFailed })
-          await browser.close()
+          // The browser is closed whatever the settle does: a rejected settle still
+          // reports its own error, after the close, and never replaces a failed
+          // leg's error.
+          await settleAndClose(legPage, browser, { legFailed })
         }
       }
     }
