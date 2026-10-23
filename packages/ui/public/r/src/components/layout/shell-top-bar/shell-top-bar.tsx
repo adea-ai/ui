@@ -156,7 +156,7 @@ export function ShellTopBar(props: ShellTopBarProps) {
         orientation="vertical"
         data-slot="shell-top-bar-divider"
         aria-hidden="true"
-        class="h-5"
+        class="data-[orientation=vertical]:h-5"
       />
       <Show when={breadcrumb()}>
         <div
