@@ -903,8 +903,12 @@ export function PackedSceneControlsConsumer() {
               ).toBe(32)
               await plain.focus()
               await expect(plain).toBeFocused()
+              // Tooltips open on keyboard focus that follows a Tab, never on
+              // programmatic focus (lib/tooltip-focus-gate), so the tooltip
+              // buttons are reached the way a keyboard user reaches them.
               const ordinaryTooltip = page.getByRole('button', { name: 'Tooltip action' })
-              await ordinaryTooltip.focus()
+              await page.keyboard.press('Tab')
+              await expect(ordinaryTooltip).toBeFocused()
               await expect(page.getByRole('tooltip')).toHaveText('Open action details')
               // The tooltipIcon passthrough survives the packed build: the tip
               // carries the decorative glyph beside the label.
@@ -912,7 +916,8 @@ export function PackedSceneControlsConsumer() {
               await expect(tooltipIcon).toHaveAttribute('aria-hidden', 'true')
               await expect(tooltipIcon.locator('svg')).toBeVisible()
               const polymorphic = page.getByRole('link', { name: 'Polymorphic tooltip link' })
-              await polymorphic.focus()
+              await page.keyboard.press('Tab')
+              await expect(polymorphic).toBeFocused()
               await expect(page.getByRole('tooltip')).toHaveText('Open the linked action details')
               const menuTrigger = page.getByRole('button', { name: 'Open comfortable menu' })
               await menuTrigger.focus()
