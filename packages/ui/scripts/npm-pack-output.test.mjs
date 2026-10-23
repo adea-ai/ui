@@ -52,3 +52,21 @@ test('counts the archives of either shape, so a gate can still demand exactly on
     /did not report an artifact filename/
   )
 })
+
+test('the plural parser rejects a report with a malformed entry instead of dropping it', () => {
+  const malformed = { name: 'missing-file' }
+  const noName = /did not report an artifact filename/
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([entry, malformed])), noName)
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([malformed, entry])), noName)
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry, 'missing-file': malformed })),
+    noName
+  )
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify([entry, { ...entry, filename: '' }])),
+    noName
+  )
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([entry, null])), noName)
+  // The singular parser keeps its first-valid behaviour for its other callers.
+  assert.equal(parseNpmPackEntry(JSON.stringify([entry, malformed])).filename, entry.filename)
+})

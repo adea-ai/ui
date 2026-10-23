@@ -17,23 +17,32 @@ function isEntry(value) {
   )
 }
 
-/** Every entry that names a tarball, in report order. */
-export function parseNpmPackEntries(raw) {
+function reportCandidates(raw) {
   const report = JSON.parse(raw)
-  const candidates = Array.isArray(report)
+  return Array.isArray(report)
     ? report
     : isEntry(report)
       ? [report]
       : typeof report === 'object' && report !== null
         ? Object.values(report)
         : []
-  const entries = candidates.filter(isEntry)
-  if (entries.length === 0) throw new Error('npm pack did not report an artifact filename')
-  return entries
 }
 
+/**
+ * Every entry of the report, in order. Strict: one element that names no
+ * tarball rejects the whole report, so a gate that demands exactly one archive
+ * cannot be satisfied by a malformed second entry being dropped.
+ */
+export function parseNpmPackEntries(raw) {
+  const candidates = reportCandidates(raw)
+  if (candidates.length === 0 || !candidates.every(isEntry))
+    throw new Error('npm pack did not report an artifact filename')
+  return candidates
+}
+
+/** The first entry that names a tarball; other malformed entries are ignored. */
 export function parseNpmPackEntry(raw) {
-  return /** @type {NonNullable<ReturnType<typeof parseNpmPackEntries>[0]>} */ (
-    parseNpmPackEntries(raw)[0]
-  )
+  const entry = reportCandidates(raw).find(isEntry)
+  if (!entry) throw new Error('npm pack did not report an artifact filename')
+  return entry
 }
