@@ -11,13 +11,11 @@ import {
   markImageFromFile,
   markImageProblemCopy,
 } from '../src/components/composites/icon-picker/image-data-url'
+import { preserveGlobals } from './helpers/globals'
 
 const g = globalThis as Record<string, unknown>
-const saved = { document: g.document, createImageBitmap: g.createImageBitmap }
-afterEach(() => {
-  g.document = saved.document
-  g.createImageBitmap = saved.createImageBitmap
-})
+const restoreGlobals = preserveGlobals('document', 'createImageBitmap')
+afterEach(restoreGlobals)
 
 const PNG = `data:image/png;base64,${'A'.repeat(40)}`
 

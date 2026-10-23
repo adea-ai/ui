@@ -419,10 +419,32 @@ describe('Questionnaire once settled', () => {
     expect(dom.window.document.activeElement).not.toBe(root.querySelector('section'))
   })
 
-  test('focus that left through a control disappearing is kept in the questionnaire', () => {
-    const root = mount({ questions: [text] })
+  test('focus that leaves for nowhere, as when its control is removed, still lands on the record', async () => {
+    const [status, setStatus] = createSignal<QuestionnaireProps['status']>('open')
+    const root = dom.mount(() => (
+      <Questionnaire
+        questions={[text]}
+        status={status()}
+        answers={{ why: { optionIds: [], text: 'x' } }}
+        onSubmit={() => {}}
+      />
+    ))
+    const section = root.querySelector('section')!
     const area = field(root)
+    area.focus()
+    area.dispatchEvent(new dom.window.FocusEvent('focusin', { bubbles: true }))
+    expect(dom.window.document.activeElement).toBe(area)
+    // A control that goes away reports a focusout with no element receiving focus.
     area.dispatchEvent(new dom.window.FocusEvent('focusout', { bubbles: true }))
-    expect(root.querySelector('section')).not.toBeNull()
+    // Moving to the questionnaire's own Send button is not leaving it either.
+    const send = button(root, 'Send answer')
+    area.dispatchEvent(
+      new dom.window.FocusEvent('focusout', { bubbles: true, relatedTarget: send })
+    )
+    setStatus('answered')
+    await tick()
+    expect(root.querySelector('textarea')).toBeNull()
+    expect(section.getAttribute('data-status')).toBe('answered')
+    expect(dom.window.document.activeElement).toBe(section)
   })
 })

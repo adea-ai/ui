@@ -291,9 +291,13 @@ describe('Tooltip', () => {
       </Tooltip>
     ))
     await tick()
+    expect(byRole('tooltip')).not.toBeNull()
+    expect(changes).toEqual([])
     ;(doc().querySelector('button') as HTMLButtonElement).click()
     await tick(60)
     expect(clicks).toBe(1)
+    expect(changes.at(-1)).toBe(false)
+    expect(byRole('tooltip')).toBeNull()
   })
 })
 

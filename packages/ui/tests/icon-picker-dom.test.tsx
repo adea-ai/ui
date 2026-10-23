@@ -8,6 +8,7 @@ import {
 import { markImageProblemCopy } from '../src/components/composites/icon-picker/image-data-url'
 import { shellIconEntries } from '../src/components/composites/icon-picker/shell-icons'
 import { useDom } from './helpers/dom'
+import { preserveGlobals } from './helpers/globals'
 
 const dom = useDom()
 const doc = () => dom.window.document
@@ -18,12 +19,8 @@ const buttonNamed = (text: string) =>
     | HTMLButtonElement
     | undefined
 
-const real = {
-  createImageBitmap: (globalThis as { createImageBitmap?: unknown }).createImageBitmap,
-}
-afterEach(() => {
-  ;(globalThis as { createImageBitmap?: unknown }).createImageBitmap = real.createImageBitmap
-})
+const restoreGlobals = preserveGlobals('createImageBitmap')
+afterEach(restoreGlobals)
 
 /** Pick a file the way the browser does: set the input's files, then dispatch `change`. */
 function pickFile(input: HTMLInputElement, file: File) {

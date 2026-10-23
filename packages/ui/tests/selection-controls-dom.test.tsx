@@ -129,7 +129,7 @@ describe('ToggleGroup', () => {
     expect(spaced.classList.contains('gap-1')).toBe(true)
   })
 
-  test('Escape on an item is stopped there so an enclosing dialog is not starved of it, and the caller handler still runs', () => {
+  test('Escape on an item stops there instead of bubbling to an enclosing key handler, and the caller handler still runs', () => {
     const seen: string[] = []
     const root = dom.mount(() => (
       <div onKeyDown={(event) => seen.push(`outer:${event.key}`)}>
