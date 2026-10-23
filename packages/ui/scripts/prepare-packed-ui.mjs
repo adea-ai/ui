@@ -9,6 +9,7 @@ import {
 } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
+import { parseNpmPackEntries } from './npm-pack-output.mjs'
 
 const uiRoot = resolve(import.meta.dirname, '..')
 const outputDirectory = process.argv[2] ? resolve(process.argv[2]) : null
@@ -22,7 +23,7 @@ const output = execFileSync('npm', ['pack', '--json', '--pack-destination', outp
   encoding: 'utf8',
   stdio: ['ignore', 'pipe', 'pipe'],
 })
-const packed = JSON.parse(output)
+const packed = parseNpmPackEntries(output)
 if (packed.length !== 1) throw new Error(`Expected one npm archive, received ${packed.length}`)
 
 const [archive] = packed

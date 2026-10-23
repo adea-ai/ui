@@ -9,6 +9,7 @@ import { chromium, webkit, expect, type BrowserContext } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-packed-transcript-'))
@@ -18,14 +19,14 @@ const MAX_CSS_BYTES = 42 * 1024
 console.log(`Owned transcript pilot runner PID: ${process.pid}`)
 
 try {
-  const [archive] = JSON.parse(
+  const archive = parseNpmPackEntry(
     execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
       cwd: root,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 60_000,
     })
-  ) as [{ filename: string }]
+  )
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     peerDependencies: Record<string, string>
   }
