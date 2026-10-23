@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dir, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -57,7 +58,7 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       await run('npm', ['pack', '--json', '--pack-destination', consumer], uiRoot, {}, true)
     )
     archivePath = join(consumer, archive.filename)

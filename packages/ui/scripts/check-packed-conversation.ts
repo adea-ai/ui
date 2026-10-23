@@ -14,6 +14,7 @@ import {
   MAX_ATOMIC_INCREMENT_GZIP_BYTES,
 } from './conversation-packed-budget'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 import { describeBrowserGoneFailure } from './packed-browser-gone.mjs'
 import { tracePageInteractions, type InteractionTrace } from './packed-interaction-trace'
 import { waitForFiniteAnimations, settleAndClose } from './finite-animations'
@@ -228,7 +229,7 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
         cwd: root,
         encoding: 'utf8',

@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const packageRoot = resolve(import.meta.dir, '..')
 const root = resolve(packageRoot, '../..')
@@ -52,11 +53,9 @@ try {
   const suppliedArchive = sharedPackedUiArchive()
   let archivePath = suppliedArchive
   if (!archivePath) {
-    const packed = JSON.parse(
+    const archive = parseNpmPackEntry(
       await run('npm', ['pack', '--json', '--pack-destination', consumer], packageRoot, {}, true)
-    ) as [{ filename: string }]
-    const archive = packed[0]
-    if (!archive) throw new Error('npm pack did not return a tarball')
+    )
     archivePath = join(consumer, archive.filename)
   }
   const archiveHash = createHash('sha256').update(readFileSync(archivePath)).digest('hex')
