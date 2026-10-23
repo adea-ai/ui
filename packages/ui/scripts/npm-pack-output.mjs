@@ -17,7 +17,8 @@ function isEntry(value) {
   )
 }
 
-export function parseNpmPackEntry(raw) {
+/** Every entry that names a tarball, in report order. */
+export function parseNpmPackEntries(raw) {
   const report = JSON.parse(raw)
   const candidates = Array.isArray(report)
     ? report
@@ -26,7 +27,13 @@ export function parseNpmPackEntry(raw) {
       : typeof report === 'object' && report !== null
         ? Object.values(report)
         : []
-  const entry = candidates.find(isEntry)
-  if (!entry) throw new Error('npm pack did not report an artifact filename')
-  return entry
+  const entries = candidates.filter(isEntry)
+  if (entries.length === 0) throw new Error('npm pack did not report an artifact filename')
+  return entries
+}
+
+export function parseNpmPackEntry(raw) {
+  return /** @type {NonNullable<ReturnType<typeof parseNpmPackEntries>[0]>} */ (
+    parseNpmPackEntries(raw)[0]
+  )
 }

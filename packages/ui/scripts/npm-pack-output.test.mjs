@@ -3,7 +3,7 @@
 // parseNpmPackEntry, so both shapes (and the failures) are pinned here.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseNpmPackEntry } from './npm-pack-output.mjs'
+import { parseNpmPackEntries, parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const entry = {
   id: '@adea-ai/ui@0.146.3',
@@ -40,4 +40,15 @@ test('refuses a report that names no tarball', () => {
 
 test('refuses output that is not JSON instead of guessing', () => {
   assert.throws(() => parseNpmPackEntry('npm notice nothing'), SyntaxError)
+})
+
+test('counts the archives of either shape, so a gate can still demand exactly one', () => {
+  const other = { ...entry, name: 'other', filename: 'other-1.0.0.tgz' }
+  assert.equal(parseNpmPackEntries(JSON.stringify([entry])).length, 1)
+  assert.equal(parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry })).length, 1)
+  assert.equal(parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry, other })).length, 2)
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify({})),
+    /did not report an artifact filename/
+  )
 })
