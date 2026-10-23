@@ -166,7 +166,7 @@ export function expectedId(root = repoRoot) {
   }
 }
 
-function verify(expected) {
+export function verify(expected) {
   let actual
   try {
     actual = idOf(identity())
