@@ -35,6 +35,8 @@ describe('theme context', () => {
         value,
         get children() {
           seen = copy.useOptionalTheme()
+          // The strict hook reads the same shared context.
+          expect(copy.useTheme()).toBe(value)
           return undefined
         },
       })
