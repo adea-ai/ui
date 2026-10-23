@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.4](https://github.com/adea-ai/ui/compare/v0.146.3...v0.146.4) (2026-10-23)
+
+
+### Bug Fixes
+
+* **test:** enforce coverage and load Solid in changed checks ([#489](https://github.com/adea-ai/ui/issues/489)) ([3ae9bb6](https://github.com/adea-ai/ui/commit/3ae9bb63a078a73d121331555d2d172e10ee5a3a))
+
 ## [0.146.3](https://github.com/adea-ai/ui/compare/v0.146.2...v0.146.3) (2026-10-23)
 
 
