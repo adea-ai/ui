@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.3](https://github.com/adea-ai/ui/compare/v0.146.2...v0.146.3) (2026-10-23)
+
+
+### Tests
+
+* **ui:** diagnose intermittent packed WebKit process failures ([#481](https://github.com/adea-ai/ui/issues/481)) ([#482](https://github.com/adea-ai/ui/issues/482)) ([c677169](https://github.com/adea-ai/ui/commit/c677169b124a2acfc937796f28808e13e632d8d3))
+
 ## [0.146.2](https://github.com/adea-ai/ui/compare/v0.146.1...v0.146.2) (2026-10-23)
 
 
