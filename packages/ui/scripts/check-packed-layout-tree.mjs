@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-layout-tree-'))
@@ -18,9 +19,9 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   const pack = sharedArchive
     ? { filename: sharedArchive }
-    : JSON.parse(
+    : parseNpmPackEntry(
         run('npm', ['pack', '--json', '--pack-destination', consumer], join(root, 'packages/ui'))
-      )[0]
+      )
   writeFileSync(
     join(consumer, 'package.json'),
     JSON.stringify({

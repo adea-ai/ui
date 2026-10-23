@@ -3,7 +3,7 @@
 // parseNpmPackEntry, so both shapes (and the failures) are pinned here.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseNpmPackEntry } from './npm-pack-output.mjs'
+import { parseNpmPackEntries, parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const entry = {
   id: '@adea-ai/ui@0.146.3',
@@ -40,4 +40,33 @@ test('refuses a report that names no tarball', () => {
 
 test('refuses output that is not JSON instead of guessing', () => {
   assert.throws(() => parseNpmPackEntry('npm notice nothing'), SyntaxError)
+})
+
+test('counts the archives of either shape, so a gate can still demand exactly one', () => {
+  const other = { ...entry, name: 'other', filename: 'other-1.0.0.tgz' }
+  assert.equal(parseNpmPackEntries(JSON.stringify([entry])).length, 1)
+  assert.equal(parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry })).length, 1)
+  assert.equal(parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry, other })).length, 2)
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify({})),
+    /did not report an artifact filename/
+  )
+})
+
+test('the plural parser rejects a report with a malformed entry instead of dropping it', () => {
+  const malformed = { name: 'missing-file' }
+  const noName = /did not report an artifact filename/
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([entry, malformed])), noName)
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([malformed, entry])), noName)
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify({ '@adea-ai/ui': entry, 'missing-file': malformed })),
+    noName
+  )
+  assert.throws(
+    () => parseNpmPackEntries(JSON.stringify([entry, { ...entry, filename: '' }])),
+    noName
+  )
+  assert.throws(() => parseNpmPackEntries(JSON.stringify([entry, null])), noName)
+  // The singular parser keeps its first-valid behaviour for its other callers.
+  assert.equal(parseNpmPackEntry(JSON.stringify([entry, malformed])).filename, entry.filename)
 })
