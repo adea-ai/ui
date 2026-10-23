@@ -8,6 +8,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dir, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-ui-consumer-'))
@@ -229,7 +230,7 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
         cwd: root,
         encoding: 'utf8',

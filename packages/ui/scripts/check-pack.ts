@@ -26,6 +26,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const manifest: {
@@ -48,7 +49,7 @@ const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
   stdio: ['ignore', 'pipe', 'ignore'],
 })
 
-const [archive] = JSON.parse(raw)
+const archive = parseNpmPackEntry(raw)
 const files: string[] = archive.files.map((file: { path: string }) => file.path)
 const failures: string[] = []
 

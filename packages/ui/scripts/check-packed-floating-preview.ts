@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-floating-preview-'))
@@ -9,13 +10,12 @@ console.log(
   JSON.stringify({ ownerPid: process.pid, consumer, owner: 'packed-floating-preview-check' })
 )
 try {
-  const [packed] = JSON.parse(
+  const packed = parseNpmPackEntry(
     execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
       cwd: root,
       encoding: 'utf8',
     })
-  ) as { filename: string }[]
-  if (!packed?.filename) throw new Error('npm pack did not return an artifact filename')
+  )
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     peerDependencies: Record<string, string>
   }
