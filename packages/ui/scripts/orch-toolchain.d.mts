@@ -4,3 +4,4 @@ export type Identity = { platform: string; libc: string; node: Binary; bun: Bina
 export function identity(options?: { root?: string; searchPath?: string }): Identity
 export function idOf(found: Identity): string
 export function expectedId(root?: string): string
+export function verify(expected: string): 0 | 1
