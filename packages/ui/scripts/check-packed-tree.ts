@@ -9,6 +9,7 @@ import { chromium, expect, webkit, type BrowserContext } from '@playwright/test'
 import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const uiRoot = resolve(import.meta.dir, '..')
 const repositoryRoot = resolve(uiRoot, '../..')
@@ -18,14 +19,14 @@ const maxCssBytes = 42 * 1024
 console.log(JSON.stringify({ owner: 'packed-tree-check', runnerPid: process.pid, consumer }))
 
 try {
-  const [archive] = JSON.parse(
+  const archive = parseNpmPackEntry(
     execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
       cwd: uiRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 60_000,
     })
-  ) as [{ filename: string }]
+  )
   const packageManifest = JSON.parse(readFileSync(join(uiRoot, 'package.json'), 'utf8')) as {
     dependencies: Record<string, string>
     peerDependencies: Record<string, string>

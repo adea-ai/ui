@@ -38,7 +38,13 @@ export const TEST_ROOTS: readonly TestRoot[] = [
   {
     cwd: 'packages/ui',
     dir: 'packages/ui/tests',
-    command: ['bun', 'test', '--conditions=browser'],
+    command: [
+      'bun',
+      'test',
+      '--conditions=browser',
+      '--preload',
+      './tests/helpers/solid-transform.ts',
+    ],
     // Read by nearly every module, or read from disk rather than imported, so an
     // import graph cannot say which tests depend on them.
     core: [

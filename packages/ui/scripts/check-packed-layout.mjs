@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { installCancellationHandlers, runCommand } from './packed-layout-process.mjs'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const packageDirectory = join(root, 'packages/ui')
@@ -26,8 +27,7 @@ try {
       displayArgs: ['pack', '--json', '--pack-destination', '<consumer-temp>'],
       displayCwd: '<workspace>/packages/ui',
     })
-    const [packedArtifact] = JSON.parse(pack.stdout)
-    if (!packedArtifact?.filename) throw Error('npm pack did not return a tarball filename')
+    const packedArtifact = parseNpmPackEntry(pack.stdout)
     archivePath = join(consumer, packedArtifact.filename)
   }
 

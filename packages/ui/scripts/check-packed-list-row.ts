@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import type { EnvironmentOptions } from 'vite'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 import { findUnrelatedPackedRowModules } from './packed-row-modules'
 
 const root = resolve(import.meta.dir, '../../..')
@@ -238,14 +239,14 @@ async function measureRichRows(
 try {
   let archivePath = sharedPackedUiArchive()
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
         cwd: uiRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 60_000,
       })
-    ) as [{ filename: string }]
+    )
     archivePath = join(consumer, archive.filename)
   }
 

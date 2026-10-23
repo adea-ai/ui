@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const packageRoot = resolve(import.meta.dirname, '..')
 const workspaceRoot = resolve(packageRoot, '../..')
@@ -17,13 +18,13 @@ try {
     sharedArchive ??
     join(
       consumer,
-      JSON.parse(
+      parseNpmPackEntry(
         execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
           cwd: packageRoot,
           encoding: 'utf8',
           stdio: ['ignore', 'pipe', 'inherit'],
         })
-      )[0].filename
+      ).filename
     )
   execFileSync('tar', ['-xzf', archive, '-C', consumer])
   const installed = join(consumer, 'package')
