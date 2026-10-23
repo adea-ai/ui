@@ -11,6 +11,7 @@ import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 import { parseNpmPackEntry } from './npm-pack-output.mjs'
+import { allowedPackedUi } from './packed-scene-controls-allowed-ui.mjs'
 
 declare global {
   interface Window {
@@ -437,15 +438,7 @@ export function PackedSceneControlsConsumer() {
         throw new Error(`${fixture.name} selected the wrong ${condition} export condition`)
       if (uiModules.some((id) => id.includes(otherCondition)))
         throw new Error(`${fixture.name} mixed compiled and Solid export conditions`)
-      const allowedUi =
-        // `cn-tables.generated` rides along with `lib/utils` (`cn()` reads the
-        // class tables); it is shared infrastructure, not an unrelated module.
-        // `lib/overlay` rides along with the shared tooltip: #329 gave every
-        // tip the dialog surface's top-layer exemption, so any bundle that
-        // renders a tooltip now carries it.
-        fixture.name === 'scene-controls'
-          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
-          : /\/components\/(?:composites\/action-button|ui\/(?:button|dropdown-menu|popover|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
+      const allowedUi = allowedPackedUi(fixture.name)
       const unrelatedUi = uiModules.filter((id) => !allowedUi.test(id))
       if (unrelatedUi.length)
         throw new Error(`${fixture.name} retained unrelated UI modules: ${unrelatedUi.join(', ')}`)
