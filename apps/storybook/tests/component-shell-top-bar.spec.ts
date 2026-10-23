@@ -72,6 +72,15 @@ test('the shell top bar stays inside its window and keeps every control reachabl
           height: box.height,
           leadingScrolls: leading.scrollWidth > leading.clientWidth + 1,
           leadingRight: leading.getBoundingClientRect().right,
+          top: box.top,
+          bottom: box.bottom,
+          rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+          divider: (() => {
+            const rect = header
+              .querySelector<HTMLElement>('[data-slot="shell-top-bar-divider"]')!
+              .getBoundingClientRect()
+            return { height: rect.height, top: rect.top, bottom: rect.bottom }
+          })(),
           controls: controls.map((control) => {
             const rect = control.getBoundingClientRect()
             return {
@@ -80,6 +89,8 @@ test('the shell top bar stays inside its window and keeps every control reachabl
               right: rect.right,
               width: rect.width,
               height: rect.height,
+              top: rect.top,
+              bottom: rect.bottom,
             }
           }),
         }
@@ -95,7 +106,29 @@ test('the shell top bar stays inside its window and keeps every control reachabl
         measured.controls.length,
         `${where}: every control is rendered`
       ).toBeGreaterThanOrEqual(7)
+      // The divider is a fixed 1.25rem mark. Its own vertical-orientation `h-full` once won over a
+      // plain `h-5`, so it took a height from the wrapped bar (or none at all) instead.
+      expect(
+        Math.abs(measured.divider.height - 1.25 * measured.rem),
+        `${where}: the divider is 1.25rem tall`
+      ).toBeLessThanOrEqual(1)
+      expect(
+        measured.divider.top,
+        `${where}: the divider starts inside the bar`
+      ).toBeGreaterThanOrEqual(measured.top - 1)
+      expect(
+        measured.divider.bottom,
+        `${where}: the divider ends inside the bar`
+      ).toBeLessThanOrEqual(measured.bottom + 1)
       for (const control of measured.controls) {
+        expect(
+          control.bottom,
+          `${where}: ${control.name} ends inside the bar, not below it`
+        ).toBeLessThanOrEqual(measured.bottom)
+        expect(
+          control.height,
+          `${where}: ${control.name} keeps a 24px target height`
+        ).toBeGreaterThanOrEqual(24)
         expect(
           control.left,
           `${where}: ${control.name} starts inside the window`
