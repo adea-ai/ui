@@ -11,6 +11,7 @@ import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
 import { parseNpmPackEntry } from './npm-pack-output.mjs'
+import { allowedPackedUi } from './packed-scene-controls-allowed-ui.mjs'
 
 declare global {
   interface Window {
@@ -437,15 +438,7 @@ export function PackedSceneControlsConsumer() {
         throw new Error(`${fixture.name} selected the wrong ${condition} export condition`)
       if (uiModules.some((id) => id.includes(otherCondition)))
         throw new Error(`${fixture.name} mixed compiled and Solid export conditions`)
-      const allowedUi =
-        // `cn-tables.generated` rides along with `lib/utils` (`cn()` reads the
-        // class tables); it is shared infrastructure, not an unrelated module.
-        // `lib/overlay` rides along with the shared tooltip: #329 gave every
-        // tip the dialog surface's top-layer exemption, so any bundle that
-        // renders a tooltip now carries it.
-        fixture.name === 'scene-controls'
-          ? /\/components\/(?:composites\/(?:scene-controls|action-button)|ui\/(?:button|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
-          : /\/components\/(?:composites\/action-button|ui\/(?:button|dropdown-menu|popover|spinner|tooltip))\/|\/lib\/(?:cn-tables\.generated|overlay|utils|variants)\./
+      const allowedUi = allowedPackedUi(fixture.name)
       const unrelatedUi = uiModules.filter((id) => !allowedUi.test(id))
       if (unrelatedUi.length)
         throw new Error(`${fixture.name} retained unrelated UI modules: ${unrelatedUi.join(', ')}`)
@@ -910,8 +903,12 @@ export function PackedSceneControlsConsumer() {
               ).toBe(32)
               await plain.focus()
               await expect(plain).toBeFocused()
+              // Tooltips open on keyboard focus that follows a Tab, never on
+              // programmatic focus (lib/tooltip-focus-gate), so the tooltip
+              // buttons are reached the way a keyboard user reaches them.
               const ordinaryTooltip = page.getByRole('button', { name: 'Tooltip action' })
-              await ordinaryTooltip.focus()
+              await page.keyboard.press('Tab')
+              await expect(ordinaryTooltip).toBeFocused()
               await expect(page.getByRole('tooltip')).toHaveText('Open action details')
               // The tooltipIcon passthrough survives the packed build: the tip
               // carries the decorative glyph beside the label.
@@ -919,7 +916,8 @@ export function PackedSceneControlsConsumer() {
               await expect(tooltipIcon).toHaveAttribute('aria-hidden', 'true')
               await expect(tooltipIcon.locator('svg')).toBeVisible()
               const polymorphic = page.getByRole('link', { name: 'Polymorphic tooltip link' })
-              await polymorphic.focus()
+              await page.keyboard.press('Tab')
+              await expect(polymorphic).toBeFocused()
               await expect(page.getByRole('tooltip')).toHaveText('Open the linked action details')
               const menuTrigger = page.getByRole('button', { name: 'Open comfortable menu' })
               await menuTrigger.focus()
