@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { checkTabsSsr } from './check-tabs-ssr'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 
 const root = resolve(import.meta.dir, '../../..')
 const consumer = mkdtempSync(join(tmpdir(), 'adea-packed-settings-navigation-'))
@@ -19,14 +20,14 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
         cwd: join(root, 'packages/ui'),
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 60_000,
       })
-    ) as [{ filename: string }]
+    )
     archivePath = join(consumer, archive.filename)
   }
   const manifest = JSON.parse(readFileSync(join(root, 'packages/ui/package.json'), 'utf8')) as {

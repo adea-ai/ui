@@ -10,6 +10,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { build, type EnvironmentOptions } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 import { allowedPackedUi } from './packed-scene-controls-allowed-ui.mjs'
 
 declare global {
@@ -243,13 +244,13 @@ try {
   const suppliedArchive = sharedPackedUiArchive()
   let archivePath = suppliedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       execFileSync('npm', ['pack', '--json', '--pack-destination', consumer], {
         cwd: packageRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
       })
-    ) as [{ filename: string }]
+    )
     if (!archive?.filename) throw new Error('npm pack did not return a tarball')
     archivePath = join(consumer, archive.filename)
   }

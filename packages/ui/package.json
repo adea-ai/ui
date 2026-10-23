@@ -134,7 +134,7 @@
     "check:packed-consumer": "bun scripts/check-packed-consumer.ts",
     "check:packed-list-row": "bun scripts/check-packed-list-row.ts",
     "check:packed-scene-controls": "node --test scripts/packed-scene-controls-allowed-ui.test.mjs && bun scripts/check-packed-scene-controls.ts",
-    "check:packed-conversation": "node --test scripts/check-packed-browser-gone.test.mjs && bun scripts/check-packed-conversation.ts",
+    "check:packed-conversation": "node --test scripts/check-packed-browser-gone.test.mjs scripts/npm-pack-output.test.mjs && bun scripts/check-packed-conversation.ts",
     "check:packed-transcript": "bun scripts/check-packed-transcript.ts",
     "check:packed-layout-renderer": "bun scripts/check-packed-layout-renderer.ts",
     "check:packed-appearance": "bun scripts/check-packed-appearance.ts",
