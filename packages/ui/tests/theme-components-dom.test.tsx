@@ -87,6 +87,218 @@ describe('ThemeProvider', () => {
   })
 })
 
+/** A `matchMedia` whose queries the test can flip, standing in for the operating system. */
+function stubMedia(initial: Record<string, boolean>) {
+  const state = { ...initial }
+  const listeners = new Map<string, Set<(event: { matches: boolean }) => void>>()
+  const original = dom.window.matchMedia
+  dom.window.matchMedia = ((query: string) => ({
+    media: query,
+    get matches() {
+      return state[query] ?? false
+    },
+    addEventListener: (_: string, listener: (event: { matches: boolean }) => void) => {
+      if (!listeners.has(query)) listeners.set(query, new Set())
+      listeners.get(query)!.add(listener)
+    },
+    removeEventListener: (_: string, listener: (event: { matches: boolean }) => void) =>
+      void listeners.get(query)?.delete(listener),
+  })) as never
+  return {
+    set(query: string, matches: boolean) {
+      state[query] = matches
+      for (const listener of listeners.get(query) ?? []) listener({ matches })
+    },
+    restore: () => {
+      dom.window.matchMedia = original
+    },
+  }
+}
+
+describe('ThemeProvider and the operating system', () => {
+  test('a system appearance follows the operating system as it changes', () => {
+    const media = stubMedia({ '(prefers-color-scheme: dark)': false })
+    try {
+      let theme!: ThemeContextValue
+      mountProvider({ appearance: 'system' }, () => {
+        theme = useTheme()
+        return null
+      })
+      expect(theme.resolvedAppearance()).toBe('light')
+      media.set('(prefers-color-scheme: dark)', true)
+      expect(theme.resolvedAppearance()).toBe('dark')
+      expect(html().getAttribute('data-theme')).toBe('adea-dark')
+      expect(theme.selection().appearance).toBe('system')
+    } finally {
+      media.restore()
+    }
+  })
+
+  test('Reduce Transparency forces opaque surfaces only once the surface axis is on', () => {
+    const query = '(prefers-reduced-transparency: reduce)'
+    const media = stubMedia({ [query]: true })
+    try {
+      let on!: ThemeContextValue
+      dom.mount(() => (
+        <ThemeProvider
+          surface={{ nativeTranslucency: true }}
+          persistence={{ read: () => ({ surface: 'translucent' }), write: () => {} }}
+        >
+          {(() => {
+            on = useTheme()
+            return null
+          })()}
+        </ThemeProvider>
+      ))
+      expect(on.reduceTransparencyActive()).toBe(true)
+      expect(on.effectiveSurface()).toBe('opaque')
+      media.set(query, false)
+      expect(on.reduceTransparencyActive()).toBe(false)
+      expect(on.effectiveSurface()).toBe('translucent')
+
+      let off!: ThemeContextValue
+      mountProvider({ surface: 'translucent' }, () => {
+        off = useTheme()
+        return null
+      })
+      expect(off.reduceTransparencyActive()).toBe(false)
+    } finally {
+      media.restore()
+    }
+  })
+})
+
+describe('ThemeProvider options', () => {
+  test('fontZoom binds the zoom chords to the three text sizes and leaves handled events alone', () => {
+    let theme!: ThemeContextValue
+    dom.mount(() => (
+      <ThemeProvider fontZoom persistence={{ read: () => undefined, write: () => {} }}>
+        {(() => {
+          theme = useTheme()
+          return null
+        })()}
+      </ThemeProvider>
+    ))
+    const before = theme.selection().fonts.ui.size
+    const chord = (key: string, init: KeyboardEventInit = {}) => {
+      const event = new dom.window.KeyboardEvent('keydown', {
+        key,
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      })
+      dom.window.dispatchEvent(event)
+      return event
+    }
+    const zoomIn = chord('=')
+    expect(zoomIn.defaultPrevented).toBe(true)
+    expect(theme.selection().fonts.ui.size).toBeGreaterThan(before)
+    chord('-')
+    expect(theme.selection().fonts.ui.size).toBe(before)
+    chord('=')
+    chord('0')
+    expect(theme.selection().fonts.ui.size).toBe(before)
+    const unrelated = chord('a')
+    expect(unrelated.defaultPrevented).toBe(false)
+    theme.zoomFonts('in')
+    expect(theme.selection().fonts.ui.size).toBeGreaterThan(before)
+  })
+
+  test('without fontZoom the chords are left to the browser', () => {
+    let theme!: ThemeContextValue
+    mountProvider(undefined, () => {
+      theme = useTheme()
+      return null
+    })
+    const before = theme.selection().fonts.ui.size
+    const event = new dom.window.KeyboardEvent('keydown', {
+      key: '=',
+      metaKey: true,
+      cancelable: true,
+    })
+    dom.window.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+    expect(theme.selection().fonts.ui.size).toBe(before)
+  })
+
+  test('disableTransitionOnChange holds transitions off while a change lands, then restores them', async () => {
+    let theme!: ThemeContextValue
+    dom.mount(() => (
+      <ThemeProvider
+        disableTransitionOnChange
+        persistence={{ read: () => ({ appearance: 'light' }), write: () => {} }}
+      >
+        {(() => {
+          theme = useTheme()
+          return null
+        })()}
+      </ThemeProvider>
+    ))
+    const holds = () =>
+      [...dom.window.document.head.querySelectorAll('style')].filter((style) =>
+        style.textContent?.includes('transition:none')
+      ).length
+    expect(holds()).toBe(1)
+    theme.setSelection({ appearance: 'dark' })
+    expect(html().getAttribute('data-theme')).toBe('adea-dark')
+    expect(holds()).toBeGreaterThan(0)
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(holds()).toBe(0)
+  })
+
+  test('a caller-owned selection drives the document, and a picker below still reports a change', () => {
+    const [selection, setSelection] = createSignal<Partial<ThemeSelection>>({ appearance: 'dark' })
+    let theme!: ThemeContextValue
+    dom.mount(() => (
+      <ThemeProvider selection={selection()}>
+        {(() => {
+          theme = useTheme()
+          return null
+        })()}
+      </ThemeProvider>
+    ))
+    expect(html().getAttribute('data-theme')).toBe('adea-dark')
+    setSelection({ appearance: 'light' })
+    expect(html().getAttribute('data-theme')).toBe('adea-light')
+    expect(theme.selection().appearance).toBe('light')
+  })
+
+  test('extra themes join the catalogue and the accent roles follow the selected pair', () => {
+    const base = themeById('adea-dark')!
+    const extra = { ...base, id: 'host-night', label: 'Host night' }
+    let theme!: ThemeContextValue
+    dom.mount(() => (
+      <ThemeProvider
+        themes={[extra]}
+        persistence={{
+          read: () => ({ appearance: 'dark', darkThemeId: 'host-night' }),
+          write: () => {},
+        }}
+      >
+        {(() => {
+          theme = useTheme()
+          return null
+        })()}
+      </ThemeProvider>
+    ))
+    expect(theme.allThemes().length).toBe(builtinThemes.length + 1)
+    expect(theme.variant().id).toBe('host-night')
+    expect(html().getAttribute('data-theme')).toBe('host-night')
+    expect(theme.accentRolesFor(null)).toBeUndefined()
+    expect(theme.accentRolesFor('theme')).toBeUndefined()
+  })
+
+  test('loadCatalogue resolves at once under the eager provider', async () => {
+    let theme!: ThemeContextValue
+    mountProvider(undefined, () => {
+      theme = useTheme()
+      return null
+    })
+    await expect(theme.loadCatalogue?.()).resolves.toBeUndefined()
+  })
+})
+
 describe('ThemeToggle', () => {
   test('marks the stored appearance as pressed and changes it on click', () => {
     let theme!: ThemeContextValue
