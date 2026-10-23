@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.2](https://github.com/adea-ai/ui/compare/v0.146.1...v0.146.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** keep ShellTopBar inside a 320px window at 200% text ([#485](https://github.com/adea-ai/ui/issues/485)) ([94b706c](https://github.com/adea-ai/ui/commit/94b706c7f86247139232c589ff8e5b7be126fbd6))
+
 ## [0.146.1](https://github.com/adea-ai/ui/compare/v0.146.0...v0.146.1) (2026-10-22)
 
 
