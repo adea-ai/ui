@@ -94,7 +94,7 @@ describe('ActionButton', () => {
   test('a disabled link drops its href and is announced as a link that cannot be followed', () => {
     const [disabled, setDisabled] = createSignal(true)
     const root = dom.mount(() => (
-      <ActionButton as="a" href="/next" disabled={disabled()}>
+      <ActionButton as="a" href="/next" {...{ disabled: disabled() }}>
         Next
       </ActionButton>
     ))
@@ -130,7 +130,7 @@ describe('ActionButton with a tooltip', () => {
   test('a disabled link with a tooltip stays in the tab order', () => {
     const link = dom
       .mount(() => (
-        <ActionButton as="a" href="/x" disabled tooltip="Unavailable">
+        <ActionButton as="a" href="/x" {...{ disabled: true }} tooltip="Unavailable">
           Go
         </ActionButton>
       ))

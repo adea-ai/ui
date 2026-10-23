@@ -152,24 +152,24 @@ describe('WorkspaceSwitcher', () => {
   })
 })
 
-describe('WorkspaceSwitcher reordering', () => {
-  async function openReorder(onReorder: (ids: readonly string[]) => void | Promise<void>) {
-    dom.mount(() => (
-      <WorkspaceSwitcher
-        workspaces={workspaces}
-        value="work"
-        onValueChange={() => {}}
-        onReorder={onReorder}
-        reorderLabel="Reorder spaces"
-      />
-    ))
-    await openMenu()
-    // Opening the menu starts loading the dialog module.
-    await tick(80)
-    choose(menuItem('Reorder spaces'))
-    await tick(120)
-  }
+async function openReorder(onReorder: (ids: readonly string[]) => void | Promise<void>) {
+  dom.mount(() => (
+    <WorkspaceSwitcher
+      workspaces={workspaces}
+      value="work"
+      onValueChange={() => {}}
+      onReorder={onReorder}
+      reorderLabel="Reorder spaces"
+    />
+  ))
+  await openMenu()
+  // Opening the menu starts loading the dialog module.
+  await tick(80)
+  choose(menuItem('Reorder spaces'))
+  await tick(120)
+}
 
+describe('WorkspaceSwitcher reordering', () => {
   test('opens the reorder dialog on demand and saves each move', async () => {
     const saved: Array<readonly string[]> = []
     await openReorder((ids) => void saved.push(ids))
@@ -271,7 +271,7 @@ describe('WorkspaceReorderDialog', () => {
         open
         onOpenChange={() => {}}
         workspaces={order()}
-        onReorder={(ids) => setOrder(ids.map((id) => items.find((item) => item.id === id)!))}
+        onReorder={(ids) => void setOrder(ids.map((id) => items.find((item) => item.id === id)!))}
       />
     ))
     await tick()

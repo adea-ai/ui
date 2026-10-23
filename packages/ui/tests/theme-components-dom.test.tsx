@@ -29,6 +29,8 @@ function mountProvider(
   return { root, writes }
 }
 
+const uiSize = (theme: ThemeContextValue) => theme.selection().fonts?.ui?.size ?? 0
+
 describe('ThemeProvider', () => {
   test('paints the stored preference on the document and persists a change', () => {
     let theme!: ThemeContextValue
@@ -179,7 +181,7 @@ describe('ThemeProvider options', () => {
         })()}
       </ThemeProvider>
     ))
-    const before = theme.selection().fonts.ui.size
+    const before = uiSize(theme)
     const chord = (key: string, init: KeyboardEventInit = {}) => {
       const event = new dom.window.KeyboardEvent('keydown', {
         key,
@@ -193,16 +195,16 @@ describe('ThemeProvider options', () => {
     }
     const zoomIn = chord('=')
     expect(zoomIn.defaultPrevented).toBe(true)
-    expect(theme.selection().fonts.ui.size).toBeGreaterThan(before)
+    expect(uiSize(theme)).toBeGreaterThan(before)
     chord('-')
-    expect(theme.selection().fonts.ui.size).toBe(before)
+    expect(uiSize(theme)).toBe(before)
     chord('=')
     chord('0')
-    expect(theme.selection().fonts.ui.size).toBe(before)
+    expect(uiSize(theme)).toBe(before)
     const unrelated = chord('a')
     expect(unrelated.defaultPrevented).toBe(false)
     theme.zoomFonts('in')
-    expect(theme.selection().fonts.ui.size).toBeGreaterThan(before)
+    expect(uiSize(theme)).toBeGreaterThan(before)
   })
 
   test('without fontZoom the chords are left to the browser', () => {
@@ -211,7 +213,7 @@ describe('ThemeProvider options', () => {
       theme = useTheme()
       return null
     })
-    const before = theme.selection().fonts.ui.size
+    const before = uiSize(theme)
     const event = new dom.window.KeyboardEvent('keydown', {
       key: '=',
       metaKey: true,
@@ -219,7 +221,7 @@ describe('ThemeProvider options', () => {
     })
     dom.window.dispatchEvent(event)
     expect(event.defaultPrevented).toBe(false)
-    expect(theme.selection().fonts.ui.size).toBe(before)
+    expect(uiSize(theme)).toBe(before)
   })
 
   test('disableTransitionOnChange holds transitions off while a change lands, then restores them', async () => {

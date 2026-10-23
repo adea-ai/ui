@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll } from 'bun:test'
 import type { JSX } from 'solid-js'
 
 import { Window } from 'happy-dom'
-import { render } from 'solid-js/web'
+import { DelegatedEvents, delegateEvents, render } from 'solid-js/web'
 
 /**
  * Browser globals a component reads while it renders, copied from a happy-dom window.
@@ -91,6 +91,10 @@ function install() {
         },
       }),
   })
+  // Compiled JSX registers its delegated events on the document once, when the component's
+  // module first loads. A module another file already loaded never does it again, so the
+  // window made for this file registers every event Solid delegates itself.
+  delegateEvents([...DelegatedEvents], window.document as unknown as Document)
   installed = { window, saved }
   return window
 }
