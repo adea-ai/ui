@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.8](https://github.com/adea-ai/ui/compare/v0.146.7...v0.146.8) (2026-10-24)
+
+
+### Maintenance
+
+* **deps:** update dependency happy-dom to v21 [security] ([#498](https://github.com/adea-ai/ui/issues/498)) ([99d6940](https://github.com/adea-ai/ui/commit/99d694098acf775d14e6d33d7cc3e93bc6f20a90))
+
 ## [0.146.7](https://github.com/adea-ai/ui/compare/v0.146.6...v0.146.7) (2026-10-23)
 
 
