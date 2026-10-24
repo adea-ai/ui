@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import { sharedPackedUiArchive } from './packed-artifact.mjs'
+import { parseNpmPackEntry } from './npm-pack-output.mjs'
 import { verifyPackedLayoutLazyController } from './check-packed-layout-lazy-controller'
 const root = resolve(import.meta.dirname, '../../..')
 const uiRoot = join(root, 'packages/ui')
@@ -81,7 +82,7 @@ try {
   const sharedArchive = sharedPackedUiArchive()
   let archivePath = sharedArchive
   if (!archivePath) {
-    const [archive] = JSON.parse(
+    const archive = parseNpmPackEntry(
       await run('npm', ['pack', '--json', '--pack-destination', consumer], uiRoot, {}, true)
     )
     archivePath = join(consumer, archive.filename)

@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.146.7](https://github.com/adea-ai/ui/compare/v0.146.6...v0.146.7) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** give the ShellTopBar divider its own 1.25rem height ([#488](https://github.com/adea-ai/ui/issues/488)) ([85dafdd](https://github.com/adea-ai/ui/commit/85dafddc7fde9ed00ee00f356a178c4359c57f70))
+
+
+### Tests
+
+* **ui:** combine component and tooling coverage without weakening gates ([#491](https://github.com/adea-ai/ui/issues/491)) ([27cd6a8](https://github.com/adea-ai/ui/commit/27cd6a8c138d573a01f239916296f4cf72d799a8))
+
+## [0.146.6](https://github.com/adea-ai/ui/compare/v0.146.5...v0.146.6) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** allow the tooltip focus gate in the packed scene-controls gate ([#494](https://github.com/adea-ai/ui/issues/494)) ([ef7cc11](https://github.com/adea-ai/ui/commit/ef7cc116fd5575cba65f8b77343162f477e0080a))
+
+## [0.146.5](https://github.com/adea-ai/ui/compare/v0.146.4...v0.146.5) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ui:** read the tarball name from npm pack output of either shape ([#493](https://github.com/adea-ai/ui/issues/493)) ([a1c150f](https://github.com/adea-ai/ui/commit/a1c150fdd5bcfb556ab9c5012f58d6f76f1d354c))
+
+## [0.146.4](https://github.com/adea-ai/ui/compare/v0.146.3...v0.146.4) (2026-10-23)
+
+
+### Bug Fixes
+
+* **test:** enforce coverage and load Solid in changed checks ([#489](https://github.com/adea-ai/ui/issues/489)) ([3ae9bb6](https://github.com/adea-ai/ui/commit/3ae9bb63a078a73d121331555d2d172e10ee5a3a))
+
 ## [0.146.3](https://github.com/adea-ai/ui/compare/v0.146.2...v0.146.3) (2026-10-23)
 
 
